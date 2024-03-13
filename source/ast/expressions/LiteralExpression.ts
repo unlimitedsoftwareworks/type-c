@@ -15,6 +15,7 @@
 import { matchDataTypes } from "../../typechecking/typechecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { ArrayType } from "../types/ArrayType";
 import { BasicType, BasicTypeKind } from "../types/BasicType";
 import { BooleanType } from "../types/BooleanType";
 import { DataType } from "../types/DataType";
@@ -98,6 +99,16 @@ export class StringLiteralExpression extends LiteralExpression {
         super(location, "string_literal");
         this.value = value;
     }
+
+    infer(ctx: Context, hint: DataType | null = null): DataType {
+        this.setHint(hint);
+    
+
+        // TODO:
+        //this.inferredType = BuiltinInterface.getStringClass();
+
+        throw ctx.parser.customError("Not implemented", this.location);
+    }
 }
 
 export class BinaryStringLiteralExpression extends LiteralExpression {
@@ -107,6 +118,14 @@ export class BinaryStringLiteralExpression extends LiteralExpression {
         super(location, "binary_string_literal");
         this.value = value;
     }
+
+    infer(ctx: Context, hint: DataType | null = null): DataType {
+        this.setHint(hint);
+
+
+        this.inferredType = new ArrayType(this.location, new BasicType(this.location, 'u8'));
+        return this.inferredType;
+    }
 }
 
 export class CharLiteralExpression extends LiteralExpression {
@@ -115,6 +134,11 @@ export class CharLiteralExpression extends LiteralExpression {
     constructor(location: SymbolLocation, value: string){
         super(location, "char_literal");
         this.value = value;
+    }
+
+    infer(ctx: Context, hint: DataType | null = null): DataType {
+        this.setHint(hint);
+        throw ctx.parser.customError("Not implemented", this.location);
     }
 }
 
