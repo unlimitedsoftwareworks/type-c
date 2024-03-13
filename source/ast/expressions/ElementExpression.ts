@@ -11,8 +11,11 @@
  */
 
 import { matchDataTypes } from "../../typechecking/typechecking";
+import { FunctionPrototype } from "../other/FunctionPrototype";
 import { Context } from "../symbol/Context";
+import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
+import { FunctionArgument } from "../symbol/FunctionArgument";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { Expression } from "./Expression";
@@ -47,20 +50,15 @@ export class ElementExpression extends Expression {
         if (this.inferredType) return this.inferredType;
         this.setHint(hint);
 
-        let variable = ctx.lookupScope(this.name);
+        let variable = ctx.lookup(this.name);
 
         if(variable === null){
             throw ctx.parser.customError(`Variable ${this.name} not found`, this.location);
         }
-
-        else {
-            console.log(variable)
-        }
-
         
-        if (variable.sym instanceof DeclaredVariable) {
+        if (variable instanceof DeclaredVariable) {
             this._isVariable = true;
-            this.inferredType = variable.sym.annotation;
+            this.inferredType = variable.annotation;
 
             // make sure hint and variable type matches
 
@@ -72,12 +70,39 @@ export class ElementExpression extends Expression {
             }
 
             // inherit variable constantness
-            this.isConstant = variable.sym.isConst;
+            this.isConstant = variable.isConst;
 
             return this.inferredType!;
         }
+        else if (variable instanceof DeclaredFunction) {
+            let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments);
+            this.inferredType = newDecl.prototype.header;
 
-        throw ctx.parser.customError(`Element ${this.name} is not a variable`, this.location);
+            if(hint) {
+                let res = matchDataTypes(ctx, hint, this.inferredType);
+                if(!res.success) {
+                    throw ctx.parser.customError(`Type mismatch, expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
+                }
+            }
+
+            
+            this.isConstant = false;
+            return this.inferredType;
+        }
+        else if (variable instanceof FunctionArgument) {
+            this.inferredType = variable.type;
+            if(hint) {
+                let res = matchDataTypes(ctx, hint, this.inferredType);
+                if(!res.success) {
+                    throw ctx.parser.customError(`Type mismatch, expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
+                }   
+            }
+
+            this.isConstant = !variable.isMutable;
+            return this.inferredType;
+        }
+
+        throw ctx.parser.customError(`Not implemented`, this.location);
 
     }
 }

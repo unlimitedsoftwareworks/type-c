@@ -14,6 +14,7 @@ import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { UnionType } from "./UnionType";
 import { Context } from "../symbol/Context";
+import { matchDataTypes } from "../../typechecking/typechecking";
 
 export class GenericTypeConstraint {
     types: DataType[] = [];
@@ -30,6 +31,22 @@ export class GenericTypeConstraint {
             this.types.push(types);
         }
     }
+
+
+    /**
+     * Checks if a given type matches the constraints
+     * @param type 
+     * @param scope 
+     */
+    checkType(ctx: Context, type: DataType): boolean {
+        if(this.types.length == 0) return true;
+        for(let t of this.types){
+            let res = matchDataTypes(ctx, t, type);
+            if(res.success) return true;
+        }
+
+        return false;
+    }
 }
 
 export class GenericType extends DataType {
@@ -41,7 +58,7 @@ export class GenericType extends DataType {
         this.constraint = constraint;
     }
 
-    resolve(ctx: Context) {
+    resolve(ctx: Context): DataType {
         /**
          * We throw an error because resolving generic types is not supported.
          * Resolving types must occur when all types are concrete.

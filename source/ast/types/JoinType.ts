@@ -38,4 +38,16 @@ export class JoinType extends DataType {
     serialize(): string {
         return `@join{lhs:${this.left.serialize()},rhs:${this.right.serialize()}}`
     }
+
+    is(targetType: new (...args: any[]) => DataType): boolean {
+        if(targetType === JoinType) return true;
+        if(targetType === InterfaceType) return true;
+        return false;
+    }
+
+    toInterfaceType(): DataType {
+        // TODO: implement
+        // called from base DataType class to cast a generic type to an interface type
+        throw new Error("Method not implemented.");
+    }
 }

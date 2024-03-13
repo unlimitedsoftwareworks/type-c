@@ -13,6 +13,7 @@
 
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 
 export type StatementKind = "stmt_expression" | "stmt_let" | "function_decl" | "ifelse" | "match" 
 | "for" | "foreach" | "while" | "do" | "break" | "continue" | "return" | "block"; 
@@ -28,5 +29,9 @@ export class Statement {
 
     infer(ctx: Context){
         throw new Error("infer is not implemented on abstract Statement");
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context | null): Statement {
+        throw new Error("clone is not implemented on abstract Statement");
     }
 }

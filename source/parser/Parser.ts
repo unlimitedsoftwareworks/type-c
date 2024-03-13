@@ -240,6 +240,74 @@ export class Parser {
     }
 
 
+    warning(message: string, coords?: { line: number, col: number, pos: number }, tokenLength: number=1) {
+        // get current active lexeme without changing the stack
+        // get current active lexeme without changing the stack
+        
+
+        let token: Token | { line: number, col: number, pos: number } | null = null;
+        if (this.stackIndex > 0) {
+            token = this.tokenStack[this.stackIndex - 1];
+        }
+        else {
+            token = this.peek();
+        }
+        
+        let coordinates = { line: token.location.line, col: token.location.col, pos: token.location.pos };
+
+        if(coords) {
+            coordinates = coords;
+        }
+
+        this.logs.push({
+            type: "warning",
+            file: this.lexer.filepath || "<stdin>",
+            message: message,
+            line: coordinates.line,
+            column: coordinates.col,
+            length: tokenLength
+        });
+
+        // draw ^^^^^ under the token
+
+        //  extract the line where the token is, starting from the current pos backtowards the beginning of the line
+        let lineContent = "";
+        let lineStart = coordinates.pos;
+        while (lineStart > 0 && this.lexer.data[lineStart] != "\n") {
+            lineStart--;
+        }
+        // now line end
+        let lineEnd = coordinates.pos;
+        while (lineEnd < this.lexer.data.length && this.lexer.data[lineEnd] != "\n") {
+            lineEnd++;
+        }
+
+        // get the line
+        lineContent = this.lexer.data.substring(lineStart, lineEnd);
+        // remove new lines from lineContent
+        lineContent = lineContent.replace(/\n/g, "");
+
+        let msg = message + '\n' + lineContent + "\n";
+        if(!coords) {
+            msg += " ".repeat(coordinates.col) + "^".repeat(token.value.length);
+        }
+        else {
+            msg += " ".repeat(coordinates.col) + "^".repeat(tokenLength)
+        }
+        msg += "\n";
+
+        console.log(`${this.lexer.filepath || "<stdin>"}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`);
+    }
+
+    customWarning(message: string, location: SymbolLocation, extraLogs: {msg: string, loc: SymbolLocation}[] = []) {
+        console.log(colors.FgYellow + colors.Underscore + colors.Bright, `Compiler Warning: ${message}`)
+        console.log(colors.Reset)
+        this.warning(message, {line: location.line, col: location.col, pos: location.pos}, 1);
+        for(let log of extraLogs){
+            this.warning(log.msg, {line: log.loc.line, col: log.loc.col, pos: log.loc.pos}, 1);
+        }
+    }
+
     loc(): SymbolLocation {
         let token = this.peek();
         this.rejectOne();

@@ -1,4 +1,5 @@
 import {SymbolLocation} from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import {FunctionType} from "../types/FunctionType";
 import {GenericType} from "../types/GenericType";
 
@@ -12,5 +13,9 @@ export class FunctionPrototype {
         this.name = name;
         this.header = header;
         this.generics = generics;
+    }
+
+    clone(typeMap: {[key: string]: DataType}): FunctionPrototype {
+        return new FunctionPrototype(this.location, this.name, this.header.clone(typeMap), this.generics);
     }
 }

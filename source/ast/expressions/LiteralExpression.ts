@@ -38,8 +38,7 @@ export type LiteralKind =
     "null" // null
 ;
 
-function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
-    // Convert the number from its string representation to an actual number
+function parseTCInt(number: string): number | bigint {
     let value: number | bigint;
     if (number.startsWith("0b")) {
         value = parseInt(number, 2);
@@ -50,6 +49,13 @@ function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
     } else {
         value = number.includes(".") ? parseFloat(number) : parseInt(number, 10);
     }
+
+    return value;
+}
+
+function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
+    // Convert the number from its string representation to an actual number
+    let value: number | bigint = parseTCInt(number);
 
     // Check if the number fits in the given hint type
     switch (hint) {
@@ -82,6 +88,34 @@ function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
             return false;
     }
 }
+
+function findLeastSufficientType(value: string): BasicTypeKind {
+    // Determine if the value is floating-point or integer
+    const isFloat = value.includes('.') || value.toLowerCase().includes('e');
+    const num = isFloat ? parseFloat(value) : BigInt(value);
+
+    // Handle floating-point numbers
+    if (isFloat) {
+        if (num >= -3.4e38 && num <= 3.4e38) return "f32";
+        else return "f64"; // Assumes f64 can cover the rest of the cases
+    }
+
+    // Handle signed integers
+    if (value.startsWith('-')) {
+        if (num >= BigInt(-128) && num <= BigInt(127)) return "i8";
+        else if (num >= BigInt(-32768) && num <= BigInt(32767)) return "i16";
+        else if (num >= BigInt(-2147483648) && num <= BigInt(2147483647)) return "i32";
+        else return "i64"; // Assumes i64 can cover the rest of the cases
+    }
+    // Handle unsigned integers
+    else {
+        if (num >= BigInt(0) && num <= BigInt(255)) return "u8";
+        else if (num >= BigInt(0) && num <= BigInt(65535)) return "u16";
+        else if (num >= BigInt(0) && num <= BigInt(4294967295)) return "u32";
+        else return "u64"; // Assumes u64 can cover the rest of the cases
+    }
+}
+
 
 export class LiteralExpression extends Expression {
     literalKind: LiteralKind;
@@ -161,6 +195,9 @@ export class IntLiteralExpression extends LiteralExpression {
             this.inferredType = hint;
         }
 
+        else if (!hint) {
+            this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
+        }
         else {
             throw new Error("Hint for integer literal must be a basic type or a boolean type");
         }

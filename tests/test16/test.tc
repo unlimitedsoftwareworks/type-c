@@ -23,13 +23,16 @@ type ConcreteUserData = class {
 let x: UserData? = null
 */
 
-fn sum(x: u32) {
-    fn sum2(y: u32) {
-        let z = x + y
-        return z
-    }
-
-    return sum2
+fn sum(x: i32, y: i32) -> i32 {
+    return x + y
 }
 
-let z = sum(1)
+type CustomInt = {x: i32, y: i32}
+
+let z: i32  = 1
+let y: i32 = z as i32
+let x: i32 = sum(x, y)
+
+let alpha: {x: i32, y: i32} = 
+    if x == y => {x: 13, y: 15} 
+    else         {x: 8, y: 30,  z: 0}

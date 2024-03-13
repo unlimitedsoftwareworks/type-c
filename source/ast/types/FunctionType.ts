@@ -42,4 +42,8 @@ export class FunctionType extends DataType {
     serialize(): string {
         return `@fn{@parameters[${this.parameters.map(e => e.serialize())}],@returnType[${this.returnType.serialize()}]}`
     }
+
+    clone(typeMap: {[key: string]: DataType}): FunctionType {
+        return new FunctionType(this.location, this.parameters.map(p => p.clone(typeMap)), this.returnType.clone(typeMap));
+    }
 }

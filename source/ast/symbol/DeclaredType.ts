@@ -38,4 +38,8 @@ export class DeclaredType extends Symbol {
     isGeneric(): boolean {
         return this.genericParameters.length > 0;
     }
+
+    clone(): DeclaredType {
+        return new DeclaredType(this.location, this.parentContext, this.name, this.type, this.genericParameters, this.parentPackage);
+    }
 }

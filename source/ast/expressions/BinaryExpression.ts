@@ -130,7 +130,7 @@ export function isLHSAssignable(lhs: Expression): TypeMatchResult{
         }
         case "member_access":{
             let mem = lhs as MemberAccessExpression;
-            if(mem.left.inferredType instanceof ArrayType){
+            if(mem.left.inferredType!.is(ArrayType)){
                 return Err("Cannot assign to static array fields or methods");
             }
 

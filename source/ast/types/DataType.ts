@@ -129,4 +129,46 @@ export class DataType {
     isAssignable(): boolean {
         return true;
     }
+
+    clone(typeMap: {[key: string]: DataType}): DataType {
+        throw new Error("Method not implemented.");
+    }
+
+    /**
+     * Checks if a DataType is of a certain type
+     * While this method uses instanceof, it not used to check the actual instance, but rather the semantic,
+     * for example: let t: DataType = new JoinType(...), t.is(InterfaceType) will return true, to get the 
+     * interface type, use t.toInterfaceType().
+     * This method is overloaded in JoinType to return true for InterfaceType and JoinType
+     * @param targetType 
+     * @returns 
+     */
+    is(targetType: new (...args: any[]) => DataType): boolean {
+        // we use the kind attribute to avoid circular dependencies
+        if (this.kind === "reference") {
+            return this.dereference().is(targetType);
+        }
+        else {
+            return this instanceof targetType;
+        }
+    }
+
+    /**
+     * Same logic as is, but performs the casting, by resolving the reference type and returning 
+     * the appropriate type.
+     * 
+     * Casting is need after call, since it returns a generic type, but is guarentees that the returned type is of the given
+     * instance
+     */
+    to(targetType: new (...args: any[]) => DataType): DataType {
+        if (this.kind === "reference") {
+            return this.dereference().to(targetType);
+        }
+        else {
+            if(!(this instanceof targetType)){
+                throw new Error(`Unreachable`);
+            }
+            return this;
+        }
+    }
 }

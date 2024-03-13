@@ -11,7 +11,9 @@
  */
 
 
+import { Expression } from "../ast/expressions/Expression";
 import { Context } from "../ast/symbol/Context";
+import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { ArrayType } from "../ast/types/ArrayType";
 import { BasicType } from "../ast/types/BasicType";
 import { BooleanType } from "../ast/types/BooleanType";
@@ -28,6 +30,7 @@ import { NullType } from "../ast/types/NullType";
 import { NullableType } from "../ast/types/NullableType";
 import { ProcessType } from "../ast/types/ProcessType";
 import { ReferenceType } from "../ast/types/ReferenceType";
+import { StructType } from "../ast/types/StructType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
@@ -78,6 +81,10 @@ export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict:
  * @returns 
  */
 export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType, strict: boolean = false, stack: string[] = []): TypeMatchResult {
+    // resolve types
+    et.resolve(ctx);
+    dt.resolve(ctx);
+
     /**
      * 1. we remove any reference from the types
      */
@@ -314,6 +321,14 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
         return matchVariantConstructors(ctx, t1, t2, strict, stack);
     }
 
+
+    if(t1 instanceof StructType) {
+        if(!(t2 instanceof StructType)) {
+            return Err(`Type mismatch, expected struct, got ${t2.shortname()}`);
+        }
+        return matchStructs(ctx, t1, t2, strict, stack);
+    }
+
     /**
      * case 19: UnsetType
      * an unset type is used for methods who's return type is not set, hence we should not be here
@@ -322,15 +337,14 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
         throw new Error("Unset types should not be here");
     }
 
-    throw new Error(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);
+    return Err(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);
 }
 
 function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boolean): TypeMatchResult {
     if(strict) {
         if(t1.kind === t2.kind) {
             return Ok();
-        }
-        else {
+        } else {
             return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
         }
     }
@@ -344,35 +358,65 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
     const signedInts = ["i8", "i16", "i32", "i64"];
     const floats = ["f32", "f64"];
 
+    // Check for safe casting from unsigned to signed where the signed type is larger.
+    if (unsignedInts.includes(t1.kind) && signedInts.includes(t2.kind)) {
+        // Find the sizes of each type to compare their capacities.
+        const t1Index = unsignedInts.indexOf(t1.kind);
+        const t2Index = signedInts.indexOf(t2.kind);
+        // Allow casting if the signed type has equal or more capacity than the unsigned type.
+        // Assuming each step in the arrays represents a doubling in capacity.
+        if (t2Index >= t1Index + 1) {
+            return Ok();
+        } else {
+            return Err(`Type mismatch, cannot safely cast ${t1.shortname()} to ${t2.shortname()}`);
+        }
+    }
+
+
+    // Check for safe casting from unsigned to signed where the signed type is larger.
+    if (unsignedInts.includes(t2.kind) && signedInts.includes(t1.kind)) {
+        // Find the sizes of each type to compare their capacities.
+        const t1Index = unsignedInts.indexOf(t2.kind);
+        const t2Index = signedInts.indexOf(t1.kind);
+        // Allow casting if the signed type has equal or more capacity than the unsigned type.
+        // Assuming each step in the arrays represents a doubling in capacity.
+        if (t2Index >= t1Index + 1) {
+            return Ok();
+        } else {
+            return Err(`Type mismatch, cannot safely cast ${t1.shortname()} to ${t2.shortname()}`);
+        }
+    }
+
+    // Existing checks for unsigned and signed integer ranges within their own types
     if (unsignedInts.includes(t1.kind) && unsignedInts.includes(t2.kind)) {
         if (unsignedInts.indexOf(t1.kind) >= unsignedInts.indexOf(t2.kind)) {
             return Ok();
-        }
-        else {
+        } else {
             return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
         }
     }
+
     if (signedInts.includes(t1.kind) && signedInts.includes(t2.kind)) {
         if (signedInts.indexOf(t1.kind) >= signedInts.indexOf(t2.kind)) {
             return Ok();
-        }
-        else {
+        } else {
             return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
         }
     }
+
+    // Checks for floats remain unchanged
     if (floats.includes(t1.kind) && floats.includes(t2.kind)) {
         if (floats.indexOf(t1.kind) >= floats.indexOf(t2.kind)) {
             return Ok();
-        }
-        else {
+        } else {
             return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
         }
     }
 
     // All other combinations are incompatible.
-    return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
-
+    return Err(`Type mismatch, unexpected combination of ${t1.shortname()} and ${t2.shortname()}`);
 }
+
 
 function matchEnumTypes(ctx: Context, t1: EnumType, t2: EnumType, strict: boolean): TypeMatchResult {
     // if strict is enabled, the types must be the same and not just compatible
@@ -668,6 +712,41 @@ function matchVariantConstructors(ctx: Context, t1: VariantConstructorType, t2: 
     return Ok();
 }
 
+function matchStructs(ctx: Context, t1: StructType, t2: StructType, strict: boolean, stack: string[]): TypeMatchResult {
+    let t1Fields = t1.fields;
+    let t2Fields = t2.fields;
+
+    if(strict) {
+        if(t1Fields.length !== t2Fields.length) {
+            return Err(`Type mismatch, expected struct with ${t1Fields.length} fields, got ${t2Fields.length}`);
+        }
+    }
+    else {
+        if(t1Fields.length > t2Fields.length) {
+            return Err(`Type mismatch, expected struct with at most ${t1Fields.length} fields, got ${t2Fields.length}`);
+        }
+    }
+
+    // every field of t1 must match exactly one in t2
+    for(let field of t1Fields) {
+        let found = false;
+        for(let field2 of t2Fields) {
+            if(field.name === field2.name) {
+                let res = matchDataTypesRecursive(ctx, field.type, field2.type, strict, stack);
+                if(!res.success) {
+                    return Err(`Field ${field.name} types do not match: ${res.message}: ${res.message}`);
+                }
+                found = true;
+                break;
+            }
+        }
+        if(!found) {
+            return Err(`Field ${field.name} not found in struct ${t2.shortname()}`);
+        }
+    }
+
+    return Ok();
+}
 
 /**
  * Checks if two function types are identical.
@@ -704,3 +783,17 @@ export function areDataTypesIdentical(ctx: Context, a: DataType, b: DataType): b
     return matchDataTypesRecursive(ctx, a, b, true).success;
 }
 
+
+
+/**
+ * Checks if two expressions are compatible based on their immutable/mutable status
+ * @param e1 
+ * @param e2 
+ */
+export function checkExpressionArgConst(e1: Expression, dt1: DataType, e2: FunctionArgument, dt2: DataType) {
+    if (e1.isConstant && e2.isMutable && dt1.isAssignable() && (dt2.isAssignable())) {
+        return false;
+    }
+
+    return true;
+}

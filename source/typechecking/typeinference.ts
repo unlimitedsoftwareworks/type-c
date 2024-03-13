@@ -12,13 +12,20 @@
 
 
 import { Expression } from "../ast/expressions/Expression";
+import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { BlockStatement } from "../ast/statements/BlockStatement";
 import { ReturnStatement } from "../ast/statements/ReturnStatement";
 import { Context } from "../ast/symbol/Context";
+import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { FunctionType } from "../ast/types/FunctionType";
+import { GenericType } from "../ast/types/GenericType";
+import { InterfaceType } from "../ast/types/InterfaceType";
+import { StructField, StructType } from "../ast/types/StructType";
 import { UnsetType } from "../ast/types/UnsetType";
+import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VoidType } from "../ast/types/VoidType";
+import { matchDataTypes } from "./typechecking";
 
 /**
  * Used to infer the return type of a function, given a list of return statements.
@@ -155,6 +162,203 @@ export function inferFunctionHeader(
 }
 
 export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | null {
-    throw new Error("Not implemented");
-    return null;
+
+    function findCommonSupertypeOrCompatibleType(ctx: Context, t1: DataType, t2: DataType): DataType | null {
+        // case 1: two variant constructors, make sure they have the same parent and return the parent
+        if(t1.is(VariantConstructorType) && t2.is(VariantConstructorType)) {
+            let e1 = t1.dereference() as VariantConstructorType;
+            let e2 = t2.dereference() as VariantConstructorType;
+
+            if(e1._parent === e2._parent) {
+                return e1._parent;
+            }
+            else {
+                return null;
+            }
+        }
+
+        if(t1.is(StructType) && t2.is(StructType)) {
+            let e1 = t1.dereference() as StructType;
+            let e2 = t2.dereference() as StructType;
+
+            // find the common fields
+            let e1Fields = e1.fields.map(f => f.name);
+            let e2Fields = e2.fields.map(f => f.name);
+
+            let commonFields = e1Fields.filter(f => e2Fields.includes(f));
+            let commonFieldsTypes: StructField[] = [];
+
+            // make sure field types match
+            for(let field of commonFields) {
+                let e1Type = e1.fields.find(f => f.name === field)!.type;
+                let e2Type = e2.fields.find(f => f.name === field)!.type;
+
+                let result = matchDataTypes(ctx, e1Type, e2Type, false);
+                if(!result.success) {
+                    let result = matchDataTypes(ctx, e2Type, e1Type, false);
+                    if(!result.success) {
+                        return null;
+                    }
+                    else {
+                        commonFieldsTypes.push(new StructField(ctx.location, field, e2Type));
+                    }
+                }
+                else {
+                    commonFieldsTypes.push(new StructField(ctx.location, field, e1Type));
+                }
+            }
+
+            if(commonFieldsTypes.length === 0) {
+                return null;
+            }
+
+            // if all fields match, return the common type
+            return new StructType(ctx.location, commonFieldsTypes);
+        }
+
+        if((t1.is(InterfaceType) && t2.is(InterfaceType)) || (t1.is(ClassType) && t2.is(InterfaceType)) || (t1.is(InterfaceType) && t2.is(ClassType))) {
+            let et1 = t1.to(InterfaceType) as InterfaceType;
+            let et2 = t2.to(InterfaceType) as InterfaceType;
+
+            if (et1.methods.length === 0 || et2.methods.length === 0) {
+                return null;
+            }
+
+            let commonMethods: InterfaceMethod[] = [];
+
+            // find common methods
+            for(let i = 0; i < et1.methods.length; i++) {
+                let m1 = et1.methods[i];
+                let m2 = et2.getMethodBySignature(ctx, m1.name, m1.header.parameters.map(p => p.type), m1.header.returnType);
+
+                if (m2.length !== 1) {
+                    continue
+                }
+                else {
+                    commonMethods.push(m1);
+                }
+            }
+
+            if(commonMethods.length === 0) {
+                // we swap the types and try again
+
+                // find common methods
+                for(let i = 0; i < et2.methods.length; i++) {
+                    let m1 = et2.methods[i];
+                    let m2 = et1.getMethodBySignature(ctx, m1.name, m1.header.parameters.map(p => p.type), m1.header.returnType);
+
+                    if (m2.length !== 1) {
+                        continue
+                    }
+                    else {
+                        commonMethods.push(m1);
+                    }
+                }
+
+                if(commonMethods.length === 0) {
+                    return null;
+                }
+            }
+
+            if(commonMethods.length === 0) {
+                return null;
+            }
+            
+            return new InterfaceType(ctx.location, commonMethods, []);
+        }
+
+        return null;
+    }
+
+
+    // Check for base cases
+    if(t.length === 0) {
+        throw new Error("Cannot find compatible types for an empty list");
+    }
+
+    // If there's only one type, it's trivially compatible with itself.
+    if(t.length === 1) {
+        return t[0];
+    }
+
+    // Start with the assumption that the first type could be compatible with all
+    let baseType = t[0];
+
+    let lastStop = 0;
+
+    for (let i = 1; i < t.length; i++) {
+        // Check if baseType is compatible with t[i]
+        let result = matchDataTypes(ctx, baseType, t[i], false);
+        if (result.success) {
+            // If baseType is a supertype or compatible with t[i], no changes needed
+            continue;
+        } else {
+            // Check if t[i] is a supertype or compatible with baseType
+            result = matchDataTypes(ctx, t[i], baseType, false);
+            if (result.success) {
+                // Update baseType to the more general type
+                baseType = t[i];
+            } else {
+                // No direct compatibility found, attempt to find a common supertype or compatible type
+                let commonType = findCommonSupertypeOrCompatibleType(ctx, baseType, t[i]);
+                if (commonType) {
+                    baseType = commonType;
+
+                    /*if(lastStop > i) {
+                        return null;
+                    }*/
+
+                    // now we will have to reset the loop
+                    lastStop = i;
+                    i = -1;
+                } else {
+                    // If no common type can be found, the types are incompatible
+                    return null;
+                }
+            }
+        }
+    }
+    
+    // After checking all types, baseType is the most specific common compatible type
+    return baseType;
+}
+
+
+/**
+ * Generates a signature from a list of types
+ * @param types 
+ * @returns 
+ */
+export function signatureFromGenerics(types: DataType[]): string {
+    return types.map(t => t.serialize()).join("-");
+}
+
+/**
+ * Creates a map with the generic types names as keys and their concrete types.
+ * Also makes sure that the generics constraints are respected
+ * @param generics 
+ * @param concreteTypes 
+ */
+export function buildGenericsMaps(ctx: Context, generics: GenericType[], concreteTypes: DataType[]): {[key: string]: DataType} {
+    if(generics.length != concreteTypes.length) {
+        throw ctx.parser.customError(`Expected ${generics.length} generics, but got ${concreteTypes.length}`, ctx.location);
+    }
+
+    let map: {[key: string]: DataType} = {};
+
+    for(let i = 0; i < generics.length; i++) {
+        let generic = generics[i];
+        let concrete = concreteTypes[i];
+
+        if(generic.constraint) {
+            let ok = generic.constraint.checkType(ctx, concrete);
+            if(!ok) {
+                throw ctx.parser.customError(`Generic type ${generic.name} does not respect the constraints: ${generic.constraint.types.map(e => e.shortname()).join(" | ")}`, ctx.location);
+            }
+        }
+
+        map[generic.name] = concrete;
+    }
+
+    return map;
 }

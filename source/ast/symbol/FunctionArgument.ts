@@ -30,4 +30,8 @@ export class FunctionArgument extends Symbol {
     serialize(): string {
         return `@argument{${this.name}:${this.type.serialize()},isMut:${this.isMutable}}`
     }
+
+    clone(typeMap: {[key: string]: DataType}): FunctionArgument {
+        return new FunctionArgument(this.location, this.name, this.type.clone(typeMap), this.isMutable);
+    }
 }

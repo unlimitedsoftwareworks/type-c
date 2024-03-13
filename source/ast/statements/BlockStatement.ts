@@ -13,6 +13,7 @@
 
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { Statement } from "./Statement";
 
 export class BlockStatement extends Statement {
@@ -29,5 +30,9 @@ export class BlockStatement extends Statement {
         for(const statement of this.statements){
             statement.infer(this.context);
         }
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context | null): BlockStatement {
+        throw new Error("clone is not implemented on BlockStatement");
     }
 }

@@ -2241,6 +2241,7 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     parser.assert((exprBody !== null) || (stmtBody !== null), "Function body is not defined!");
     
     let fnStatement = new FunctionDeclarationStatement(loc, fn);
+    fn.declStatement = fnStatement;
 
     //ctx.overrideSymbol(proto.name, fn.astNode);
     ctx.addSymbol(fn);

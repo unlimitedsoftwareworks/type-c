@@ -17,8 +17,10 @@ import { LambdaExpression } from "../expressions/LambdaExpression";
 import { ClassMethod } from "../other/ClassMethod";
 import { ProcessMethod } from "../other/ProcessMethod";
 import { ClassType } from "../types/ClassType";
+import { DataType } from "../types/DataType";
 import { ProcessType } from "../types/ProcessType";
 import { DeclaredFunction } from "./DeclaredFunction";
+import { DeclaredType } from "./DeclaredType";
 import { Symbol } from "./Symbol";
 import { SymbolLocation } from "./SymbolLocation";
 
@@ -221,6 +223,7 @@ export class Context {
         return this.activeProcess;
     }
 
+
     /**
      * Used to override parent, used after cloning a method, where the parent scope would point to the old method's root context, 
      * this is upated in the class consturctor to point to the new method's context.
@@ -228,5 +231,33 @@ export class Context {
      */
     overrideParent(parent: Context) {
         this.parent = parent;
+    }
+
+    getParent(): Context | null {
+        return this.parent;
+    }
+
+    /**
+     * Clones current context, clones the active symbols too,
+     * requires a parent scope, so we do not need to clone parents recursively
+     */
+    clone(parent: Context, genericsTypeMap: {[key: string]: string} = {}): Context {
+        let newContext = new Context(this.location, this.parser, parent, this.env);
+
+        /**
+         * TODO: check if we need to clone the symbols, or if we can just reference them
+         */
+        /*
+        for(let key in this.symbols) {
+            let v = this.symbols.get(key);
+
+            if(v instanceof Vari) {
+                newContext.addSymbol(v);
+            }
+        }
+        */
+
+        return newContext;
+        
     }
 }

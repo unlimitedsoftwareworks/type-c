@@ -95,4 +95,13 @@ export class ReferenceType extends DataType{
 
         throw ctx.parser.customError("Reference is not a class neither an interface", this.location);
     }
+
+
+    to(targetType: new (...args: any[]) => DataType): DataType {
+        if(this.baseType == null){
+            throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
+        }
+
+        return this.baseType.to(targetType);
+    }
 }

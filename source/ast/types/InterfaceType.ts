@@ -4,7 +4,7 @@ import {ReferenceType} from "./ReferenceType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { FunctionType } from "./FunctionType";
-import { areSignaturesIdentical } from "../../typechecking/typechecking";
+import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/typechecking";
 
 
 export class InterfaceType extends DataType {
@@ -39,6 +39,12 @@ export class InterfaceType extends DataType {
         let superType = this.superType.map((superType) => superType.serialize()).join(",");
         let methods = this.methods.map((method) => method.serialize()).join(",");
         return `@interface{${superType}:${methods}}`
+    }
+
+   
+    to(targetType: new (...args: any[]) => DataType): DataType {
+        if(targetType === InterfaceType) return this;
+        throw new Error(`Cannot cast interface to ${targetType.name}`);
     }
 
     resolve(ctx: Context) {
@@ -111,6 +117,69 @@ export class InterfaceType extends DataType {
     methodExists(ctx: Context, name: string): boolean {
         return this._allMethods.some((method) => method.name == name);
     }
+
+     /**
+     * Returns the methods which matches the given signature.
+     * The return type is optional as it is not part of the signature, but if present 
+     * in this function call, a check will be performed to make sure it matches.
+     * 
+     * This function will first look for a method matching the exact signature, meaning strict checking,
+     * if none found, strictness is set to false, and it searches again.
+     * 
+     * This function will also look into instanciated generic functions, 
+     * 
+     * @param ctx 
+     * @param name 
+     * @param parameters 
+     * @param returnType 
+     */
+     getMethodBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): InterfaceMethod[] {
+        let findMethod = (ctx: Context, name: string, parameters: DataType[], returnType: DataType | null, strict: boolean): InterfaceMethod[] => {
+            let candidates: InterfaceMethod[] = [];
+            let allMethods = this._allMethods;
+
+            for(let method of allMethods) {
+                if (method.name === name) {
+                    if(method.generics.length > 0) {
+                        // generic methods cannot be overloaded, returning only one
+                        return [method];
+                    }
+
+                    if(returnType !== null) {
+                        let res = matchDataTypes(ctx, method.header.returnType, returnType, strict);
+                        if(!res.success){
+                            continue;
+                        }
+                    }
+
+                    if(method.header.parameters.length != parameters.length) {
+                        continue
+                    }
+
+                    let allMatch = method.header.parameters.every((p, i) => {
+                        let res = matchDataTypes(ctx, p.type, parameters[i], strict)
+                        return res.success;
+                    });
+
+                    if(!allMatch) {
+                        continue;
+                    }
+
+                    candidates.push(method);
+                }
+            }
+
+            return candidates;
+        }
+
+        let candidates = findMethod(ctx, name, parameters, returnType, true);
+        if(candidates.length === 0) {
+            candidates = findMethod(ctx, name, parameters, returnType, false);
+        }
+
+        return candidates;
+    }
+
 }
 
 export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[]){

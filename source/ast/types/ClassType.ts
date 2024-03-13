@@ -329,4 +329,23 @@ export class ClassType extends DataType {
 
         return index;
     }
+
+    to(targetType: new (...args: any[]) => DataType): DataType {
+        if(targetType === InterfaceType){
+            let methods: InterfaceMethod[] = [];
+            for(const method of this.methods) {
+                // interfaces cannot have generic methods
+                if(method.imethod.generics.length === 0) {
+                    methods.push(method.imethod);
+                }
+            }
+
+            return new InterfaceType(this.location, methods, []);
+        }
+        else if (targetType === ClassType) {
+            return this;
+        }
+
+        throw new Error(`Cannot convert class to ${targetType.name}`);
+    }
 }

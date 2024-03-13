@@ -37,4 +37,14 @@ export class StructType extends DataType {
     serialize(): string {
         return `@struct{${this.fields.map(f => `${f.name}:${f.type.serialize()}`).join(",")}}`
     }
+
+
+    getFieldTypeByName(name: string): DataType | null{
+        for(let field of this.fields){
+            if(field.name == name){
+                return field.type;
+            }
+        }
+        return null;
+    }
 }

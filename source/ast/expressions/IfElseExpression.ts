@@ -11,7 +11,12 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/typechecking";
+import { findCompatibleTypes } from "../../typechecking/typeinference";
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { BooleanType } from "../types/BooleanType";
+import { DataType } from "../types/DataType";
 import { Expression } from "./Expression";
 
 export class IfElseExpression extends Expression {
@@ -24,5 +29,47 @@ export class IfElseExpression extends Expression {
         this.conditions = conditions;
         this.bodies = bodies;
         this.elseBody = elseBody;
+    }
+
+    infer(ctx: Context, hint: DataType | null): DataType {
+        if(this.inferredType) return this.inferredType;
+        this.setHint(hint);
+
+        // step 1: infer the conditions, as boolean
+        this.conditions.forEach((condition) => condition.infer(ctx, new BooleanType(this.location)));
+
+        // step 2: infer the expressions of each if expression
+        let typesCombined: DataType[] = this.bodies.map((body) => body.infer(ctx, hint));
+
+        // step 3: infer the else expression
+        typesCombined.push(this.elseBody.infer(ctx, hint));
+
+        // if no hint was present, we will have to infer the common type
+        if(!hint) {
+            let commonType = findCompatibleTypes(ctx, typesCombined);
+            if(!commonType) {
+                throw ctx.parser.customError(`No common type found for if-else expression inferred types: [${typesCombined.map(e => e.shortname()).join(",")}]`, this.location);
+            }
+            else {
+                this.inferredType = commonType;
+                // set the common type as hint for all expressions
+                this.bodies.forEach((body) => body.setHint(commonType));
+                this.elseBody.setHint(commonType);
+            }
+        }
+        else {
+            // if we have a hint, we need to make sure that the hint is compatible with all types
+            for (let i = 0; i < typesCombined.length; i++) {
+                let r = matchDataTypes(ctx, hint, typesCombined[i]);
+                if(!r.success) {
+                    throw ctx.parser.customError(`Incompatible type for condition ${i+1} expression, expected ${hint.shortname()} but ${typesCombined[i].shortname()} was found: ${r.message}`, this.location);
+                }
+            }
+
+            // the hint was already set to all expressions, we do not need to reset it.
+            this.inferredType = hint;
+        }
+
+        return this.inferredType;
     }
 }

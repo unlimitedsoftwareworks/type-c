@@ -10,8 +10,11 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/typechecking";
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
+import { NullableType } from "../types/NullableType";
 import { Expression } from "./Expression";
 
 export class CastExpression extends Expression {
@@ -32,5 +35,55 @@ export class CastExpression extends Expression {
         this.target = target;
         this.expression = expression;
         this.castType = castType;
+    }
+
+    infer(ctx: Context, hint: DataType | null): DataType {
+        this.setHint(hint);
+
+        // 1. infer base expression without a hint
+        let expressionType = this.expression.infer(ctx, null);
+        
+        // 2. Check if we can cast to the target type
+        let r = matchDataTypes(ctx, this.target, expressionType);
+
+        matchDataTypes(ctx, this.target, expressionType);
+
+        if(!r.success && (this.castType === 'regular')) {
+            throw ctx.parser.customError(`Cannot cast ${expressionType.shortname()} to ${this.target.shortname()}: ${r.message}`, this.location);
+        }
+
+        if(r.success && (this.castType === 'force')) {
+            ctx.parser.customWarning(`Unnecessary forced cast from ${expressionType.shortname()} to ${this.target.shortname()}`, this.location);
+        }
+
+        if(r.success && (this.castType === 'safe')) {
+            ctx.parser.customWarning(`Unnecessary safe cast from ${expressionType.shortname()} to ${this.target.shortname()}`, this.location);
+        }
+
+        // post process this.target
+        if(this.castType === 'safe') {
+            this.target = new NullableType(this.location, this.target);
+        }
+
+        if(!hint) {
+            this.inferredType = this.target;
+        }
+        else {
+            let res = matchDataTypes(ctx, hint, this.target);
+            if(!res.success && (this.castType !== 'force')) {
+                throw ctx.parser.customError(`Cannot cast ${this.target.shortname()} to ${hint.shortname()}: ${r.message}`, this.location);
+            }
+            else if (!res.success && (this.castType === 'force')) {
+                ctx.parser.customWarning(`Dangerous forced cast from ${this.target.shortname()} to ${hint.shortname()}`, this.location);
+                this.inferredType = hint;
+            }
+            else {
+                this.inferredType = hint;
+            }
+        }
+
+        this.isConstant = this.expression.isConstant;
+
+        return this.inferredType;
     }
 }
