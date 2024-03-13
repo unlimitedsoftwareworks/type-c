@@ -12,7 +12,6 @@
  */
 
 import { Expression } from "../expressions/Expression";
-import { BasicType } from "../types/BasicType";
 import { DataType } from "../types/DataType";
 import { LiteralIntType } from "../types/LiteralNumberType";
 import { VoidType } from "../types/VoidType";

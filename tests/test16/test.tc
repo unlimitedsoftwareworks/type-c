@@ -36,3 +36,7 @@ let x: i32 = sum(x, y)
 let alpha: {x: i32, y: i32} = 
     if x == y => {x: 13, y: 15} 
     else         {x: 8, y: 30,  z: 0}
+
+let beta: u32[] = [1, 2, 3]
+
+let t = beta[0]

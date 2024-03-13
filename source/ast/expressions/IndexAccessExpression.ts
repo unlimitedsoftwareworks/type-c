@@ -14,6 +14,14 @@
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
 import { Expression } from "./Expression";
+import { Context } from "../symbol/Context";
+import { ClassType } from "../types/ClassType";
+import { InterfaceType } from "../types/InterfaceType";
+import { isIndexable, setIndexesHint } from "../../typechecking/OperatorOverload";
+import { matchDataTypes } from "../../typechecking/typechecking";
+import { ArrayType } from "../types/ArrayType";
+import { BasicType } from "../types/BasicType";
+import { DataType } from "../types/DataType";
 
 export class IndexAccessExpression extends Expression {
     lhs: Expression;
@@ -27,5 +35,58 @@ export class IndexAccessExpression extends Expression {
         super(location, "index_access");
         this.lhs = lhs;
         this.indexes = indexes;
+    }
+
+    infer(ctx: Context, hint: DataType | null): DataType {
+        if(this.inferredType) return this.inferredType;
+        this.setHint(hint);
+
+        let lhsType = this.lhs.infer(ctx, null);
+
+        // we can apply index access to arrays and classes/interfaces
+        if(lhsType.is(InterfaceType) || lhsType.is(ClassType)) {
+            let lhsT = lhsType.dereference() as ClassType | InterfaceType;
+            if(!isIndexable(ctx, lhsT)) {
+                throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+            }
+
+            let m = lhsT.getMethodBySignature(ctx, "__index__", this.indexes.map((index) => index.infer(ctx, null)), hint);
+
+            if(m.length == 0) {
+                throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
+            }
+
+            if(m.length > 1) {
+                throw ctx.parser.customError(`Type ${lhsType.shortname()} has multiple methods with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
+            }
+
+            this.operatorOverloadState.setMethodRef(m[0]);
+
+            this.inferredType = setIndexesHint(ctx, m[0], this.indexes);
+        }
+        else if (lhsType.is(ArrayType)) {
+            let arrayType = lhsType.to(ArrayType) as ArrayType;
+            
+            // make sure we have exactly one index
+            if(this.indexes.length != 1) {
+                throw ctx.parser.customError(`Array index access expects exactly one index, got ${this.indexes.length}`, this.location);
+            }
+
+            this.indexes[0].infer(ctx, new BasicType(this.location, "u64"));
+            this.inferredType = arrayType.arrayOf;
+        }
+        else {
+            throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+        }
+
+        
+        if(hint) {
+            let r = matchDataTypes(ctx, hint, this.inferredType);
+            if(!r.success) {
+                throw ctx.parser.customError(`Inferred type ${this.inferredType.shortname()} does not match hint ${hint.shortname()}: ${r.message}`, this.location);
+            }
+        }
+
+        return this.inferredType;
     }
 }

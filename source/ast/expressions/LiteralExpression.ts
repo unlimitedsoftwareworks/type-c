@@ -199,7 +199,7 @@ export class IntLiteralExpression extends LiteralExpression {
             this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
         }
         else {
-            throw new Error("Hint for integer literal must be a basic type or a boolean type");
+            throw new Error(`Hint for integer literal must be a basic type or a boolean type, got ${hint.shortname()}`);
         }
 
         return this.inferredType;
