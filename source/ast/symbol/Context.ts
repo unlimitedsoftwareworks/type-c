@@ -151,11 +151,14 @@ export class Context {
         return p;
     }
 
-    findParentFunction(): DeclaredFunction | ClassMethod | null {
+    findParentFunction(): DeclaredFunction | LambdaExpression | ClassMethod | null {
         if(this.owner instanceof DeclaredFunction){
             return this.owner;
         }
         if(this.owner instanceof ClassMethod){
+            return this.owner;
+        }
+        if(this.owner instanceof LambdaExpression){
             return this.owner;
         }
         else if(this.parent){

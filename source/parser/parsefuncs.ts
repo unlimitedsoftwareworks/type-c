@@ -1539,18 +1539,22 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
         let header = parseFnTypeBody(parser, ctx);
         let newScope = new Context(loc, parser, ctx, { withinFunction: true });
         newScope.location = loc;
-
+        let fn = new LambdaExpression(loc, newScope, header, null, null);
+        newScope.setOwner(fn);
+    
         lexeme = parser.peek();
         if (lexeme.type === "{") {
             parser.reject();
             let body = parseStatementBlock(parser, newScope);
-            return new LambdaExpression(loc, newScope, header, body, null);
+            fn.body = body;
+            return fn
         }
         else {
             parser.reject();
             parser.expect("=");
             let fnBody = parseExpression(parser, newScope);
-            return new LambdaExpression(loc, newScope, header, null, fnBody);
+            fn.expression = fnBody;
+            return fn;
         }
     }
     if (lexeme.type === "this") {

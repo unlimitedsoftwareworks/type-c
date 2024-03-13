@@ -44,3 +44,7 @@ beta[1] = 5
 
 //type CustomArray<T> = T[]
 //let gamma: CustomArray<u32> = [1, 2, 3]
+
+let f: fn(x: i32, y: i32) -> i32 = fn(x: i32, y: i32) -> i32 {
+    return x + y
+}
