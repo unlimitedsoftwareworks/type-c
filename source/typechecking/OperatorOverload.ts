@@ -41,7 +41,7 @@ export function isIndexSettable(ctx: Context, dt: OverridableMethodType){
     return dt.methodExists(ctx, "__index_set__");
 }
 
-export function setIndexesSetHint(ctx: Context, method: InterfaceMethod, indexes: Expression[], rhsType: DataType, parentExpr: Expression){
+export function setIndexesSetHint(ctx: Context, method: InterfaceMethod, indexes: Expression[]){
 
     // make sure rest of methods match the index access types
     for(let i = 0; i < indexes.length; i++){

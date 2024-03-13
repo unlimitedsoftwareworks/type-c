@@ -27,7 +27,7 @@ fn sum(x: i32, y: i32) -> i32 {
     return x + y
 }
 
-type CustomInt = {x: i32, y: i32}
+type CustomInt = u32
 
 let z: i32  = 1
 let y: i32 = z as i32
@@ -40,3 +40,7 @@ let alpha: {x: i32, y: i32} =
 let beta: u32[] = [1, 2, 3]
 
 let t = beta[0]
+beta[1] = 5
+
+//type CustomArray<T> = T[]
+//let gamma: CustomArray<u32> = [1, 2, 3]

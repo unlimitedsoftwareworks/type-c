@@ -8,4 +8,4 @@
 
 - 13/04/2024@TODO:
     - Inference of IndexAccessExpression
-    - 
+    - Inference of IndexSetExpression

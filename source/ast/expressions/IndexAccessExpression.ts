@@ -17,7 +17,7 @@ import { Expression } from "./Expression";
 import { Context } from "../symbol/Context";
 import { ClassType } from "../types/ClassType";
 import { InterfaceType } from "../types/InterfaceType";
-import { isIndexable, setIndexesHint } from "../../typechecking/OperatorOverload";
+import { getOperatorOverloadType, isIndexable, setIndexesHint } from "../../typechecking/OperatorOverload";
 import { matchDataTypes } from "../../typechecking/typechecking";
 import { ArrayType } from "../types/ArrayType";
 import { BasicType } from "../types/BasicType";
@@ -50,19 +50,14 @@ export class IndexAccessExpression extends Expression {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
             }
 
-            let m = lhsT.getMethodBySignature(ctx, "__index__", this.indexes.map((index) => index.infer(ctx, null)), hint);
-
-            if(m.length == 0) {
+            // TODO: remove the !
+            let m = getOperatorOverloadType(ctx, "__index__", lhsT, this.indexes.map((index) => index.infer(ctx, null)));
+            if(m === null) {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
             }
 
-            if(m.length > 1) {
-                throw ctx.parser.customError(`Type ${lhsType.shortname()} has multiple methods with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
-            }
-
-            this.operatorOverloadState.setMethodRef(m[0]);
-
-            this.inferredType = setIndexesHint(ctx, m[0], this.indexes);
+            this.operatorOverloadState.setMethodRef(m);
+            this.inferredType = setIndexesHint(ctx, m, this.indexes);
         }
         else if (lhsType.is(ArrayType)) {
             let arrayType = lhsType.to(ArrayType) as ArrayType;
