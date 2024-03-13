@@ -1,0 +1,36 @@
+/**
+ * Standard Type-C Library Unit test
+ * Test standard String implementation
+ * Only works when the default String implementation is set to the built-in class.
+ */
+
+from std.io import println
+from std.string import String
+from std.unit.test import TestUnit, UnitSet
+
+
+fn test_case_1(rn: TestUnit) {
+    // initialize empty string
+    let str1 = new String()
+    rn.assert_eq<u64>(str1.rawLength(), 0)
+
+    let str2 = new String("Hello World")
+    rn.assert_eq<u64>(str2.rawLength(), 11)
+
+    let str3 = str2.clone()
+    rn.assert_eq<u64>(str3.rawLength(), 11)
+    rn.assert_obj_eq<String>(str3, str2)
+
+    let str4 = str3.cat("!!!")
+    rn.assert_eq<u64>(str4.rawLength(), 14)
+
+    let str5 = str4.cat(str3)
+    rn.assert_eq<u64>(str5.rawLength(), 28)
+}
+
+fn main() -> u32{
+    let test_1 = new TestUnit("test 1", "Test String 1", test_case_1)
+    let set = new UnitSet("STD String test", "", [test_1])
+
+    return set.run()
+}

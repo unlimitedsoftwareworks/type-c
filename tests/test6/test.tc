@@ -1,0 +1,100 @@
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+
+
+type KeyValuePair<K, V> = struct {
+    key: K,
+    value: V
+}
+
+type Map<K, V> = class {
+    let array: KeyValuePair<K, V>[]
+
+    fn init() {
+        this.array = []
+    }
+
+    fn insert(key: K, value: V) -> void {
+        for let i: u64 = 0 ; i < this.array.length ; i+=1 {
+            if (this.array[i].key == key) {
+                this.array[i].value = value
+                return
+            }
+        }
+
+        this.array.extend(this.array.length+1)
+
+        this.array[this.array.length-1] = ({key: key, value: value} as KeyValuePair<K, V>)
+    }
+
+    fn get(key: K) -> V? {
+        for let i: u64 = 0 ; i < this.array.length; i+=1 {
+            if this.array[i].key.eq(key) {
+                return this.array[i].value
+            }
+        }
+        return null
+    }
+
+    fn remove(key: K) -> bool {
+        let i: u64 = 0
+        for i = 0; i < this.array.length; i+=1 {
+            if this.array[i].key.eq(key) {
+                // Remove the element
+                for let j: u64 = i ; j < this.array.length-1 ; j+=1 {
+                    this.array[j] = this.array[j+1]
+                }
+                this.array.extend(this.array.length-1)
+
+                return true
+            }
+        }
+        return false
+    }
+
+    fn size() -> u64 {
+        return this.array.length
+    }
+}
+
+type Integer = class {
+    let value: i32
+
+    fn init(v: i32) {
+        this.value = v
+    }
+
+    fn toString() -> String {
+        return "Integer(" + this.value + ")"
+    }
+}
+
+fn test_case_1(rn: TestUnit) {
+    let myMap: Map<string, Integer> = new Map<string, Integer>()
+
+    myMap.insert("one", new Integer(1))
+    myMap.insert("two", new Integer(2))
+    myMap.insert("three", new Integer(3))
+
+    let oneValue: Integer? = myMap.get("one")
+    rn.assert_eq<i32>(oneValue!.value, 1)
+
+    let success: bool = myMap.remove("two")
+    rn.assert_eq<bool>(success, true)
+
+    let twoValue: Integer? = myMap.get("two")
+    rn.assert_obj_null<Integer>(twoValue)
+
+    rn.assert_eq<u64>(myMap.size(), 2)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests the map class", test_case_1)
+    let set = new UnitSet("Map Tests", "Tests map", [test_1])
+
+    return set.run()
+}
+
+// Start the program
+

@@ -1,0 +1,35 @@
+/*
+
+type X = u32
+
+type User = struct {
+    age: X
+}
+
+type UserData = interface {
+    fn getData() -> u32
+    fn getData(x: i32) -> i32
+
+}
+
+type ConcreteUserData = class {
+    let age: u32
+
+    fn init() {
+        this.age = 0
+    }
+}
+
+let x: UserData? = null
+*/
+
+fn sum(x: u32) {
+    fn sum2(y: u32) {
+        let z = x + y
+        return z
+    }
+
+    return sum2
+}
+
+let z = sum(1)

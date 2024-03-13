@@ -1,0 +1,67 @@
+/**
+ * Standard Type-C Library Unit test
+ * Tests:
+ * - Recursion
+ * - Functions with expressions as body
+ */
+
+from std.io import println
+from std.string import String
+from std.unit.test import TestUnit, UnitSet
+
+
+fn fib(n: u32) -> u32 = 
+    if n <= 1 => n else fib(n - 1) + fib(n - 2)
+
+fn fib_imperative(n: u32) -> u32 {
+    if(n <= 1) {
+        return n
+    }
+    return fib_imperative(n - 1) + fib_imperative(n - 2)
+}
+
+fn factorial(n: u32) -> u32 = 
+    if n <= 1 => n else n * factorial(n - 1)    
+
+fn factorial_imperative(n: u32) -> u32 {
+    if(n <= 1) {
+        return n
+    }
+    return n * factorial_imperative(n - 1)
+}
+
+
+fn test_case_1(rn: TestUnit) {
+    let fib_10 = fib(10)
+    rn.assert_eq<u32>(fib_10, 55)
+
+
+    let fib_10_imperative = fib_imperative(10)
+    rn.assert_eq<u32>(fib_10_imperative, 55)
+
+    let fib_20 = fib(20)
+    rn.assert_eq<u32>(fib_20, 6765)
+
+    let fib_20_imperative = fib_imperative(20)
+    rn.assert_eq<u32>(fib_20_imperative, 6765)
+
+
+    let factorial_7 = factorial(7)
+    rn.assert_eq<u32>(factorial_7, 5040)
+
+    let factorial_7_imperative = factorial_imperative(7)
+    rn.assert_eq<u32>(factorial_7_imperative, 5040)
+
+    let factorial_10 = factorial(10)
+    rn.assert_eq<u32>(factorial_10, 3628800)
+
+    let factorial_10_imperative = factorial_imperative(10)
+    rn.assert_eq<u32>(factorial_10_imperative, 3628800)
+}
+
+fn main() -> u32{
+    let test_1 = new TestUnit("test 1", "Test expression function return, known to bug with register allocation", test_case_1)
+    let set = new UnitSet("Recursion and Expression", "Tests a variety of recursions and expressions", [test_1])
+
+    return set.run()
+}

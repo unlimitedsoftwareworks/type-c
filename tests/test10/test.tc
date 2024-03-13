@@ -1,0 +1,41 @@
+from std.concurrency.ProcessState import ProcessState
+from std.concurrency.Promise import Promise
+from std.concurrency.Runnable import EmitResult
+
+type ProcessInput = variant {
+    Download(file: string)
+}
+
+type ProcessOutput = variant {
+    Downloaded(file: string),
+    Error(code: u32)
+}
+
+type Process = process<ProcessInput, ProcessOutput>(tempDir: string) {
+    fn receive(input: ProcessInput) -> ProcessOutput {
+        if input is ProcessInput.Download {
+            let const path = (input as! ProcessInput.Download).file
+            // download ..
+            let localFile = this.download(path)
+            return ProcessOutput.Downloaded(localFile)
+        }
+    }
+
+    fn download(path: string) -> string {
+        return this.tempDir //+ "/" + "tmp.zip"
+    }
+}
+
+let p = spawn new Process("/tmp/")
+let res = await p.emit(ProcessInput.Download("/tmp/"))
+let state = let p1 = spawn new Process("/tmp/") in p1.getState() as u8
+
+
+let success = match res {
+    EmitResult.Accepted<ProcessOutput>(x) => match x {
+        ProcessOutput.Downloaded(_) => true,
+        ProcessOutput.Error(_) => false
+    },
+    EmitResult.Rejected<ProcessOutput>(_) => false
+}
+

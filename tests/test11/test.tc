@@ -1,0 +1,203 @@
+
+type Data<T> = class {
+    let data: T[]
+
+    fn init(){
+        this.data = [] 
+    }
+
+    fn __index__(index: u64) -> T {
+        return this.data[index]
+    }
+
+    fn __index_set__(value: T, index: u64, index2: T){
+        this.data[index] = value
+        return value
+    }
+
+    fn __call__(x: u32) -> T {
+        return this.data[0]
+    }
+
+    fn __add__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+
+    fn __sub__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+
+    fn __mul__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+
+    fn __div__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __mod__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __gt__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __lt__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __ge__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __le__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __lshift__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __rshift__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __band__(y: string) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __bor__(y: u32) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __bxor__(y: u32) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __and__(y: string) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __or__(y: u32) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    
+    fn __bnot__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __neg__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __not__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __inc__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __dec__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+}
+
+let d = new Data<string>()
+let zzzz = d[1]
+let zzz = d[1, "hehe"] = "hi"
+
+let const d2 = new Data<f32>()
+let z2 = d2[1, 3.14f] = 1.1f
+
+let arg: u32 = 1
+
+let x1: string = d(1)
+let x2: f32 = d2(arg+1) 
+
+let d3 = new Data<string>()
+
+let d4 = d + d3
+let d5 = d4 - d3
+let d6 = d5*d4
+let d7 = d5/d6
+let d8 = d7%d6
+let d9 = d8>d7
+let d10 = d9<d8
+let d11 = d10>=d9
+let d12 = d11<=d10
+let d13 = d12<<d11
+let d14 = d13>>d12
+let d15 = d14&"hi"
+let d16 = d15|1
+let d17 = d16^1
+let d18 = d17&&"hi"
+let d19 = d18||1
+let d20 = -d19
+let d21 = !d20
+let d22 = d21++
+let d23 = d22--
+let d24 = ++d23
+let d25 = --d24
+let const d26 = ~d25
+
+fn doSomething(mut x: Data<string>) -> i32 {
+    return 1
+}
+
+doSomething(d25)
+
+fn doSomethingElse<T>(x: Data<T>) -> T {
+    return x.data[0]
+}
+
+let someResult = doSomethingElse<string>(d)
+//let d27 = d26

@@ -1,0 +1,87 @@
+
+
+type HttpResponse = variant {
+    Success(code: u32, time: f32),
+    Error(buffer: u8[], code: u32)
+}
+
+type Data<T> = class {
+    let data: T[]
+    let length: u64
+    let capacity: u64
+
+    fn init() {
+        this.data = []
+        this.length = 0
+        return
+    }   
+
+    fn __index__(index: u64) -> T {
+        return this.data[index]
+    }
+
+    fn push(value: T) {
+        if(this.length == this.capacity) {
+            this.capacity += this.capacity + 1
+        }
+
+        this.data.extend(this.capacity)
+        this.data[this.length] = value
+        this.length += 1
+
+        return
+    }
+
+    fn pop() -> T {
+        this.length -= 1
+        return this.data[this.length]
+    }
+}
+
+
+
+fn main() {
+    let arr: Data<u32> = new Data<u32>()
+
+
+    arr.push(1)
+    arr.push(10)
+    arr.push(100)
+    arr.push(1000)
+    let sum = arr.sum()
+
+
+    let arr2: Data<f64> = new Data<f64>()
+    arr2.push(1.0)
+    arr2.push(1.0)
+    arr2.push(3.14)
+    arr2.push(2.0)
+    arr2.push(0.25)
+    arr2.push(0.5)
+
+    let sum2 = arr2.sum()
+
+
+    let arr = new Data<HttpResponse>()
+
+    arr.push(HttpResponse.Success(200, 0.1f))
+    arr.push(HttpResponse.Success(300, 0.1f))
+    arr.push(HttpResponse.Error([1], 100))
+    arr.push(HttpResponse.Error([1], 500))
+
+    let sum: u32 = 0
+
+    let i: u64 = 0
+    for i = 0; i < arr.length ; i += 1 {
+        if arr[i] is HttpResponse.Success {
+            let success = arr[i] as! HttpResponse.Success
+            sum += success.code
+        }
+        else {
+            let error = arr[i] as! HttpResponse.Error
+            sum += error.code
+        }
+    }
+
+    return sum
+}

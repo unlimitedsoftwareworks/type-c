@@ -1,0 +1,219 @@
+
+from std.io import println
+from std.string import String
+from std.unit.test import TestUnit, UnitSet
+
+fn swap(mut arr: i32[], i: u64, j: u64) {
+    let temp: i32 = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+    return
+}
+
+// Partition function for the quicksort
+fn partition(mut arr: i32[], low: u64, high: u64) -> u64 {
+    let pivot: i32 = arr[high]
+    let i: u64 = low
+    // i = low - 1 results in an MAX_U64,
+    // hence we just postpone incrementing i
+
+    for let j = low; j < high; j = j + 1 {
+        
+        if arr[j] < pivot {
+            swap(arr, i, j)
+            i = i + 1
+        }
+    }
+    swap(arr, i , high)
+    return (i)
+}
+
+// The main quicksort function
+fn quickSort(mut arr: i32[], low: u64, high: u64) -> void {
+    
+    if low < high {
+        let pi: u64 = partition(arr, low, high)
+        if(pi > 0) {
+            quickSort(arr, low, pi - 1)
+        }
+        if((pi) < high) {
+            quickSort(arr, pi + 1, high)
+        }
+    }
+}
+
+
+// A function to print the array
+fn serializeArray(arr: i32[]) {
+    let str: String = "Array: "
+    for let i: u64 = 0; i < arr.length; i += 1 {
+        let element  = arr[i]
+        str.cat(element).cat(", ")
+    }
+
+    return str
+}
+
+type Array = class {
+    let data: i32[]
+    let length: u64
+    let capacity: u64
+
+    fn init() {
+        this.data = []
+        this.length = 0
+        this.capacity = 0
+    }
+
+    fn init(capacity: u64) {
+        this.data = []
+        this.length = 0
+        this.capacity = capacity
+        this.data.extend(capacity)
+    }
+
+    fn push(element: i32) {
+        if(this.length == this.capacity) {
+            this.capacity = this.capacity * 2 + 1
+            this.data.extend(this.capacity)
+        }
+        this.data[this.length] = element
+        this.length = this.length + 1
+        return
+    }
+
+    fn pop() -> i32 {
+        if(this.length == 0) {
+            return 0
+        }
+        this.length = this.length - 1
+        return this.data[this.length]
+    }
+
+    fn print() {
+        let str = "vector<"
+        for let i: u64 = 0; i < this.length; i = i + 1 {
+            str = str + this.data[i]
+            if(i < this.length - 1) {
+                str = str + ", "
+            }
+        }
+
+        println(str+">")
+    }
+
+    fn __index__(index: u64) -> i32 {
+        return this.data[index]
+    }
+
+    fn __index_set__(value: i32, i1: u64, i2: u64) {
+        this.data[i1+i2] = value
+    }
+}
+
+fn test_case_1(runner: TestUnit) {
+    let arr1: Array = new Array(10)
+    arr1.push(1)
+    arr1.push(2)
+    arr1.push(3)
+    arr1.push(4)
+    arr1.push(5)
+
+    runner.assert_eq<i32>(arr1.data[0], 1)
+    runner.assert_eq<i32>(arr1.data[1], 2)
+    runner.assert_eq<i32>(arr1.data[2], 3)
+    runner.assert_eq<i32>(arr1.data[3], 4)
+    runner.assert_eq<i32>(arr1.data[4], 5)
+
+    arr1[1, 1] = 100
+    
+    runner.assert_eq<i32>(arr1.data[2], 100)
+}
+
+type BasicArray = class {
+    let data: i32[]
+    
+    fn init(data: i32[]) {
+        this.data = data
+    }
+
+    fn eq(other: BasicArray) -> bool {
+        if(this.data.length != other.data.length) {
+            return false
+        }
+
+        for let i: u64 = 0; i < this.data.length; i = i + 1 {
+            if(this.data[i] != other.data[i]) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    fn toString() {
+        let str = "["
+        for let i: u64 = 0; i < this.data.length; i = i + 1 {
+            str = str + this.data[i]
+            if(i < this.data.length - 1) {
+                str = str + ", "
+            }
+        }
+
+        return str + "]"
+    }
+}
+
+fn test_case_2(runner: TestUnit) {
+    let arr: i32[] = [1, 10, 7, 8, 9, 1, 5]
+
+    runner.assert_eq<u64>(arr.length, 7)
+
+    let n: u64 = arr.length 
+    quickSort(arr, 0, n-1)
+    
+    let gt_arr: i32[] = [1, 1, 5, 7, 8, 9, 10]
+
+    println(serializeArray(arr))
+    //println(serializeArray(gt_arr))
+
+    let expectedArray = new BasicArray(gt_arr)
+    let actualArray = new BasicArray(arr)
+
+    runner.assert_obj_eq<BasicArray>(actualArray, expectedArray)
+}
+
+fn fib(x: i32) -> i32 {
+    if x == 0 {
+        return 0
+    } else if x == 1 {
+        return 1
+    } else {
+        return fib(x - 1) + fib(x - 2)
+    }
+}
+
+let x: fn(y: i32) -> i32 = fib
+let z = x(5)
+
+fn test_case_3(runner: TestUnit) {
+    let xx = fib(10)
+    let y = x(10)
+    let a = fib(5)
+
+    runner.assert_eq<i32>(xx, y)
+    runner.assert_eq<i32>(y, 55)
+    runner.assert_eq<i32>(xx, 55)
+    runner.assert_eq<i32>(a, 5)
+    runner.assert_eq<i32>(a, 5)
+}
+
+
+fn main() {
+    let test_1 = new TestUnit("test 1", "Random Array", test_case_1)
+    let test_2 = new TestUnit("test 2", "Quick sort", test_case_2)
+    let test_3 = new TestUnit("test 3", "Fib-recursive", test_case_3)
+    let set = new UnitSet("STD Test 3", "Tests random stuff", [test_1, test_2, test_3])
+
+    return set.run()
+}

@@ -1,0 +1,50 @@
+from std.unit.test import TestUnit, UnitSet
+from std.string import String
+
+type A = interface {
+    fn methodA() -> void
+}
+
+type B = interface {
+    fn methodB() -> void
+}
+
+type C = interface {
+    fn methodC() -> void
+}
+
+type D = interface A, B{
+    fn methodD() -> void
+}
+type E = interface A {
+    fn methodE() -> void
+}
+
+
+type DClass = class D {
+    fn methodA() -> void {}
+    fn methodB() -> void {}
+    fn methodC() -> void {}
+    fn methodD() -> void {}
+}
+
+
+fn test_case_1(runner: TestUnit) {
+    let deepOptional: ((A & B) & C) ? = new DClass() // should be valid
+    let deepUnwrap: ((A & B) & C) = deepOptional! // should be valid
+
+    runner.assert_obj_not_null<((A & B) & C)>(deepOptional)
+}
+
+fn main(){
+    let test_1 = new TestUnit("test 1", "Basic Sanity", test_case_1)
+
+    let set = new UnitSet("STD Test 2", "Tests random stuff", [test_1])
+
+    set.run()
+    /**
+     * TODO: returning void should not be allowed
+
+    //return set.run()
+    */
+}

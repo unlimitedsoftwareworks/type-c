@@ -1,0 +1,133 @@
+from std.io import println
+from std.String import String
+from std.unit.test import TestUnit, UnitSet
+
+type User<T> = struct {
+    name: T,
+    age: i32
+}
+
+type Iterable<T> = interface {
+
+    fn initIter()
+    fn next() -> T
+    fn hasNext() -> bool
+}
+
+type Array<T> = class Iterable<T> {
+    let data: T[]
+
+    let iteratorCounter: u64
+
+    fn init(){
+        this.data = []
+        this.iteratorCounter = 0
+    }
+
+    fn push(e: T) {
+        let prevLen = this.data.length
+        this.data.extend(prevLen+1)
+        this.data[prevLen] = e
+    }
+
+    fn pop(keep: bool) {
+        let res = this.data[this.data.length-1]
+
+        if !keep {
+            this.data.extend(this.data.length-1)
+        }
+
+        return res
+    }
+
+    fn initIter() {
+        this.iteratorCounter = 0
+    }
+
+    fn next() -> T {
+        let res = this.data[this.iteratorCounter]
+        this.iteratorCounter += 1
+        return res
+    }
+
+    fn hasNext() -> bool = this.iteratorCounter < this.data.length
+    
+    fn map<U>(f: fn(x: T) -> U) -> Array<U> {
+        let arr = new Array<U>()
+        
+        for let i: u64 = 0; i < this.data.length; i+=1 {
+            arr.push(f(this.data[i]))
+        }
+
+        return arr
+    }
+
+    fn length() -> u64 = this.data.length
+
+    fn __index__(i: u64) -> T = this.data[i]
+}
+
+fn getNames(u: struct {name: String, age: i32}) -> String {
+    return u.name
+}
+
+fn test_case_1(rn: TestUnit) {
+    // create a new array
+    let container = new Array< User<String> >()
+
+    // create some data
+    let user1: User<String>? = {name: "John", age: 20}
+    let user2: User<String>? = {name: "Jane", age: 21}
+    let user3: User<String>? = {name: "Jack", age: 22}
+    let user4: User<String>? = {name: "Jill", age: 23}
+
+    // push the data into the array
+    container.push(user1!)
+    container.push(user2!)
+    container.push(user3!)
+    container.push(user4!)
+
+    rn.assert_eq<u64>(container.length(), 4)
+    rn.assert_eq<u64>(container.iteratorCounter, 0)
+
+    let names = container.map<String>(getNames)
+    
+    rn.assert_eq<u64>(names.length(), 4)
+    
+    rn.assert_obj_eq<String>(names[0], "John")
+    rn.assert_obj_eq<String>(names[1], "Jane")
+    rn.assert_obj_eq<String>(names[2], "Jack")
+    rn.assert_obj_eq<String>(names[3], "Jill")
+
+    names.initIter()
+    container.initIter()
+
+    for let i: u64 = 0; i < container.length(); i+=1 {
+        rn.assert_obj_eq<String>(names.next(), container.next().name)
+    }
+
+}
+
+fn test_case_2(rn: TestUnit) {
+    let user1 = {name: "John", age: 20 as u32, rank: 12 as u8, inventory: [1,2,3,4,5]}
+    let user2 = {name: "Jane", age: 21 as u32, rank: 13 as u8, inventory: [1,2,3,4,5]}
+
+    let u1: {name: String, inventory: u32[]} = user1
+
+    rn.assert_obj_eq<String>(u1.name, "John")
+
+    u1.inventory = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+
+    rn.assert_eq<u64>(u1.inventory.length, 10)
+    rn.assert_eq<u64>(user1.inventory.length, 10)
+
+}
+
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests generic class and generic struct", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests the UserClass class", test_case_2)
+    let set = new UnitSet("Structs tests", "Tests struct usage", [test_1, test_2])
+
+    return set.run()
+}

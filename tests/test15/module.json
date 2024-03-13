@@ -1,0 +1,12 @@
+{
+    "name": "Type-C Sample",
+    "version": "1.0.0",
+    "author": "praisethemoon",
+    "dependencies": [],
+    "description": "Tests FFI",
+    "compiler": {
+        "target": "runnable",
+        "entry": "test.tc"
+    },
+    "_compilerAssertions": []
+}

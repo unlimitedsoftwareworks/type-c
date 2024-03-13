@@ -1,0 +1,127 @@
+from std.io import println
+from std.String import String
+from std.unit.test import TestUnit, UnitSet
+
+
+type Byte = class {
+    let value: u8[]
+
+    fn init() {
+        this.value = [1, 2, 3]
+    }
+
+    fn __index__(i: u64) -> u8 {
+        return this.value[i]
+    }
+}
+
+type DataArray<T> = class {
+    let data: T[]
+    
+    fn init() {
+        this.data = []
+        this.data.extend(10)
+    }
+
+    fn length() -> u64 {
+        return this.data.length
+    }
+
+    /**
+     * @description Returns the element at the given index
+     */
+    fn push(v: T) -> void {
+        this.data.extend(this.data.length+1)
+        this.data[this.data.length-1] = v
+    }
+
+    /**
+     * @description Returns the element at the given index
+     */
+    fn pop() -> T {
+        let v = this.data[this.data.length-1]
+        this.data.extend(this.data.length-1)
+        return v
+    }
+    
+
+    
+    fn reduce(f: fn (x: T, y: T) -> T) -> T {
+        return this.data[0]
+    }
+
+    fn forEach(f: fn (x: T) -> void) -> void {
+
+    }
+
+    /** x[i] */
+    fn __index__(i: u64) -> T {
+        return this.data[i]
+    }
+
+    /** x[i] = v */
+    fn __index_set__(v: T, i: u64) -> T {
+        this.data[i] = v
+        return v
+    }
+}
+
+type User = struct {
+    name: string,
+    data: DataArray<DataArray< DataArray<Byte> > >
+}
+
+fn test_case_1(rn: TestUnit) {
+    let x: DataArray<DataArray< DataArray<Byte> > > = new DataArray< DataArray< DataArray<Byte> > >()
+    let y: User = { name: "hello", data: new DataArray<DataArray< DataArray<Byte> > >() } as User
+
+
+    let b = new Byte()
+    x[0] = new DataArray< DataArray<Byte> >()
+    x[0][0] = new DataArray<Byte>()
+    x[0][0][0] = b
+
+    let a1 = x[0][0][0][0]
+    rn.assert_eq<u8>(a1, 1)
+
+    let b1 = x[0][0][0][1]
+    rn.assert_eq<u8>(b1, 2)
+
+    let c1 = x[0][0][0][2]
+    rn.assert_eq<u8>(c1, 3)
+}
+
+type UserClass = class {
+    let name: String
+
+    fn init(name: String) {
+        this.name = name
+    }
+
+    fn greet() {
+        return "Hello, my name is " + this.name
+    }
+    fn swim() {}
+    fn walk() {}
+    fn run() {}
+}
+
+fn test_case_2(rn: TestUnit) {
+    //let z1: strict interface { fn greet()  fn walk() } = new UserClass("John") // should fail
+    let z: i32 = 1
+    let s: String = "John"
+    let z2: strict = new UserClass(s) // should succeed, auto inferred type to strict
+    let z3: strict (interface { fn greet() -> String  fn swim() } & interface {fn walk()}) & interface { fn run() } = new UserClass("John")  // should succeed
+
+    let msg = z3.greet()
+    rn.assert_obj_eq<String>(msg, "Hello, my name is John")
+}
+
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests the map class", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests the UserClass class", test_case_2)
+    let set = new UnitSet("Random Tests", "Tests Random things i guess", [test_1, test_2])
+
+    return set.run()
+}

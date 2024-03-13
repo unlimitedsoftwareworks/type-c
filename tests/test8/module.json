@@ -1,0 +1,11 @@
+{
+    "name": "Type-C Sample",
+    "version": "1.0.0",
+    "author": "praisethemoon",
+    "dependencies": [],
+    "description": "Type-C test case, tests structs",
+    "compiler": {
+        "target": "runnable",
+        "entry": "test.tc"
+    }
+}

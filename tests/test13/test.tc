@@ -1,0 +1,3 @@
+let x : i32 = 1
+let z = x as! string
+let y = z as! string

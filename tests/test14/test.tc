@@ -1,0 +1,12 @@
+from std.String import String, UTF8String
+
+fn print(mut d: String) -> i32{
+    d = new UTF8String("hi")
+    return -(1 as i32)
+}
+
+let const x: String = new UTF8String("hello world!")
+let y = x.clone()
+
+
+let z = print(y)

@@ -1,0 +1,11 @@
+{
+    "name": "Type-C Sample",
+    "version": "1.0.0",
+    "author": "praisethemoon",
+    "dependencies": [],
+    "description": "Tests basic compiler and runtime functionalities, contains cases of issues that have been fixed, related to syntax, type checking and register allocation",
+    "compiler": {
+        "target": "runnable",
+        "entry": "test.tc"
+    }
+}
