@@ -14,6 +14,8 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { Expression } from "./Expression";
+import { DataType } from "../types/DataType";
+import { matchDataTypes } from "../../typechecking/typechecking";
 
 export class LetInExpression extends Expression {
     // multiple variables can be declared in a let binding
@@ -26,5 +28,24 @@ export class LetInExpression extends Expression {
         this.variables = variables;
         this.inExpression = inExpression;
         this.context = context;
+    }
+
+    infer(ctx: Context, hint: DataType | null): DataType {
+        if(this.inferredType) return this.inferredType;
+        this.setHint(hint);
+
+        // infer the variables
+        this.variables.forEach(v => v.infer(ctx));
+        this.inferredType = this.inExpression.infer(ctx, hint);
+
+        if(hint) {
+            let r = matchDataTypes(ctx, hint, this.inferredType);
+            if(!r.success) {
+                throw ctx.parser.customError(`Type mismatch in let-in expression: ${r.message}`, this.location);
+            }
+        }
+
+        this.isConstant = this.inExpression.isConstant;
+        return this.inferredType;
     }
 }

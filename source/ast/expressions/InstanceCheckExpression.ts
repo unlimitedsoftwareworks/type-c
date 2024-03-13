@@ -11,6 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/typechecking";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BasicType } from "../types/BasicType";
 import { BooleanType } from "../types/BooleanType";
@@ -102,6 +103,15 @@ export class InstanceCheckExpression extends Expression {
         */
 
         this.isConstant = false;
-        return new BooleanType(this.location);
+        this.inferredType = new BooleanType(this.location);
+
+        if(hint) {
+            let r = matchDataTypes(ctx, hint, this.inferredType);
+            if(!r.success) {
+                throw ctx.parser.customError(`Type mismatch in instance check: ${r.message}`, this.location);
+            }
+        }
+
+        return this.inferredType;
     }
 }

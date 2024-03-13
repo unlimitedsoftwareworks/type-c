@@ -44,9 +44,14 @@ export type DataTypeKind =
     "void" | // VoidType
     "nullable" | // NullableType
     "ffi_method" | // FFI Method
-    "ffi_type" |
+    "ffi_namespace_type" |
     "unset" | // UnsetType
-    "literal"; // LiteralType
+    "literal" | // LiteralType
+    "meta_class" | // MetaClassType, used for meta classes, 
+    "meta_interface" | // MetaInterfaceType, used for meta interfaces
+    "meta_variant" | // MetaVariantType, used for constructing variants
+    "meta_variant_constructor" | // MetaVariantConstructorType, used for constructing variant constructors
+    "meta_enum" // MetaStructType, used for meta structs
 
 
 export class DataType {

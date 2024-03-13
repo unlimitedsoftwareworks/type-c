@@ -158,6 +158,14 @@ export class BinaryStringLiteralExpression extends LiteralExpression {
 
 
         this.inferredType = new ArrayType(this.location, new BasicType(this.location, 'u8'));
+
+        if(hint) {
+            let res = matchDataTypes(ctx, hint, this.inferredType);
+            if (!res.success) {
+                ctx.parser.customError(`Incompatible types: ${res.message}`, this.location);
+            }
+        }
+
         return this.inferredType;
     }
 }
