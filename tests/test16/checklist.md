@@ -7,5 +7,4 @@
     - Basic implementation of cloning for declared functions, etc.
 
 - 13/04/2024@TODO:
-    - Inference of IndexAccessExpression
-    - Inference of IndexSetExpression
+    - Infer functions for some expressions
