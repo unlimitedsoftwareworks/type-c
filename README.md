@@ -5,7 +5,7 @@ Type-C
     <tr>
         <td>
             <p align="center">
-                <img align="center" src='assets/type-c.png' width='100%'>
+                <img align="center" src='assets/logo.png' width='100%'>
             </p>
         </td>
     </tr>
