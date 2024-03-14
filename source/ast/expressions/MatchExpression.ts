@@ -14,6 +14,7 @@ import { PatternExpression } from "../matching/PatternExpression";
 import { BlockStatement } from "../statements/BlockStatement";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { Expression } from "./Expression";
 
 export type MatchCaseType = "match_block" | "match_expression"
@@ -30,6 +31,8 @@ export class MatchCaseExpression {
     location: SymbolLocation;
     pattern: PatternExpression;
 
+    _inferred: boolean = false;
+
     constructor(location: SymbolLocation, context: Context, pattern: PatternExpression, type: MatchCaseType, expression: Expression | null, block: BlockStatement | null, guard: Expression | null) {
         this.type = type;
         this.expression = expression;
@@ -38,6 +41,16 @@ export class MatchCaseExpression {
         this.context = context;
         this.location = location;
         this.pattern = pattern;
+    }
+
+    /**
+     * Infers the pattern match case, with the given expression type that is being matched.
+     * @param ctx 
+     * @param expressionType 
+     */
+    infer(ctx: Context, expressionType: DataType) {
+        if (this._inferred) return;
+        this.pattern
     }
 }
 

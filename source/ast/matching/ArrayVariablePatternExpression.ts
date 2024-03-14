@@ -11,8 +11,11 @@
  */
 
 import { LiteralExpression } from "../expressions/LiteralExpression";
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
+import { ArrayType } from "../types/ArrayType";
+import { DataType } from "../types/DataType";
 import { PatternExpression } from "./PatternExpression";
 
 export class ArrayVariablePatternExpression extends PatternExpression {
@@ -29,5 +32,16 @@ export class ArrayVariablePatternExpression extends PatternExpression {
     constructor(location: SymbolLocation, name: string) {
         super(location, "variable");
         this.name = name;
+    }
+
+    infer(ctx: Context, expressionType: DataType) {
+        if(!this.symbolPointer) {
+            this.symbolPointer = new VariablePattern(this.location, this.name, new ArrayType(this.location, expressionType));
+            ctx.addSymbol(this.symbolPointer);
+        }
+    }
+
+    setPosition(pos: number){ 
+        this.position = pos;
     }
 }

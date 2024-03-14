@@ -10,8 +10,11 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/typechecking";
 import { LiteralExpression } from "../expressions/LiteralExpression";
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { PatternExpression } from "./PatternExpression";
 
 export class LiteralPatternExpression extends PatternExpression {
@@ -20,5 +23,12 @@ export class LiteralPatternExpression extends PatternExpression {
     constructor(location: SymbolLocation, literal: LiteralExpression) {
         super(location, "literal");
         this.literal = literal;
+    }
+
+    infer(ctx: Context, expressionType: DataType) {
+        let r = matchDataTypes(ctx, this.literal.infer(ctx, expressionType), expressionType);
+        if(!r.success) {
+            throw ctx.parser.customError(`Cannot match ${expressionType.shortname()} again literal: ${r.success}`, this.location);
+        }
     }
 }

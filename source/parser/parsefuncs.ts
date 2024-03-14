@@ -33,7 +33,7 @@ import { ArrayPatternExpression } from "../ast/matching/ArrayPatternExpression";
 import { ArrayVariablePatternExpression } from "../ast/matching/ArrayVariablePatternExpression";
 import { DataTypePatternExpression } from "../ast/matching/DataTypePatternExpression";
 import { LiteralPatternExpression } from "../ast/matching/LiteralPatternExpression";
-import { StructPatternExpression, StructFieldPattern } from "../ast/matching/StructpatternExpression";
+import { StructPatternExpression, StructFieldPattern } from "../ast/matching/StructPatternExpression";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { FunctionPrototype } from "../ast/other/FunctionPrototype";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";

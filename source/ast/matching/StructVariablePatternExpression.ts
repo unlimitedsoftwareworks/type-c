@@ -10,8 +10,11 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import exp from "constants";
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
+import { DataType } from "../types/DataType";
 import { PatternExpression } from "./PatternExpression";
 
 export class StructVariablePatternExpression extends PatternExpression {
@@ -25,5 +28,13 @@ export class StructVariablePatternExpression extends PatternExpression {
     constructor(location: SymbolLocation, name: string) {
         super(location, "variable");
         this.name = name;
+    }
+
+
+    infer(ctx: Context, expressionType: DataType) {
+        if(!this.symbolPointer) {
+            this.symbolPointer = new VariablePattern(this.location, this.name, expressionType);
+            ctx.addSymbol(this.symbolPointer);
+        }
     }
 }

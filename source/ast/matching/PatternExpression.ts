@@ -10,7 +10,9 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 
 export type PatternExpressionType = 
     "array" |  // [1, 2, 3]
@@ -29,5 +31,13 @@ export class PatternExpression {
     constructor(location: SymbolLocation, matchType: PatternExpressionType) {
         this.location = location;
         this.matchType = matchType;
+    }
+
+    infer(ctx: Context, expressionType: DataType) {
+        throw "Not implemented";
+    }
+
+    clone(typeMap: {[key: string]: DataType}): PatternExpression {
+        throw "Not implemented";
     }
 }
