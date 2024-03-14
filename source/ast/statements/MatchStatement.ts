@@ -30,6 +30,7 @@ export class MatchStatement extends Statement {
     }
 
     infer(ctx: Context){
-        throw ctx.parser.customError("Match statements are not supported yet", this.location)
+        let type = this.expression.infer(ctx);
+        this.cases.forEach(c => c.infer(ctx, type));
     }
 }
