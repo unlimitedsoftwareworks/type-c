@@ -31,4 +31,8 @@ export class ProcessType extends DataType {
         throw new Error("Method not implemented.");
         //return `@process{attributes:${this.attributes.map(a => a.serialize()).join(",")},methods:${this.methods.map(m => m.serialize()).join(",")}}`
     }
+
+    allowedNullable(): boolean {
+        return false;
+    }
 }

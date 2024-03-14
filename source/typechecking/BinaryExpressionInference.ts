@@ -7,7 +7,7 @@ import { DataType } from "../ast/types/DataType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { NullableType } from "../ast/types/NullableType";
 import { ReferenceType } from "../ast/types/ReferenceType";
-import { isAddable, getOperatorOverloadType, setBinaryOverrideMethodHint, isSubable, isMultiplicable, isDivisible, isModable, isLt, isLte, isGt, isGte, isOr, isAnd, isLShift, isRShift, isBAnd, isBOr, isXor } from "./OperatorOverload";
+import { isAddable, getOperatorOverloadType, setBinaryOverrideMethodHint, isSubable, isMultiplicable, isDivisible, isModable, isLt, isLte, isGt, isGte, isOr, isAnd, isLShift, isRShift, isBAnd, isBOr, isXor, OverridableMethodType } from "./OperatorOverload";
 import { matchDataTypes } from "./typechecking";
 
 
@@ -28,7 +28,7 @@ const basicTypePromotionMap: Record<string, Record<string, DataTypeKind>> = {
 
 // addition(+), addition assignment(+=) requires two numeric inputs and returns a numeric output
 function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){
+    if(lhs.is(BasicType) && rhs.is(BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -38,9 +38,9 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    else if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
-        if(isAddable(ctx, lhs)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs, [rhs]);
+    else if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+        if(isAddable(ctx, lhs as OverridableMethodType)){
+            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -52,7 +52,7 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
 // subtraction(-), substraction assignment (-=) requires two numeric inputs and returns a numeric output
 function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){
+    if(lhs.is(BasicType) && rhs.is(BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -62,9 +62,9 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
         }
     }
 
-    else if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
-        if(isSubable(ctx, lhs)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs, [rhs]);
+    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+        if(isSubable(ctx, lhs as OverridableMethodType)){
+            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -76,7 +76,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
 
 // multiplication(*), multiplication assignment(*=) requires two numeric inputs and returns a numeric output
 function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){
+    if(lhs.is(BasicType) && rhs.is(BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -86,9 +86,9 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
         }
     }
 
-    else if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
-        if(isMultiplicable(ctx, lhs)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs, [rhs]);
+    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+        if(isMultiplicable(ctx, lhs as OverridableMethodType)){
+            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -100,7 +100,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
 
 // division(/), division assignment requires two numeric inputs and returns a numeric output
 function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){
+    if(lhs.is(BasicType) && rhs.is(BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -110,9 +110,9 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    else if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
-        if(isDivisible(ctx, lhs)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs, [rhs]);
+    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+        if(isDivisible(ctx, lhs as OverridableMethodType)){
+            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -124,7 +124,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
 // modulo(%) requires two numeric inputs and returns a numeric output
 function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){
+    if(lhs.is(BasicType) && rhs.is(BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -134,9 +134,9 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
         }
     }
 
-    else if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
-        if(isModable(ctx, lhs)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs, [rhs]);
+    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+        if(isModable(ctx, lhs as OverridableMethodType)){
+            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -148,7 +148,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
 
 // less than(<), less or equal(<=), greater than(>), greater or tequal(>=) requires two numeric inputs and returns a bool
 function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){
+    if(lhs.is(BasicType) && rhs.is(BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BooleanType(expr.location);
@@ -158,27 +158,27 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    else if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
-        if(isLt(ctx, lhs) && (expr.operator === "<")){
-            let method = getOperatorOverloadType(ctx, "__lt__", lhs, [rhs]);
+    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+        if(isLt(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === "<")){
+            let method = getOperatorOverloadType(ctx, "__lt__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
-        if(isLte(ctx, lhs) && (expr.operator === "<=")){
-            let method = getOperatorOverloadType(ctx, "__le__", lhs, [rhs]);
+        if(isLte(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === "<=")){
+            let method = getOperatorOverloadType(ctx, "__le__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
-        if(isGt(ctx, lhs) && (expr.operator === ">")){
-            let method = getOperatorOverloadType(ctx, "__gt__", lhs, [rhs]);
+        if(isGt(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === ">")){
+            let method = getOperatorOverloadType(ctx, "__gt__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
-        if(isGte(ctx, lhs) && (expr.operator === ">=")){
-            let method = getOperatorOverloadType(ctx, "__ge__", lhs, [rhs]);
+        if(isGte(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === ">=")){
+            let method = getOperatorOverloadType(ctx, "__ge__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -201,13 +201,13 @@ function inferLogicalAndOr(ctx: Context, lhs: DataType, rhs: DataType, expr: Bin
 
     if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
         if(isOr(ctx, lhs) && (expr.operator === "||")){
-            let method = getOperatorOverloadType(ctx, "__or__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__or__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
         if(isAnd(ctx, lhs) && (expr.operator === "&&")){
-            let method = getOperatorOverloadType(ctx, "__and__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__and__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -230,38 +230,38 @@ function inferLogicalAndOr(ctx: Context, lhs: DataType, rhs: DataType, expr: Bin
 function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType){
         if(isLShift(ctx, lhs) && (expr.operator === "<<")){
-            let method = getOperatorOverloadType(ctx, "__lshift__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__lshift__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
         if(isRShift(ctx, lhs) && (expr.operator === ">>")){
-            let method = getOperatorOverloadType(ctx, "__rshift__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__rshift__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
         if(isBAnd(ctx, lhs) && (expr.operator === "&")){
-            let method = getOperatorOverloadType(ctx, "__band__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__band__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
         if(isBOr(ctx, lhs) && (expr.operator === "|")){
-            let method = getOperatorOverloadType(ctx, "__bor__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__bor__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
         if(isXor(ctx, lhs) && (expr.operator === "^")){
-            let method = getOperatorOverloadType(ctx, "__xor__", lhs, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__xor__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
     }
 
-    if((lhs.dereference() instanceof BasicType) && (rhs.dereference() instanceof BasicType)){ 
+    if(lhs.is(BasicType) && rhs.is(BasicType)){ 
         // make sure it is not float 
         if(lhs.kind === "f32" || lhs.kind === "f64"){
             throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);

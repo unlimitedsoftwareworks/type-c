@@ -53,16 +53,9 @@ export class LambdaExpression extends Expression {
         this.setHint(hint);
 
         this.inferredType = this.header;
-
-        if(hint) {
-            let r = matchDataTypes(ctx, this.header, hint);
-            if(!r.success) {
-                throw ctx.parser.customError(`Type mismatch in lambda expression: ${r.message}`, this.location);
-            }
-        }
-
         inferFunctionHeader(ctx, 'function', this.returnStatements, this.header, this.body, this.expression);
 
+        this.checkHint(ctx);
         this.isConstant = false;
         return this.inferredType;
     }

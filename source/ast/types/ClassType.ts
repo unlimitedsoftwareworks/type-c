@@ -20,6 +20,8 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType"
 import { InterfaceType, checkOverloadedMethods } from "./InterfaceType";
 import { ReferenceType } from "./ReferenceType";
+import { UnsetType } from "./UnsetType";
+import { VoidType } from "./VoidType";
 
 
 export class ClassType extends DataType {
@@ -65,10 +67,11 @@ export class ClassType extends DataType {
         }
 
         /**
-         * 2. Make sure attributes are correctly defined
+         * 2. Make sure attributes are correctly defined and init methods are correctly defined
          */
         this.checkAttributes(ctx);
-
+        this.checkInitMethods(ctx);
+        
         /**
          * 3. build up a list of all required methods, from the super types
          */
@@ -134,7 +137,30 @@ export class ClassType extends DataType {
      * 1. must be non static
      */
     checkInitMethods(ctx: Context) {
-        let init
+        for(let i = 0; i < this.methods.length; i++) {
+            if(this.methods[i].imethod.name === "init") {
+                // 1. must be non static
+                if(this.methods[i].imethod.isStatic) {
+                    throw ctx.parser.customError("init method cannot be static", this.methods[i].location);
+                }
+
+                // 2. must return void
+                if(!this.methods[i].imethod.header.returnType.is(VoidType)) {
+                    // maybe it is unset?
+                    if(this.methods[i].imethod.header.returnType.is(UnsetType)) {
+                        this.methods[i].imethod.header.returnType = new VoidType(this.methods[i].location);
+                    }
+                    else {
+                        throw ctx.parser.customError("init method must return void", this.methods[i].location);
+                    }
+                }
+
+                // 3. must be non-generic
+                if(this.methods[i].imethod.generics.length > 0) {
+                    throw ctx.parser.customError("init method cannot be generic", this.methods[i].location);
+                }
+            }
+        }
     }
 
     /**
@@ -347,5 +373,30 @@ export class ClassType extends DataType {
         }
 
         throw new Error(`Cannot convert class to ${targetType.name}`);
+    }
+
+    allowedNullable(): boolean {
+        return true;
+    }
+
+    isPromise(ctx: Context): boolean {
+        for(let i = 0; i < this.superTypes.length; i++){
+            if(this.superTypes[i].isPromise(ctx)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    getPromiseType(ctx: Context): DataType | null {
+        for(let i = 0; i < this.superTypes.length; i++){
+            let promiseType = this.superTypes[i].getPromiseType(ctx);
+            if(promiseType !== null){
+                return promiseType;
+            }
+        }
+
+        return null;
     }
 }

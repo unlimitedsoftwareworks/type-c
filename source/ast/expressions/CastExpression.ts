@@ -65,6 +65,7 @@ export class CastExpression extends Expression {
             this.target = new NullableType(this.location, this.target);
         }
 
+        // we do not use internal checkHint since we need to check based on the castType
         if(!hint) {
             this.inferredType = this.target;
         }

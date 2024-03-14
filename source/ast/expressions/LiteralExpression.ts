@@ -207,11 +207,13 @@ export class IntLiteralExpression extends LiteralExpression {
             this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
         }
         else {
-            throw new Error(`Hint for integer literal must be a basic type or a boolean type, got ${hint.shortname()}`);
+            this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
+            throw ctx.parser.customError(`Unexpected type, ${hint.shortname()} expected but found ${this.inferredType?.shortname()}`, this.location);
         }
 
         return this.inferredType;
     }
+    
 }
 
 export class BinaryIntLiteralExpression extends LiteralExpression {
@@ -310,13 +312,7 @@ export class FloatLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BasicType(this.location, "f32");
 
-        if (hint) {
-            let res = matchDataTypes(ctx, this.inferredType, hint);
-            if (!res.success) {
-                ctx.parser.customError(`Incompatible types: ${res.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }
@@ -335,13 +331,7 @@ export class DoubleLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BasicType(this.location, "f64");
 
-        if (hint) {
-            let res = matchDataTypes(ctx, this.inferredType, hint);
-            if (!res.success) {
-                ctx.parser.customError(`Incompatible types: ${res.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }
@@ -356,13 +346,7 @@ export class TrueLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BooleanType(this.location);
 
-        if (hint) {
-            let res = matchDataTypes(ctx, this.inferredType, hint);
-            if (!res.success) {
-                ctx.parser.customError(`Incompatible types: ${res.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }
@@ -378,13 +362,8 @@ export class FalseLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BooleanType(this.location);
 
-        if (hint) {
-            let res = matchDataTypes(ctx, this.inferredType, hint);
-            if (!res.success) {
-                ctx.parser.customError(`Incompatible types: ${res.message}`, this.location);
-            }
-        }
-
+        
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }
@@ -399,8 +378,7 @@ export class NullLiteralExpression extends LiteralExpression {
 
         // make sure that the hint is either a nullable or null.
         if(hint !== null){
-            let h = hint?.dereference();
-            if(!((h instanceof NullType) || (h instanceof NullableType))) {
+            if(!((hint.is(NullType)) || (hint.is(NullableType)))) {
                 ctx.parser.customError("Expected a nullable or null type", this.location);
             }
         }

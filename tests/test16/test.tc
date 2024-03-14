@@ -63,11 +63,14 @@ let c1 = Color.Red
 
 
 type ConcreteUserData = class {
-    let age: u32
+    let age: i32
 
     fn init() {
-        this.age = 0
+        this.age = 1
     }
 }
 
 let cud = new ConcreteUserData()
+
+// FIX: w
+let zzz: {x: i32, y: {z: {z: i32}}} = {1, {{cud.age}}}

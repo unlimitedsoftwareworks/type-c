@@ -13,6 +13,7 @@
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
+import { matchDataTypes } from "../../typechecking/typechecking";
 
 
 export type ExpressionKind = 
@@ -84,6 +85,16 @@ export class Expression {
 
     setHint(hint: DataType | null){
         this.hintType = hint;
+    }
+
+    
+    checkHint(ctx: Context){
+        if(this.hintType) {
+            let r = matchDataTypes(ctx, this.hintType!, this.inferredType!);
+            if(!r.success) {
+                throw ctx.parser.customError(`Type mismatch, expected ${this.hintType!.shortname()} but found ${this.inferredType!.shortname()}: ${r.message}`, this.location);
+            }
+        }
     }
 
     /**

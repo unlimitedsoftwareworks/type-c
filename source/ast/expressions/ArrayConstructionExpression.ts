@@ -28,18 +28,16 @@ export class ArrayConstructionExpression extends Expression {
 
     infer(ctx: Context, hint: DataType | null = null): DataType{
         this.setHint(hint);
-        let baseHint = hint?.denullReference() || null;
 
-        if(baseHint) {
-            // make sure the hint is an array
-            if(!(baseHint instanceof ArrayType)){
-                ctx.parser.customError("Expected an array type", this.location);
-            }
-        }
-
-        if((this.elements.length == 0) && (baseHint == null)){
+        if((this.elements.length == 0) && (hint == null)){
             ctx.parser.customError("Cannot infer an empty array without hint", this.location);
         }
+
+        if(hint && !hint.is(ArrayType)){ 
+            ctx.parser.customError(`Type missmatch, ${hint.shortname()} expected, but array was found`, this.location);
+        }
+
+        let baseHint = hint?hint.to(ArrayType) as ArrayType:null;
 
         // infer all elements
         let elementTypes: DataType[] = [];

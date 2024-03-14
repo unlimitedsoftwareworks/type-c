@@ -151,6 +151,8 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
         if(!(t2 instanceof BooleanType)) {
             return Err(`Type mismatch, expected boolean, got ${t2.shortname()}`);
         }
+
+        return Ok();
     }
 
     // case 3: array type

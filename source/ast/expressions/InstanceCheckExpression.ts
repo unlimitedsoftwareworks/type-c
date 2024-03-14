@@ -104,14 +104,7 @@ export class InstanceCheckExpression extends Expression {
 
         this.isConstant = false;
         this.inferredType = new BooleanType(this.location);
-
-        if(hint) {
-            let r = matchDataTypes(ctx, hint, this.inferredType);
-            if(!r.success) {
-                throw ctx.parser.customError(`Type mismatch in instance check: ${r.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }

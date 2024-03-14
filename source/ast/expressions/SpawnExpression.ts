@@ -30,5 +30,4 @@ export class SpawnExpression extends Expression {
         this.type = type;
         this.arguments = arguments_;
     }
-
 }

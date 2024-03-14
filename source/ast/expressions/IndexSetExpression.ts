@@ -84,13 +84,7 @@ export class IndexSetExpression extends Expression {
             throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
         }
 
-        if(hint) {
-            let res = matchDataTypes(ctx, hint, this.inferredType);
-            if(!res.success) {
-                throw ctx.parser.customError(`Type mismatch in index set: ${res.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }

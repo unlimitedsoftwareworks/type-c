@@ -10,7 +10,7 @@ import { ReferenceType } from "../ast/types/ReferenceType";
 import { matchDataTypes } from "./typechecking";
 
 
-type OverridableMethodType = InterfaceType | ClassType | ReferenceType;
+export type OverridableMethodType = InterfaceType | ClassType | ReferenceType;
 
 /**
  * __index__ x[i, j, ...]
@@ -321,4 +321,17 @@ export function isInc(ctx: Context, dt: OverridableMethodType){
 
 export function isDec(ctx: Context, dt: OverridableMethodType){
     return dt.methodExists(ctx, "__dec__");
+}
+
+export function isPromise(ctx: Context, dt: OverridableMethodType){
+    return dt.isPromise(ctx);
+}
+
+export function getPromiseReturnType(ctx: Context, dt: OverridableMethodType){
+    let ret = dt.getPromiseType(ctx);
+    if(ret == null){
+        throw ctx.parser.customError(`Cannot use await operator on non-promise type ${dt.shortname()}`, dt.location);
+    }
+
+    return ret;
 }

@@ -60,6 +60,7 @@ export class NamedStructConstructionExpression extends Expression {
             this.inferredType = structType;
         }
 
+        this.checkHint(ctx);
         this.isConstant = false;
         return this.inferredType;
     }

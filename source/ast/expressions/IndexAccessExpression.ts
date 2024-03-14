@@ -75,13 +75,8 @@ export class IndexAccessExpression extends Expression {
         }
 
         
-        if(hint) {
-            let r = matchDataTypes(ctx, hint, this.inferredType);
-            if(!r.success) {
-                throw ctx.parser.customError(`Inferred type ${this.inferredType.shortname()} does not match hint ${hint.shortname()}: ${r.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
+        this.isConstant = false;
         return this.inferredType;
     }
 }

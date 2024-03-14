@@ -88,14 +88,7 @@ export class FunctionCallExpression extends Expression {
             }
 
             this.inferredType = lhsT.returnType;
-
-            if(hint) {
-                let res = matchDataTypes(ctx, hint, this.inferredType);
-                if(!res.success) {
-                    throw ctx.parser.customError(`Expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
-                }
-            }
-
+            this.checkHint(ctx);
             return this.inferredType;
         }
         // Callable instance
@@ -121,14 +114,7 @@ export class FunctionCallExpression extends Expression {
             this.operatorOverloadState.setMethodRef(method);
 
             this.inferredType = matchCall(ctx, method, this.args);
-
-            if(hint) {
-                let res = matchDataTypes(ctx, hint, this.inferredType);
-                if(!res.success) {
-                    throw ctx.parser.customError(`Expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
-                }
-            }
-
+            this.checkHint(ctx);
             return this.inferredType;
         }
 
@@ -159,13 +145,7 @@ export class FunctionCallExpression extends Expression {
             }
             this.inferredType = interfaceMethod.header.returnType;
 
-            if(hint) {
-                let res = matchDataTypes(ctx, hint, this.inferredType);
-                if(!res.success) {
-                    throw ctx.parser.customError(`Expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
-                }
-            }
-            
+            this.checkHint(ctx);
             this.isConstant = true;
             return this.inferredType;
         }

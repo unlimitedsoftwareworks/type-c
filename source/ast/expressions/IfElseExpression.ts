@@ -70,6 +70,7 @@ export class IfElseExpression extends Expression {
             this.inferredType = hint;
         }
 
+        this.checkHint(ctx);
         return this.inferredType;
     }
 }

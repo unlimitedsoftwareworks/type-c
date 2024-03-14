@@ -24,6 +24,7 @@ import { FFINamespaceType } from "../types/FFINamespaceType";
 import { FunctionType } from "../types/FunctionType";
 import { MetaClassType, MetaEnumType, MetaVariantConstructorType, MetaVariantType } from "../types/MetaTypes";
 import { StructType } from "../types/StructType";
+import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
 import { VoidType } from "../types/VoidType";
 import { ElementExpression } from "./ElementExpression";
@@ -39,6 +40,7 @@ import { Expression } from "./Expression";
         this.right = right;
     }
 
+
     infer(ctx: Context, hint: DataType | null): DataType {
         if(this.inferredType) return this.inferredType;
         this.setHint(hint);
@@ -49,11 +51,12 @@ import { Expression } from "./Expression";
          * 2. Access to struct field
          * 3. Access to class field
          * 4. Access to an FFI method
-         * 5. Access to enum value
-         * 6. Access to a class field or static field, calls are handled by the FunctionCallExpression, since 
+         * 5. Access to VariantConstructor parameter
+         * 6. Access to enum value
+         * 7. Access to a class field or static field, calls are handled by the FunctionCallExpression, since 
          *    Class/Interface methods are not first class citizens
-         * 7. Access to an interface method
-         * 8. Access to a variant constructor
+         * 8. Access to an interface method
+         * 9. Access to a variant constructor
          */
 
 
@@ -69,6 +72,7 @@ import { Expression } from "./Expression";
             if(this.right.name === "length") {
                 this.inferredType = new BasicType(this.location, "u64");
                 this.isConstant = false;
+                this.checkHint(ctx);
                 return this.inferredType;
             }
 
@@ -82,6 +86,7 @@ import { Expression } from "./Expression";
                     new VoidType(this.location)
                 );
                 this.isConstant = false;
+                this.checkHint(ctx);
                 return this.inferredType;
             }
 
@@ -95,6 +100,7 @@ import { Expression } from "./Expression";
                     new ArrayType(this.location, arrayType.arrayOf)
                 );
                 this.isConstant = false;
+                this.checkHint(ctx);
                 return this.inferredType;
             }
 
@@ -113,14 +119,8 @@ import { Expression } from "./Expression";
 
             this.inferredType = field.type;
 
-            if(hint) {
-                let r = matchDataTypes(ctx, hint, this.inferredType);
-                if(!r.success) {
-                    throw ctx.parser.customError(`Type mismatch in member access, expected ${hint.shortname()} but found ${this.inferredType.shortname()}: ${r.message}`, this.location);
-                }
-            }
-
             this.isConstant = false;
+            this.checkHint(ctx);
             return this.inferredType;
         }
         // case 3: class field
@@ -133,6 +133,8 @@ import { Expression } from "./Expression";
             }
 
             this.inferredType = field.type;
+            this.checkHint(ctx);
+            return this.inferredType;
         }
 
         // case 4: FFI method
@@ -144,6 +146,22 @@ import { Expression } from "./Expression";
             }
             this.inferredType = method;
             this.isConstant = false;
+            this.checkHint(ctx);
+            return this.inferredType;
+        }
+
+        // case 5: VariantConstructor parameter
+        if(lhsType.is(VariantConstructorType)) {
+            let variantConstructorType = lhsType.to(VariantConstructorType) as VariantConstructorType;
+            let parameter = variantConstructorType.parameters.find(p => p.name === this.right.name);
+
+            if(!parameter) {
+                throw ctx.parser.customError(`Parameter ${this.right.name} not found on variant constructor ${variantConstructorType.shortname()}`, this.location);
+            }
+
+            this.inferredType = parameter.type;
+            this.isConstant = false;
+            this.checkHint(ctx);
             return this.inferredType;
         }
 
@@ -164,6 +182,7 @@ import { Expression } from "./Expression";
             this.inferredType = field.type;
             // TODO: allow constant fields within class
             this.isConstant = false;
+            this.checkHint(ctx);
             return this.inferredType;
         }
 
@@ -195,6 +214,7 @@ import { Expression } from "./Expression";
 
             this.inferredType = new MetaVariantConstructorType(this.location, constructor, typeArguments);
             this.isConstant = false;
+            this.checkHint(ctx);
             return this.inferredType;
         }
 
@@ -213,6 +233,7 @@ import { Expression } from "./Expression";
 
             this.inferredType = enumType;
             this.isConstant = false;
+            this.checkHint(ctx);
             return this.inferredType;
         }
 

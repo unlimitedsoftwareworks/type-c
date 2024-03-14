@@ -176,4 +176,13 @@ export class DataType {
             return this;
         }
     }
+
+    /**
+     * Returns true if the datatype can be wrapped by a nullable such as X?
+     * Otherwise false.
+     */
+    allowedNullable(): boolean {
+        // default behavior is to return false
+        return false;
+    }
 }

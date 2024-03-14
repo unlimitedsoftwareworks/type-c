@@ -42,4 +42,8 @@ export class VariantType extends DataType {
     shortname(): string {
         return `@variant{`+this.constructors.map((c) => c.shortname()).join("|")+`}`;
     }
+
+    allowedNullable(): boolean {
+        return true;
+    }
 }

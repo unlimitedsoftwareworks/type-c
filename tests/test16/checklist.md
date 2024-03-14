@@ -8,8 +8,17 @@
 - 13/04/2024@23:54:
     - Infer functions for some expressions
     - MetaTypes (also known as RawTypes in the old compiler), which holds enums, classes, interfaces, variants and variant consturctors
-
+    - New method `allowNullable`, which indicates that a datatype is allowed to be wrapped within a `Nullable` class. For example Classes, interfaces, struct, variants can be nullables.
+    - New method `Expression.checkHint` used to compare the hint with the inferred type of the expression, since the check is very repetitive.
 
 
 TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
+- Address the issue of non-inferred expressions suchas expressions as arguments to method call.
+
+    ```ts
+    dt.callMe({"user", 20})
+    ```
+    In such case, the compiler will not infer the unnamed struct construction `{"user", 20}` with the method argument, due to method overload resolution.
+- Match Statements
+- Processes

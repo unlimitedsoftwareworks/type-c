@@ -35,4 +35,8 @@ export class ArrayType extends DataType {
     serialize(): string {
         return `@array{${this.arrayOf.serialize()}`;
     }
+
+    allowedNullable(): boolean {
+        return false;
+    }
 }

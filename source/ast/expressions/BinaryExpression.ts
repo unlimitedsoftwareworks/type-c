@@ -90,12 +90,14 @@ export class BinaryExpression extends Expression {
             }
 
             let canAssign = isLHSAssignable(this.left);
-            if(canAssign.success) {
-                ctx.parser.customError(`Cannot assign to LHS of operator =, a constant.`, this.location);
+            if(!canAssign.success) {
+                ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
             }
         }
 
         this.inferredType = binaryTypeCheckers[this.operator](ctx, lhsType, rhsType, this);
+
+        this.checkHint(ctx);
 
         if(!this.inferredType) {
             ctx.parser.customError(`Cannot apply operator ${this.operator} to types ${lhsType} and ${rhsType}`, this.location);

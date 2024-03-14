@@ -10,8 +10,6 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/typechecking";
-import { FunctionPrototype } from "../other/FunctionPrototype";
 import { Context } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
@@ -69,14 +67,7 @@ export class ElementExpression extends Expression {
             this.inferredType = variable.annotation;
 
             // make sure hint and variable type matches
-
-            if(hint !== null){
-                let res = matchDataTypes(ctx, hint, this.inferredType!);
-                if(!res.success) {
-                    throw ctx.parser.customError(`Type mismatch, expected ${hint.shortname()}, got ${this.inferredType!.shortname()}`, this.location);
-                }
-            }
-
+            this.checkHint(ctx);
             // inherit variable constantness
             this.isConstant = variable.isConst;
 
@@ -86,26 +77,13 @@ export class ElementExpression extends Expression {
             let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments);
             this.inferredType = newDecl.prototype.header;
 
-            if(hint) {
-                let res = matchDataTypes(ctx, hint, this.inferredType);
-                if(!res.success) {
-                    throw ctx.parser.customError(`Type mismatch, expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
-                }
-            }
-
-            
+            this.checkHint(ctx);
             this.isConstant = false;
             return this.inferredType;
         }
         else if (variable instanceof FunctionArgument) {
             this.inferredType = variable.type;
-            if(hint) {
-                let res = matchDataTypes(ctx, hint, this.inferredType);
-                if(!res.success) {
-                    throw ctx.parser.customError(`Type mismatch, expected ${hint.shortname()}, got ${this.inferredType.shortname()}`, this.location);
-                }   
-            }
-
+            this.checkHint(ctx);
             if(this.typeArguments.length > 0) {
                 throw ctx.parser.customError(`Function argument ${variable.name} is not allowed to have generics`, this.location);
             }

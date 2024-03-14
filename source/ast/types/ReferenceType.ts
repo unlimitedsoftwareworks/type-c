@@ -26,6 +26,7 @@ export class ReferenceType extends DataType{
 
     // base type
     baseType: DataType | null = null;
+    baseDecl: DeclaredType | null = null;
 
     constructor(location: SymbolLocation, pkg: string[], typeArgs: DataType[] = []){
         super(location, "reference");
@@ -48,6 +49,7 @@ export class ReferenceType extends DataType{
         // TODO: clone!
         this.baseType = type.type;
         this.baseType.resolve(ctx);
+        this.baseDecl = type;
     }
 
     dereference(): DataType {
@@ -96,6 +98,36 @@ export class ReferenceType extends DataType{
         throw ctx.parser.customError("Reference is not a class neither an interface", this.location);
     }
 
+    /**
+     * Returns true if the reference is std.concurrency.Promise
+     */
+    isPromise(ctx: Context): boolean{
+        if((this.baseDecl?.name == "Promise") && (this.baseDecl.parentPackage == "~std.concurrency.Promise")){
+            return true;
+        }
+        else if(this.baseType instanceof ReferenceType){
+            return this.baseType.isPromise(ctx);
+        }
+
+        return false;
+    }
+
+
+    getPromiseType(ctx: Context): DataType | null {
+        if((this.baseDecl?.name == "Promise") && (this.baseDecl.parentPackage == "~std.concurrency.Promise")){
+            // assert we have one type argument
+            if(this.typeArgs.length != 1){
+                throw ctx.parser.customError("Promise type must have one type argument", this.location);
+            }
+            return this.typeArgs[0];
+        }
+        else if(this.baseType instanceof ReferenceType){
+            return this.baseType.getPromiseType(ctx);
+        }
+
+        return null;
+    }
+
 
     to(targetType: new (...args: any[]) => DataType): DataType {
         if(this.baseType == null){
@@ -103,5 +135,13 @@ export class ReferenceType extends DataType{
         }
 
         return this.baseType.to(targetType);
+    }
+
+    allowedNullable(): boolean {
+        if(this.baseType == null){
+            throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
+        }
+
+        return this.baseType.allowedNullable();
     }
 }

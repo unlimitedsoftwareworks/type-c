@@ -38,13 +38,7 @@ export class LetInExpression extends Expression {
         this.variables.forEach(v => v.infer(ctx));
         this.inferredType = this.inExpression.infer(ctx, hint);
 
-        if(hint) {
-            let r = matchDataTypes(ctx, hint, this.inferredType);
-            if(!r.success) {
-                throw ctx.parser.customError(`Type mismatch in let-in expression: ${r.message}`, this.location);
-            }
-        }
-
+        this.checkHint(ctx);
         this.isConstant = this.inExpression.isConstant;
         return this.inferredType;
     }

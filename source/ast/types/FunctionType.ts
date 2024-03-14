@@ -46,4 +46,8 @@ export class FunctionType extends DataType {
     clone(typeMap: {[key: string]: DataType}): FunctionType {
         return new FunctionType(this.location, this.parameters.map(p => p.clone(typeMap)), this.returnType.clone(typeMap));
     }
+
+    allowedNullable(): boolean {
+        return true;
+    }
 }

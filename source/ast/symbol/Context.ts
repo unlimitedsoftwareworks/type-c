@@ -169,6 +169,20 @@ export class Context {
         }
     }
 
+    /**
+     * Sometimes, we could be within a lambda function within a class method, and we need to retrieve the actual method,
+     * hence we use this method
+     */
+    findParentClassMethod(): ClassMethod | null {
+        if(this.owner instanceof ClassMethod) {
+            return this.owner;
+        }
+        if(this.parent) {
+            return this.parent.findParentClassMethod();
+        }
+        return null;
+    }
+
     lookup(name: string): Symbol | null {
         let symbol = this.symbols.get(name);
         if(symbol !== undefined){
@@ -215,7 +229,15 @@ export class Context {
     }
 
     getActiveClass(): ClassType | null {
-        return this.activeClass;
+        if(this.activeClass) {
+            return this.activeClass;
+        }
+        if(this.parent){
+            return this.parent.getActiveClass();
+        }
+        else {
+            return null;
+        }
     }
 
     setActiveProcess(proc: ProcessType | null) {

@@ -21,14 +21,14 @@ export class InterfaceType extends DataType {
     _allMethods: InterfaceMethod[] = [];
 
     // interfaces can only extend from references and not anonymous types
-    superType: ReferenceType[];
+    superTypes: ReferenceType[];
 
     private _resolved: boolean = false;
 
     constructor(location: SymbolLocation, methods: InterfaceMethod[], superType: ReferenceType[] = []) {
         super(location, "interface");
         this.methods = methods;
-        this.superType = superType;
+        this.superTypes = superType;
     }
 
     shortname(): string {
@@ -36,7 +36,7 @@ export class InterfaceType extends DataType {
     }
 
     serialize(): string {
-        let superType = this.superType.map((superType) => superType.serialize()).join(",");
+        let superType = this.superTypes.map((superType) => superType.serialize()).join(",");
         let methods = this.methods.map((method) => method.serialize()).join(",");
         return `@interface{${superType}:${methods}}`
     }
@@ -52,7 +52,7 @@ export class InterfaceType extends DataType {
         
         // make sure all supertypes are resolved
         let superInterfaces: InterfaceType[] = [];
-        this.superType.forEach((superType) => {
+        this.superTypes.forEach((superType) => {
             superType.resolve(ctx);
             let interfaceSuper = superType.dereference();
             if(interfaceSuper == null) {
@@ -180,6 +180,34 @@ export class InterfaceType extends DataType {
         return candidates;
     }
 
+    allowedNullable(): boolean {
+        return true;
+    }
+
+    /**
+     * @returns true if the interface extends std.concurrency.Promise
+     */
+    isPromise(ctx: Context): boolean {
+        for(let i = 0; i < this.superTypes.length; i++){
+            if(this.superTypes[i].isPromise(ctx)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    getPromiseType(ctx: Context): DataType | null {
+        for(let i = 0; i < this.superTypes.length; i++){
+            let promiseType = this.superTypes[i].getPromiseType(ctx);
+            if(promiseType){
+                return promiseType;
+            }
+        }
+
+        return null;
+    
+    }
 }
 
 export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[]){
