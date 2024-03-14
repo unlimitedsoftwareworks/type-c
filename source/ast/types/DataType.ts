@@ -167,6 +167,8 @@ export class DataType {
      */
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         if (this.kind === "reference") {
+            // @ts-ignore
+            this.resolveIfNeeded(ctx);
             return this.dereference().to(ctx, targetType);
         }
         else {

@@ -31,6 +31,8 @@ import { NullableType } from "../ast/types/NullableType";
 import { ProcessType } from "../ast/types/ProcessType";
 import { ReferenceType } from "../ast/types/ReferenceType";
 import { StructType } from "../ast/types/StructType";
+import { UnionType } from "../ast/types/UnionType";
+import { UnsetType } from "../ast/types/UnsetType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
@@ -80,20 +82,9 @@ export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict:
  * @param stack 
  * @returns 
  */
-export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType, strict: boolean = false, stack: string[] = []): TypeMatchResult {
-    // resolve types
-    et.resolve(ctx);
-    dt.resolve(ctx);
-
-    /**
-     * 1. we remove any reference from the types
-     */
-    let t1 = et.dereference();
-    let t2 = dt.dereference();
-
-    if(t1 === null || t2 === null) {
-        return Err("Cannot dereference type");
-    }
+export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType, strict: boolean = false, stack: string[] = []): TypeMatchResult {
+    t1.resolve(ctx);
+    t2.resolve(ctx);
 
     /**
      * 2. We generate a type-key to avoid inifnite recursion and also
@@ -121,7 +112,7 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      */
 
     // case 1: void types
-    if(t1 instanceof VoidType) {
+    if(t1.is(ctx, VoidType)) {
         // make sure t2 is also a void type
         if(!(t2 instanceof VoidType)) {
             return Err(`Type mismatch, expected void, got ${t2.shortname()}`);
@@ -129,12 +120,12 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
     }
 
     // case 2: basic data types (integers, floats and doubles)
-    if(t1 instanceof BasicType) {
-        if(t2 instanceof LiteralIntType) {
-            return matchBasicLiteralIntType(ctx, t1, t2, strict);
+    if(t1.is(ctx, BasicType)) {
+        if(t2.is(ctx, LiteralIntType)) {
+            return matchBasicLiteralIntType(ctx, t1.to(ctx, BasicType) as BasicType, t2.to(ctx, LiteralIntType) as LiteralIntType, strict);
         }
 
-        if(!(t2 instanceof BasicType)) {
+        if(!t2.is(ctx, BasicType)) {
             return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
         }
         
@@ -142,13 +133,13 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
             return Ok();
         }
         else {
-            return matchBasicTypes(ctx, t1, t2, strict);
+            return matchBasicTypes(ctx, t1.to(ctx, BasicType) as BasicType, t2.to(ctx, BasicType) as BasicType, strict);
         }
     }
 
     // case 2: boolean
-    if(t1 instanceof BooleanType) {
-        if(!(t2 instanceof BooleanType)) {
+    if(t1.is(ctx, BooleanType)) {
+        if(!(t2.is(ctx, BooleanType))) {
             return Err(`Type mismatch, expected boolean, got ${t2.shortname()}`);
         }
 
@@ -157,12 +148,12 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
 
     // case 3: array type
 
-    if(t1 instanceof ArrayType) {
-        if(!(t2 instanceof ArrayType)) {
+    if(t1.is(ctx, ArrayType)) {
+        if(!(t2.is(ctx, ArrayType))) {
             return Err(`Type mismatch, expected array, got ${t2.shortname()}`);
         }
 
-        let res = matchDataTypesRecursive(ctx, t1.arrayOf, t2.arrayOf, strict, stack);
+        let res = matchDataTypesRecursive(ctx, (t1.to(ctx, ArrayType) as ArrayType).arrayOf, (t2.to(ctx, ArrayType) as ArrayType).arrayOf, strict, stack);
         if(!res.success) {
             return res;
         }
@@ -170,18 +161,18 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
     }
 
     // case 4: null types, a null can be only assigned a null
-    if(t1 instanceof NullType) {
-        if(!(t2 instanceof NullType)) {
+    if(t1.is(ctx, NullType)) {
+        if(!(t2.is(ctx, NullType))) {
             return Err(`Type mismatch, expected null, got ${t2.shortname()}`);
         }
     }
 
     // case 5: nullable, nullable<T> can be assigned a value of type T or null
-    if(t1 instanceof NullableType) {
-        if(t2 instanceof NullableType) {
-            return matchDataTypesRecursive(ctx, t1.type, t2.type, strict, stack);
+    if(t1.is(ctx, NullableType)) {
+        if(t2.is(ctx, NullableType)) {
+            return matchDataTypesRecursive(ctx, (t1.to(ctx, NullableType) as NullableType).type, (t2.to(ctx, NullableType) as NullableType).type, strict, stack);
         }
-        if(t2 instanceof NullType) {
+        if(t2.is(ctx, NullType)) {
             return Ok();
         }
         return Err(`Type mismatch, expected nullable, got ${t2.shortname()}`);
@@ -193,14 +184,16 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      * if the type allows it. Also if strict is enabled, t2 must be an enum type, and not 
      * an integer.
      */
-    if(t1 instanceof EnumType) {
-        if(t2 instanceof EnumType) {
-            return matchEnumTypes(ctx, t1, t2, strict);
+    if(t1.is(ctx, EnumType)) {
+        if(t2.is(ctx, EnumType)) {
+            return matchEnumTypes(ctx, t1.to(ctx, EnumType) as EnumType, t2.to(ctx, EnumType) as EnumType, strict);
         }
-        if((t2 instanceof LiteralIntType) && (!strict)) {
+        if((t2.is(ctx, LiteralIntType)) && (!strict)) {
             return Ok();
         }
-        return Err(`Type mismatch, expected enum with fields ${t1.fields.map(e => e.name).join(", ")}, got ${t2.shortname()}`);
+
+        let te = t1.to(ctx, EnumType) as EnumType;
+        return Err(`Type mismatch, expected enum with fields ${te.fields.map(e => e.name).join(", ")}, got ${t2.shortname()}`);
     }
 
     /**
@@ -208,7 +201,7 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      * we should not be performing type matching on FFI methods
      * since they are only used to call method and should not be passed around
      */
-    if(t1 instanceof FFIMethodType) {
+    if(t1.is(ctx, FFIMethodType)) {
         throw new Error("Cannot perform type matching on FFI methods");
     }
 
@@ -216,11 +209,11 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      * case 8: FunctionType
      * two functions are compatible if they have the same signature
      */
-    if(t1 instanceof FunctionType) {
-        if(!(t2 instanceof FunctionType)) {
+    if(t1.is(ctx, FunctionType)) {
+        if(!t2.is(ctx, FunctionType)) {
             return Err(`Type mismatch, expected function, got ${t2.shortname()}`);
         }
-        return matchFunctionType(ctx, t1, t2, stack, strict);
+        return matchFunctionType(ctx, t1.to(ctx, FunctionType) as FunctionType, t2.to(ctx, FunctionType) as FunctionType, stack, strict);
     }
 
     /**
@@ -233,24 +226,24 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
     /**
      * case 10: LiteralIntType
      */
-    if(t1 instanceof LiteralIntType) {
-        if(!(t2 instanceof BasicType)) {
+    if(t1.is(ctx, LiteralIntType)) {
+        if(!t2.is(ctx, BasicType)) {
             return Err(`Type mismatch, expected basic type, got ${t2.shortname()}`);
         }
         // TODO: maybe swapping ain't enough
-        return matchBasicLiteralIntType(ctx, t2, t1, strict);
+        return matchBasicLiteralIntType(ctx, t2, t1.to(ctx, LiteralIntType) as LiteralIntType, strict);
     }
 
     /**
      * case 11: InterfaceType,
      * an interface is only compatible with another interface, or a class that implements its methods
      */
-    if(t1 instanceof InterfaceType) {
-        if(t2 instanceof InterfaceType) {
-            return matchInterfaces(ctx, t1, t2, strict, stack);
+    if(t1.is(ctx, InterfaceType)) {
+        if(t2.is(ctx, InterfaceType)) {
+            return matchInterfaces(ctx, t1.to(ctx, InterfaceType) as InterfaceType, t2.to(ctx, InterfaceType) as InterfaceType, strict, stack);
         }
-        if(t2 instanceof ClassType) {
-            return matchInterfaceClass(ctx, t1, t2, strict, stack);
+        if(t2.is(ctx, ClassType)) {
+            return matchInterfaceClass(ctx, t1.to(ctx, InterfaceType) as InterfaceType, t2.to(ctx, ClassType) as ClassType, strict, stack);
         }
         return Err(`Type mismatch, expected interface or class, got ${t2.shortname()}`);
     }
@@ -259,44 +252,39 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      * case 12: ClassType
      * a class is only compatible with another class with the exact same structure both attributes and methods
      */
-    if(t1 instanceof ClassType) {
-        if(!(t2 instanceof ClassType)) {
+    if(t1.is(ctx, ClassType)) {
+        if(!t2.is(ctx, InterfaceType)) {
             return Err(`Type mismatch, expected class, got ${t2.shortname()}`);
         }
         
-        return matchClasses(ctx, t1, t2, strict, stack);
+        return matchClasses(ctx, t1.to(ctx, ClassType) as ClassType, t2.to(ctx, ClassType) as ClassType, strict, stack);
     }
         
     /**
      * case 13: JoinType
-     */
+     * commented because now Join is recognized as an interface thanks to new .is(InterfaceType) and .to(InterfaceType)
+     
     if(t1 instanceof JoinType) {
         // a join type is the same as an interface
         return matchJoinType(ctx, t1, t2, strict, stack);
     }
-
-    /**
-     * case 14: ReferenceType, this is a reference to another type, but since we dereference, we should not be here
-     */
-    if(t1 instanceof ReferenceType) {
-        throw new Error("Reference types should not be here");
-    }
+    */
 
     /**
      * case 15: ProcessType
      * Similar to classes, a process is only compatible with another process with the exact same structure
      */
-    if(t1 instanceof ProcessType) {
-        if(!(t2 instanceof ProcessType)) {
+    if(t1.is(ctx, ProcessType)) {
+        if(!t2.is(ctx, ProcessType)) {
             return Err(`Type mismatch, expected process, got ${t2.shortname()}`);
         }
-        return matchProcesses(ctx, t1, t2, strict, stack);
+        return matchProcesses(ctx, t1.to(ctx, ProcessType) as ProcessType, t2.to(ctx, ProcessType) as ProcessType, strict, stack);
     }
 
     /**
      * case 16: UnionType, unions are only used to model generic type constraints, hence we should not be here
      */
-    if(t1 instanceof ReferenceType) {
+    if(t1 instanceof UnionType) {
         throw new Error("Union types should not be here");
     }
 
@@ -304,12 +292,12 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      * case 17: VariantType, a variant type is only compatible with another variant type with the exact same structure, 
      * or a constructor of the variant type
      */
-    if(t1 instanceof VariantType) {
-        if(t2 instanceof VariantType) {
-            return matchVariants(ctx, t1, t2, strict, stack);
+    if(t1.is(ctx, VariantType)) {
+        if(t2.is(ctx, VariantType)) {
+            return matchVariants(ctx, t1.to(ctx, VariantType) as VariantType,  t2.to(ctx, VariantType) as VariantType, strict, stack);
         }
-        if(t2 instanceof VariantConstructorType) {
-            return matchVariantWithConstructor(ctx, t1, t2, strict, stack);
+        if(t2.is(ctx, VariantConstructorType)) {
+            return matchVariantWithConstructor(ctx, t1.to(ctx, VariantType) as VariantType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
         }
     }
 
@@ -317,26 +305,26 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
      * case 18: VariantConstructorType, a variant constructor is only compatible with another variant constructor
      *  with the exact same structure
      */
-    if(t1 instanceof VariantConstructorType) {
-        if(!(t2 instanceof VariantConstructorType)) {
+    if(t1.is(ctx, VariantConstructorType)) {
+        if(!t2.is(ctx, VariantConstructorType)) {
             return Err(`Type mismatch, expected variant constructor, got ${t2.shortname()}`);
         }
-        return matchVariantConstructors(ctx, t1, t2, strict, stack);
+        return matchVariantConstructors(ctx, t1.to(ctx, VariantConstructorType) as VariantConstructorType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
     }
 
 
-    if(t1 instanceof StructType) {
-        if(!(t2 instanceof StructType)) {
+    if(t1.is(ctx, StructType)) {
+        if(!(t2.is(ctx, StructType))) {
             return Err(`Type mismatch, expected struct, got ${t2.shortname()}`);
         }
-        return matchStructs(ctx, t1, t2, strict, stack);
+        return matchStructs(ctx, t1.to(ctx, StructType) as StructType, t2.to(ctx, StructType) as StructType, strict, stack);
     }
 
     /**
      * case 19: UnsetType
      * an unset type is used for methods who's return type is not set, hence we should not be here
      */
-    if(t1 instanceof ReferenceType) {
+    if(t1 instanceof UnsetType) {
         throw new Error("Unset types should not be here");
     }
 
