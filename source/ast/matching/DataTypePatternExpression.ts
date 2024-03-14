@@ -41,14 +41,14 @@ export class DataTypePatternExpression extends PatternExpression {
          *   - We expect the type to be either an interface or class and without any type parameters
          */
 
-        if(expressionType.is(VariantType)) {
+        if(expressionType.is(ctx, VariantType)) {
             // we expect variant constuctors
-            if(!this.type.is(VariantConstructorType)) {
+            if(!this.type.is(ctx, VariantConstructorType)) {
                 throw ctx.parser.customError(`Cannot perform variant matching on non-variant consturctor type ${this.type.shortname()} against a variant ${expressionType.shortname()}`, this.location);
             }
 
-            let variantType = expressionType.to(VariantType) as VariantType;
-            let variantConstructorType = this.type.to(VariantConstructorType) as VariantConstructorType;
+            let variantType = expressionType.to(ctx, VariantType) as VariantType;
+            let variantConstructorType = this.type.to(ctx, VariantConstructorType) as VariantConstructorType;
 
             if(variantConstructorType._parent != variantType) {
                 throw ctx.parser.customError(`Cannot perform variant matching on variant constructor ${variantConstructorType.shortname()} who is not a subtype of a variant ${variantType.shortname()}`, this.location);
@@ -63,10 +63,10 @@ export class DataTypePatternExpression extends PatternExpression {
                 arg.infer(ctx, variantConstructorType.parameters[index].type);
             });
         }
-        else if (expressionType.is(VariantConstructorType)) {
+        else if (expressionType.is(ctx, VariantConstructorType)) {
             // when we have a variant constructor, we expect the type to be the same as the variant constructor, because
             // matching will be performed on fields of the variant constructor
-            if(!this.type.is(VariantConstructorType)) {
+            if(!this.type.is(ctx, VariantConstructorType)) {
                 throw ctx.parser.customError(`Cannot perform variant matching on non-variant consturctor type ${this.type.shortname()} against a variant constructor ${expressionType.shortname()}`, this.location);
             }
 
@@ -92,12 +92,12 @@ export class DataTypePatternExpression extends PatternExpression {
                 throw ctx.parser.customError(`Cannot perform variant matching on non-variant type ${expressionType.shortname()} with ${this.args.length} arguments`, this.location);
             }
 
-            if(!(expressionType.is(ClassType) || expressionType.is(InterfaceType))) {
+            if(!(expressionType.is(ctx, ClassType) || expressionType.is(ctx, InterfaceType))) {
                 throw ctx.parser.customError(`Cannot perform variant matching on type ${this.type.shortname()} against a non-matching type ${expressionType.shortname()}`, this.location);
             }
 
             // we make sure that this.type is an interface, since we cannot perform `interface is class` safely
-            if(!this.type.is(InterfaceType)) {
+            if(!this.type.is(ctx, InterfaceType)) {
                 throw ctx.parser.customError(`Cannot perform variant matching on class type ${this.type.shortname()} against a non-matching type ${expressionType.shortname()}`, this.location);
             }
         }

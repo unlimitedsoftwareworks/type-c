@@ -34,6 +34,12 @@ export class ReferenceType extends DataType{
         this.typeArgs = typeArgs;
     }
 
+    resolveIfNeeded(ctx: Context){
+        if(this.baseType == null){
+            this.resolve(ctx);
+        }
+    }
+
     resolve(ctx: Context) {
         let fullPkg = this.pkg.join(".");
 
@@ -84,9 +90,7 @@ export class ReferenceType extends DataType{
      * given that the reference is either a class or an interface, otherwise false
      */
     methodExists(ctx: Context, methodName: string): boolean {
-        if(this.baseType == null){
-            throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
-        }
+        this.resolveIfNeeded(ctx);
 
         if(this.baseType instanceof ClassType){
             return this.baseType.methodExists(ctx, methodName);
@@ -102,6 +106,7 @@ export class ReferenceType extends DataType{
      * Returns true if the reference is std.concurrency.Promise
      */
     isPromise(ctx: Context): boolean{
+        this.resolveIfNeeded(ctx);
         if((this.baseDecl?.name == "Promise") && (this.baseDecl.parentPackage == "~std.concurrency.Promise")){
             return true;
         }
@@ -114,6 +119,7 @@ export class ReferenceType extends DataType{
 
 
     getPromiseType(ctx: Context): DataType | null {
+        this.resolveIfNeeded(ctx);
         if((this.baseDecl?.name == "Promise") && (this.baseDecl.parentPackage == "~std.concurrency.Promise")){
             // assert we have one type argument
             if(this.typeArgs.length != 1){
@@ -129,19 +135,13 @@ export class ReferenceType extends DataType{
     }
 
 
-    to(targetType: new (...args: any[]) => DataType): DataType {
-        if(this.baseType == null){
-            throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
-        }
-
-        return this.baseType.to(targetType);
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
+        this.resolveIfNeeded(ctx);
+        return this.baseType!.to(ctx, targetType);
     }
 
-    allowedNullable(): boolean {
-        if(this.baseType == null){
-            throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
-        }
-
-        return this.baseType.allowedNullable();
+    allowedNullable(ctx: Context): boolean {
+        this.resolveIfNeeded(ctx);
+        return this.baseType!.allowedNullable(ctx);
     }
 }

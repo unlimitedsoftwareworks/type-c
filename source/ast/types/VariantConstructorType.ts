@@ -53,7 +53,7 @@ export class VariantConstructorType  extends DataType{
         return `@variant_constructor{name:${this.name},parameters:[${this.parameters.map(f => `${f.name}:${f.type.serialize()}`).join(",")}]}`;
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return true;
     }
 }

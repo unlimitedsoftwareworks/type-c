@@ -39,11 +39,11 @@ export class StructPatternExpression extends PatternExpression {
         // since we capture the fields, we only need to infer once otherwise we might run into run time error?
         if (this._inferred) return;
 
-        if (!expressionType.is(StructType)) {
+        if (!expressionType.is(ctx, StructType)) {
             throw ctx.parser.customError(`Cannot perform struct matching on non-struct type ${expressionType.shortname()}`, this.location);
         }
 
-        let structType = expressionType.to(StructType) as StructType;
+        let structType = expressionType.to(ctx, StructType) as StructType;
 
         for (let i = 0; i < this.fieldPatterns.length; i++) {
             let fieldPattern = this.fieldPatterns[i];

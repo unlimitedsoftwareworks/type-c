@@ -42,7 +42,7 @@ export class InterfaceType extends DataType {
     }
 
    
-    to(targetType: new (...args: any[]) => DataType): DataType {
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         if(targetType === InterfaceType) return this;
         throw new Error(`Cannot cast interface to ${targetType.name}`);
     }
@@ -180,7 +180,7 @@ export class InterfaceType extends DataType {
         return candidates;
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return true;
     }
 

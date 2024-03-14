@@ -64,7 +64,7 @@ export class FunctionCallExpression extends Expression {
          * 4. Variant Constructor
          */
 
-        if(lhsType.is(FunctionType)) {
+        if(lhsType.is(ctx, FunctionType)) {
             let lhsT = lhsType as FunctionType;
             // regular function call
             // check if the number of arguments is correct
@@ -92,7 +92,7 @@ export class FunctionCallExpression extends Expression {
             return this.inferredType;
         }
         // Callable instance
-        else if (lhsType.is(ClassType) || lhsType.is(InterfaceType)) {
+        else if (lhsType.is(ctx, ClassType) || lhsType.is(ctx, InterfaceType)) {
             let lhsT = lhsType as ClassType | InterfaceType;
             let iscallable = isCallable(ctx, lhsT);
 
@@ -119,7 +119,7 @@ export class FunctionCallExpression extends Expression {
         }
 
         // FFI Method
-        else if (lhsType.is(FFIMethodType)) {
+        else if (lhsType.is(ctx, FFIMethodType)) {
             let lhsT = lhsType.dereference() as FFIMethodType
             let interfaceMethod = lhsT.imethod;
 
@@ -150,7 +150,7 @@ export class FunctionCallExpression extends Expression {
             return this.inferredType;
         }
         // Variant Constructor
-        else if (lhsType.is(VariantConstructorType)) {
+        else if (lhsType.is(ctx, VariantConstructorType)) {
             // TODO: implement variant constructor
             throw new Error("Not implemented");
         }

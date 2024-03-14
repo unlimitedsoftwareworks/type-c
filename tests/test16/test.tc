@@ -77,7 +77,7 @@ let zzz: {x: i32, y: {z: {z: i32}}} = {1, {{cud.age}}}
 
 let zzzzz = match zzz {
     {x: 1, y: {z: {z: 1}}} => 1,
-    {x: 1, ...s} => s.ass,
+    {x: 1, ...s} => s.y.z.z,
     {x: 1, y: {z: {z: 3}}} => 3,
     _ => 0
 }

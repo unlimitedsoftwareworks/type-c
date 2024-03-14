@@ -44,7 +44,7 @@ export class IndexAccessExpression extends Expression {
         let lhsType = this.lhs.infer(ctx, null);
 
         // we can apply index access to arrays and classes/interfaces
-        if(lhsType.is(InterfaceType) || lhsType.is(ClassType)) {
+        if(lhsType.is(ctx, InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isIndexable(ctx, lhsT)) {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
@@ -59,8 +59,8 @@ export class IndexAccessExpression extends Expression {
             this.operatorOverloadState.setMethodRef(m);
             this.inferredType = setIndexesHint(ctx, m, this.indexes);
         }
-        else if (lhsType.is(ArrayType)) {
-            let arrayType = lhsType.to(ArrayType) as ArrayType;
+        else if (lhsType.is(ctx, ArrayType)) {
+            let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
             
             // make sure we have exactly one index
             if(this.indexes.length != 1) {

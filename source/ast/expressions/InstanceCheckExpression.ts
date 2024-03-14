@@ -68,35 +68,35 @@ export class InstanceCheckExpression extends Expression {
 
         let lhsType = this.expression.infer(ctx, hint);
         if(!(
-            lhsType.is(VariantConstructorType) ||
-            lhsType.is(VariantType) ||
-            lhsType.is(ClassType) ||
-            lhsType.is(InterfaceType)
+            lhsType.is(ctx, VariantConstructorType) ||
+            lhsType.is(ctx, VariantType) ||
+            lhsType.is(ctx, ClassType) ||
+            lhsType.is(ctx, InterfaceType)
         )) {
             throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
         }
 
-        if(lhsType.is(ClassType)) {
-            if(!(this.type.is(InterfaceType))) {
+        if(lhsType.is(ctx, ClassType)) {
+            if(!(this.type.is(ctx, InterfaceType))) {
                 throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
 
-        if(lhsType.is(InterfaceType)) {
-            if(!(this.type.is(InterfaceType) || this.type.is(ClassType))) {
+        if(lhsType.is(ctx, InterfaceType)) {
+            if(!(this.type.is(ctx, InterfaceType) || this.type.is(ctx, ClassType))) {
                 throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
 
-        if(lhsType.is(VariantConstructorType)) {
-            if(!(this.type.is(VariantType))) {
+        if(lhsType.is(ctx, VariantConstructorType)) {
+            if(!(this.type.is(ctx, VariantType))) {
                 throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
 
         /* unsure about this
-        if(lhsType.is(VariantType)) {
-            if(!(this.type.is(VariantType))) {
+        if(lhsType.is(ctx, VariantType)) {
+            if(!(this.type.is(ctx, VariantType))) {
                 throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }

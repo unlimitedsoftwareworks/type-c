@@ -48,7 +48,7 @@ export class StructType extends DataType {
         return null;
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return true;
     }
 }

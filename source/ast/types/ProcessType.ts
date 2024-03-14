@@ -32,7 +32,7 @@ export class ProcessType extends DataType {
         //return `@process{attributes:${this.attributes.map(a => a.serialize()).join(",")},methods:${this.methods.map(m => m.serialize()).join(",")}}`
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return false;
     }
 }

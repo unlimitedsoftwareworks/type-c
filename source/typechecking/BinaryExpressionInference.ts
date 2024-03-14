@@ -28,7 +28,7 @@ const basicTypePromotionMap: Record<string, Record<string, DataTypeKind>> = {
 
 // addition(+), addition assignment(+=) requires two numeric inputs and returns a numeric output
 function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if(lhs.is(BasicType) && rhs.is(BasicType)){
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -38,7 +38,7 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    else if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+    else if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isAddable(ctx, lhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
@@ -52,7 +52,7 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
 // subtraction(-), substraction assignment (-=) requires two numeric inputs and returns a numeric output
 function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if(lhs.is(BasicType) && rhs.is(BasicType)){
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -62,7 +62,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
         }
     }
 
-    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+    if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isSubable(ctx, lhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
@@ -76,7 +76,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
 
 // multiplication(*), multiplication assignment(*=) requires two numeric inputs and returns a numeric output
 function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if(lhs.is(BasicType) && rhs.is(BasicType)){
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -86,7 +86,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
         }
     }
 
-    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+    if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isMultiplicable(ctx, lhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
@@ -100,7 +100,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
 
 // division(/), division assignment requires two numeric inputs and returns a numeric output
 function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if(lhs.is(BasicType) && rhs.is(BasicType)){
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -110,7 +110,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+    if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isDivisible(ctx, lhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
@@ -124,7 +124,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
 // modulo(%) requires two numeric inputs and returns a numeric output
 function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if(lhs.is(BasicType) && rhs.is(BasicType)){
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -134,7 +134,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
         }
     }
 
-    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+    if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isModable(ctx, lhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
             if(method){
@@ -148,7 +148,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
 
 // less than(<), less or equal(<=), greater than(>), greater or tequal(>=) requires two numeric inputs and returns a bool
 function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if(lhs.is(BasicType) && rhs.is(BasicType)){
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BooleanType(expr.location);
@@ -158,7 +158,7 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    if(lhs.is(ClassType) || lhs.is(InterfaceType)){
+    if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isLt(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === "<")){
             let method = getOperatorOverloadType(ctx, "__lt__", lhs as OverridableMethodType, [rhs]);
             if(method){
@@ -261,7 +261,7 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
         }
     }
 
-    if(lhs.is(BasicType) && rhs.is(BasicType)){ 
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){ 
         // make sure it is not float 
         if(lhs.kind === "f32" || lhs.kind === "f64"){
             throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);

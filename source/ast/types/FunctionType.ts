@@ -47,7 +47,7 @@ export class FunctionType extends DataType {
         return new FunctionType(this.location, this.parameters.map(p => p.clone(typeMap)), this.returnType.clone(typeMap));
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return true;
     }
 }

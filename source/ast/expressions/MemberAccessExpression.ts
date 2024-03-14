@@ -64,8 +64,8 @@ import { Expression } from "./Expression";
         let lhsType = this.left.infer(ctx);
 
         // case 1: array element
-        if(lhsType.is(ArrayType)) {
-            let arrayType = lhsType.to(ArrayType) as ArrayType;
+        if(lhsType.is(ctx, ArrayType)) {
+            let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
             /**
              * Only one of the following are accepeted: length, extend and slice
              */
@@ -108,8 +108,8 @@ import { Expression } from "./Expression";
         }
 
         // case 2: struct field
-        if(lhsType.is(StructType)) {
-            let structType = lhsType.to(StructType) as StructType;
+        if(lhsType.is(ctx, StructType)) {
+            let structType = lhsType.to(ctx, StructType) as StructType;
 
             // make sure field exists
             let field = structType.fields.find(f => f.name === this.right.name);
@@ -124,8 +124,8 @@ import { Expression } from "./Expression";
             return this.inferredType;
         }
         // case 3: class field
-        if(lhsType.is(ClassType)){
-            let classType = lhsType.to(ClassType) as ClassType;
+        if(lhsType.is(ctx, ClassType)){
+            let classType = lhsType.to(ctx, ClassType) as ClassType;
             // make sure attribute
             let field = classType.attributes.find(f => f.name === this.right.name);
             if(!field) {
@@ -138,8 +138,8 @@ import { Expression } from "./Expression";
         }
 
         // case 4: FFI method
-        if(lhsType.is(FFINamespaceType)) {
-            let ffiType = lhsType.to(FFINamespaceType) as FFINamespaceType;
+        if(lhsType.is(ctx, FFINamespaceType)) {
+            let ffiType = lhsType.to(ctx, FFINamespaceType) as FFINamespaceType;
             let method = ffiType.parentFFI.methods.find(m => m.imethod.name === this.right.name);
             if(!method) {
                 throw ctx.parser.customError(`Method ${this.right.name} not found on FFI namespace ${ffiType.shortname()}`, this.location);
@@ -151,8 +151,8 @@ import { Expression } from "./Expression";
         }
 
         // case 5: VariantConstructor parameter
-        if(lhsType.is(VariantConstructorType)) {
-            let variantConstructorType = lhsType.to(VariantConstructorType) as VariantConstructorType;
+        if(lhsType.is(ctx, VariantConstructorType)) {
+            let variantConstructorType = lhsType.to(ctx, VariantConstructorType) as VariantConstructorType;
             let parameter = variantConstructorType.parameters.find(p => p.name === this.right.name);
 
             if(!parameter) {
@@ -166,10 +166,10 @@ import { Expression } from "./Expression";
         }
 
         // the rest of the cases are under MetaType
-        if(lhsType.is(MetaClassType)) {
+        if(lhsType.is(ctx, MetaClassType)) {
             // make sure we are accessing a static field/attribute
-            let metaClassType = lhsType.to(MetaClassType) as MetaClassType;
-            let classType = metaClassType.classType.to(ClassType) as ClassType;
+            let metaClassType = lhsType.to(ctx, MetaClassType) as MetaClassType;
+            let classType = metaClassType.classType.to(ctx, ClassType) as ClassType;
             let field = classType.attributes.find(f => f.name === this.right.name);
             if(!field) {
                 throw ctx.parser.customError(`Field ${this.right.name} not found on class ${classType.shortname()}`, this.location);
@@ -186,7 +186,7 @@ import { Expression } from "./Expression";
             return this.inferredType;
         }
 
-        if(lhsType.is(MetaVariantType)) {
+        if(lhsType.is(ctx, MetaVariantType)) {
             // make sure rhs is a valid constructor
             /**
              * For variant constructor, we have two cases that involves generics:
@@ -197,8 +197,8 @@ import { Expression } from "./Expression";
              * For example Tree<u32>.Leaf<u32> is not allowed
              */
 
-            let metaVariantType = lhsType.to(MetaVariantType) as MetaVariantType;
-            let variantType = metaVariantType.variantType.to(VariantType) as VariantType;
+            let metaVariantType = lhsType.to(ctx, MetaVariantType) as MetaVariantType;
+            let variantType = metaVariantType.variantType.to(ctx, VariantType) as VariantType;
 
             let constructor = variantType.constructors.find(c => c.name === this.right.name);
 
@@ -218,13 +218,13 @@ import { Expression } from "./Expression";
             return this.inferredType;
         }
 
-        if(lhsType.is(MetaEnumType)) {
+        if(lhsType.is(ctx, MetaEnumType)) {
             if(this.right.typeArguments.length > 0) {
                 throw ctx.parser.customError(`Enum ${lhsType.shortname()} is not allowed to have generics`, this.location);
             }
 
-            let metaEnumType = lhsType.to(MetaEnumType) as MetaEnumType;
-            let enumType = metaEnumType.enumType.to(EnumType) as EnumType;
+            let metaEnumType = lhsType.to(ctx, MetaEnumType) as MetaEnumType;
+            let enumType = metaEnumType.enumType.to(ctx, EnumType) as EnumType;
 
             let value = enumType.fields.find(v => v.name === this.right.name);
             if(!value) { 

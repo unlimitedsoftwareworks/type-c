@@ -148,10 +148,10 @@ export class DataType {
      * @param targetType 
      * @returns 
      */
-    is(targetType: new (...args: any[]) => DataType): boolean {
+    is(ctx: Context, targetType: new (...args: any[]) => DataType): boolean {
         // we use the kind attribute to avoid circular dependencies
         if (this.kind === "reference") {
-            return this.dereference().is(targetType);
+            return this.dereference().is(ctx, targetType);
         }
         else {
             return this instanceof targetType;
@@ -165,9 +165,9 @@ export class DataType {
      * Casting is need after call, since it returns a generic type, but is guarentees that the returned type is of the given
      * instance
      */
-    to(targetType: new (...args: any[]) => DataType): DataType {
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         if (this.kind === "reference") {
-            return this.dereference().to(targetType);
+            return this.dereference().to(ctx, targetType);
         }
         else {
             if(!(this instanceof targetType)){
@@ -181,7 +181,7 @@ export class DataType {
      * Returns true if the datatype can be wrapped by a nullable such as X?
      * Otherwise false.
      */
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         // default behavior is to return false
         return false;
     }

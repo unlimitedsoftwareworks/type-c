@@ -26,11 +26,11 @@ export class ArrayPatternExpression extends PatternExpression {
     }
 
     infer(ctx: Context, expressionType: DataType) {
-        if(!expressionType.is(ArrayType)) {
+        if(!expressionType.is(ctx, ArrayType)) {
             throw ctx.parser.customError(`Cannot perform array matching on non-array type ${expressionType.shortname()}`, this.location);
         }
 
-        let arrayElement = (expressionType.to(ArrayType) as ArrayType).arrayOf;
+        let arrayElement = (expressionType.to(ctx, ArrayType) as ArrayType).arrayOf;
 
         for(let i = 0; i < this.elements.length; i++) {
             let pattern = this.elements[i];

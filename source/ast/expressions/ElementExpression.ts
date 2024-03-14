@@ -130,7 +130,7 @@ export class ElementExpression extends Expression {
              * - enum
              */
 
-            if(variable.type.is(ClassType)) {
+            if(variable.type.is(ctx, ClassType)) {
                 // type arguments are not always needed, for example when accessing non-generic method from generic class
                 // so we insert them but not validate them
                 this.inferredType = new MetaClassType(this.location, variable.type, this.typeArguments);
@@ -139,7 +139,7 @@ export class ElementExpression extends Expression {
                 return this.inferredType;
             }
 
-            if(variable.type.is(InterfaceType)) {
+            if(variable.type.is(ctx, InterfaceType)) {
                 // no generics are allowed here, so we make sure we have none
                 if(this.typeArguments.length > 0) {
                     throw ctx.parser.customError(`Interface ${variable.type.shortname()} is not allowed to have generics`, this.location);
@@ -149,7 +149,7 @@ export class ElementExpression extends Expression {
                 return this.inferredType;
             }
 
-            if(variable.type.is(EnumType)) {
+            if(variable.type.is(ctx, EnumType)) {
                 // make sure we have no generics
                 if(this.typeArguments.length > 0) {
                     throw ctx.parser.customError(`Enum ${variable.type.shortname()} is not allowed to have generics`, this.location);
@@ -159,7 +159,7 @@ export class ElementExpression extends Expression {
                 return this.inferredType;
             }
 
-            if(variable.type.is(VariantType)) {
+            if(variable.type.is(ctx, VariantType)) {
                 // generics are allowed here however
                 this.inferredType = new MetaVariantType(this.location, variable.type, this.typeArguments);
                 this.isConstant = false;

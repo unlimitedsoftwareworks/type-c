@@ -48,7 +48,7 @@ export class IndexSetExpression extends Expression {
          * Same as index access, index set is applicable to arrays and classes/interfaces which implement the __index_set__ method
          */
 
-        if(lhsType.is(InterfaceType) || lhsType.is(ClassType)) {
+        if(lhsType.is(ctx,InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isIndexSettable(ctx, lhsT)) {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
@@ -64,8 +64,8 @@ export class IndexSetExpression extends Expression {
             let valueType = this.value.infer(ctx, m.header.returnType);
             this.inferredType = setIndexesSetHint(ctx, m, this.indexes);
         }
-        else if (lhsType.is(ArrayType)) {
-            let arrayType = lhsType.to(ArrayType) as ArrayType;
+        else if (lhsType.is(ctx, ArrayType)) {
+            let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
             let valueType = this.value.infer(ctx, arrayType.arrayOf);
             this.inferredType = valueType;
 

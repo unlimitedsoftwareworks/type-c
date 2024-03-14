@@ -38,12 +38,12 @@ export class NamedStructConstructionExpression extends Expression {
 
         if (hint) {
             // make sure the hint is a struct
-            if(!hint.is(StructType)){ 
+            if(!hint.is(ctx, StructType)){ 
                 throw ctx.parser.customError(`Cannot create a named struct from a non-struct type ${hint.shortname()}`, this.location);
             }
 
             // the hint may not contain all the fields present in the name struct construction
-            let structHint = hint.to(StructType) as StructType;
+            let structHint = hint.to(ctx, StructType) as StructType;
             this.inferredType = new StructType(this.location, this.fields.map((field) => new StructField(field.location, field.name, field.value.infer(ctx, structHint.getFieldTypeByName(field.name)))));
 
             let r = matchDataTypes(ctx, hint, this.inferredType);

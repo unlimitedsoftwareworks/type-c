@@ -165,9 +165,9 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
 
     function findCommonSupertypeOrCompatibleType(ctx: Context, t1: DataType, t2: DataType): DataType | null {
         // case 1: two variant constructors, make sure they have the same parent and return the parent
-        if(t1.is(VariantConstructorType) && t2.is(VariantConstructorType)) {
-            let e1 = t1.dereference() as VariantConstructorType;
-            let e2 = t2.dereference() as VariantConstructorType;
+        if(t1.is(ctx, VariantConstructorType) && t2.is(ctx, VariantConstructorType)) {
+            let e1 = t1.to(ctx, VariantConstructorType) as VariantConstructorType;
+            let e2 = t2.to(ctx, VariantConstructorType) as VariantConstructorType;
 
             if(e1._parent === e2._parent) {
                 return e1._parent;
@@ -177,9 +177,9 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             }
         }
 
-        if(t1.is(StructType) && t2.is(StructType)) {
-            let e1 = t1.dereference() as StructType;
-            let e2 = t2.dereference() as StructType;
+        if(t1.is(ctx, StructType) && t2.is(ctx, StructType)) {
+            let e1 = t1.to(ctx, StructType) as StructType;
+            let e2 = t2.to(ctx, StructType) as StructType;
 
             // find the common fields
             let e1Fields = e1.fields.map(f => f.name);
@@ -216,9 +216,9 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             return new StructType(ctx.location, commonFieldsTypes);
         }
 
-        if((t1.is(InterfaceType) && t2.is(InterfaceType)) || (t1.is(ClassType) && t2.is(InterfaceType)) || (t1.is(InterfaceType) && t2.is(ClassType))) {
-            let et1 = t1.to(InterfaceType) as InterfaceType;
-            let et2 = t2.to(InterfaceType) as InterfaceType;
+        if((t1.is(ctx, InterfaceType) && t2.is(ctx, InterfaceType)) || (t1.is(ctx, ClassType) && t2.is(ctx, InterfaceType)) || (t1.is(ctx, InterfaceType) && t2.is(ctx, ClassType))) {
+            let et2 = t2.to(ctx, InterfaceType) as InterfaceType;
+            let et1 = t1.to(ctx, InterfaceType) as InterfaceType;
 
             if (et1.methods.length === 0 || et2.methods.length === 0) {
                 return null;

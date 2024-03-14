@@ -145,9 +145,9 @@ export class ClassType extends DataType {
                 }
 
                 // 2. must return void
-                if(!this.methods[i].imethod.header.returnType.is(VoidType)) {
+                if(!this.methods[i].imethod.header.returnType.is(ctx, VoidType)) {
                     // maybe it is unset?
-                    if(this.methods[i].imethod.header.returnType.is(UnsetType)) {
+                    if(this.methods[i].imethod.header.returnType.is(ctx, UnsetType)) {
                         this.methods[i].imethod.header.returnType = new VoidType(this.methods[i].location);
                     }
                     else {
@@ -356,7 +356,7 @@ export class ClassType extends DataType {
         return index;
     }
 
-    to(targetType: new (...args: any[]) => DataType): DataType {
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         if(targetType === InterfaceType){
             let methods: InterfaceMethod[] = [];
             for(const method of this.methods) {
@@ -375,7 +375,7 @@ export class ClassType extends DataType {
         throw new Error(`Cannot convert class to ${targetType.name}`);
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return true;
     }
 

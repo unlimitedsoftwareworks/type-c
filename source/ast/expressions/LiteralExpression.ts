@@ -378,7 +378,7 @@ export class NullLiteralExpression extends LiteralExpression {
 
         // make sure that the hint is either a nullable or null.
         if(hint !== null){
-            if(!((hint.is(NullType)) || (hint.is(NullableType)))) {
+            if(!((hint.is(ctx, NullType)) || (hint.is(ctx, NullableType)))) {
                 ctx.parser.customError("Expected a nullable or null type", this.location);
             }
         }

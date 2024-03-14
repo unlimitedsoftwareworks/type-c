@@ -36,7 +36,7 @@ export class ArrayType extends DataType {
         return `@array{${this.arrayOf.serialize()}`;
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return false;
     }
 }

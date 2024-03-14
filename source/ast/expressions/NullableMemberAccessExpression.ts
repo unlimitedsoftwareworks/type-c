@@ -44,12 +44,12 @@ import { Expression } from "./Expression";
         let leftType = this.left.infer(ctx, null);
 
         // we have to make sure that leftType is nullable
-        if(!leftType.is(NullableType)) {
+        if(!leftType.is(ctx, NullableType)) {
             throw ctx.parser.customError(`Cannot null-access member of non-nullable type ${leftType.shortname()}`, this.location);
         }
 
         // get the actual type
-        leftType = (leftType.to(NullableType) as NullableType).type;
+        leftType = (leftType.to(ctx, NullableType) as NullableType).type;
 
         /** 
          * Only the following datatypes can be nullables:
@@ -62,8 +62,8 @@ import { Expression } from "./Expression";
          * 7. ProcessType
          */
         
-        if(leftType.is(ClassType)) {
-            let classType = leftType.to(ClassType) as ClassType;
+        if(leftType.is(ctx, ClassType)) {
+            let classType = leftType.to(ctx, ClassType) as ClassType;
             
             // check if the attribute exists
             let attribute = classType.attributes.find(a => a.name == this.right.name);
@@ -72,7 +72,7 @@ import { Expression } from "./Expression";
             }
 
             // we also need to make sure that the attribute is nullable
-            if(!attribute.type.allowedNullable()) {
+            if(!attribute.type.allowedNullable(ctx)) {
                 throw ctx.parser.customError(`Attribute ${this.right.name} is not nullable in class ${classType}`, this.location);
             }
 
@@ -82,8 +82,8 @@ import { Expression } from "./Expression";
             return this.inferredType;
         }
 
-        else if (leftType.is(StructType)) {
-            let structType = leftType.to(StructType) as StructType;
+        else if (leftType.is(ctx, StructType)) {
+            let structType = leftType.to(ctx, StructType) as StructType;
 
             // check if the field exists
             let field = structType.fields.find(f => f.name == this.right.name);
@@ -92,7 +92,7 @@ import { Expression } from "./Expression";
             }
 
             // we also need to make sure that the field is nullable
-            if(!field.type.allowedNullable()) {
+            if(!field.type.allowedNullable(ctx)) {
                 throw ctx.parser.customError(`Field ${this.right.name} is not nullable in struct ${structType.shortname()}`, this.location);
             }
 
@@ -102,8 +102,8 @@ import { Expression } from "./Expression";
             return this.inferredType;
         }
 
-        else if (leftType.is(VariantConstructorType)) {
-            let variantConstructorType = leftType.to(VariantConstructorType) as VariantConstructorType;
+        else if (leftType.is(ctx, VariantConstructorType)) {
+            let variantConstructorType = leftType.to(ctx, VariantConstructorType) as VariantConstructorType;
 
             let parameter = variantConstructorType.parameters.find(p => p.name == this.right.name);
 
@@ -112,7 +112,7 @@ import { Expression } from "./Expression";
             }
 
             // we also need to make sure that the parameter can be nullable
-            if(!parameter.type.allowedNullable()) {
+            if(!parameter.type.allowedNullable(ctx)) {
                 throw ctx.parser.customError(`Parameter ${this.right.name} is not nullable in variant constructor ${variantConstructorType.shortname()}`, this.location);
             }
 

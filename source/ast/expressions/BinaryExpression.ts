@@ -89,7 +89,7 @@ export class BinaryExpression extends Expression {
                 ctx.parser.customError("Cannot assign to this", this.location);
             }
 
-            let canAssign = isLHSAssignable(this.left);
+            let canAssign = isLHSAssignable(ctx, this.left);
             if(!canAssign.success) {
                 ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
             }
@@ -108,7 +108,7 @@ export class BinaryExpression extends Expression {
     }
 }
 
-export function isLHSAssignable(lhs: Expression): TypeMatchResult{
+export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
     if(lhs.isConstant && !lhs.inferredType?.isAssignable()) return Err("Cannot modify the state of a constant expression/variable");
     
     if(lhs instanceof ElementExpression) {
@@ -132,14 +132,14 @@ export function isLHSAssignable(lhs: Expression): TypeMatchResult{
         }
         case "member_access":{
             let mem = lhs as MemberAccessExpression;
-            if(mem.left.inferredType!.is(ArrayType)){
+            if(mem.left.inferredType!.is(ctx, ArrayType)){
                 return Err("Cannot assign to static array fields or methods");
             }
 
-            return isLHSAssignable((lhs as MemberAccessExpression).left);
+            return isLHSAssignable(ctx, (lhs as MemberAccessExpression).left);
         }
         case "index_access":{
-            return isLHSAssignable((lhs as IndexAccessExpression).lhs);
+            return isLHSAssignable(ctx, (lhs as IndexAccessExpression).lhs);
         }
         case "unary_op":{
             return Err("Cannot assign to unary expression");

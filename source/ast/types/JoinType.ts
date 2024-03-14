@@ -82,7 +82,7 @@ export class JoinType extends DataType {
         return `@join{lhs:${this.left.serialize()},rhs:${this.right.serialize()}}`
     }
 
-    is(targetType: new (...args: any[]) => DataType): boolean {
+    is(ctx: Context, targetType: new (...args: any[]) => DataType): boolean {
         if(targetType === JoinType) return true;
         if(targetType === InterfaceType) return true;
         return false;
@@ -96,10 +96,9 @@ export class JoinType extends DataType {
         return this.interfaceType!;
     }
 
-    allowedNullable(): boolean {
+    allowedNullable(ctx: Context): boolean {
         return true;
     }
-
     
     /**
      * Returns true if the reference type has a method with the given name

@@ -33,11 +33,11 @@ export class ArrayConstructionExpression extends Expression {
             ctx.parser.customError("Cannot infer an empty array without hint", this.location);
         }
 
-        if(hint && !hint.is(ArrayType)){ 
+        if(hint && !hint.is(ctx, ArrayType)){ 
             ctx.parser.customError(`Type missmatch, ${hint.shortname()} expected, but array was found`, this.location);
         }
 
-        let baseHint = hint?hint.to(ArrayType) as ArrayType:null;
+        let baseHint = hint?hint.to(ctx, ArrayType) as ArrayType:null;
 
         // infer all elements
         let elementTypes: DataType[] = [];

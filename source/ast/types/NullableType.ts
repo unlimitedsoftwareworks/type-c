@@ -38,8 +38,8 @@ export class NullableType extends DataType {
         return `@nullable{type:${this.type.serialize()}}`
     }
 
-    to(targetType: new (...args: any[]) => DataType): DataType {
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         if(targetType === NullableType) return this;
-        return this.type.to(targetType);
+        return this.type.to(ctx, targetType);
     }
 }

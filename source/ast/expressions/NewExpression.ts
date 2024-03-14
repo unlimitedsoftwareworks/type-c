@@ -55,9 +55,9 @@ export class NewExpression extends Expression {
         /**
          * New expression is used to spawn a new class or process
          */
-        if(this.type.is(ClassType)) {
+        if(this.type.is(ctx, ClassType)) {
             // now we need to find init method matching the arguments given
-            let classType = this.type.to(ClassType) as ClassType;
+            let classType = this.type.to(ctx, ClassType) as ClassType;
 
             let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null)), null);
 
@@ -83,7 +83,7 @@ export class NewExpression extends Expression {
             this.isConstant = false;
             return this.inferredType;
         }
-        else if (this.type.is(ProcessType)) {
+        else if (this.type.is(ctx, ProcessType)) {
             throw ctx.parser.customError(`Feature is not yet implemented`, this.location);
         }
         else {
