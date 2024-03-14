@@ -11,12 +11,12 @@ export class MetaType extends DataType {
 
 export class MetaClassType extends MetaType {
     classType: DataType;
-    genericTypes: DataType[];
+    typeArguments: DataType[];
 
     constructor(location: SymbolLocation, classType: DataType, genericTypes: DataType[] = []) {
         super(location, "meta_class");
         this.classType = classType;
-        this.genericTypes = genericTypes;
+        this.typeArguments = genericTypes;
     }
 
     serialize(): string {
@@ -47,12 +47,12 @@ export class MetaInterfaceType extends MetaType {
 
 export class MetaVariantType extends MetaType {
     variantType: DataType;
-    genericTypes: DataType[];
+    typeArguments: DataType[];
 
     constructor(location: SymbolLocation, variantType: DataType, genericTypes: DataType[] = []) {
         super(location, "meta_variant");
         this.variantType = variantType;
-        this.genericTypes = genericTypes;
+        this.typeArguments = genericTypes;
     }
 
     serialize(): string {
@@ -66,12 +66,12 @@ export class MetaVariantType extends MetaType {
 
 export class MetaVariantConstructorType extends MetaType {
     variantConstructorType: DataType;
-    genericTypes: DataType[];
+    typeArguments: DataType[];
 
     constructor(location: SymbolLocation, variantConstructorType: DataType, genericTypes: DataType[] = []) {
         super(location, "meta_variant_constructor");
         this.variantConstructorType = variantConstructorType;
-        this.genericTypes = genericTypes;
+        this.typeArguments = genericTypes;
     }
 
     serialize(): string {

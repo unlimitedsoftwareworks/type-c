@@ -48,3 +48,26 @@ beta[1] = 5
 let f: fn(x: i32, y: i32) -> i32 = fn(x: i32, y: i32) -> i32 {
     return x + y
 }
+
+let y1 = {x: 1, y: 2}
+
+let y2 = y1.y
+
+type Color = enum {
+    Red, 
+    Green,
+    Blue
+}
+
+let c1 = Color.Red
+
+
+type ConcreteUserData = class {
+    let age: u32
+
+    fn init() {
+        this.age = 0
+    }
+}
+
+let cud = new ConcreteUserData()

@@ -22,7 +22,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { EnumType } from "../types/EnumType";
-import { FFINamespaceType } from "../types/FFINameSpaceType";
+import { FFINamespaceType } from "../types/FFINamespaceType";
 import { InterfaceType } from "../types/InterfaceType";
 import { MetaClassType, MetaEnumType, MetaInterfaceType, MetaVariantType } from "../types/MetaTypes";
 import { VariantType } from "../types/VariantType";
@@ -106,6 +106,10 @@ export class ElementExpression extends Expression {
                 }   
             }
 
+            if(this.typeArguments.length > 0) {
+                throw ctx.parser.customError(`Function argument ${variable.name} is not allowed to have generics`, this.location);
+            }
+
             this.isConstant = !variable.isMutable;
             return this.inferredType;
         }
@@ -121,6 +125,10 @@ export class ElementExpression extends Expression {
             // we make sure we have no hint
             if(hint) {
                 throw ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a MetaType`, this.location);
+            }
+
+            if(this.typeArguments.length > 0) {
+                throw ctx.parser.customError(`Type ${variable.name} is not allowed to have generics`, this.location);
             }
 
             /**
@@ -159,6 +167,7 @@ export class ElementExpression extends Expression {
                 }
 
                 this.inferredType = new MetaEnumType(this.location, variable.type);
+                return this.inferredType;
             }
 
             if(variable.type.is(VariantType)) {
