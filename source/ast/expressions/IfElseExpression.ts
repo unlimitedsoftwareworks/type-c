@@ -32,7 +32,7 @@ export class IfElseExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
-        if(this.inferredType) return this.inferredType;
+        //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         // step 1: infer the conditions, as boolean

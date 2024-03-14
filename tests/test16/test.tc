@@ -1,65 +1,3 @@
-/*
-
-type X = u32
-
-type User = struct {
-    age: X
-}
-
-type UserData = interface {
-    fn getData() -> u32
-    fn getData(x: i32) -> i32
-
-}
-
-type ConcreteUserData = class {
-    let age: u32
-
-    fn init() {
-        this.age = 0
-    }
-}
-
-let x: UserData? = null
-*/
-
-fn sum(x: i32, y: i32) -> i32 {
-    return x + y
-}
-
-type CustomInt = u32
-
-let z: i32  = 1
-let y: i32 = z as i32
-let x: i32 = sum(x, y)
-
-let alpha: {x: i32, y: i32} = 
-    if x == y => {x: 13, y: 15} 
-    else         {x: 8, y: 30,  z: 0}
-
-let beta: u32[] = [1, 2, 3]
-
-let t = beta[0]
-beta[1] = 5
-
-//type CustomArray<T> = T[]
-//let gamma: CustomArray<u32> = [1, 2, 3]
-
-let f: fn(x: i32, y: i32) -> i32 = fn(x: i32, y: i32) -> i32 {
-    return x + y
-}
-
-let y1 = {x: 1, y: 2}
-
-let y2 = y1.y
-
-type Color = enum {
-    Red, 
-    Green,
-    Blue
-}
-
-let c1 = Color.Red
 
 
 type ConcreteUserData = class {
@@ -68,16 +6,12 @@ type ConcreteUserData = class {
     fn init() {
         this.age = 1
     }
+
+    fn cool(x: i32) -> i32[] {
+        return [x, x+1]
+    }
 }
 
 let cud = new ConcreteUserData()
 
-// FIX: w
-let zzz: {x: i32, y: {z: {z: i32}}} = {1, {{cud.age}}}
-
-let zzzzz = match zzz {
-    {x: 1, y: {z: {z: 1}}} => 1,
-    {x: 1, ...s} => s.y.z.z,
-    {x: 1, y: {z: {z: 3}}} => 3,
-    _ => 0
-}
+let z: interface { fn cool(x: i32) -> i32[] } = cud

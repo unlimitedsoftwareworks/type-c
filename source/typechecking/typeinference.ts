@@ -138,15 +138,7 @@ export function inferFunctionHeader(
                 ctx.parser.customError(`${type} is required to return a value`, body.location);
             }
 
-            let returnTypes = returnStatements.map((ret) => ret.stmt.getReturnType(ret.ctx));
-
-            let allMatch = findCompatibleTypes(ctx, returnTypes);
-
-            if(allMatch === null) {
-                ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
-            }
-
-            header.returnType = allMatch;
+            let returnTypes = returnStatements.map((ret) => ret.stmt.returnExpression?.infer(ret.ctx, definedReturnType));
         }
         else {
             let retType = expr!.infer(ctx, definedReturnType);

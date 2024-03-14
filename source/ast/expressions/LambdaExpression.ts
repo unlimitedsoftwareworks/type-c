@@ -49,7 +49,7 @@ export class LambdaExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
-        if(this.inferredType) return this.inferredType;
+        //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         this.inferredType = this.header;

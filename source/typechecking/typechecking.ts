@@ -166,6 +166,7 @@ export function matchDataTypesRecursive(ctx: Context, et: DataType, dt: DataType
         if(!res.success) {
             return res;
         }
+        return Ok();
     }
 
     // case 4: null types, a null can be only assigned a null
