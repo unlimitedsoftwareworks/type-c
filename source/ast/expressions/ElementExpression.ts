@@ -17,6 +17,7 @@ import { DeclaredType } from "../symbol/DeclaredType";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { FunctionArgument } from "../symbol/FunctionArgument";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { VariablePattern } from "../symbol/VariablePattern";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { EnumType } from "../types/EnumType";
@@ -89,6 +90,16 @@ export class ElementExpression extends Expression {
             }
 
             this.isConstant = !variable.isMutable;
+            return this.inferredType;
+        }
+        else if (variable instanceof VariablePattern) {
+            // we do not allow generics here
+            if(this.typeArguments.length > 0) {
+                throw ctx.parser.customError(`Variable pattern ${variable.name} is not allowed to have generics`, this.location);
+            }
+            this.inferredType = variable.type;
+            this.checkHint(ctx);
+            this.isConstant = false;
             return this.inferredType;
         }
         else if (variable instanceof DeclaredFFI){

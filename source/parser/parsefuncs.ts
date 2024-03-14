@@ -1854,9 +1854,20 @@ function parseMatchPattern(parser: Parser, ctx: Context, parentType: "array"|"st
     }
     if (lexeme.type === "{") {
         parser.accept();
+        let remaining: StructVariablePatternExpression | null = null;
         let fields = parseMatchPatternStructFields(parser, ctx);
+        let tok = parser.peek();
+        if(tok.type !== "}"){
+            parser.reject();
+            parser.expect("...");
+            let id = parser.expect("identifier");
+            remaining = new StructVariablePatternExpression(id.location, id.value);
+        }
+        else {
+            parser.reject();
+        }
         parser.expect("}");
-        return new StructPatternExpression(loc, fields);
+        return new StructPatternExpression(loc, fields, remaining);
     }
     else if (lexeme.isLiteral()) {
         parser.accept();
@@ -1887,10 +1898,6 @@ function parseMatchPattern(parser: Parser, ctx: Context, parentType: "array"|"st
         if (parentType == "array") {
             let arrayVar = new ArrayVariablePatternExpression(variable.location, variable.name); 
             return arrayVar;
-        }
-        else if (parentType == "struct") {
-            let structVar = new StructVariablePatternExpression(variable.location, variable.name); 
-            return structVar;
         }
 
         return variable;
@@ -1956,18 +1963,26 @@ function parseMatchPatternStructFields(parser: Parser, ctx: Context): StructFiel
     let canLoop = true;
     let fields: StructFieldPattern[] = [];
     while (canLoop) {
-        let id = parser.expect("identifier");
-        parser.expect(":");
-        let pattern = parseMatchPattern(parser, ctx, "struct");
-        fields.push({ name: id.value, pattern: pattern });
-        let token = parser.peek();
-        canLoop = token.type === ",";
-        if (canLoop) {
+        let tok = parser.peek();
+        if(tok.type === "identifier") {
             parser.accept();
+            parser.expect(":");
+            let pattern = parseMatchPattern(parser, ctx, "struct");
+            fields.push({ name: tok.value, pattern: pattern });
+            let token = parser.peek();
+            canLoop = token.type === ",";
+            if (canLoop) {
+                parser.accept();
+            }
+            else {
+                parser.reject();
+            }
         }
         else {
             parser.reject();
+            canLoop = false;
         }
+        
     }
     return fields;
 }

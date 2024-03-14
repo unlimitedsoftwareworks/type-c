@@ -10,10 +10,12 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { findCompatibleTypes } from "../../typechecking/typeinference";
 import { PatternExpression } from "../matching/PatternExpression";
 import { BlockStatement } from "../statements/BlockStatement";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { BooleanType } from "../types/BooleanType";
 import { DataType } from "../types/DataType";
 import { Expression } from "./Expression";
 
@@ -32,6 +34,7 @@ export class MatchCaseExpression {
     pattern: PatternExpression;
 
     _inferred: boolean = false;
+    _inferredType: DataType | null = null;
 
     constructor(location: SymbolLocation, context: Context, pattern: PatternExpression, type: MatchCaseType, expression: Expression | null, block: BlockStatement | null, guard: Expression | null) {
         this.type = type;
@@ -45,12 +48,29 @@ export class MatchCaseExpression {
 
     /**
      * Infers the pattern match case, with the given expression type that is being matched.
+     * also we infer using this.context, which is the context of the match expression
      * @param ctx 
      * @param expressionType 
      */
-    infer(ctx: Context, expressionType: DataType) {
-        if (this._inferred) return;
-        this.pattern
+    infer(ctx: Context, expressionType: DataType): DataType | null{
+        if (this._inferred) return this._inferredType;
+        this.pattern.infer(this.context, expressionType);
+
+        if(this.guard) {
+            this.guard.infer(this.context, new BooleanType(this.location));
+        }
+
+        if(this.expression) {
+            this._inferred = true;
+            this._inferredType = this.expression.infer(this.context);
+            return this._inferredType;
+        }
+        else if (this.block) {
+            this.block.infer(this.context);
+        }
+
+        this._inferred = true;
+        return null;
     }
 }
 
@@ -62,5 +82,25 @@ export class MatchExpression extends Expression {
         super(location, "match");
         this.expression = expression;
         this.cases = cases;
+    }
+
+    infer(ctx: Context, hint: DataType | null): DataType {
+        if(this.inferredType) return this.inferredType;
+        this.setHint(hint);
+
+        let type = this.expression.infer(ctx);
+        type.resolve(ctx);
+
+        let matchExprsTypes = this.cases.map(c => c.infer(ctx, type)!);
+        let res = findCompatibleTypes(ctx, matchExprsTypes);
+
+        if(!res) {
+            throw ctx.parser.customError(`No common type found for match expression`, this.location);
+        }
+
+        this.isConstant = false;
+        this.inferredType = res;
+        this.checkHint(ctx);
+        return this.inferredType;
     }
 }
