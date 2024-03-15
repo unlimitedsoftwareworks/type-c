@@ -50,7 +50,7 @@ export class ForStatement extends Statement {
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): ForStatement {
-        let newContext = this.context.clone(ctx, typeMap);
+        let newContext = this.context.clone(ctx);
 
         let newInitializers = this.initializers.map(s => s.clone(typeMap, newContext));
         let newCondition = this.condition ? this.condition.clone(typeMap, newContext) : null;

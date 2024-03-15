@@ -11,6 +11,7 @@
  */
 
 import { DataType } from "../types/DataType";
+import { GenericType } from "../types/GenericType";
 import { Context } from "./Context";
 import { Symbol } from "./Symbol";
 import { SymbolLocation } from "./SymbolLocation";
@@ -18,12 +19,12 @@ import { SymbolLocation } from "./SymbolLocation";
 export class DeclaredType extends Symbol {
     name: string;
     type: DataType;
-    genericParameters: DataType[];
+    genericParameters: GenericType[];
     parentPackage: string;
 
     parentContext: Context;
 
-    constructor(location: SymbolLocation, parentContext: Context, name: string, type: DataType, genericParameters: DataType[] = [], parentPackage: string){
+    constructor(location: SymbolLocation, parentContext: Context, name: string, type: DataType, genericParameters: GenericType[] = [], parentPackage: string){
         super(location, "type_declaration", name);
         this.name = name;
         this.type = type;

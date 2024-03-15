@@ -112,7 +112,7 @@ export class DeclaredFunction extends Symbol {
 
         return newM;
         */
-        let newContext = this.context.clone(ctx, typeMap);
+        let newContext = this.context.clone(ctx);
         let newM = new DeclaredFunction(this.location, newContext, this.prototype.clone(typeMap), null, null);
         newM.declStatement = this.declStatement;
         newM.expression = this.expression;

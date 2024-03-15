@@ -16,6 +16,7 @@ import { Context } from "../symbol/Context";
 import { DeclaredType } from "../symbol/DeclaredType";
 import { ClassType } from "./ClassType";
 import { InterfaceType } from "./InterfaceType";
+import { buildGenericsMaps } from "../../typechecking/typeinference";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]
@@ -57,10 +58,20 @@ export class ReferenceType extends DataType{
             throw ctx.parser.customError(`Type ${fullPkg} requires ${type.genericParameters.length} type arguments [${type.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
         }
 
-        // TODO: clone!
-        this.baseType = type.type;
-        this.baseType.resolve(ctx);
-        this.baseDecl = type;
+
+        if(type.genericParameters.length === 0){
+            this.baseType = type.type;
+            this.baseType.resolve(ctx);
+            this.baseDecl = type;
+        }
+        else {
+            // we have to clone the original type
+            let map = buildGenericsMaps(ctx, type.genericParameters, this.typeArgs);
+            this.baseType = type.type.clone(map);
+            this.baseType.resolve(ctx);
+            this.baseDecl = type;
+        }
+        
     }
 
     dereference(): DataType {

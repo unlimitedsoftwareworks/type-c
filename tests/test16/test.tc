@@ -12,4 +12,8 @@ type ConcreteUserData<T> = class {
     }
 }
 
-let cud = new ConcreteUserData()
+let cud = new ConcreteUserData<u32>()
+
+let cud2 = new ConcreteUserData<f64>()
+
+let z = [cud.cool(), cud2.cool()]

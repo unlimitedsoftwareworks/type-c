@@ -266,8 +266,8 @@ export class Context {
      * Clones current context, clones the active symbols too,
      * requires a parent scope, so we do not need to clone parents recursively
      */
-    clone(parent: Context, genericsTypeMap: {[key: string]: DataType} = {}): Context {
-        let newContext = new Context(this.location, this.parser, parent, this.env);
+    clone(parent: Context | null): Context {
+        let newContext = new Context(this.location, this.parser, parent || this.parent, this.env);
 
         /**
          * TODO: check if we need to clone the symbols, or if we can just reference them
