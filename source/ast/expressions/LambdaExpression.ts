@@ -59,4 +59,9 @@ export class LambdaExpression extends Expression {
         this.isConstant = false;
         return this.inferredType;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): LambdaExpression{
+        return new LambdaExpression(this.location, ctx, this.header.clone(typeMap), this.body?.clone(typeMap, ctx) || null, this.expression?.clone(typeMap, ctx) || null);
+    }
 }

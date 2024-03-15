@@ -104,7 +104,11 @@ export class BinaryExpression extends Expression {
         }
 
         return this.inferredType;
+    }
 
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): BinaryExpression{
+        return new BinaryExpression(this.location, this.left.clone(typeMap, ctx), this.right.clone(typeMap, ctx), this.operator);
     }
 }
 

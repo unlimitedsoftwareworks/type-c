@@ -87,4 +87,9 @@ export class IndexSetExpression extends Expression {
         this.checkHint(ctx);
         return this.inferredType;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): IndexSetExpression {
+        return new IndexSetExpression(this.location, this.lhs.clone(typeMap, ctx), this.indexes.map(e => e.clone(typeMap, ctx)), this.value.clone(typeMap, ctx));
+    }
 }

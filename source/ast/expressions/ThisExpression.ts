@@ -55,4 +55,8 @@ export class ThisExpression extends Expression {
             throw ctx.parser.customError(`'this' can only be used within a class or process`, this.location);
         }
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ThisExpression {
+        return new ThisExpression(this.location);
+    }
 }

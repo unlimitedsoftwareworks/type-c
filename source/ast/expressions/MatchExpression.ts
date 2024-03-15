@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import exp from "constants";
 import { findCompatibleTypes } from "../../typechecking/typeinference";
 import { PatternExpression } from "../matching/PatternExpression";
 import { BlockStatement } from "../statements/BlockStatement";
@@ -72,6 +73,29 @@ export class MatchCaseExpression {
         this._inferred = true;
         return null;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): MatchCaseExpression{
+        let newCtx = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
+
+
+        let expression = this.expression?.clone(typeMap, newCtx) || null;
+        let block = this.block?.clone(typeMap, newCtx) || null;
+
+        if(block !== null) {
+            block.context.overrideParent(newCtx);
+        }
+
+        let newExpr = new MatchCaseExpression(this.location, 
+            newCtx, 
+            this.pattern.clone(typeMap, newCtx), 
+            this.type, 
+            expression, 
+            block, 
+            this.guard?.clone(typeMap, newCtx) || null
+        );
+
+        return newExpr;
+    }
 }
 
 export class MatchExpression extends Expression {
@@ -102,5 +126,12 @@ export class MatchExpression extends Expression {
         this.inferredType = res;
         this.checkHint(ctx);
         return this.inferredType;
+    }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): MatchExpression{
+        return new MatchExpression(this.location, this.expression.clone(typeMap, ctx), this.cases.map(c => 
+            c.clone(typeMap, ctx)
+        ));
     }
 }

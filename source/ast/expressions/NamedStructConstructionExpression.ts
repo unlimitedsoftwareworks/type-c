@@ -64,4 +64,8 @@ export class NamedStructConstructionExpression extends Expression {
         this.isConstant = false;
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): NamedStructConstructionExpression{
+        return new NamedStructConstructionExpression(this.location, this.fields.map(f => ({name: f.name, value: f.value.clone(typeMap, ctx), location: f.location})));
+    }
 }

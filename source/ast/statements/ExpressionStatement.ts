@@ -13,6 +13,7 @@
 import { Expression } from "../expressions/Expression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { Statement } from "./Statement";
 
 
@@ -26,5 +27,10 @@ export class ExpressionStatement extends Statement {
 
     infer(ctx: Context){
         this.expression.infer(ctx);
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): ExpressionStatement {
+        let newExpression = this.expression.clone(typeMap, ctx);
+        return new ExpressionStatement(this.location, newExpression);
     }
 }

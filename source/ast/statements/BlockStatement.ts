@@ -33,6 +33,8 @@ export class BlockStatement extends Statement {
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): BlockStatement {
-        throw new Error("clone is not implemented on BlockStatement");
+        let newContext = this.context.clone(ctx, typeMap);
+        let newStatements = this.statements.map(s => s.clone(typeMap, newContext));
+        return new BlockStatement(this.location, newContext, newStatements);
     }
 }

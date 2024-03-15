@@ -79,4 +79,9 @@ export class IndexAccessExpression extends Expression {
         this.isConstant = false;
         return this.inferredType;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): IndexAccessExpression {
+        return new IndexAccessExpression(this.location, this.lhs.clone(typeMap, ctx), this.indexes.map(e => e.clone(typeMap, ctx)));
+    }
 }

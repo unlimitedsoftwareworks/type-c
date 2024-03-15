@@ -239,4 +239,8 @@ import { Expression } from "./Expression";
 
         throw ctx.parser.customError(`Invalid member access of field ${this.right.name} on type ${lhsType.shortname()}`, this.location);
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): MemberAccessExpression{
+        return new MemberAccessExpression(this.location, this.left.clone(typeMap, ctx), this.right.clone(typeMap, ctx));
+    }
 }

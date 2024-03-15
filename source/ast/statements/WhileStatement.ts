@@ -14,6 +14,7 @@ import { Expression } from "../expressions/Expression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BooleanType } from "../types/BooleanType";
+import { DataType } from "../types/DataType";
 import { BlockStatement } from "./BlockStatement";
 import { Statement } from "./Statement";
 
@@ -31,5 +32,11 @@ export class WhileStatement extends Statement {
     infer(ctx: Context){
         this.condition.infer(ctx, new BooleanType(this.location));
         this.body.infer(ctx);
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): WhileStatement {
+        let newCondition = this.condition.clone(typeMap, ctx);
+        let newBody = this.body.clone(typeMap, ctx);
+        return new WhileStatement(this.location, newCondition, newBody);
     }
 }

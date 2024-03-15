@@ -15,6 +15,7 @@ import { Expression } from "../expressions/Expression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BooleanType } from "../types/BooleanType";
+import { DataType } from "../types/DataType";
 import { BlockStatement } from "./BlockStatement";
 import { Statement } from "./Statement";
 
@@ -36,5 +37,11 @@ export class IfStatement extends Statement {
         if(this.elseBody){
             this.elseBody.infer(ctx);
         }
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): IfStatement {
+        let newIfBlocks = this.ifBlocks.map(b => { return {expression: b.expression.clone(typeMap, ctx), statement: b.statement.clone(typeMap, ctx)} });
+        let newElseBody = this.elseBody ? this.elseBody.clone(typeMap, ctx) : null;
+        return new IfStatement(this.location, newIfBlocks, newElseBody);
     }
 }

@@ -157,4 +157,8 @@ export class FunctionCallExpression extends Expression {
 
         throw ctx.parser.customError(`Not implemented`, this.location);
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): FunctionCallExpression {
+        return new FunctionCallExpression(this.location, this.lhs.clone(typeMap, ctx), this.args.map(e => e.clone(typeMap, ctx)));
+    }
 }

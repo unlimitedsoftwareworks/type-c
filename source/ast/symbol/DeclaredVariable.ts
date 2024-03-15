@@ -60,4 +60,18 @@ export class DeclaredVariable extends Symbol {
             ctx.parser.customError("Variables needs type hint, cannot infer type from number literal", this.location);
         }
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): DeclaredVariable{
+        let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation, this.isConst, this.isStrict);
+        
+        let sym = ctx.lookup(this.name);
+        // TODO:
+        // update the UID of the symbol
+        if(sym) {
+            // sym.uid = newVar.uid;
+        }
+
+        return newVar;
+    }
 }

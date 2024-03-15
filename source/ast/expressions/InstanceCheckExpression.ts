@@ -12,6 +12,7 @@
  */
 
 import { matchDataTypes } from "../../typechecking/typechecking";
+import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BasicType } from "../types/BasicType";
 import { BooleanType } from "../types/BooleanType";
@@ -33,7 +34,7 @@ export class InstanceCheckExpression extends Expression {
         this.type = type;
     }
 
-    infer(ctx: any, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -106,5 +107,10 @@ export class InstanceCheckExpression extends Expression {
         this.inferredType = new BooleanType(this.location);
         this.checkHint(ctx);
         return this.inferredType;
+    }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): InstanceCheckExpression{
+        return new InstanceCheckExpression(this.location, this.expression.clone(typeMap, ctx), this.type.clone(typeMap));   
     }
 }

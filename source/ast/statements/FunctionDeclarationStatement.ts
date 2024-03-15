@@ -15,6 +15,7 @@ import { FunctionPrototype } from "../other/FunctionPrototype";
 import { Context } from "../symbol/Context";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { BlockStatement } from "./BlockStatement";
 import { Statement } from "./Statement";
 
@@ -30,5 +31,11 @@ export class FunctionDeclarationStatement extends Statement {
 
     infer(ctx: Context){
         // TODO: need to infer the function prototype, return statements, etc. 
+        let sym = this.symbolPointer;
+        sym.infer(ctx)
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): FunctionDeclarationStatement {
+         return new FunctionDeclarationStatement(this.location, this.symbolPointer.clone(typeMap, ctx));
     }
 }

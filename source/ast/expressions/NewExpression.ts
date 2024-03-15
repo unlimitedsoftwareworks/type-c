@@ -91,4 +91,8 @@ export class NewExpression extends Expression {
         }
     }
 
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): NewExpression {
+        return new NewExpression(this.location, this.type.clone(typeMap), this.arguments.map(a => a.clone(typeMap, ctx)));
+    }
+
 }

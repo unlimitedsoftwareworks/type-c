@@ -29,7 +29,7 @@ export class DeclaredFunction extends Symbol {
     context: Context;
 
     // cache of return statements, used for type checking
-    returnStatements: {stmt: ReturnStatement, ctx: Context}[] = [];
+    returnStatements: { stmt: ReturnStatement, ctx: Context }[] = [];
 
     /**
      * Reference to the original declaration statement
@@ -40,9 +40,9 @@ export class DeclaredFunction extends Symbol {
     /**
      * When a generic function is called, the generic arguments are used to instantiate a new function
      */
-    concreteGenerics: {[key: string]: DeclaredFunction} = {};
+    concreteGenerics: { [key: string]: DeclaredFunction } = {};
 
-    constructor(location: SymbolLocation, context: Context,  prototype: FunctionPrototype, expression: Expression | null, body: BlockStatement | null) {
+    constructor(location: SymbolLocation, context: Context, prototype: FunctionPrototype, expression: Expression | null, body: BlockStatement | null) {
         super(location, "function", prototype.name);
         this.prototype = prototype;
         this.expression = expression;
@@ -58,27 +58,27 @@ export class DeclaredFunction extends Symbol {
         }
     }
 
-    infer(ctx: Context, typeArguments?: DataType[]): DeclaredFunction{
-        if(this.prototype.generics.length > 0) {
-            if(!typeArguments) {
+    infer(ctx: Context, typeArguments?: DataType[]): DeclaredFunction {
+        if (this.prototype.generics.length > 0) {
+            if (!typeArguments) {
                 return this;
             }
 
-            if(this.prototype.generics.length !== typeArguments.length) {
+            if (this.prototype.generics.length !== typeArguments.length) {
                 throw ctx.parser.customError(`Function expects ${this.prototype.generics.length} generics parameters, but got ${typeArguments.length} instead`, this.location);
             }
 
             // check if we have a cached version of this function with the given type arguments
             let cached = this.concreteGenerics[signatureFromGenerics(typeArguments)];
-            if(cached) {
+            if (cached) {
                 return cached;
             }
 
             // otherwise, create a new function with the given type arguments
-            let genericTypeMap: {[key: string]: DataType} = buildGenericsMaps(ctx, this.prototype.generics, typeArguments);
+            let genericTypeMap: { [key: string]: DataType } = buildGenericsMaps(ctx, this.prototype.generics, typeArguments);
 
             // clone the function with the new type map
-            let newFn = this.clone(genericTypeMap);
+            let newFn = this.clone(genericTypeMap, ctx);
 
             // update cache
             this.concreteGenerics[signatureFromGenerics(typeArguments)] = newFn;
@@ -96,7 +96,8 @@ export class DeclaredFunction extends Symbol {
         return this;
     }
 
-    clone(typeMap: {[key: string]: DataType}): DeclaredFunction {
+    clone(typeMap: { [key: string]: DataType }, ctx: Context): DeclaredFunction {
+        /**
         let ctxClone = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
 
         let newM = new DeclaredFunction(this.location, ctxClone, this.prototype.clone(typeMap), null, null);
@@ -105,6 +106,19 @@ export class DeclaredFunction extends Symbol {
         newM.body = this.body?.clone(typeMap, ctxClone) || null;
 
         if(newM.body) {
+            newM.body.context.setOwner(newM);
+            newM.body.context.overrideParent(newM.context);
+        }
+
+        return newM;
+        */
+        let newContext = this.context.clone(ctx, typeMap);
+        let newM = new DeclaredFunction(this.location, newContext, this.prototype.clone(typeMap), null, null);
+        newM.declStatement = this.declStatement;
+        newM.expression = this.expression;
+        newM.body = this.body?.clone(typeMap, newContext) || null;
+
+        if (newM.body) {
             newM.body.context.setOwner(newM);
             newM.body.context.overrideParent(newM.context);
         }

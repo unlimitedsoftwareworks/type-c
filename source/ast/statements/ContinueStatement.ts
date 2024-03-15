@@ -12,6 +12,7 @@
 
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { Statement } from "./Statement";
 
 export class ContinueStatement extends Statement {
@@ -20,6 +21,13 @@ export class ContinueStatement extends Statement {
     }
 
     infer(ctx: Context){
-        // do nothing
+        // make sure we are inside a loop
+        if(!ctx.env.withinLoop) {
+            ctx.parser.customError("ccontinue statement must be inside a loop", this.location);
+        }
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): ContinueStatement {
+        return new ContinueStatement(this.location);
     }
 }

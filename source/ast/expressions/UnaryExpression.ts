@@ -55,4 +55,8 @@ export class UnaryExpression extends Expression {
         this.checkHint(ctx);
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): UnaryExpression {
+        return new UnaryExpression(this.location, this.expression.clone(typeMap, ctx), this.operator);
+    }
 }

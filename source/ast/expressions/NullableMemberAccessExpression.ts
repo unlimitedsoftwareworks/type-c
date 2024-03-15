@@ -124,4 +124,8 @@ import { Expression } from "./Expression";
 
         throw ctx.parser.customError(`Cannot null-access member of type ${leftType.shortname()}`, this.location);
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): NullableMemberAccessExpression {
+        return new NullableMemberAccessExpression(this.location, this.left.clone(typeMap, ctx), this.right.clone(typeMap, ctx));
+    }
 }

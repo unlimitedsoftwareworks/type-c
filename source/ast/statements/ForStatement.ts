@@ -16,6 +16,7 @@ import { Expression } from "../expressions/Expression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BooleanType } from "../types/BooleanType";
+import { DataType } from "../types/DataType";
 import { BlockStatement } from "./BlockStatement";
 import { Statement } from "./Statement";
 
@@ -46,5 +47,15 @@ export class ForStatement extends Statement {
             incrementor.infer(this.context);
         }
         this.body.infer(this.context);
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): ForStatement {
+        let newContext = this.context.clone(ctx, typeMap);
+
+        let newInitializers = this.initializers.map(s => s.clone(typeMap, newContext));
+        let newCondition = this.condition ? this.condition.clone(typeMap, newContext) : null;
+        let newIncrementors = this.incrementors.map(s => s.clone(typeMap, newContext));
+        let newBody = this.body.clone(typeMap, newContext);
+        return new ForStatement(this.location, newContext, newInitializers, newCondition, newIncrementors, newBody);
     }
 }

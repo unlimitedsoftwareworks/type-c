@@ -78,6 +78,12 @@ export class ElementExpression extends Expression {
             let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments);
             this.inferredType = newDecl.prototype.header;
 
+            // check if the function is generic and if we need type arguments
+            // TODO: infer type arguments from hint, here
+            if(variable.prototype.generics.length > 0 && this.typeArguments.length === 0) {
+                throw ctx.parser.customError(`Function ${variable.name} is generic and expects ${variable.prototype.generics.length} type arguments`, this.location);
+            }
+
             this.checkHint(ctx);
             this.isConstant = false;
             return this.inferredType;
@@ -169,6 +175,10 @@ export class ElementExpression extends Expression {
         }
 
         throw ctx.parser.customError(`Not implemented`, this.location);
+    }
 
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ElementExpression {
+        return new ElementExpression(this.location, this.name, this.typeArguments.map(t => t.clone(typeMap)));
     }
 }

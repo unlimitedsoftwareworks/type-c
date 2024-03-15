@@ -55,4 +55,8 @@ export class UnnamedStructConstructionExpression extends Expression {
         // this.checkHint(ctx); not needed
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): UnnamedStructConstructionExpression {
+        return new UnnamedStructConstructionExpression(this.location, this.elements.map((element) => element.clone(typeMap, ctx)));
+    }
 }

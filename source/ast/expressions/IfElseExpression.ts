@@ -73,4 +73,9 @@ export class IfElseExpression extends Expression {
         this.checkHint(ctx);
         return this.inferredType;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): IfElseExpression{
+        return new IfElseExpression(this.location, this.conditions.map(e => e.clone(typeMap, ctx)), this.bodies.map(e => e.clone(typeMap, ctx)), this.elseBody.clone(typeMap, ctx));
+    }
 }

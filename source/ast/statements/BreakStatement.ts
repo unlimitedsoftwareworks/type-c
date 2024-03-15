@@ -12,6 +12,7 @@
 
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { Statement } from "./Statement";
 
 export class BreakStatement extends Statement {
@@ -20,6 +21,13 @@ export class BreakStatement extends Statement {
     }
 
     infer(ctx: Context){
-        // do nothing
+        // make sure we are inside a loop
+        if(!ctx.env.withinLoop) {
+            ctx.parser.customError("break statement must be inside a loop", this.location);
+        }
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): BreakStatement {
+        return new BreakStatement(this.location);
     }
 }

@@ -63,5 +63,9 @@ export class ArrayConstructionExpression extends Expression {
         this.inferredType = new ArrayType(this.location, elementTypes[0]);
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ArrayConstructionExpression{
+        return new ArrayConstructionExpression(this.location, this.elements.map(e => e.clone(typeMap, ctx)));
+    }
     
 }

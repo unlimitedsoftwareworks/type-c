@@ -15,6 +15,7 @@ import { MatchCaseExpression } from "../expressions/MatchExpression";
 import { BlockStatement } from "../statements/BlockStatement";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { DataType } from "../types/DataType";
 import { Statement } from "./Statement";
 
 export type MatchCaseType = "match_block" | "match_expression"
@@ -32,5 +33,11 @@ export class MatchStatement extends Statement {
     infer(ctx: Context){
         let type = this.expression.infer(ctx);
         this.cases.forEach(c => c.infer(ctx, type));
+    }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): MatchStatement {
+        let newExpression = this.expression.clone(typeMap, ctx);
+        let newCases = this.cases.map(c => c.clone(typeMap, ctx));
+        return new MatchStatement(this.location, newExpression, newCases);
     }
 }

@@ -87,4 +87,9 @@ export class CastExpression extends Expression {
 
         return this.inferredType;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): CastExpression{
+        return new CastExpression(this.location, this.expression.clone(typeMap, ctx), this.target.clone(typeMap), this.castType);
+    }
 }

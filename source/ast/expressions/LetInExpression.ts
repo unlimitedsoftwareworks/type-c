@@ -42,4 +42,9 @@ export class LetInExpression extends Expression {
         this.isConstant = this.inExpression.isConstant;
         return this.inferredType;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): LetInExpression{
+        return new LetInExpression(this.location, ctx, this.variables.map(v => v.clone(typeMap, ctx)), this.inExpression.clone(typeMap, ctx));
+    }
 }

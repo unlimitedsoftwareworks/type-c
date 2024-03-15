@@ -124,6 +124,11 @@ export class LiteralExpression extends Expression {
         super(location, literalKind);
         this.literalKind = literalKind;
     }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): LiteralExpression {
+        return this;   
+    }
 }
 
 export class StringLiteralExpression extends LiteralExpression {

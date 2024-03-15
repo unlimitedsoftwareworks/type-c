@@ -45,4 +45,11 @@ export class ReturnStatement extends Statement {
             return new VoidType(this.location);
         }
     }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): ReturnStatement {
+        let newExpression = this.returnExpression ? this.returnExpression.clone(typeMap, ctx) : null;
+        let newReturn = new ReturnStatement(this.location, newExpression);
+        ctx.findParentFunction()?.returnStatements.push({ctx: ctx, stmt: newReturn});
+        return newReturn;
+    }
 }
