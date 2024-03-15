@@ -54,6 +54,12 @@ export class ClassMethod {
         this.body = body;
         this.expression = expression;
 
+
+        /**
+         * Mark this method as the owner of the context
+         */
+        context.setOwner(this);
+
         /**
          * Add arguments to the method's context
          */
@@ -89,7 +95,7 @@ export class ClassMethod {
     }
 
     clone(typeMap: { [key: string]: DataType; }, removeGenerics: boolean = false): ClassMethod {
-        let newCtx = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
+        let newCtx = this.context.clone(null);
         let newProto = this.imethod.clone(typeMap);
 
         if(removeGenerics === true) {
