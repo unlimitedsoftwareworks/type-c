@@ -1,17 +1,15 @@
 
 
-type ConcreteUserData = class {
-    let age: i32
+type ConcreteUserData<T> = class {
+    let age: T
 
-    fn init() {
-        this.age = 1
+    fn init(v: T) {
+        this.age = v
     }
 
-    fn cool(x: i32) -> i32[] {
-        return [x, x+1]
+    fn cool() -> T[] {
+        return [this.age, this.age+1]
     }
 }
 
 let cud = new ConcreteUserData()
-
-let z: interface { fn cool(x: i32) -> i32[] } = cud

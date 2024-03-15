@@ -52,6 +52,11 @@ export class ReferenceType extends DataType{
             throw ctx.parser.customError(`Type ${fullPkg} is not a declared type`, this.location);
         }
 
+        // check if we have the right number of type arguments
+        if(type.genericParameters.length != this.typeArgs.length){
+            throw ctx.parser.customError(`Type ${fullPkg} requires ${type.genericParameters.length} type arguments [${type.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
+        }
+
         // TODO: clone!
         this.baseType = type.type;
         this.baseType.resolve(ctx);
