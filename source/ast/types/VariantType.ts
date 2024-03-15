@@ -46,4 +46,8 @@ export class VariantType extends DataType {
     allowedNullable(ctx: Context): boolean {
         return true;
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}){
+        return new VariantType(this.location, this.constructors.map((c) => c.clone(genericsTypeMap)));
+    }
 }

@@ -117,4 +117,8 @@ export class Expression {
     infer(ctx: Context, hint: DataType | null = null): DataType{
         throw new Error("infer is not implemented on abstract Expression");
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): Expression{
+        throw new Error("clone is not implemented on abstract Expression");
+    }
 }

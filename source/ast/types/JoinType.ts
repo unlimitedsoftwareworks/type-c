@@ -118,4 +118,9 @@ export class JoinType extends DataType {
     getPromiseType(ctx: Context): DataType | null {
         return this.left.getPromiseType(ctx) || this.right.getPromiseType(ctx);
     }
+
+
+    clone(genericsTypeMap: {[key: string]: DataType}): JoinType{
+        return new JoinType(this.location, this.left.clone(genericsTypeMap), this.right.clone(genericsTypeMap));
+    }
 }

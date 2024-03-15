@@ -144,4 +144,15 @@ export class ReferenceType extends DataType{
         this.resolveIfNeeded(ctx);
         return this.baseType!.allowedNullable(ctx);
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): DataType{
+        let name = this.pkg[0];
+        if(name in genericsTypeMap){
+            return genericsTypeMap[name];
+        }
+        else {
+            let r = new ReferenceType(this.location, this.pkg, this.typeArgs.map(t => t.clone(genericsTypeMap)));
+            return r;
+        }
+    }
 }

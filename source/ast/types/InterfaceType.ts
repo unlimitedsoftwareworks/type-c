@@ -21,11 +21,14 @@ export class InterfaceType extends DataType {
     _allMethods: InterfaceMethod[] = [];
 
     // interfaces can only extend from references and not anonymous types
-    superTypes: ReferenceType[];
+    superTypes: DataType[];
+
+    // superTypes after being resolved as InterfaceTypes
+    superInterfaces: InterfaceType[] = [];
 
     private _resolved: boolean = false;
 
-    constructor(location: SymbolLocation, methods: InterfaceMethod[], superType: ReferenceType[] = []) {
+    constructor(location: SymbolLocation, methods: InterfaceMethod[], superType: DataType[] = []) {
         super(location, "interface");
         this.methods = methods;
         this.superTypes = superType;
@@ -54,19 +57,18 @@ export class InterfaceType extends DataType {
         let superInterfaces: InterfaceType[] = [];
         this.superTypes.forEach((superType) => {
             superType.resolve(ctx);
-            let interfaceSuper = superType.dereference();
-            if(interfaceSuper == null) {
+
+            if(!superType.is(ctx, InterfaceType)){
                 ctx.parser.customError("Interface can only extend from other interfaces", superType.location);
                 return;
             }
 
-            if(!(interfaceSuper instanceof InterfaceType)) {
-                ctx.parser.customError("Interface can only extend from other interfaces", superType.location);
-                return;
-            }
+            let interfaceSuper = superType.to(ctx, InterfaceType) as InterfaceType;
 
             superInterfaces.push(interfaceSuper);
         });
+
+        this.superInterfaces = superInterfaces;
 
         // make sure methods has no generic types
         this.methods.forEach((method) => {
@@ -189,7 +191,7 @@ export class InterfaceType extends DataType {
      */
     isPromise(ctx: Context): boolean {
         for(let i = 0; i < this.superTypes.length; i++){
-            if(this.superTypes[i].isPromise(ctx)){
+            if(this.superInterfaces[i].isPromise(ctx)){
                 return true;
             }
         }
@@ -199,14 +201,19 @@ export class InterfaceType extends DataType {
 
     getPromiseType(ctx: Context): DataType | null {
         for(let i = 0; i < this.superTypes.length; i++){
-            let promiseType = this.superTypes[i].getPromiseType(ctx);
+            let promiseType = this.superInterfaces[i].getPromiseType(ctx);
             if(promiseType){
                 return promiseType;
             }
         }
 
         return null;
-    
+    }
+
+
+    clone(genericsTypeMap: {[key: string]: DataType}): InterfaceType{
+        let clone = new InterfaceType(this.location, this.methods.map((method) => method.clone(genericsTypeMap)), this.superTypes.map((superType) => superType.clone(genericsTypeMap)));
+        return clone;
     }
 }
 

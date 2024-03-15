@@ -73,4 +73,10 @@ export class GenericType extends DataType {
     serialize(): string {
         return `@generic{${this.name},@constraint{${this.constraint.types.map(e => e.serialize()).join(",")}}}`
     }
+
+    
+    clone(genericsTypeMap: {[key: string]: DataType}): DataType{
+        if(this.name in genericsTypeMap) return genericsTypeMap[this.name];
+        return new GenericType(this.location, this.name, this.constraint);
+    }
 }

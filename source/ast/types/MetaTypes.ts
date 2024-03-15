@@ -7,6 +7,10 @@ export class MetaType extends DataType {
     constructor(location: SymbolLocation, kind: DataTypeKind) {
         super(location, kind)
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): MetaType{
+        return this;
+    }
 }
 
 export class MetaClassType extends MetaType {

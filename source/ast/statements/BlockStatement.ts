@@ -32,7 +32,7 @@ export class BlockStatement extends Statement {
         }
     }
 
-    clone(typeMap: {[key: string]: DataType}, ctx: Context | null): BlockStatement {
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): BlockStatement {
         throw new Error("clone is not implemented on BlockStatement");
     }
 }

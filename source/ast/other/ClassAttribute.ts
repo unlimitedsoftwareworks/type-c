@@ -30,4 +30,8 @@ export class ClassAttribute {
     serialize(): string {
         return `@attribute{${this.name}:${this.type.serialize()}}`
     }
+
+    clone(typeMap: { [key: string]: DataType; }): ClassAttribute {
+        return new ClassAttribute(this.location, this.name, this.type.clone(typeMap), this.isStatic);
+    }
 }

@@ -25,4 +25,8 @@ export class UnsetType extends DataType {
     serialize(): string {
         return "@unset"
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}){
+        return new UnsetType(this.location);
+    }
 }

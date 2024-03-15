@@ -26,4 +26,9 @@ export class LiteralIntType extends DataType {
     serialize(): string {
         return "@literal_number"
     }
+
+
+    clone(genericsTypeMap: {[key: string]: DataType}): LiteralIntType{
+        return new LiteralIntType(this.location, "0");
+    }
 }

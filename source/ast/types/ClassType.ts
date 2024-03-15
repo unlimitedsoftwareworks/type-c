@@ -27,13 +27,16 @@ import { VoidType } from "./VoidType";
 export class ClassType extends DataType {
     attributes: ClassAttribute[];
     methods: ClassMethod[];
-    superTypes: ReferenceType[];
+    // parents
+    superTypes: DataType[];
+    // parents after being resolved as interfaces
+    superInterfaces: InterfaceType[] = [];
 
     staticBlock: BlockStatement | null = null;
 
     private _resolved: boolean = false;
 
-    constructor(location: SymbolLocation, superTypes: ReferenceType[], attributes: ClassAttribute[], methods: ClassMethod[]) {
+    constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[]) {
         super(location, "class");
         this.superTypes = superTypes;
         this.attributes = attributes;
@@ -57,14 +60,16 @@ export class ClassType extends DataType {
         let superInterfaces: InterfaceType[] = [];
         for(const superType of this.superTypes) {
             superType.resolve(ctx);
-
-            let interfaceSuper = superType.dereference();
-            if((interfaceSuper == null) || !(interfaceSuper instanceof InterfaceType)) {
+            
+            if(!superType.is(ctx, InterfaceType)) {
                 ctx.parser.customError(`A class can only implement interfaces, ${superType.shortname()} is not an interface`, superType.location);
             }
-
+            
+            
+            let interfaceSuper = superType.to(ctx, InterfaceType) as InterfaceType;
             superInterfaces.push(interfaceSuper);
         }
+        this.superInterfaces = superInterfaces;
 
         /**
          * 2. Make sure attributes are correctly defined and init methods are correctly defined
@@ -381,7 +386,7 @@ export class ClassType extends DataType {
 
     isPromise(ctx: Context): boolean {
         for(let i = 0; i < this.superTypes.length; i++){
-            if(this.superTypes[i].isPromise(ctx)){
+            if(this.superInterfaces[i].isPromise(ctx)){
                 return true;
             }
         }
@@ -391,12 +396,32 @@ export class ClassType extends DataType {
 
     getPromiseType(ctx: Context): DataType | null {
         for(let i = 0; i < this.superTypes.length; i++){
-            let promiseType = this.superTypes[i].getPromiseType(ctx);
+            let promiseType = this.superInterfaces[i].getPromiseType(ctx);
             if(promiseType !== null){
                 return promiseType;
             }
         }
 
         return null;
+    }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): ClassType {
+        let clone = new ClassType(
+            this.location,
+            this.superTypes.map(e => e.clone(genericsTypeMap)),
+            this.attributes.map(e => e.clone(genericsTypeMap)),
+            this.methods.map(e => e.clone(genericsTypeMap))
+        );
+
+        // make sure each method has current class as active class
+
+        clone.methods.forEach((method) => {
+            method.context.setActiveClass(clone);
+            method.returnStatements.forEach((stmt) => {
+                stmt.ctx.setActiveClass(clone);
+            })
+        })
+
+        return clone;
     }
 }

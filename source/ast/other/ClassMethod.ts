@@ -18,6 +18,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { InterfaceMethod } from "./InterfaceMethod";
 import { inferFunctionHeader } from "../../typechecking/typeinference";
+import { DataType } from "../types/DataType";
 
 
 export class ClassMethod {
@@ -87,4 +88,25 @@ export class ClassMethod {
         return this._concreteGenerics;
     }
 
+    clone(typeMap: { [key: string]: DataType; }, removeGenerics: boolean = false): ClassMethod {
+        let newCtx = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
+        let newProto = this.imethod.clone(typeMap);
+
+        if(removeGenerics === true) {
+            newProto.generics = [];
+        }
+
+        let fn = new ClassMethod(this.location, newCtx, newProto, null, null);
+        // we delay the cloning of the body and expression because
+        // return statements in body requires the owner in the 
+        // context to refer to the method, which is not set until after
+        // the fn has been constucted and then the body cloned
+        fn.expression = this.expression?.clone(typeMap, newCtx) || null;
+        fn.body = this.body?.clone(typeMap, newCtx) || null;
+
+        if(fn.body !== null) {
+            fn.body.context.overrideParent(fn.context);
+        }
+        return fn;
+    }
 }

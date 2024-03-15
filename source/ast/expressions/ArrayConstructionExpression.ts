@@ -63,4 +63,5 @@ export class ArrayConstructionExpression extends Expression {
         this.inferredType = new ArrayType(this.location, elementTypes[0]);
         return this.inferredType;
     }
+    
 }

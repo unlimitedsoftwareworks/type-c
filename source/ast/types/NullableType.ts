@@ -42,4 +42,8 @@ export class NullableType extends DataType {
         if(targetType === NullableType) return this;
         return this.type.to(ctx, targetType);
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): NullableType{
+        return new NullableType(this.location, this.type.clone(genericsTypeMap));
+    }
 }

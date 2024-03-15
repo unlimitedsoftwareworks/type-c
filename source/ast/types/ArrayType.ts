@@ -39,4 +39,8 @@ export class ArrayType extends DataType {
     allowedNullable(ctx: Context): boolean {
         return false;
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): ArrayType{
+        return new ArrayType(this.location, this.arrayOf.clone(genericsTypeMap), this.length || 0);
+    }
 }

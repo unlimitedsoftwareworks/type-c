@@ -20,6 +20,10 @@ export class VariantParameter {
         this.name = name;
         this.type = type;
     }
+
+    clone(typeMap: { [key: string]: DataType; }): VariantParameter {
+        return new VariantParameter(this.location, this.name, this.type.clone(typeMap));
+    }
 }
 
 export class VariantConstructorType  extends DataType{
@@ -55,5 +59,9 @@ export class VariantConstructorType  extends DataType{
 
     allowedNullable(ctx: Context): boolean {
         return true;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }): VariantConstructorType {
+        return new VariantConstructorType(this.location, this.name, this.parameters.map(f => f.clone(typeMap)));
     }
 }

@@ -24,4 +24,8 @@ export class NullType extends DataType {
     serialize(): string {
         return "@null"
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): NullType{
+        return new NullType(this.location);
+    }
 }

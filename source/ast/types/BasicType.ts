@@ -39,4 +39,8 @@ export class BasicType extends DataType {
         // TODO: check if this is correct
         return true;
     }
+
+    clone(genericsTypeMap: { [key: string]: DataType }): BasicType {
+        return new BasicType(this.location, this.kind as BasicTypeKind)
+    }
 }

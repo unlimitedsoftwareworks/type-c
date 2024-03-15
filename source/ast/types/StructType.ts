@@ -12,6 +12,10 @@ export class StructField {
         this.name = name;
         this.type = type;
     }
+
+    clone(typeMap: { [key: string]: DataType; }): StructField {
+        return new StructField(this.location, this.name, this.type.clone(typeMap));
+    }
 }
 
 export class StructType extends DataType {
@@ -50,5 +54,9 @@ export class StructType extends DataType {
 
     allowedNullable(ctx: Context): boolean {
         return true;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }): DataType {
+        return new StructType(this.location, this.fields.map(f => f.clone(typeMap)));
     }
 }

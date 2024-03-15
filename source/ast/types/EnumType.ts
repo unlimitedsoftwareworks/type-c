@@ -55,6 +55,10 @@ export class EnumField {
         }
         throw new Error("Cannot convert null to number");
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}){
+        return new EnumField(this.location, this.name, this.value, this.literal_type);
+    }
 }
 
 export type EnumTargetType = "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "unset";
@@ -139,5 +143,10 @@ export class EnumType extends DataType {
 
     isAssignable(): boolean {
         return false;
+    }
+
+
+    clone(genericsTypeMap: {[key: string]: DataType}): EnumType{
+        return new EnumType(this.location, this.fields.map(f => f.clone(genericsTypeMap)), this.as);
     }
 }

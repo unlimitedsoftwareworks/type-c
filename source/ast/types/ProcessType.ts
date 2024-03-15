@@ -35,4 +35,8 @@ export class ProcessType extends DataType {
     allowedNullable(ctx: Context): boolean {
         return false;
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}): ProcessType{
+        throw "Not implemented";
+    }
 }

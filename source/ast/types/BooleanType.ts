@@ -31,4 +31,9 @@ export class BooleanType extends DataType {
     serialize(): string {
         return "@bool"
     }
+
+
+    clone(genericsTypeMap: {[key: string]: DataType}): BooleanType{
+        return new BooleanType(this.location);
+    }
 }

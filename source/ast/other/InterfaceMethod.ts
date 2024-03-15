@@ -15,6 +15,7 @@ import {FunctionPrototype} from "./FunctionPrototype";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {GenericType} from "../types/GenericType";
 import {FunctionType} from "../types/FunctionType";
+import { DataType } from "../types/DataType";
 
 export class InterfaceMethod extends FunctionPrototype {
     isStatic: boolean;
@@ -33,5 +34,9 @@ export class InterfaceMethod extends FunctionPrototype {
      */
     isGeneric(): boolean {
         return this.generics.length > 0;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }): InterfaceMethod {
+        return new InterfaceMethod(this.location, this.name, this.header.clone(typeMap) as FunctionType, this.isStatic, this.generics.map(g => g.clone(typeMap)) as GenericType[]);
     }
 }

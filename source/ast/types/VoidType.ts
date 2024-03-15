@@ -19,4 +19,8 @@ export class VoidType extends DataType {
     serialize(): string {
         return "@void"
     }
+
+    clone(genericsTypeMap: {[key: string]: DataType}){
+        return new VoidType(this.location);
+    }
 }
