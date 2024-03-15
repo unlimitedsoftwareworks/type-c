@@ -130,7 +130,7 @@ export class ClassType extends DataType {
     }
 
     shortname(): string {
-        return "class"
+        return "class {"+this.methods.map(e => e.shortname()).join(",")+"}";
     }
 
     serialize(): string {
@@ -359,6 +359,15 @@ export class ClassType extends DataType {
         }
 
         return index;
+    }
+
+    getMethodByIndex(idx: number): ClassMethod | null{
+        let allMethods = this.getAllMethods();
+        if(idx < 0 || idx >= allMethods.length){
+            return null;
+        }
+
+        return allMethods[idx];
     }
 
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {

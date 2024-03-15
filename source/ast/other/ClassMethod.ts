@@ -17,7 +17,7 @@ import { ReturnStatement } from "../statements/ReturnStatement";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { InterfaceMethod } from "./InterfaceMethod";
-import { inferFunctionHeader } from "../../typechecking/typeinference";
+import { inferFunctionHeader, signatureFromGenerics } from "../../typechecking/typeinference";
 import { DataType } from "../types/DataType";
 
 
@@ -74,6 +74,10 @@ export class ClassMethod {
 
     }
 
+    shortname(): string {
+        return this.imethod.shortname();
+    }
+
     serialize(): string {
         return `@method{${this.imethod.serialize()}}`
     }
@@ -114,5 +118,45 @@ export class ClassMethod {
             fn.body.context.overrideParent(fn.context);
         }
         return fn;
+    }
+
+    /**
+     * Clones the method if no concrete method with the given type arguments exists, otherwise
+     * returns the existing concrete method
+     * @param ctx
+     * @param typeMap 
+     * @param typeArguments 
+     */
+    generateConcreteMethod(ctx: Context, typeMap: { [key: string]: DataType}, typeArguments: DataType[]): ClassMethod {
+        let sig = signatureFromGenerics(typeArguments);
+        if(this._concreteGenerics[sig] !== undefined) {
+            return this._concreteGenerics[sig];
+        }
+
+        // else we have to construct it
+        if(this.imethod.generics.length !== typeArguments.length) {
+            throw new Error(`Method ${this.imethod.name} expects ${this.imethod.generics.length} type arguments, got ${typeArguments.length}`);
+        }
+
+        for(let arg of this.imethod.generics) {
+            arg.constraint.types.forEach(t => {t.resolve(ctx)});
+
+            if(typeMap[arg.name] === undefined) {
+                throw ctx.parser.customError(`Generic type ${arg.name} not found in type map`, this.location);
+            }
+
+            let res = arg.constraint.checkType(ctx, typeMap[arg.name]);
+            if(res === false) {
+                throw ctx.parser.customError(`Type ${typeMap[arg.name].shortname()} does not satisfy constraint set on generic type ${arg.name}`, this.location);
+            }
+        }
+
+        // all conditions are met, we can now clone the method
+        let newMethod = this.clone(typeMap, true);
+        this._concreteGenerics[sig] = newMethod;
+        newMethod._concreteGenerics = this._concreteGenerics;
+        newMethod.infer(newMethod.context);
+
+        return newMethod;
     }
 }

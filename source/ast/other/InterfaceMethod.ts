@@ -25,6 +25,10 @@ export class InterfaceMethod extends FunctionPrototype {
         this.isStatic = isStatic;
     }
 
+    shortname() {
+        return this.name+"("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.shortname()).join(",")+") -> "+this.header.returnType.shortname();
+    }
+
     serialize(): string {
         return `@method{${this.name}:${this.header.serialize()},static:${this.isStatic}}`
     }
