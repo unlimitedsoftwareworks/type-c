@@ -13,7 +13,7 @@
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 
 export type ExpressionKind = 

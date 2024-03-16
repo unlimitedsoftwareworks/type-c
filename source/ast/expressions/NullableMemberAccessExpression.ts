@@ -11,7 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";

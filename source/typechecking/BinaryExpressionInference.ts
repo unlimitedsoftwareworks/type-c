@@ -1,3 +1,15 @@
+/**
+ * Filename: BinaryExpressionInference.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Contains type checking logic for binary expressions
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
 import { Context } from "../ast/symbol/Context";
 import { BasicType } from "../ast/types/BasicType";
@@ -8,7 +20,7 @@ import { InterfaceType } from "../ast/types/InterfaceType";
 import { NullableType } from "../ast/types/NullableType";
 import { ReferenceType } from "../ast/types/ReferenceType";
 import { isAddable, getOperatorOverloadType, setBinaryOverrideMethodHint, isSubable, isMultiplicable, isDivisible, isModable, isLt, isLte, isGt, isGte, isOr, isAnd, isLShift, isRShift, isBAnd, isBOr, isXor, OverridableMethodType } from "./OperatorOverload";
-import { matchDataTypes } from "./typechecking";
+import { matchDataTypes } from "./TypeChecking";
 
 
 type DataTypeKind = "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "f32" | "f64";

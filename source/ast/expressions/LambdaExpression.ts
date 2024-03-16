@@ -16,9 +16,9 @@ import { Context } from "../symbol/Context";
 import { FunctionType } from "../types/FunctionType";
 import { Expression } from "./Expression";
 import { DataType } from "../types/DataType";
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ReturnStatement } from "../statements/ReturnStatement";
-import { inferFunctionHeader } from "../../typechecking/typeinference";
+import { inferFunctionHeader } from "../../typechecking/TypeInference";
 
 export class LambdaExpression extends Expression {
     header: FunctionType;

@@ -19,13 +19,13 @@ import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 import { FunctionType } from "../types/FunctionType";
-import { checkExpressionArgConst, matchDataTypes } from "../../typechecking/typechecking";
+import { checkExpressionArgConst, matchDataTypes } from "../../typechecking/TypeChecking";
 import { ClassType } from "../types/ClassType";
 import { getOperatorOverloadType, isCallable, matchCall } from "../../typechecking/OperatorOverload";
 import { InterfaceType } from "../types/InterfaceType";
 import { FFIMethodType } from "../types/FFIMethodType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
-import { buildGenericsMaps } from "../../typechecking/typeinference";
+import { buildGenericsMaps } from "../../typechecking/TypeInference";
 import { MetaClassType, MetaType, MetaVariantType } from "../types/MetaTypes";
 import { VariantType } from "../types/VariantType";
 

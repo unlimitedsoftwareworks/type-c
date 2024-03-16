@@ -14,7 +14,7 @@ import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { UnionType } from "./UnionType";
 import { Context } from "../symbol/Context";
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 export class GenericTypeConstraint {
     types: DataType[] = [];

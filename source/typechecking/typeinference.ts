@@ -25,7 +25,7 @@ import { StructField, StructType } from "../ast/types/StructType";
 import { UnsetType } from "../ast/types/UnsetType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VoidType } from "../ast/types/VoidType";
-import { matchDataTypes } from "./typechecking";
+import { matchDataTypes } from "./TypeChecking";
 
 /**
  * Used to infer the return type of a function, given a list of return statements.

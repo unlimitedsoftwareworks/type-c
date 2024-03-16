@@ -18,7 +18,7 @@ import { Context } from "../symbol/Context";
 import { ClassType } from "../types/ClassType";
 import { InterfaceType } from "../types/InterfaceType";
 import { getOperatorOverloadType, isIndexable, setIndexesHint } from "../../typechecking/OperatorOverload";
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ArrayType } from "../types/ArrayType";
 import { BasicType } from "../types/BasicType";
 import { DataType } from "../types/DataType";

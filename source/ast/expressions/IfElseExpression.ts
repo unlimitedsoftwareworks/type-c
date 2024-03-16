@@ -11,8 +11,8 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/typechecking";
-import { findCompatibleTypes } from "../../typechecking/typeinference";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { findCompatibleTypes } from "../../typechecking/TypeInference";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BooleanType } from "../types/BooleanType";

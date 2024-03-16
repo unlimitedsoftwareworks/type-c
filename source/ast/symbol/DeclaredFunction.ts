@@ -10,7 +10,8 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { buildGenericsMaps, inferFunctionHeader, signatureFromGenerics } from "../../typechecking/typeinference";
+import { FunctionInferenceCache } from "../../typechecking/FunctionInference";
+import { buildGenericsMaps, inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { Expression } from "../expressions/Expression";
 import { FunctionPrototype } from "../other/FunctionPrototype";
 import { BlockStatement } from "../statements/BlockStatement";
@@ -58,7 +59,20 @@ export class DeclaredFunction extends Symbol {
         }
     }
 
+    /**
+     * Used to check for recursive functions.
+     * Generates a unique hash for the function
+     */
+    hash() {
+        return this.prototype.name+this.location.file+this.location.pos+'-'+this.prototype.generics.map(g => g.name).join('-');
+    }
+
     infer(ctx: Context, typeArguments?: DataType[]): DeclaredFunction {
+        if(FunctionInferenceCache.has(this)) {
+            return this;
+        }
+
+        FunctionInferenceCache.push(this);
         if (this.prototype.generics.length > 0) {
             if (!typeArguments) {
                 return this;
@@ -89,10 +103,12 @@ export class DeclaredFunction extends Symbol {
             // refer to the original concrete generics
             newFn.concreteGenerics = this.concreteGenerics;
 
+            FunctionInferenceCache.pop(this);
             return newFn;
         }
 
         inferFunctionHeader(ctx, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        FunctionInferenceCache.pop(this);
         return this;
     }
 
@@ -123,6 +139,7 @@ export class DeclaredFunction extends Symbol {
             newM.body.context.overrideParent(newM.context);
         }
 
+        FunctionInferenceCache.pop(this);
         return newM;
     }
 }

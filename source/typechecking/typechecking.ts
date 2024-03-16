@@ -1,5 +1,5 @@
 /**
- * Filename: typehcecking.ts
+ * Filename: TypeChecking.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
  * 

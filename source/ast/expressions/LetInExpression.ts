@@ -15,7 +15,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { Expression } from "./Expression";
 import { DataType } from "../types/DataType";
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 export class LetInExpression extends Expression {
     // multiple variables can be declared in a let binding

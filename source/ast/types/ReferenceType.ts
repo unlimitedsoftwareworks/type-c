@@ -16,7 +16,7 @@ import { Context } from "../symbol/Context";
 import { DeclaredType } from "../symbol/DeclaredType";
 import { ClassType } from "./ClassType";
 import { InterfaceType } from "./InterfaceType";
-import { buildGenericsMaps } from "../../typechecking/typeinference";
+import { buildGenericsMaps } from "../../typechecking/TypeInference";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]

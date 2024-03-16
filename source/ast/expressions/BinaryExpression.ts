@@ -17,7 +17,7 @@ import { Expression } from "./Expression";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { ThisExpression } from "./ThisExpression";
-import { Err, Ok, TypeMatchResult } from "../../typechecking/typechecking";
+import { Err, Ok, TypeMatchResult } from "../../typechecking/TypeChecking";
 import { ArrayType } from "../types/ArrayType";
 import { ElementExpression } from "./ElementExpression";
 import { IndexAccessExpression } from "./IndexAccessExpression";

@@ -20,7 +20,7 @@ import { InterfaceType } from "../types/InterfaceType";
 import { ClassType } from "../types/ClassType";
 import { getOperatorOverloadType, isIndexSettable, setIndexesHint, setIndexesSetHint } from "../../typechecking/OperatorOverload";
 import { ArrayType } from "../types/ArrayType";
-import { matchDataTypes } from "../../typechecking/typechecking";
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 export class IndexSetExpression extends Expression {
     lhs: Expression;

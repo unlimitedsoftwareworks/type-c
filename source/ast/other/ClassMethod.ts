@@ -17,7 +17,7 @@ import { ReturnStatement } from "../statements/ReturnStatement";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { InterfaceMethod } from "./InterfaceMethod";
-import { inferFunctionHeader, signatureFromGenerics } from "../../typechecking/typeinference";
+import { inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { DataType } from "../types/DataType";
 
 

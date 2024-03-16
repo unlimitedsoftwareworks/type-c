@@ -11,7 +11,7 @@
  */
 
 import exp from "constants";
-import { findCompatibleTypes } from "../../typechecking/typeinference";
+import { findCompatibleTypes } from "../../typechecking/TypeInference";
 import { PatternExpression } from "../matching/PatternExpression";
 import { BlockStatement } from "../statements/BlockStatement";
 import { Context } from "../symbol/Context";

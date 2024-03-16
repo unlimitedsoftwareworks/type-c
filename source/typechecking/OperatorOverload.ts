@@ -1,3 +1,15 @@
+/**
+ * Filename: OperatorOverload.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Contains type checking for operator overloads for classes and interfaces
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { BinaryExpression } from "../ast/expressions/BinaryExpression";
 import { Expression } from "../ast/expressions/Expression";
 import { UnaryExpression } from "../ast/expressions/UnaryExpression";
@@ -7,7 +19,7 @@ import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { ReferenceType } from "../ast/types/ReferenceType";
-import { matchDataTypes } from "./typechecking";
+import { matchDataTypes } from "./TypeChecking";
 
 
 export type OverridableMethodType = InterfaceType | ClassType | ReferenceType;

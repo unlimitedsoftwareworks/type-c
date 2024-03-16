@@ -10,7 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { findCompatibleTypes } from "../../typechecking/typeinference";
+import { findCompatibleTypes } from "../../typechecking/TypeInference";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ArrayType } from "../types/ArrayType";

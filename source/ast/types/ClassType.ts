@@ -10,8 +10,8 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { globalTypeCache } from "../../typechecking/typecache";
-import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/typechecking";
+import { globalTypeCache } from "../../typechecking/TypeCache";
+import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
 import { ClassAttribute } from "../other/ClassAttribute";
 import { ClassMethod } from "../other/ClassMethod";
 import { InterfaceMethod } from "../other/InterfaceMethod";

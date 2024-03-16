@@ -4,8 +4,8 @@ import {ReferenceType} from "./ReferenceType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { FunctionType } from "./FunctionType";
-import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/typechecking";
-import { globalTypeCache } from "../../typechecking/typecache";
+import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
+import { globalTypeCache } from "../../typechecking/TypeCache";
 
 
 export class InterfaceType extends DataType {

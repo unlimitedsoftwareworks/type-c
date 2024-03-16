@@ -1,35 +1,20 @@
-type A = interface {
-    fn methodA() -> void
+from std.io import println
+from std.String import String, UTF8String
+
+fn fib(x: i32) -> i32 {
+    if x == 0 {
+        return 0
+    } else if x == 1 {
+        return 1
+    } else {
+        return fib(x - 1) + fib(x - 2)
+    }
 }
 
-type B = interface {
-    fn methodB() -> void
-}
+let x: fn(y: i32) -> i32 = fib
 
-type C = interface {
-    fn methodC() -> void
-}
+fn main() {
+    println("fib 10: "+fib(10)+ ", fib: 32: "+x(32))
 
-type D = interface A, B{
-    fn methodD() -> void
-}
-type E = interface A {
-    fn methodE() -> void
-}
-
-
-type DClass = class D {
-    fn methodA() -> void {}
-    fn methodB() -> void {}
-    fn methodC() -> void {}
-    fn methodD() -> void {}
-}
-
-
-let deepOptional: ((A & B) & C) ? = new DClass() // should be valid
-
-let deepUnwrap: ((A & B) & C) = deepOptional! // should be valid
-
-
-fn main(){
+    return
 }
