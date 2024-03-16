@@ -17,3 +17,17 @@ let cud = new ConcreteUserData<u32>()
 let cud2 = new ConcreteUserData<u32>()
 
 let z = [cud.cool(), cud2.cool()]
+
+
+
+
+type HttpResponse = variant {
+    Success(code: u32, time: f32),
+    Error(buffer: u8[], code: u32)
+}
+
+
+let r1 = HttpResponse.Success(200, 0.5f)
+let r2 = HttpResponse.Error([1, 2, 3], 404)
+
+let r1: HttpResponse = HttpResponse.Success(200, 0.5f)
