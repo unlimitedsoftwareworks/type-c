@@ -529,9 +529,12 @@ function parseTypeDecl(parser: Parser) {
 
     let declaredType = new DeclaredType(loc, parser.basePackage.ctx, name, type, generics, parser.basePackage.ctx.getCurrentPackage());
 
+    /*
+    Postpone type resolution for when used or import or later, because some symbols might not be resolved yet
     if(!declaredType.isGeneric()) {
         declaredType.type.resolve(parser.basePackage.ctx);
     }
+    */
 
     parser.basePackage.addType(declaredType);
 }
