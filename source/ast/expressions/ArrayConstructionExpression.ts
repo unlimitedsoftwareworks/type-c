@@ -48,7 +48,11 @@ export class ArrayConstructionExpression extends Expression {
         // TODO:
         // make sure all elements are of the same type
 
-        if(!baseHint){
+        if(!baseHint && (elementTypes.length == 0)){
+            ctx.parser.customError("Cannot infer an empty array without hint", this.location);
+        }
+        
+        if(this.elements.length !== 0){
             let commonType = findCompatibleTypes(ctx, elementTypes);
             if(commonType == null){
                 ctx.parser.customError("Could not find a common type for array elements", this.location);
@@ -57,10 +61,14 @@ export class ArrayConstructionExpression extends Expression {
             for(const element of this.elements){
                 element.setHint(commonType);
             }
+
+            this.inferredType = new ArrayType(this.location, commonType);
         }
-
-
-        this.inferredType = new ArrayType(this.location, elementTypes[0]);
+        else {
+            this.inferredType = hint!;
+        }
+        
+        this.checkHint(ctx);
         return this.inferredType;
     }
 

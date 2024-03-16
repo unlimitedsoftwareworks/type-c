@@ -1,5 +1,110 @@
+
 from std.io import println
 from std.String import String, UTF8String
+
+// Function to swap two elements in an array
+fn swap(mut arr: i32[], i: u64, j: u64) {
+    let temp: i32 = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+    return
+}
+
+// Partition function for the quicksort
+fn partition(mut arr: i32[], low: u64, high: u64) -> u64 {
+    let pivot: i32 = arr[high]
+    let i: u64 = (low - 1)
+    for let j = low; j < high; j = j + 1 {
+        if arr[j] < pivot {
+            i = i + 1
+            swap(arr, i, j)
+        }
+    }
+    swap(arr, i + 1, high)
+    return (i + 1)
+}
+
+// The main quicksort function
+fn quickSort(mut arr: i32[], low: u64, high: u64) -> void {
+    if low < high {
+        let pi: u64 = partition(arr, low, high)
+        if(pi > 0) {
+            quickSort(arr, low, pi - 1)
+        }
+        quickSort(arr, pi + 1, high)
+    }
+
+    return
+}
+
+// A function to print the array
+fn printArray(arr: i32[]) {
+    let str: String = new UTF8String("Array: ")
+    for let i: u64 = 0; i < arr.length; i += 1 {
+        let element  = arr[i]
+        str.cat(element).cat(", ")
+    }
+    println(str)
+    return
+}
+
+type Array = class {
+    let data: i32[]
+    let length: u64
+    let capacity: u64
+
+    fn init() {
+        this.data = []
+        this.length = 0
+        this.capacity = 0
+    }
+
+    fn init(capacity: u64) {
+        this.data = []
+        this.length = 0
+        this.capacity = capacity
+        this.data.extend(capacity)
+    }
+
+    fn push(element: i32) {
+        if(this.length == this.capacity) {
+            this.capacity = this.capacity * 2 + 1
+            this.data.extend(this.capacity)
+        }
+        this.data[this.length] = element
+        this.length = this.length + 1
+        return
+    }
+
+    fn pop() -> i32 {
+        if(this.length == 0) {
+            return 0
+        }
+        this.length = this.length - 1
+        return this.data[this.length]
+    }
+
+    fn print() {
+        let str = "vector<"
+        for let i: u64 = 0; i < this.length; i = i + 1 {
+            str = str + this.data[i]
+            if(i < this.length - 1) {
+                str = str + ", "
+            }
+        }
+
+        println(str+">")
+    }
+
+    fn __index__(index: u64) -> i32 {
+        return this.data[index]
+    }
+
+    fn __index_set__(value: i32, i1: u64, i2: u64) {
+        this.data[i1+i2] = value
+    }
+}
+
 
 fn fib(x: i32) -> i32 {
     if x == 0 {
@@ -12,9 +117,34 @@ fn fib(x: i32) -> i32 {
 }
 
 let x: fn(y: i32) -> i32 = fib
+let z = x(32)
 
 fn main() {
-    println("fib 10: "+fib(10)+ ", fib: 32: "+x(32))
+    let arr1: Array = new Array(10)
+    arr1.push(1)
+    arr1.push(2)
+    arr1.push(3)
+    arr1.push(4)
+    arr1.push(5)
+
+    arr1.print()
+
+    let z = arr1[1]
+    println("element at index 0: "+z)
+    arr1[1, 1] = 100
+    println("element at index 0: "+arr1[2])
+
+
+
+    let arr: i32[] = [1, 10, 7, 8, 9, 1, 5]
+    printArray(arr)
+    let n: u64 = arr.length 
+    quickSort(arr, 0, n-1)
+    //print("Sorted array: ")
+    printArray(arr)
+
+    println("Hello "+"raet "+3.14f+", "+1+"😃😄"+fib(5))
+    println("fib 40: "+fib(1))
 
     return
 }
