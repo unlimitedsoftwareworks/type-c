@@ -253,7 +253,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      * a class is only compatible with another class with the exact same structure both attributes and methods
      */
     if(t1.is(ctx, ClassType)) {
-        if(!t2.is(ctx, InterfaceType)) {
+        if(!t2.is(ctx, ClassType)) {
             return Err(`Type mismatch, expected class, got ${t2.shortname()}`);
         }
         
