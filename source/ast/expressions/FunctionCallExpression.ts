@@ -26,6 +26,8 @@ import { InterfaceType } from "../types/InterfaceType";
 import { FFIMethodType } from "../types/FFIMethodType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { buildGenericsMaps } from "../../typechecking/typeinference";
+import { MetaClassType, MetaType, MetaVariantType } from "../types/MetaTypes";
+import { VariantType } from "../types/VariantType";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -131,6 +133,72 @@ export class FunctionCallExpression extends Expression {
                 this.inferredType = method.header.returnType;
                 this.checkHint(ctx);
                 return this.inferredType;
+            }
+            else if (baseExprType.is(ctx, MetaType)) {
+                /**
+                 * If we have a metatype, we face the following 2 cases:
+                 * 1. Static method call from a class
+                 * 2. VariantConstructor call
+                 */
+
+                // case 1: static method call
+                if(baseExprType.is(ctx, MetaClassType)) {
+                    let metaClass = baseExprType.to(ctx, MetaClassType) as MetaClassType;
+                    let classType = metaClass.classType.to(ctx, ClassType) as ClassType;
+
+                    // find the method
+                    let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
+                    let candidateMethods = classType.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
+
+                    if(candidateMethods.length === 0) {
+                        throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${classType.shortname()}`, this.location);
+                    }
+
+                    if(candidateMethods.length > 1) {
+                        throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${classType.shortname()}`, this.location);
+                    }
+
+                    let method = candidateMethods[0];
+                    for(let i = 0; i < this.args.length; i++){
+                        this.args[i].infer(ctx, method.header.parameters[i].type);
+                        if(!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
+                            throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
+                        }
+                    }
+
+                    this.inferredType = method.header.returnType;
+                    this.checkHint(ctx);
+                    return this.inferredType;
+                }
+
+                // case 2: variant constructor
+                else if(baseExprType.is(ctx, MetaVariantType)) {
+                    let metaVariant = baseExprType.to(ctx, MetaVariantType) as MetaVariantType;
+                    let variantType = metaVariant.variantType.to(ctx, VariantType) as VariantType;
+                    let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
+
+                    // TODO: variant constructor can have generics
+
+                    if(variantConstructor === undefined) {
+                        throw ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
+                    }
+
+                    // make sure we have the right number of arguments
+                    if(this.args.length !== variantConstructor.parameters.length) {
+                        throw ctx.parser.customError(`Expected ${variantConstructor.parameters.length} arguments, got ${this.args.length}`, this.location);
+                    }
+
+                    // infer the arguments
+                    for(let i = 0; i < this.args.length; i++){
+                        this.args[i].infer(ctx, variantConstructor.parameters[i].type);
+                    }
+
+                    // set the inferred type
+                    this.inferredType = variantType;
+                    this.checkHint(ctx);
+                    return this.inferredType;
+                }
+                
             }
         }
 

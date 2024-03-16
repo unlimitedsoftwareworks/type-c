@@ -64,7 +64,7 @@ export class MetaVariantType extends MetaType {
     }
 
     resolve(ctx: Context): void {
-
+        this.variantType.resolve(ctx);
     }
 }
 

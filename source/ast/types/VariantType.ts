@@ -35,6 +35,10 @@ export class VariantType extends DataType {
         }
     }
 
+    serialize(): string {
+        return `@variant{`+this.constructors.map((c) => c.serialize()).join(",")+`}`;
+    }
+
     toString(): string {
         return `variant{`+this.constructors.map((c) => c.shortname()).join("|")+`}`;
     }
