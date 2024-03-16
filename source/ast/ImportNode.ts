@@ -1,3 +1,15 @@
+/**
+ * Filename: ImportNode.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Models an AST node for an import statement
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import {SymbolLocation} from "./symbol/SymbolLocation";
 
 

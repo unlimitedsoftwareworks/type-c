@@ -1,3 +1,15 @@
+/**
+ * Filename: Lexer.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Lexer data structure
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { TokenType } from "./TokenType";
 import { Token } from './Token'
 

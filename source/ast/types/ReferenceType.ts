@@ -94,7 +94,7 @@ export class ReferenceType extends DataType{
     }
 
     shortname(){
-        return this.pkg.join(".") + (this.typeArgs.length > 0 ? "<" + this.typeArgs.map(t => t.toString()).join(", ") + ">" : "");
+        return this.pkg.join(".") + (this.typeArgs.length > 0 ? "<" + this.typeArgs.map(t => t.shortname()).join(", ") + ">" : "");
     }
 
     serialize(): string {

@@ -1,3 +1,15 @@
+/**
+ * Filename: TokenType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Hosts all kind of tokens that the lexer can produce
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 export enum TokenType {
     // Keywords.
     TOK_AWAIT = "await",

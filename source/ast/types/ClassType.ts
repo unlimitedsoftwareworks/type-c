@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { globalTypeCache } from "../../typechecking/typecache";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/typechecking";
 import { ClassAttribute } from "../other/ClassAttribute";
 import { ClassMethod } from "../other/ClassMethod";
@@ -53,6 +54,10 @@ export class ClassType extends DataType {
 
     resolve(ctx: Context, hint: DataType | null = null) {
         if(this._resolved) return;
+        if(globalTypeCache.isChecking(this)) {
+            return;
+        }
+        globalTypeCache.startChecking(this);
 
         /**
          * 1. Make sure all super types are interfaces
@@ -101,7 +106,7 @@ export class ClassType extends DataType {
         for(const method of requiredMethods) {
             let m = this.findExactMethod(ctx, method);
             if (m == null) {
-                ctx.parser.customError(`Method ${method.name} is not implemented`, this.location);
+                ctx.parser.customError(`Method ${method.shortname()} is not implemented`, this.location);
             }
         }
 
@@ -127,6 +132,7 @@ export class ClassType extends DataType {
         
 
         this._resolved = true;
+        globalTypeCache.stopChecking(this);
     }
 
     shortname(): string {
@@ -194,7 +200,7 @@ export class ClassType extends DataType {
         let foundMethod: ClassMethod | null = null;
         for(const classMethod of this.methods) {
             if(classMethod.imethod.name === method.name) {
-                if (matchDataTypes(ctx, classMethod.imethod.header, method.header, true)) {
+                if (matchDataTypes(ctx, classMethod.imethod.header, method.header, true).success) {
                     foundMethod = classMethod;
                     break;
                 }

@@ -1,6 +1,11 @@
 
 
-type ConcreteUserData<T> = class {
+type UserData<T> = interface {
+    fn cool() -> T[]
+    fn clone() -> UserData<T>
+}
+
+type ConcreteUserData<T> = class UserData<T> {
     let age: T
 
     fn init(v: T) {
@@ -10,24 +15,13 @@ type ConcreteUserData<T> = class {
     fn cool() -> T[] {
         return [this.age, this.age+1]
     }
+
+    fn clone() -> UserData<T> {
+        let c = new ConcreteUserData<T>()
+        c.age = this.age
+        return c
+    }
 }
 
-let cud = new ConcreteUserData<u32>()
-
-let cud2 = new ConcreteUserData<u32>()
-
-let z = [cud.cool(), cud2.cool()]
-
-
-
-
-type HttpResponse = variant {
-    Success(code: u32, time: f32),
-    Error(buffer: u8[], code: u32)
-}
-
-
-let r1 = HttpResponse.Success(200, 0.5f)
-let r2 = HttpResponse.Error([1, 2, 3], 404)
-
-let r1: HttpResponse = HttpResponse.Success(200, 0.5f)
+let c = new ConcreteUserData<i32>(10)
+let c2 = c.clone()

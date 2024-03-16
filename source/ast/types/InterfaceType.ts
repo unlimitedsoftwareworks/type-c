@@ -5,6 +5,7 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { FunctionType } from "./FunctionType";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/typechecking";
+import { globalTypeCache } from "../../typechecking/typecache";
 
 
 export class InterfaceType extends DataType {
@@ -52,6 +53,10 @@ export class InterfaceType extends DataType {
 
     resolve(ctx: Context) {
         if(this._resolved) return;
+        if(globalTypeCache.isChecking(this)){
+            return;
+        }
+        globalTypeCache.startChecking(this);
         
         // make sure all supertypes are resolved
         let superInterfaces: InterfaceType[] = [];
@@ -108,6 +113,7 @@ export class InterfaceType extends DataType {
         checkOverloadedMethods(ctx, allMethods);
 
         this._resolved = true;
+        globalTypeCache.stopChecking(this);
     }
 
     /**
