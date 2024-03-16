@@ -909,12 +909,6 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     }
 
     parser.expect("}");
-    // assert all superTypes are reference types
-    for(let t of superTypes){
-        if(!(t instanceof ReferenceType)){
-            throw ctx.parser.customError("Interfaces can only inherit from other interfaces", loc);
-        }
-    }
 
     return new ClassType(loc, superTypes as ReferenceType[], attributes, methods);
 }

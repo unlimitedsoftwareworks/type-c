@@ -6,8 +6,8 @@ import { InterfaceMethod } from "../other/InterfaceMethod";
 
 
 export class JoinType extends DataType {
-    left: InterfaceType | JoinType;
-    right: InterfaceType | JoinType;
+    left: DataType;
+    right: DataType;
 
     methods: InterfaceMethod[] = [];
     interfaceType: InterfaceType | null = null;
@@ -16,33 +16,24 @@ export class JoinType extends DataType {
     
     constructor(location: SymbolLocation, left: DataType, right: DataType) {
         super(location, "join");
-        if(!(left instanceof InterfaceType || left instanceof JoinType)){
-            throw new Error("Left side of join must be either interface or join");
-        }
-
-        if(!(right instanceof InterfaceType || right instanceof JoinType)){
-            throw new Error("Right side of join must be either interface or join");
-        }
 
         this.left = left;
         this.right = right;
     }
 
     resolve(ctx: Context){
-        // make sure left is either join or interface
-        if(!(this.left instanceof InterfaceType || this.left instanceof JoinType)){
+        if(!this.left.is(ctx, InterfaceType) && !this.left.is(ctx, JoinType)){
             throw new Error("Left side of join must be either interface or join");
         }
 
-        // make sure right is either join or interface
-        if(!(this.right instanceof InterfaceType || this.right instanceof JoinType)){
+        if(!this.right.is(ctx, InterfaceType) && !this.right.is(ctx, JoinType)){
             throw new Error("Right side of join must be either interface or join");
         }
         
         this.left.resolve(ctx);
         this.right.resolve(ctx);
 
-        this.methods = this.flatten();
+        this.methods = this.flatten(ctx);
 
         // create a new interface type with the methods
         this.interfaceType = new InterfaceType(this.location, this.methods);
@@ -57,18 +48,19 @@ export class JoinType extends DataType {
         }
     }
 
-    flatten(): InterfaceMethod[] {
+    flatten(ctx: Context): InterfaceMethod[] {
+        
+        let leftInterface = this.left.to(ctx, InterfaceType) as InterfaceType;
+        let rightInterface = this.right.to(ctx, InterfaceType) as InterfaceType;
+
         let methods: InterfaceMethod[] = [];
-        if(this.left instanceof JoinType){
-            methods = methods.concat(this.left.flatten());
-        } else {
-            methods = methods.concat(this.left.methods);
+
+        for(let method of leftInterface.methods){
+            methods.push(method);
         }
 
-        if(this.right instanceof JoinType){
-            methods = methods.concat(this.right.flatten());
-        } else {
-            methods = methods.concat(this.right.methods);
+        for(let method of rightInterface.methods){
+            methods.push(method);
         }
 
         return methods;
@@ -88,12 +80,10 @@ export class JoinType extends DataType {
         return false;
     }
 
-    toInterfaceType(): DataType {
-        if(!this._resolved){
-            throw new Error("Join type not resolved, call .resolve first");
-        }
-
-        return this.interfaceType!;
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
+        if(targetType === JoinType) return this;
+        if(targetType === InterfaceType) return this.interfaceType!;
+        throw new Error("Invalid cast");
     }
 
     allowedNullable(ctx: Context): boolean {
@@ -111,12 +101,60 @@ export class JoinType extends DataType {
 
     isPromise(ctx: Context): boolean {
         // recursively check lefts and rights, one is sufficient
-        return this.left.isPromise(ctx) || this.right.isPromise(ctx);
+
+        let isLHSPromise = false;
+        let isRHSPromise = false;
+
+        if(this.left.is(ctx, JoinType)){
+            let lhs: JoinType = this.left.to(ctx, JoinType) as JoinType;
+            isLHSPromise = lhs.isPromise(ctx);
+        }
+        else {
+            let lhs: InterfaceType = this.left.to(ctx, InterfaceType) as InterfaceType;
+            isLHSPromise = lhs.isPromise(ctx);
+        }
+
+        if(isLHSPromise) return true;
+
+        if(this.right.is(ctx, JoinType)){
+            let rhs: JoinType = this.right.to(ctx, JoinType) as JoinType;
+            isRHSPromise = rhs.isPromise(ctx);
+        }
+        else {
+            let rhs: InterfaceType = this.right.to(ctx, InterfaceType) as InterfaceType;
+            isRHSPromise = rhs.isPromise(ctx);
+        }
+
+        return isLHSPromise || isRHSPromise;
     }
 
 
     getPromiseType(ctx: Context): DataType | null {
-        return this.left.getPromiseType(ctx) || this.right.getPromiseType(ctx);
+
+        let lhsPromiseType: DataType | null = null;
+        let rhsPromiseType: DataType | null = null;
+
+        if(this.left.is(ctx, JoinType)){
+            let lhs: JoinType = this.left.to(ctx, JoinType) as JoinType;
+            lhsPromiseType = lhs.getPromiseType(ctx);
+        }
+        else {
+            let lhs: InterfaceType = this.left.to(ctx, InterfaceType) as InterfaceType;
+            lhsPromiseType = lhs.getPromiseType(ctx);
+        }
+
+        if(lhsPromiseType !== null) return lhsPromiseType;
+
+        if(this.right.is(ctx, JoinType)){
+            let rhs: JoinType = this.right.to(ctx, JoinType) as JoinType;
+            rhsPromiseType = rhs.getPromiseType(ctx);
+        }
+        else {
+            let rhs: InterfaceType = this.right.to(ctx, InterfaceType) as InterfaceType;
+            rhsPromiseType = rhs.getPromiseType(ctx);
+        }
+
+        return rhsPromiseType;
     }
 
 

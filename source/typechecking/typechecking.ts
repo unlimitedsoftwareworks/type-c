@@ -117,6 +117,8 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         if(!(t2 instanceof VoidType)) {
             return Err(`Type mismatch, expected void, got ${t2.shortname()}`);
         }
+
+        return Ok();
     }
 
     // case 2: basic data types (integers, floats and doubles)
@@ -175,7 +177,11 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         if(t2.is(ctx, NullType)) {
             return Ok();
         }
-        return Err(`Type mismatch, expected nullable, got ${t2.shortname()}`);
+        else {
+            // if t1 is nullable and t2 is not, we match t1.type with t2
+            let t1Type = (t1.to(ctx, NullableType) as NullableType).type;
+            return matchDataTypesRecursive(ctx, t1Type, t2, strict, stack);
+        }
     }
 
     /**

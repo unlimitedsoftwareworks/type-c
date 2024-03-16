@@ -103,7 +103,7 @@ export class InterfaceType extends DataType {
                 if(methodNames[i] == methodNames[j]){
                     // we perform the check solely based on the arguments, not the return type
                     if(areSignaturesIdentical(ctx, methodTypes[i], methodTypes[j])){
-                        ctx.parser.customError(`Method ${methodNames[i]} is duplicated`, allMethods[j].location);
+                        ctx.parser.customError(`Method ${methodNames[i]} is duplicated with the same signature`, allMethods[j].location);
                         return;
                     }
                 }

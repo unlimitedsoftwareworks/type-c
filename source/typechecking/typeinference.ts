@@ -34,26 +34,26 @@ import { matchDataTypes } from "./typechecking";
  * @param returnStatements 
  */
 export function inferFunctionHeader(
-    ctx: Context, 
+    ctx: Context,
     type: "method" | "function",
-    returnStatements:  {stmt: ReturnStatement, ctx: Context}[], 
-    header: FunctionType, 
+    returnStatements: { stmt: ReturnStatement, ctx: Context }[],
+    header: FunctionType,
     body: BlockStatement | null,
     expr: Expression | null) {
-    
+
     const definedReturnType: DataType = header.returnType;
 
     // this should be unreachable, parser makes sure that. if it is, there is an issue with the arguments
     if ((body === null) && (expr === null)) {
-        ctx.parser.customError(`${type} has no body nor expression`, ctx.location);
+        throw ctx.parser.customError(`${type} has no body nor expression`, ctx.location);
     }
 
     // if we have unset, we need to infer the type based on the return statements
-    if(definedReturnType instanceof UnsetType) {
+    if (definedReturnType instanceof UnsetType) {
         /**
          * If it is a body, we have to go through all return statements and make sure they align
          */
-        if(body !== null) {
+        if (body !== null) {
             body.infer(ctx);
 
             // list of return types from the return statements
@@ -62,10 +62,10 @@ export function inferFunctionHeader(
             // if a single void is found (meaning a return without value), the return type is void
             let voidFound = false;
 
-            for(const ret of returnStatements) {
+            for (const ret of returnStatements) {
                 let retType = ret.stmt.getReturnType(ret.ctx);
                 returnTypes.push(retType);
-                if(retType instanceof VoidType) {
+                if (retType instanceof VoidType) {
                     voidFound = true;
                 }
             }
@@ -73,17 +73,16 @@ export function inferFunctionHeader(
             /**
              * Case 1: Not a single return statement
              */
-            if(returnTypes.length === 0) {
+            if (returnTypes.length === 0) {
                 header.returnType = new VoidType(ctx.location);
             }
-
             /**
              * Case 2: At least one void is found, then all must me void
              */
-            if(voidFound) {
+            else if (voidFound) {
                 let allVoid = returnTypes.every((t) => t instanceof VoidType);
-                if(!allVoid) {
-                    ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
+                if (!allVoid) {
+                    throw ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
                 }
 
                 header.returnType = new VoidType(ctx.location);
@@ -92,14 +91,14 @@ export function inferFunctionHeader(
             /**
              * Case 3: Make sure all return types are the same
              */
-            let allMatch = findCompatibleTypes(ctx, returnTypes);
+            else {
+                let allMatch = findCompatibleTypes(ctx, returnTypes);
+                if (allMatch === null) {
+                    throw ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
+                }
 
-            if(allMatch === null) {
-                ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
+                header.returnType = allMatch;
             }
-
-
-            header.returnType = allMatch;
         }
         /**
          * If it is an expression, we can infer the type from the expression
@@ -110,12 +109,12 @@ export function inferFunctionHeader(
     }
 
     // now if we have void, all shall be void
-    if(definedReturnType instanceof VoidType) {
-        if(body !== null) {
+    else if (definedReturnType instanceof VoidType) {
+        if (body !== null) {
             body.infer(ctx);
-            for(const ret of returnStatements) {
+            for (const ret of returnStatements) {
                 let retType = ret.stmt.getReturnType(ret.ctx);
-                if(!(retType instanceof VoidType)) {
+                if (!(retType instanceof VoidType)) {
                     ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
                 }
             }
@@ -123,7 +122,7 @@ export function inferFunctionHeader(
         else {
             // WARNING: for expression, void is ALLOWED, the output is just discarded
             let retType = expr!.infer(ctx);
-            if(!(retType instanceof VoidType)) {
+            if (!(retType instanceof VoidType)) {
                 expr?.setHint(new VoidType(expr.location));
             }
         }
@@ -132,9 +131,9 @@ export function inferFunctionHeader(
     }
 
     else {
-        if(body) {
+        if (body) {
             body.infer(ctx);
-            if(returnStatements.length === 0) {
+            if (returnStatements.length === 0) {
                 ctx.parser.customError(`${type} is required to return a value`, body.location);
             }
 
@@ -148,7 +147,7 @@ export function inferFunctionHeader(
 
     // We must update the hints of all return values, with the common type,
     // so the code generator can generate the correct code to cast to the final adequate type
-    for(const ret of returnStatements) {
+    for (const ret of returnStatements) {
         ret.stmt.returnExpression?.setHint(header.returnType);
     }
 }
@@ -157,11 +156,11 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
 
     function findCommonSupertypeOrCompatibleType(ctx: Context, t1: DataType, t2: DataType): DataType | null {
         // case 1: two variant constructors, make sure they have the same parent and return the parent
-        if(t1.is(ctx, VariantConstructorType) && t2.is(ctx, VariantConstructorType)) {
+        if (t1.is(ctx, VariantConstructorType) && t2.is(ctx, VariantConstructorType)) {
             let e1 = t1.to(ctx, VariantConstructorType) as VariantConstructorType;
             let e2 = t2.to(ctx, VariantConstructorType) as VariantConstructorType;
 
-            if(e1._parent === e2._parent) {
+            if (e1._parent === e2._parent) {
                 return e1._parent;
             }
             else {
@@ -169,7 +168,7 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             }
         }
 
-        if(t1.is(ctx, StructType) && t2.is(ctx, StructType)) {
+        if (t1.is(ctx, StructType) && t2.is(ctx, StructType)) {
             let e1 = t1.to(ctx, StructType) as StructType;
             let e2 = t2.to(ctx, StructType) as StructType;
 
@@ -181,14 +180,14 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             let commonFieldsTypes: StructField[] = [];
 
             // make sure field types match
-            for(let field of commonFields) {
+            for (let field of commonFields) {
                 let e1Type = e1.fields.find(f => f.name === field)!.type;
                 let e2Type = e2.fields.find(f => f.name === field)!.type;
 
                 let result = matchDataTypes(ctx, e1Type, e2Type, false);
-                if(!result.success) {
+                if (!result.success) {
                     let result = matchDataTypes(ctx, e2Type, e1Type, false);
-                    if(!result.success) {
+                    if (!result.success) {
                         return null;
                     }
                     else {
@@ -200,7 +199,7 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
                 }
             }
 
-            if(commonFieldsTypes.length === 0) {
+            if (commonFieldsTypes.length === 0) {
                 return null;
             }
 
@@ -208,7 +207,7 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             return new StructType(ctx.location, commonFieldsTypes);
         }
 
-        if((t1.is(ctx, InterfaceType) && t2.is(ctx, InterfaceType)) || (t1.is(ctx, ClassType) && t2.is(ctx, InterfaceType)) || (t1.is(ctx, InterfaceType) && t2.is(ctx, ClassType))) {
+        if ((t1.is(ctx, InterfaceType) && t2.is(ctx, InterfaceType)) || (t1.is(ctx, ClassType) && t2.is(ctx, InterfaceType)) || (t1.is(ctx, InterfaceType) && t2.is(ctx, ClassType))) {
             let et2 = t2.to(ctx, InterfaceType) as InterfaceType;
             let et1 = t1.to(ctx, InterfaceType) as InterfaceType;
 
@@ -219,7 +218,7 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             let commonMethods: InterfaceMethod[] = [];
 
             // find common methods
-            for(let i = 0; i < et1.methods.length; i++) {
+            for (let i = 0; i < et1.methods.length; i++) {
                 let m1 = et1.methods[i];
                 let m2 = et2.getMethodBySignature(ctx, m1.name, m1.header.parameters.map(p => p.type), m1.header.returnType);
 
@@ -231,11 +230,11 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
                 }
             }
 
-            if(commonMethods.length === 0) {
+            if (commonMethods.length === 0) {
                 // we swap the types and try again
 
                 // find common methods
-                for(let i = 0; i < et2.methods.length; i++) {
+                for (let i = 0; i < et2.methods.length; i++) {
                     let m1 = et2.methods[i];
                     let m2 = et1.getMethodBySignature(ctx, m1.name, m1.header.parameters.map(p => p.type), m1.header.returnType);
 
@@ -247,15 +246,15 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
                     }
                 }
 
-                if(commonMethods.length === 0) {
+                if (commonMethods.length === 0) {
                     return null;
                 }
             }
 
-            if(commonMethods.length === 0) {
+            if (commonMethods.length === 0) {
                 return null;
             }
-            
+
             return new InterfaceType(ctx.location, commonMethods, []);
         }
 
@@ -264,12 +263,12 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
 
 
     // Check for base cases
-    if(t.length === 0) {
-        throw new Error("Cannot find compatible types for an empty list");
+    if (t.length === 0) {
+        throw ctx.parser.customError("Cannot find a common type for an empty list of types", ctx.location);
     }
 
     // If there's only one type, it's trivially compatible with itself.
-    if(t.length === 1) {
+    if (t.length === 1) {
         return t[0];
     }
 
@@ -310,7 +309,7 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
             }
         }
     }
-    
+
     // After checking all types, baseType is the most specific common compatible type
     return baseType;
 }
@@ -331,20 +330,20 @@ export function signatureFromGenerics(types: DataType[]): string {
  * @param generics 
  * @param concreteTypes 
  */
-export function buildGenericsMaps(ctx: Context, generics: GenericType[], concreteTypes: DataType[]): {[key: string]: DataType} {
-    if(generics.length != concreteTypes.length) {
+export function buildGenericsMaps(ctx: Context, generics: GenericType[], concreteTypes: DataType[]): { [key: string]: DataType } {
+    if (generics.length != concreteTypes.length) {
         throw ctx.parser.customError(`Expected ${generics.length} generics, but got ${concreteTypes.length}`, ctx.location);
     }
 
-    let map: {[key: string]: DataType} = {};
+    let map: { [key: string]: DataType } = {};
 
-    for(let i = 0; i < generics.length; i++) {
+    for (let i = 0; i < generics.length; i++) {
         let generic = generics[i];
         let concrete = concreteTypes[i];
 
-        if(generic.constraint) {
+        if (generic.constraint) {
             let ok = generic.constraint.checkType(ctx, concrete);
-            if(!ok) {
+            if (!ok) {
                 throw ctx.parser.customError(`Generic type ${generic.name} does not respect the constraints: ${generic.constraint.types.map(e => e.shortname()).join(" | ")}`, ctx.location);
             }
         }

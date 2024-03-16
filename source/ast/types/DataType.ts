@@ -140,6 +140,13 @@ export class DataType {
     }
 
     /**
+     * used by reference types to resolve the type they reference
+     * @param ctx 
+     */
+    resolveIfNeeded(ctx: Context){
+    }
+
+    /**
      * Checks if a DataType is of a certain type
      * While this method uses instanceof, it not used to check the actual instance, but rather the semantic,
      * for example: let t: DataType = new JoinType(...), t.is(InterfaceType) will return true, to get the 
@@ -149,6 +156,7 @@ export class DataType {
      * @returns 
      */
     is(ctx: Context, targetType: new (...args: any[]) => DataType): boolean {
+        this.resolveIfNeeded(ctx);
         // we use the kind attribute to avoid circular dependencies
         if (this.kind === "reference") {
             return this.dereference().is(ctx, targetType);

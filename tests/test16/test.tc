@@ -1,27 +1,35 @@
-
-
-type UserData<T> = interface {
-    fn cool() -> T[]
-    fn clone() -> UserData<T>
+type A = interface {
+    fn methodA() -> void
 }
 
-type ConcreteUserData<T> = class UserData<T> {
-    let age: T
-
-    fn init(v: T) {
-        this.age = v
-    }
-
-    fn cool() -> T[] {
-        return [this.age, this.age+1]
-    }
-
-    fn clone() -> UserData<T> {
-        let c = new ConcreteUserData<T>()
-        c.age = this.age
-        return c
-    }
+type B = interface {
+    fn methodB() -> void
 }
 
-let c = new ConcreteUserData<i32>(10)
-let c2 = c.clone()
+type C = interface {
+    fn methodC() -> void
+}
+
+type D = interface A, B{
+    fn methodD() -> void
+}
+type E = interface A {
+    fn methodE() -> void
+}
+
+
+type DClass = class D {
+    fn methodA() -> void {}
+    fn methodB() -> void {}
+    fn methodC() -> void {}
+    fn methodD() -> void {}
+}
+
+
+let deepOptional: ((A & B) & C) ? = new DClass() // should be valid
+
+let deepUnwrap: ((A & B) & C) = deepOptional! // should be valid
+
+
+fn main(){
+}

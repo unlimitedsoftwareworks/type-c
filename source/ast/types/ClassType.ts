@@ -200,7 +200,7 @@ export class ClassType extends DataType {
         let foundMethod: ClassMethod | null = null;
         for(const classMethod of this.methods) {
             if(classMethod.imethod.name === method.name) {
-                if (matchDataTypes(ctx, classMethod.imethod.header, method.header, true).success) {
+                if (matchDataTypes(ctx, method.header, classMethod.imethod.header, true).success) {
                     foundMethod = classMethod;
                     break;
                 }
@@ -275,7 +275,7 @@ export class ClassType extends DataType {
                     }
 
                     if(returnType !== null) {
-                        let res = matchDataTypes(ctx, method.imethod.header.returnType, returnType, strict);
+                        let res = matchDataTypes(ctx, returnType, method.imethod.header.returnType, strict);
                         if(!res.success){
                             continue;
                         }
