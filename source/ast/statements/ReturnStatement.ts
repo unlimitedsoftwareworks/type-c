@@ -31,7 +31,7 @@ export class ReturnStatement extends Statement {
         if(this.returnExpression){
             // we do not compare the return type to the function return type
             // since it could be unset
-            this.returnExpression.infer(ctx);
+            this.returnExpression.infer(ctx, null);
         }
     }
 
@@ -39,7 +39,7 @@ export class ReturnStatement extends Statement {
     getReturnType(ctx: Context): DataType {
         if(this.returnExpression){
             // we need to infer the expression to get the return type
-            return this.returnExpression.infer(ctx);
+            return this.returnExpression.infer(ctx, null);
         }
         else {
             return new VoidType(this.location);
