@@ -10,7 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { canCastTypes, matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
@@ -44,9 +44,7 @@ export class CastExpression extends Expression {
         let expressionType = this.expression.infer(ctx, null);
         
         // 2. Check if we can cast to the target type
-        let r = matchDataTypes(ctx, this.target, expressionType);
-
-        matchDataTypes(ctx, this.target, expressionType);
+        let r = canCastTypes(ctx, this.target, expressionType);
 
         if(!r.success && (this.castType === 'regular')) {
             throw ctx.parser.customError(`Cannot cast ${expressionType.shortname()} to ${this.target.shortname()}: ${r.message}`, this.location);

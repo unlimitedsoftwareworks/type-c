@@ -52,11 +52,16 @@ export function Err(message: string): TypeMatchResult {
 }
 
 function generateTypeKey(t1: DataType, t2: DataType, strict: boolean): string {
+    if(t1 === undefined) {
+        console.log('t1 is null')
+    }
     return `${t1.hash()}-${t2.hash()}-${strict}`;
 }
 
 
 const typeMatchCache = new WeakMap<Context, Map<string, TypeMatchResult>>();
+
+let globalMatchingStack: string[] = [];
 
 /**
  * Checks if `et` is (or compatible with `t2`).
@@ -69,7 +74,12 @@ const typeMatchCache = new WeakMap<Context, Map<string, TypeMatchResult>>();
  * @returns true if et is compatible with dt, i.e et is or a subtype of dt
  */
 export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict: boolean = false): TypeMatchResult {
+    if(globalMatchingStack.includes(generateTypeKey(et, dt, strict))) {
+        return Ok();
+    }
+    globalMatchingStack.push(generateTypeKey(et, dt, strict));
     let res = matchDataTypesRecursive(ctx, et, dt, et.isStrict() || strict, []);
+    globalMatchingStack.pop();
     return res;
 }
 
@@ -83,8 +93,6 @@ export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict:
  * @returns 
  */
 export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType, strict: boolean = false, stack: string[] = []): TypeMatchResult {
-    t1.resolve(ctx);
-    t2.resolve(ctx);
 
     /**
      * 2. We generate a type-key to avoid inifnite recursion and also
@@ -107,80 +115,101 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     stack.push(typeKey);
 
+
+    t1.resolve(ctx);
+    t2.resolve(ctx);
+
     /**
      * 3. We check if the types are the same
      */
+
+    let res = Ok();
 
     // case 1: void types
     if(t1.is(ctx, VoidType)) {
         // make sure t2 is also a void type
         if(!(t2 instanceof VoidType)) {
-            return Err(`Type mismatch, expected void, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected void, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
         }
 
-        return Ok();
+        return res;
     }
 
     // case 2: basic data types (integers, floats and doubles)
     if(t1.is(ctx, BasicType)) {
         if(t2.is(ctx, LiteralIntType)) {
-            return matchBasicLiteralIntType(ctx, t1.to(ctx, BasicType) as BasicType, t2.to(ctx, LiteralIntType) as LiteralIntType, strict);
+            res = matchBasicLiteralIntType(ctx, t1.to(ctx, BasicType) as BasicType, t2.to(ctx, LiteralIntType) as LiteralIntType, strict);
+            scopeCache.set(typeKey, res);
+            return res;
         }
 
         if(!t2.is(ctx, BasicType)) {
-            return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
+            return res;
         }
         
         if(t1.kind === t2.kind) {
-            return Ok();
+            scopeCache.set(typeKey, res);
+            return res;
         }
         else {
-            return matchBasicTypes(ctx, t1.to(ctx, BasicType) as BasicType, t2.to(ctx, BasicType) as BasicType, strict);
+            res = matchBasicTypes(ctx, t1.to(ctx, BasicType) as BasicType, t2.to(ctx, BasicType) as BasicType, strict);
+            scopeCache.set(typeKey, res);
+            return res;
         }
     }
 
     // case 2: boolean
     if(t1.is(ctx, BooleanType)) {
         if(!(t2.is(ctx, BooleanType))) {
-            return Err(`Type mismatch, expected boolean, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected boolean, got ${t2.shortname()}`);
         }
 
-        return Ok();
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     // case 3: array type
 
     if(t1.is(ctx, ArrayType)) {
         if(!(t2.is(ctx, ArrayType))) {
-            return Err(`Type mismatch, expected array, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected array, got ${t2.shortname()}`);
         }
-
-        let res = matchDataTypesRecursive(ctx, (t1.to(ctx, ArrayType) as ArrayType).arrayOf, (t2.to(ctx, ArrayType) as ArrayType).arrayOf, strict, stack);
-        if(!res.success) {
-            return res;
+        else {
+            res = matchDataTypesRecursive(ctx, (t1.to(ctx, ArrayType) as ArrayType).arrayOf, (t2.to(ctx, ArrayType) as ArrayType).arrayOf, strict, stack);
         }
-        return Ok();
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     // case 4: null types, a null can be only assigned a null
     if(t1.is(ctx, NullType)) {
         if(!(t2.is(ctx, NullType))) {
-            return Err(`Type mismatch, expected null, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected null, got ${t2.shortname()}`);
         }
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     // case 5: nullable, nullable<T> can be assigned a value of type T or null
     if(t1.is(ctx, NullableType)) {
         if(t2.is(ctx, NullableType)) {
-            return matchDataTypesRecursive(ctx, (t1.to(ctx, NullableType) as NullableType).type, (t2.to(ctx, NullableType) as NullableType).type, strict, stack);
+            res = matchDataTypesRecursive(ctx, (t1.to(ctx, NullableType) as NullableType).type, (t2.to(ctx, NullableType) as NullableType).type, strict, stack);
+            scopeCache.set(typeKey, res);
+            return res;
         }
-        if(t2.is(ctx, NullType)) {
-            return Ok();
+        else if(t2.is(ctx, NullType)) {
+            scopeCache.set(typeKey, res);
+            return res;
         }
         else {
             // if t1 is nullable and t2 is not, we match t1.type with t2
             let t1Type = (t1.to(ctx, NullableType) as NullableType).type;
-            return matchDataTypesRecursive(ctx, t1Type, t2, strict, stack);
+            res = matchDataTypesRecursive(ctx, t1Type, t2, strict, stack);
+            scopeCache.set(typeKey, res);
+            return res;
         }
     }
 
@@ -192,14 +221,19 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, EnumType)) {
         if(t2.is(ctx, EnumType)) {
-            return matchEnumTypes(ctx, t1.to(ctx, EnumType) as EnumType, t2.to(ctx, EnumType) as EnumType, strict);
+            res = matchEnumTypes(ctx, t1.to(ctx, EnumType) as EnumType, t2.to(ctx, EnumType) as EnumType, strict);
+            scopeCache.set(typeKey, res);
+            return res;
         }
         if((t2.is(ctx, LiteralIntType)) && (!strict)) {
-            return Ok();
+            scopeCache.set(typeKey, res);
+            return res;
         }
 
         let te = t1.to(ctx, EnumType) as EnumType;
-        return Err(`Type mismatch, expected enum with fields ${te.fields.map(e => e.name).join(", ")}, got ${t2.shortname()}`);
+        res = Err(`Type mismatch, expected enum with fields ${te.fields.map(e => e.name).join(", ")}, got ${t2.shortname()}`);
+        scopeCache.set(typeKey, res);
+        return res
     }
 
     /**
@@ -208,7 +242,9 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      * since they are only used to call method and should not be passed around
      */
     if(t1.is(ctx, FFIMethodType)) {
-        throw new Error("Cannot perform type matching on FFI methods");
+        res = Err("Cannot perform type matching on FFI methods");
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
@@ -217,13 +253,18 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, FunctionType)) {
         if(!t2.is(ctx, FunctionType)) {
-            return Err(`Type mismatch, expected function, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected function, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
+            return res;
         }
-        return matchFunctionType(ctx, t1.to(ctx, FunctionType) as FunctionType, t2.to(ctx, FunctionType) as FunctionType, stack, strict);
+        res = matchFunctionType(ctx, t1.to(ctx, FunctionType) as FunctionType, t2.to(ctx, FunctionType) as FunctionType, stack, strict);
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
      * case 9: GenericType
+     * should not be reached, since generic types are not resolved until concrete types are provided
      */
     if(t1 instanceof GenericType) {
         throw new Error("Cannot perform type matching on generic types");
@@ -234,10 +275,14 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, LiteralIntType)) {
         if(!t2.is(ctx, BasicType)) {
-            return Err(`Type mismatch, expected basic type, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected basic type, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
+            return res;
         }
         // TODO: maybe swapping ain't enough
-        return matchBasicLiteralIntType(ctx, t2, t1.to(ctx, LiteralIntType) as LiteralIntType, strict);
+        res = matchBasicLiteralIntType(ctx, t2, t1.to(ctx, LiteralIntType) as LiteralIntType, strict);
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
@@ -246,12 +291,18 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, InterfaceType)) {
         if(t2.is(ctx, InterfaceType)) {
-            return matchInterfaces(ctx, t1.to(ctx, InterfaceType) as InterfaceType, t2.to(ctx, InterfaceType) as InterfaceType, strict, stack);
+            res = matchInterfaces(ctx, t1.to(ctx, InterfaceType) as InterfaceType, t2.to(ctx, InterfaceType) as InterfaceType, strict, stack);
+            scopeCache.set(typeKey, res);
+            return res;
         }
         if(t2.is(ctx, ClassType)) {
-            return matchInterfaceClass(ctx, t1.to(ctx, InterfaceType) as InterfaceType, t2.to(ctx, ClassType) as ClassType, strict, stack);
+            res = matchInterfaceClass(ctx, t1.to(ctx, InterfaceType) as InterfaceType, t2.to(ctx, ClassType) as ClassType, strict, stack);
+            scopeCache.set(typeKey, res);
+            return res;
         }
-        return Err(`Type mismatch, expected interface or class, got ${t2.shortname()}`);
+        res = Err(`Type mismatch, expected interface, got ${t2.shortname()}`);
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
@@ -260,10 +311,14 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, ClassType)) {
         if(!t2.is(ctx, ClassType)) {
-            return Err(`Type mismatch, expected class, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected class, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
+            return res;
         }
         
-        return matchClasses(ctx, t1.to(ctx, ClassType) as ClassType, t2.to(ctx, ClassType) as ClassType, strict, stack);
+        res = matchClasses(ctx, t1.to(ctx, ClassType) as ClassType, t2.to(ctx, ClassType) as ClassType, strict, stack);
+        scopeCache.set(typeKey, res);
+        return res;
     }
         
     /**
@@ -282,9 +337,13 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, ProcessType)) {
         if(!t2.is(ctx, ProcessType)) {
-            return Err(`Type mismatch, expected process, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected process, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
+            return res;
         }
-        return matchProcesses(ctx, t1.to(ctx, ProcessType) as ProcessType, t2.to(ctx, ProcessType) as ProcessType, strict, stack);
+        res = matchProcesses(ctx, t1.to(ctx, ProcessType) as ProcessType, t2.to(ctx, ProcessType) as ProcessType, strict, stack);
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
@@ -300,11 +359,16 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, VariantType)) {
         if(t2.is(ctx, VariantType)) {
-            return matchVariants(ctx, t1.to(ctx, VariantType) as VariantType,  t2.to(ctx, VariantType) as VariantType, strict, stack);
+            res = matchVariants(ctx, t1.to(ctx, VariantType) as VariantType,  t2.to(ctx, VariantType) as VariantType, strict, stack);
         }
-        if(t2.is(ctx, VariantConstructorType)) {
-            return matchVariantWithConstructor(ctx, t1.to(ctx, VariantType) as VariantType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
+        else if(t2.is(ctx, VariantConstructorType)) {
+            res = matchVariantWithConstructor(ctx, t1.to(ctx, VariantType) as VariantType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
         }
+        else {
+            res = Err(`Type mismatch, expected variant or variant constructor type of base tyep ${(t1.to(ctx, VariantType) as VariantType).shortname()}, got ${t2.shortname()}`);
+        }
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
@@ -313,17 +377,27 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1.is(ctx, VariantConstructorType)) {
         if(!t2.is(ctx, VariantConstructorType)) {
-            return Err(`Type mismatch, expected variant constructor, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected variant constructor, got ${t2.shortname()}`);
         }
-        return matchVariantConstructors(ctx, t1.to(ctx, VariantConstructorType) as VariantConstructorType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
+        else {
+            res = matchVariantConstructors(ctx, t1.to(ctx, VariantConstructorType) as VariantConstructorType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
+        }
+
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
 
     if(t1.is(ctx, StructType)) {
         if(!(t2.is(ctx, StructType))) {
-            return Err(`Type mismatch, expected struct, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected struct, got ${t2.shortname()}`);
         }
-        return matchStructs(ctx, t1.to(ctx, StructType) as StructType, t2.to(ctx, StructType) as StructType, strict, stack);
+        else {
+            res = matchStructs(ctx, t1.to(ctx, StructType) as StructType, t2.to(ctx, StructType) as StructType, strict, stack);
+        }
+
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     /**
@@ -334,7 +408,9 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         throw new Error("Unset types should not be here");
     }
 
-    return Err(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);
+    res = Err(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);
+    scopeCache.set(typeKey, res);
+    return res;
 }
 
 function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boolean): TypeMatchResult {
@@ -467,6 +543,12 @@ function matchFunctionType(ctx: Context, t1: FunctionType, t2: FunctionType, sta
         }
     }
     else {
+        /**
+         * Same as with classes findMethodBySignature, we can accept a return type that unset
+         */
+        if(t1.returnType.is(ctx, UnsetType)){
+            return Ok();
+        }
         let res = matchDataTypesRecursive(ctx, t1.returnType, t2.returnType as DataType, strict, stack)
         if (!res.success) {
             return Err(`Function return types do not match: ${res.message}`)
@@ -549,6 +631,12 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
 }
 
 function matchClasses(ctx: Context, t1: ClassType, t2: ClassType, strict: boolean, stack: string[]): TypeMatchResult {
+    /**
+     * Some times, classes are not resolved due to circular dependencies, so we resolve them here
+     */
+    t1.resolve(ctx);
+    t2.resolve(ctx);
+
     /**
      * strict is irrelevant here, since classes matching is strict by default
      */
@@ -793,4 +881,24 @@ export function checkExpressionArgConst(e1: Expression, dt1: DataType, e2: Funct
     }
 
     return true;
+}
+
+/**
+ * Used by casting expressions to check if the source type can be cast to the target type.
+ * This handles the specific case where basic types are allowed to be cast to each other.
+ * @param ctx 
+ * @param sourceType 
+ * @param targetType 
+ * @returns 
+ */
+export function canCastTypes(ctx: Context, sourceType: DataType, targetType: DataType): TypeMatchResult {
+    // Example rule: Allow casting between numeric types
+    if(sourceType.is(ctx, BasicType) && targetType.is(ctx, BasicType)) {
+        return Ok();
+    }
+
+    // Additional rules here...
+
+    // Fallback to stricter matching if no casting rules apply
+    return matchDataTypes(ctx, sourceType, targetType, true);
 }
