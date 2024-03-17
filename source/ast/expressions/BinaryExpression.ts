@@ -23,6 +23,7 @@ import { ElementExpression } from "./ElementExpression";
 import { IndexAccessExpression } from "./IndexAccessExpression";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 import { binaryTypeCheckers } from "../../typechecking/BinaryExpressionInference";
+import { BasicType } from "../types/BasicType";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -77,8 +78,13 @@ export class BinaryExpression extends Expression {
         if(this.operator == "="){
             rhsType = this.right.infer(ctx, lhsType);
         } else {
-            // let rhsHint: DataType | null = null;
-            rhsType = this.right.infer(ctx, lhsType);   
+            let rhsHint: DataType | null = null;
+
+            if(lhsType.is(ctx, BasicType) && (this.operator != "&&") && (this.operator != "||")){
+                rhsHint = lhsType;
+            }
+
+            rhsType = this.right.infer(ctx, rhsHint);   
         }
 
         /**
