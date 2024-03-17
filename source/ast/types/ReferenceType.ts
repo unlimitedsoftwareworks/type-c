@@ -30,10 +30,17 @@ export class ReferenceType extends DataType{
     baseType: DataType | null = null;
     baseDecl: DeclaredType | null = null;
 
-    constructor(location: SymbolLocation, pkg: string[], typeArgs: DataType[] = []){
+    /**
+     * The context in which the reference is used (not necessarily the context in which it is declared)
+     */
+    protected _usageContext: Context | null = null;
+
+    constructor(location: SymbolLocation, pkg: string[], typeArgs: DataType[] = [], usageContext: Context | null){
         super(location, "reference");
         this.pkg = pkg;
         this.typeArgs = typeArgs;
+
+        this._usageContext = usageContext;
     }
 
     resolveIfNeeded(ctx: Context){
@@ -50,7 +57,8 @@ export class ReferenceType extends DataType{
 
         let fullPkg = this.pkg.join(".");
 
-        let type = ctx.lookup(fullPkg);
+        let type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
+        
         if(type == null){
             throw ctx.parser.customError(`Type ${fullPkg} not found`, this.location);
         }
@@ -182,7 +190,7 @@ export class ReferenceType extends DataType{
             return genericsTypeMap[name];
         }
         else {
-            let r = new ReferenceType(this.location, this.pkg, this.typeArgs.map(t => t.clone(genericsTypeMap)));
+            let r = new ReferenceType(this.location, this.pkg, this.typeArgs.map(t => t.clone(genericsTypeMap)), this._usageContext);
             return r;
         }
     }
