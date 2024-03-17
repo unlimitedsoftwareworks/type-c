@@ -54,6 +54,13 @@ export class ClassType extends DataType {
 
     resolve(ctx: Context, hint: DataType | null = null) {
         if(this._resolved) return;
+
+        if(globalTypeCache.get(this)) {
+            return;
+        }
+
+        globalTypeCache.set(this);
+
         if(globalTypeCache.isChecking(this)) {
             return;
         }
@@ -133,6 +140,7 @@ export class ClassType extends DataType {
 
         this._resolved = true;
         globalTypeCache.stopChecking(this);
+        globalTypeCache.set(this);
     }
 
     shortname(): string {
@@ -275,9 +283,14 @@ export class ClassType extends DataType {
                     }
 
                     if(returnType !== null) {
-                        let res = matchDataTypes(ctx, returnType, method.imethod.header.returnType, strict);
-                        if(!res.success){
-                            continue;
+                        /**
+                         * Sometime, returnType is unset, which in this case means we are recursivly checking the type against itself, hence we can accept
+                         */
+                        if(!returnType.is(ctx, UnsetType)) {
+                            let res = matchDataTypes(ctx, returnType, method.imethod.header.returnType, strict);
+                            if(!res.success){
+                                continue;
+                            }
                         }
                     }
 
