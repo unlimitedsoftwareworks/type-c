@@ -26,7 +26,7 @@ export class ExpressionStatement extends Statement {
     }
 
     infer(ctx: Context){
-        this.expression.infer(ctx);
+        this.expression.infer(ctx, null);
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): ExpressionStatement {
