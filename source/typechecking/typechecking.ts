@@ -600,19 +600,19 @@ function matchClasses(ctx: Context, t1: ClassType, t2: ClassType, strict: boolea
 
     // every method of t1 must match exactly one in t2
     for(let method of t1Methods) {
-        let found = false;
-        for(let method2 of t2Methods) {
-            if(method.name === method2.name) {
-                let res = matchFunctionType(ctx, method.header, method2.header, stack, strict);
-                if(!res.success) {
-                    return res;
-                }
-                found = true;
-                break;
-            }
+        // we find the method in t2
+        let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
+        if(m.length === 0) {
+            return Err(`Method ${method.shortname()} not found in class ${t2.shortname()}`);
         }
-        if(!found) {
-            return Err(`Method ${method.name} not found in class ${t2.shortname()}`);
+        else if (m.length > 1) {
+            return Err(`Ambiguous method ${method.shortname()} in class ${t2.shortname()}`);
+        }
+        else {
+            let res = matchFunctionType(ctx, method.header, m[0].header, stack, strict);
+            if(!res.success) {
+                return res;
+            }
         }
     }
 
