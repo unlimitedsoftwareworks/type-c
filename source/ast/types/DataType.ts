@@ -61,10 +61,16 @@ export class DataType {
     // if this is true, the type is strict, meaning it is only compatible with types of exact same structure.
     private _isStrict: boolean = false;
     private _hash: string | null = null;
+    
+    protected _declContext: Context | null = null;
 
     constructor(location: SymbolLocation, kind: DataTypeKind){
         this.kind = kind;
         this.location = location;
+    }
+
+    setDeclContext(ctx: Context){
+        this._declContext = ctx;
     }
 
     /**
@@ -146,6 +152,10 @@ export class DataType {
     resolveIfNeeded(ctx: Context){
     }
 
+    getBaseType(ctx: Context): DataType {
+        return this;
+    }
+
     /**
      * Checks if a DataType is of a certain type
      * While this method uses instanceof, it not used to check the actual instance, but rather the semantic,
@@ -159,7 +169,9 @@ export class DataType {
         this.resolveIfNeeded(ctx);
         // we use the kind attribute to avoid circular dependencies
         if (this.kind === "reference") {
-            return this.dereference().is(ctx, targetType);
+            let dt = this.getBaseType(ctx);
+            dt.resolve(ctx)
+            return dt.is(ctx, targetType);
         }
         else {
             return this instanceof targetType;
