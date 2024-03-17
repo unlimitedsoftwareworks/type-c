@@ -124,8 +124,11 @@ export class Context {
 
     addSymbol(symbol: Symbol) {
         this.symbols.set(symbol.name, symbol);
+        symbol.parentContext = this;
     }
 
+    // adds a symbol to the current context, but does not set the parent context
+    // i.e does not take ownership of the symbol
     addExternalSymbol(symbol: Symbol, name: string) {
         this.symbols.set(name, symbol);
     }
