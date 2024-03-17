@@ -1,6 +1,6 @@
 
 from std.io import println
-from std.String import String, UTF8String
+from std.String import String
 
 // Function to swap two elements in an array
 fn swap(mut arr: i32[], i: u64, j: u64) {
@@ -39,7 +39,7 @@ fn quickSort(mut arr: i32[], low: u64, high: u64) -> void {
 
 // A function to print the array
 fn printArray(arr: i32[]) {
-    let str: String = new UTF8String("Array: ")
+    let str: String = "Array: "
     for let i: u64 = 0; i < arr.length; i += 1 {
         let element  = arr[i]
         str.cat(element).cat(", ")
