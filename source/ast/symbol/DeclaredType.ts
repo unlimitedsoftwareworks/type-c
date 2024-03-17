@@ -31,6 +31,8 @@ export class DeclaredType extends Symbol {
         this.parentContext = parentContext;
         this.parentPackage = parentPackage;
         this.genericParameters = genericParameters;
+
+        this.type.setDeclContext(parentContext);
     }
 
     /**
