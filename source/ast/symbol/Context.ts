@@ -126,6 +126,10 @@ export class Context {
         this.symbols.set(symbol.name, symbol);
     }
 
+    addExternalSymbol(symbol: Symbol, name: string) {
+        this.symbols.set(name, symbol);
+    }
+
     /**
      * Forcibly overrides a symbol in the current context.
      * @param symbol 
