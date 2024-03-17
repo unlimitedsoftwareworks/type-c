@@ -36,7 +36,7 @@ export class IfElseExpression extends Expression {
         this.setHint(hint);
 
         // step 1: infer the conditions, as boolean
-        this.conditions.forEach((condition) => condition.infer(ctx, new BooleanType(this.location)));
+        this.conditions.forEach((condition) => condition.infer(ctx, null));
 
         // step 2: infer the expressions of each if expression
         let typesCombined: DataType[] = this.bodies.map((body) => body.infer(ctx, hint));

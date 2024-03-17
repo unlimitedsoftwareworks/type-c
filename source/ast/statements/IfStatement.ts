@@ -31,7 +31,7 @@ export class IfStatement extends Statement {
 
     infer(ctx: Context){
         for(const block of this.ifBlocks){
-            block.expression.infer(ctx, new BooleanType(this.location));
+            block.expression.infer(ctx, null);
             block.statement.infer(ctx);
         }
         if(this.elseBody){

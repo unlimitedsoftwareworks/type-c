@@ -30,7 +30,7 @@ export class WhileStatement extends Statement {
     }
 
     infer(ctx: Context){
-        this.condition.infer(ctx, new BooleanType(this.location));
+        this.condition.infer(ctx, null);
         this.body.infer(ctx);
     }
 

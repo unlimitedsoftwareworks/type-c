@@ -41,7 +41,7 @@ export class ForStatement extends Statement {
             initializer.infer(this.context);
         }
         if(this.condition){
-            this.condition.infer(this.context, new BooleanType(this.location));
+            this.condition.infer(this.context, null);
         }
         for(const incrementor of this.incrementors){
             incrementor.infer(this.context);

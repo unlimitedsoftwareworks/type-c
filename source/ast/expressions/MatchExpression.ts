@@ -58,7 +58,7 @@ export class MatchCaseExpression {
         this.pattern.infer(this.context, expressionType);
 
         if(this.guard) {
-            this.guard.infer(this.context, new BooleanType(this.location));
+            this.guard.infer(this.context, null);
         }
 
         if(this.expression) {
