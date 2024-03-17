@@ -754,13 +754,13 @@ function parseTypeReference(parser: Parser, ctx: Context): DataType {
         parser.accept();
         const types = parseTypeList(parser, ctx);
         parser.expect('>');
-        return new ReferenceType(loc, ref, types);
+        return new ReferenceType(loc, ref, types, ctx);
     }
     else {
         parser.reject();
     }
 
-    return new ReferenceType(loc, ref);
+    return new ReferenceType(loc, ref, [], ctx);
 }
 
 function parseTypeStruct(parser: Parser, ctx: Context): DataType {
