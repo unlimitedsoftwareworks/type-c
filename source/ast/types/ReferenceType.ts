@@ -68,18 +68,18 @@ export class ReferenceType extends DataType{
         if(type.genericParameters.length === 0){
             this.baseType = type.type;
             // causes infinite loop
-            //this.baseType.resolve(ctx);
             this.baseDecl = type;
         }
         else {
             // we have to clone the original type
             let map = buildGenericsMaps(ctx, type.genericParameters, this.typeArgs);
             this.baseType = type.type.clone(map);
-            this.baseType.resolve(ctx);
             this.baseDecl = type;
         }
-        
+
+        //
         globalTypeCache.stopChecking(this);
+        //this.baseType.resolve(ctx);
     }
 
     dereference(): DataType {
@@ -89,6 +89,13 @@ export class ReferenceType extends DataType{
         
         // in case of a reference to a reference
         return this.baseType.dereference();
+    }
+
+    getBaseType(ctx: Context): DataType {
+        if(this.baseType == null){
+            this.resolveIfNeeded(ctx);
+        }
+        return this.baseType!;
     }
 
     denullReference(): DataType {

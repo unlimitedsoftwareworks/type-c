@@ -13,7 +13,8 @@
 import { DataType } from "../ast/types/DataType";
 
 export class TypeCache {
-    private cache: Map<string, boolean> = new Map();
+    private checkCache: Map<string, boolean> = new Map();
+    private typeCache: Map<string, DataType> = new Map();
 
     /**
      * Check if a type is currently being checked
@@ -21,7 +22,7 @@ export class TypeCache {
      * @returns true if the type is currently being checked, false otherwise
      */
     isChecking(type: DataType): boolean {
-        return this.cache.has(type.hash());
+        return this.checkCache.has(type.hash());
     }
 
     /**
@@ -29,7 +30,7 @@ export class TypeCache {
      * @param type The type to start checking
      */
     startChecking(type: DataType) {
-        this.cache.set(type.hash(), true);
+        this.checkCache.set(type.hash(), true);
     }
 
     /**
@@ -37,7 +38,25 @@ export class TypeCache {
      * @param type The type to stop checking
      */
     stopChecking(type: DataType) {
-        this.cache.delete(type.hash());
+        this.checkCache.delete(type.hash());
+    }
+
+    /**
+     * Get a type from the cache
+     * @param type The type to get from the cache
+     * @returns The type from the cache
+     */
+    get(type: DataType): DataType | undefined {
+        return this.typeCache.get(type.hash());
+    }
+
+    /**
+     * Set a type in the cache
+     * @param type The type to set in the cache
+     * @param value The value to set
+     */
+    set(type: DataType) {
+        this.typeCache.set(type.hash(), type);
     }
 }
 
