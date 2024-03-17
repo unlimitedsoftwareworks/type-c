@@ -115,6 +115,9 @@ export class ElementExpression extends Expression {
             }
 
             this.inferredType = new FFINamespaceType(this.location, variable);
+            this.isConstant = false;
+            this.checkHint(ctx);
+            return this.inferredType;
         }
         else if (variable instanceof DeclaredType) {
             // we make sure we have no hint
@@ -152,6 +155,7 @@ export class ElementExpression extends Expression {
                 }
                 this.inferredType = new MetaInterfaceType(this.location, variable.type);
                 this.isConstant = false;
+                this.checkHint(ctx);
                 return this.inferredType;
             }
 
@@ -162,6 +166,8 @@ export class ElementExpression extends Expression {
                 }
 
                 this.inferredType = new MetaEnumType(this.location, variable.type);
+                this.isConstant = false;
+                this.checkHint(ctx);
                 return this.inferredType;
             }
 
@@ -169,6 +175,7 @@ export class ElementExpression extends Expression {
                 // generics are allowed here however
                 this.inferredType = new MetaVariantType(this.location, variable.type, this.typeArguments);
                 this.isConstant = false;
+                this.checkHint(ctx);
                 return this.inferredType;
             }
 
