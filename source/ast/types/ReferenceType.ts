@@ -17,6 +17,7 @@ import { DeclaredType } from "../symbol/DeclaredType";
 import { ClassType } from "./ClassType";
 import { InterfaceType } from "./InterfaceType";
 import { buildGenericsMaps } from "../../typechecking/TypeInference";
+import { globalTypeCache } from "../../typechecking/TypeCache";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]
@@ -42,6 +43,11 @@ export class ReferenceType extends DataType{
     }
 
     resolve(ctx: Context) {
+        if(globalTypeCache.isChecking(this)) {
+            return;
+        }
+        globalTypeCache.startChecking(this);
+
         let fullPkg = this.pkg.join(".");
 
         let type = ctx.lookup(fullPkg);
@@ -61,7 +67,8 @@ export class ReferenceType extends DataType{
 
         if(type.genericParameters.length === 0){
             this.baseType = type.type;
-            this.baseType.resolve(ctx);
+            // causes infinite loop
+            //this.baseType.resolve(ctx);
             this.baseDecl = type;
         }
         else {
@@ -72,6 +79,7 @@ export class ReferenceType extends DataType{
             this.baseDecl = type;
         }
         
+        globalTypeCache.stopChecking(this);
     }
 
     dereference(): DataType {
