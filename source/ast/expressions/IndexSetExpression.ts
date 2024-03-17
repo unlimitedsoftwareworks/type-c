@@ -54,15 +54,15 @@ export class IndexSetExpression extends Expression {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
             }
 
-            // TODO: remove the !
-            let m = getOperatorOverloadType(ctx, "__index_set__", lhsT, this.indexes.map((index) => index.infer(ctx, null)));
+            let valueType = this.value.infer(ctx, null);
+            let m = getOperatorOverloadType(ctx, "__index_set__", lhsT, [valueType, ...this.indexes.map((index) => index.infer(ctx, null))]);
             if(m === null) {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
-            let valueType = this.value.infer(ctx, m.header.returnType);
             this.inferredType = setIndexesSetHint(ctx, m, this.indexes);
+            this.checkHint(ctx);
         }
         else if (lhsType.is(ctx, ArrayType)) {
             let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
