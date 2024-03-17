@@ -15,6 +15,11 @@
     - Removed auto returning `inferredType` when set, from within expression, when we re-infer function return expression, the hint is not set and type checks are not performed since it auto-returns first thing during inference.
     One solution is to not infer return statements expressions, gotta investigate! 
 
+- 17/03/2024: 
+    - `Context.addSymbol` now sets the `parentContext` of the symbol added, if a symbol is imported, `Context.addExternalSymbol` is used instead, which does not set the `parentContext` of the symbol added.
+    - `ReferenceType` now requires attribute `usageContext`, which points the context in which the reference is used, and Not where the reference is declared!
+
+
 
 TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
