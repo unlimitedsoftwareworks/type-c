@@ -67,7 +67,7 @@ export class BinaryExpression extends Expression {
         let lhsHint: DataType | null = null;
 
         // the following operators result in boolean types
-        if(!([">", "<", ">=", "<=", "=="].includes(this.operator))){
+        if(!([">", "<", ">=", "<=", "==", "!="].includes(this.operator))){
             lhsHint = hint;
         }
 
