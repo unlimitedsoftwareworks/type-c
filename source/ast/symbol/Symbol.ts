@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { Context } from "./Context";
 import {SymbolLocation} from "./SymbolLocation";
 
 export type SymbolKind =
@@ -28,6 +29,7 @@ export class Symbol {
     location: SymbolLocation;
     kind: SymbolKind;
     name: string;
+    parentContext: Context | null = null;
 
     constructor(location: SymbolLocation, kind: SymbolKind, name: string){
         this.location = location;
