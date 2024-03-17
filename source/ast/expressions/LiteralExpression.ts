@@ -12,6 +12,7 @@
  */
 
 
+import { BuiltinModules } from "../../BuiltinModules";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
@@ -142,11 +143,14 @@ export class StringLiteralExpression extends LiteralExpression {
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
     
+        if(BuiltinModules.String == undefined){
+            throw ctx.parser.customError("Default String class is not defined.", this.location);
+        }
 
-        // TODO:
-        //this.inferredType = BuiltinInterface.getStringClass();
+        this.inferredType = BuiltinModules.String;
+        this.checkHint(ctx);
 
-        throw ctx.parser.customError("Not implemented", this.location);
+        return this.inferredType;
     }
 }
 
