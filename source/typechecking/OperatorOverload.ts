@@ -150,28 +150,39 @@ export function isAddable(ctx: Context, dt: OverridableMethodType){
 }
 
 export function getOperatorOverloadType(ctx: Context, __op__: string, dt: OverridableMethodType, types: DataType[]): InterfaceMethod | null{
-    // TODO: implement
-    /*let type = dt.getMethodsByName(ctx, __op__);
-    if(type.length == 0){
-        return null;
-    }
-    else if(type.length == 1){
-        return type[0];
-    }
-    else {
-        // find the one that matches the rhs type
-        let res = dt.getMethodByType(ctx, __op__, types);
-        if(res.length == 0){
+    if(dt.is(ctx, ClassType)){
+        let classType = dt.to(ctx, ClassType) as ClassType;
+        let method = classType.getMethodBySignature(ctx, __op__, types, null);
+
+        if(method.length == 0){
             return null;
         }
-        else if(res.length == 1){
-            return res[0];
+        else if(method.length == 1){
+            return method[0];
         }
         else {
             throw ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
         }
-    }*/
-    return null;
+
+    }
+    else if(dt.is(ctx, InterfaceType)){
+        let interfaceType = dt.to(ctx, InterfaceType) as InterfaceType;
+        let method = interfaceType.getMethodBySignature(ctx, __op__, types, null);
+
+        if(method.length == 0){
+            return null;
+        }
+        else if(method.length == 1){
+            return method[0];
+        }
+        else {
+            throw ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
+        }
+
+    }
+    else {
+        return null
+    }
 }
 
 /**
