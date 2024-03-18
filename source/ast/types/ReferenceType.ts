@@ -16,8 +16,10 @@ import { Context } from "../symbol/Context";
 import { DeclaredType } from "../symbol/DeclaredType";
 import { ClassType } from "./ClassType";
 import { InterfaceType } from "./InterfaceType";
-import { buildGenericsMaps } from "../../typechecking/TypeInference";
+import { buildGenericsMaps, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { globalTypeCache } from "../../typechecking/TypeCache";
+import { EnumType } from "./EnumType";
+import { VariantType } from "./VariantType";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]
@@ -55,9 +57,31 @@ export class ReferenceType extends DataType{
         }
         globalTypeCache.startChecking(this);
 
+        let initialPkg = this.pkg[0];
         let fullPkg = this.pkg.join(".");
 
-        let type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
+        // first we check at the first name, i.e Data.Processor
+        // we first check what Data is, depending on that we check Processor
+        let type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(initialPkg) : this._usageContext?.lookup(initialPkg);
+        if(type == null){
+            throw ctx.parser.customError(`Type ${initialPkg} not found`, this.location);
+        }
+
+        if(!(type instanceof DeclaredType)){
+            throw ctx.parser.customError(`Type ${initialPkg} is not a declared type`, this.location);
+        }
+
+        // in case of variant constructor, we need to keep reference to the parent type
+        // so when we create a clone of a variant constructor, we clone the parent type
+        // and not the variant constructor itself, then find the variant constructor
+        let parentType = type.type;
+
+        // if variant, we look up its constructor if applicable
+        if(this.pkg.length > 1){
+            if(type.type.is(this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx: this._usageContext!, VariantType)){
+                type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
+            }
+        }
         
         if(type == null){
             throw ctx.parser.customError(`Type ${fullPkg} not found`, this.location);
@@ -81,8 +105,30 @@ export class ReferenceType extends DataType{
         else {
             // we have to clone the original type
             let map = buildGenericsMaps(ctx, type.genericParameters, this.typeArgs);
-            this.baseType = type.type.clone(map);
-            this.baseDecl = type;
+            let signature = signatureFromGenerics(this.typeArgs);
+
+            if(type.concreteTypes.has(signature)){
+                this.baseType = type.concreteTypes.get(signature)!.clone(map);
+                this.baseDecl = type;
+            }
+            else {
+                if(parentType !== type.type){
+                    let parentVariant = parentType.clone(map).to(ctx, VariantType) as VariantType;
+                    // now get the constructor matching this.pkg[1]
+                    let constructor = parentVariant.constructors.find(c => c.name === this.pkg[1]);
+                    if(constructor == null){
+                        throw ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
+                    }
+                    this.baseType = constructor;
+                    this.baseDecl = type;
+                }
+                else {
+                    this.baseType = type.type.clone(map);
+                    this.baseDecl = type;
+                }
+
+                type.concreteTypes.set(signature, this.baseType);
+            }
         }
 
         //
