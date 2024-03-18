@@ -63,7 +63,7 @@ export class DeclaredVariable extends Symbol {
 
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): DeclaredVariable{
-        let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation, this.isConst, this.isStrict);
+        let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation?.clone(typeMap) || null, this.isConst, this.isStrict);
         
         let sym = ctx.lookup(this.name);
         // TODO:
