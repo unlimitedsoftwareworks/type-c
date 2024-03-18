@@ -336,7 +336,7 @@ export class FunctionCallExpression extends Expression {
             throw new Error("Not implemented");
         }
 
-        throw ctx.parser.customError(`Not implemented`, this.location);
+        throw ctx.parser.customError(`Invalid function call`, this.location);
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): FunctionCallExpression {
