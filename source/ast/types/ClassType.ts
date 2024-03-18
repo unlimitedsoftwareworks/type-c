@@ -273,7 +273,7 @@ export class ClassType extends DataType {
     getMethodBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): InterfaceMethod[] {
         let findMethod = (ctx: Context, name: string, parameters: DataType[], returnType: DataType | null, strict: boolean): InterfaceMethod[] => {
             let candidates: InterfaceMethod[] = [];
-            let allMethods = this.getAllMethods();
+            let allMethods = this.methods;
 
             for(let method of allMethods) {
                 if (method.imethod.name === name) {
@@ -286,7 +286,7 @@ export class ClassType extends DataType {
                         /**
                          * Sometime, returnType is unset, which in this case means we are recursivly checking the type against itself, hence we can accept
                          */
-                        if(!returnType.is(ctx, UnsetType)) {
+                        if(!returnType.is(ctx, UnsetType) && !method.imethod.header.returnType.is(ctx, UnsetType)) {
                             let res = matchDataTypes(ctx, returnType, method.imethod.header.returnType, strict);
                             if(!res.success){
                                 continue;
@@ -332,7 +332,7 @@ export class ClassType extends DataType {
      */
     getMethodIndexBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): number {
         let findMethod = (ctx: Context, name: string, parameters: DataType[], returnType: DataType | null, strict: boolean): number => {
-            let allMethods = this.getAllMethods();
+            let allMethods = this.methods;
 
             for(let i = 0; i < allMethods.length; i++) {
                 let method = allMethods[i];
@@ -381,7 +381,7 @@ export class ClassType extends DataType {
     }
 
     getMethodByIndex(idx: number): ClassMethod | null{
-        let allMethods = this.getAllMethods();
+        let allMethods = this.methods;
         if(idx < 0 || idx >= allMethods.length){
             return null;
         }
@@ -451,5 +451,24 @@ export class ClassType extends DataType {
         })
 
         return clone;
+    }
+
+    /**
+     * Since generic methods cannot be overloaded, 
+     * we can simply return the method with the given name
+     * @param name 
+     */
+    getGenericMethodByName(ctx: Context, name: string): ClassMethod | null {
+        for(const method of this.methods) {
+            if(method.imethod.name === name) {
+                if(method.imethod.generics.length > 0) {
+                    return method;
+                }
+                else {
+                    throw new Error(`Method ${name} is not generic`);
+                }
+            }
+        }
+        return null;
     }
 }
