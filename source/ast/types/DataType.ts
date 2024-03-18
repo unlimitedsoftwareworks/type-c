@@ -173,6 +173,15 @@ export class DataType {
             dt.resolve(ctx)
             return dt.is(ctx, targetType);
         }
+        else if(this.kind === "nullable") {
+            if (this instanceof targetType) {
+                return true
+            }
+            else {
+                // @ts-ignore
+                return this.denull().is(ctx, targetType);
+            }
+        }
         else {
             return this instanceof targetType;
         }
