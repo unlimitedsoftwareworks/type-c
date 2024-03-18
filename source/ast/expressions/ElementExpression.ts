@@ -142,7 +142,7 @@ export class ElementExpression extends Expression {
             if(variable.type.is(ctx, ClassType)) {
                 // type arguments are not always needed, for example when accessing non-generic method from generic class
                 // so we insert them but not validate them
-                this.inferredType = new MetaClassType(this.location, variable.type, this.typeArguments);
+                this.inferredType = new MetaClassType(this.location, variable.type, variable.genericParameters, this.typeArguments);
                 this.isConstant = false;
                 
                 return this.inferredType;
@@ -173,7 +173,7 @@ export class ElementExpression extends Expression {
 
             if(variable.type.is(ctx, VariantType)) {
                 // generics are allowed here however
-                this.inferredType = new MetaVariantType(this.location, variable.type, this.typeArguments);
+                this.inferredType = new MetaVariantType(this.location, variable.type, variable.genericParameters, this.typeArguments);
                 this.isConstant = false;
                 this.checkHint(ctx);
                 return this.inferredType;
