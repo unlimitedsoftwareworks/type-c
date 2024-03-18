@@ -91,7 +91,7 @@ export class ClassMethod {
             return ;
         }
 
-        inferFunctionHeader(ctx, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
+        inferFunctionHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
     }
 
     getConcreteGenerics(){
