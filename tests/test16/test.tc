@@ -1,150 +1,269 @@
-
+from std.string import String
 from std.io import println
-from std.String import String
+from std.unit.test import TestUnit, UnitSet
 
-// Function to swap two elements in an array
-fn swap(mut arr: i32[], i: u64, j: u64) {
-    let temp: i32 = arr[i]
-    arr[i] = arr[j]
-    arr[j] = temp
-    return
-}
+fn test_case_1(rn: TestUnit) {
 
-// Partition function for the quicksort
-fn partition(mut arr: i32[], low: u64, high: u64) -> u64 {
-    let pivot: i32 = arr[high]
-    let i: u64 = (low - 1)
-    for let j = low; j < high; j = j + 1 {
-        if arr[j] < pivot {
-            i = i + 1
-            swap(arr, i, j)
+    let z: u8[] = [1, 2, 3, 4, 5]
+
+    match z {
+        [1, 2, 3, 4, 5, ...v] {
+            rn.assert_eq<u64>(v.length, 0)
+        }
+        _ {
+            rn.assert_unreachable()
         }
     }
-    swap(arr, i + 1, high)
-    return (i + 1)
-}
 
-// The main quicksort function
-fn quickSort(mut arr: i32[], low: u64, high: u64) -> void {
-    if low < high {
-        let pi: u64 = partition(arr, low, high)
-        if(pi > 0) {
-            quickSort(arr, low, pi - 1)
+    match z {
+        [1, 2, ...v] {
+            rn.assert_eq<u64>(v.length, 3)
+            rn.assert_eq<u8>(v[0], 3)
+            rn.assert_eq<u8>(v[1], 4)
+            rn.assert_eq<u8>(v[2], 5)
         }
-        quickSort(arr, pi + 1, high)
+        _ {
+            rn.assert_unreachable()
+        }
     }
-
-    return
 }
 
-// A function to print the array
-fn printArray(arr: i32[]) {
-    let str: String = "Array: "
-    for let i: u64 = 0; i < arr.length; i += 1 {
-        let element  = arr[i]
-        str.cat(element).cat(", ")
+
+
+fn fib(n: u32) -> u32 = 
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fib(n - 1) + fib(n - 2)
     }
-    println(str)
-    return
+
+fn test_case_2(rn: TestUnit) {
+    let res1 = fib(10)
+    rn.assert_eq<u32>(res1, 55)
+
+    let res2 = fib(20)
+    rn.assert_eq<u32>(res2, 6765)
 }
 
-type Array = class {
-    let data: i32[]
-    let length: u64
-    let capacity: u64
+type ServerResponse = variant {
+    Ok(code: u32),
+    Error(code: u32, message: String)
+}
+
+
+fn test_case_3(rn: TestUnit) {
+    let res: ServerResponse = ServerResponse.Ok(200)
+
+    match res {
+        ServerResponse.Ok(code) {
+            rn.assert_eq<u32>(code, 200)
+        }
+
+        ServerResponse.Error(code, message) {
+            rn.assert_unreachable()
+        }
+    }
+
+    let res2: ServerResponse = ServerResponse.Error(404, "Not found")
+
+    match res2 {
+        ServerResponse.Ok(code) {
+            rn.assert_unreachable()
+        }
+
+        ServerResponse.Error(code, message) {
+            rn.assert_eq<u32>(code, 404)
+            rn.assert_obj_eq<String>(message, "Not found")
+        }
+    }
+}
+
+type Response = enum {
+    Ok,
+    Error
+}
+
+fn test_case_4(rn: TestUnit) {
+    
+    // todo investigate why const is ignored later on
+    let r = Response.Ok
+
+    match r {
+        Response.Ok {
+            rn.assert_reachable()
+        }
+        Response.Error {
+            rn.assert_unreachable()
+        }
+    }
+    
+    r = Response.Error
+
+    match r {
+        Response.Ok {
+            rn.assert_unreachable()
+        }
+
+        Response.Error {
+            rn.assert_reachable()
+        }
+    }
+}
+
+type Phone = {
+    name: String,
+    price: i32
+}
+
+
+fn test_case_5(rn: TestUnit) {
+    let phones: Phone[] = [
+        {"Samsung Galaxy S10", 3400},  // <-
+        {"iPhone 11", 3110}, 
+        {"Huawei P30", 3650}
+    ]
+
+    match phones {
+        [p1, {price: 3110}, ...res] {
+            rn.assert_obj_eq<String>(p1.name, "Samsung Galaxy S10")
+            rn.assert_eq<i32>(p1.price, 3400)
+            rn.assert_eq<u64>(res.length, 1)
+            rn.assert_obj_eq<String>(res[0].name, "Huawei P30")
+            rn.assert_eq<i32>(res[0].price, 3650)
+        }
+        
+        _ {
+            rn.assert_unreachable()
+        }
+    }
+}
+
+fn test_case_6(rn: TestUnit) {
+    let pairs: u8[] = [1, 1]
+
+    match pairs {
+        [x, y] if x == y {
+            rn.assert_eq<u8>(x, y)
+        }
+        
+        _ {
+            rn.assert_unreachable()
+        }
+    }
+
+    let pairs2: u8[] = [1, 2]
+
+    match pairs2 {
+        [x, y] if x != y {
+            rn.assert_neq<u8>(x, y)
+        }
+        _ {
+            rn.assert_unreachable()
+        }
+    }
+}
+
+type User = {
+    name: String,
+    age: u32
+}
+
+type DataArray = class {
+    let data: {
+        v: u16,
+        w: u16
+    }[]
 
     fn init() {
         this.data = []
-        this.length = 0
-        this.capacity = 0
+        this.data.extend(20)
     }
 
-    fn init(capacity: u64) {
-        this.data = []
-        this.length = 0
-        this.capacity = capacity
-        this.data.extend(capacity)
+    fn get(index: u64) -> u16 {
+        return this.data[index].v
     }
 
-    fn push(element: i32) {
-        if(this.length == this.capacity) {
-            this.capacity = this.capacity * 2 + 1
-            this.data.extend(this.capacity)
+    fn set(index: u64, value: u16) {
+        this.data[index] = {
+            v: value,
+            w: 1
         }
-        this.data[this.length] = element
-        this.length = this.length + 1
-        return
-    }
-
-    fn pop() -> i32 {
-        if(this.length == 0) {
-            return 0
-        }
-        this.length = this.length - 1
-        return this.data[this.length]
-    }
-
-    fn print() {
-        let str = "vector<"
-        for let i: u64 = 0; i < this.length; i = i + 1 {
-            str = str + this.data[i]
-            if(i < this.length - 1) {
-                str = str + ", "
-            }
-        }
-
-        println(str+">")
-    }
-
-    fn __index__(index: u64) -> i32 {
-        return this.data[index]
-    }
-
-    fn __index_set__(value: i32, i1: u64, i2: u64) {
-        this.data[i1+i2] = value
     }
 }
 
+fn test_case_7(rn: TestUnit) {
+    let s: User? = {
+        name: "John",
+        age: 20
+    }
 
-fn fib(x: i32) -> i32 {
-    if x == 0 {
-        return 0
-    } else if x == 1 {
-        return 1
-    } else {
-        return fib(x - 1) + fib(x - 2)
+    match s {
+        null {
+            rn.assert_unreachable()
+        }
+        x {
+            rn.assert_obj_eq<String>(x!.name, "John")
+        }
+    }
+
+
+     let x = new DataArray()
+    x.set(0, 1)
+    x.set(1, 2)
+
+    match x {
+        // should match since u8 is a subtype of u16
+        interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u16) } {
+            let z = x as interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u16) }
+            z.set(2, 3)
+            rn.assert_eq<u16>(x.get(2), 3)
+        }
+        x {
+            rn.assert_unreachable()
+        }
+    }
+
+    match x {
+        interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u64) } {
+            rn.assert_unreachable()
+        }
+        x {
+            rn.assert_reachable()
+        }
+    }   
+}
+
+
+type AnotherServerResponse<T> = variant {
+    Ok(code: T),
+    Error(msg: String)
+}
+
+fn test_case_8<U> (rn: TestUnit) {
+    let response: AnotherServerResponse<U> = AnotherServerResponse.Error<U>("Error")
+
+    match response {
+        AnotherServerResponse.Ok<U>(code) { 
+            rn.assert_unreachable()
+        }
+        AnotherServerResponse.Error<U>(msg) { 
+            rn.assert_obj_eq<String>(msg, "Error")
+        }
     }
 }
 
-let x: fn(y: i32) -> i32 = fib
-let z = x(32)
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests array matching", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests fibonacci", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tests variant matching", test_case_3)
+    let test_4 = new TestUnit("test 4", "Tests enum matching", test_case_4)
+    let test_5 = new TestUnit("test 5", "Tests array matching with destructuring", test_case_5)
+    let test_6 = new TestUnit("test 6", "Tests array matching with guards", test_case_6)
+    let test_7 = new TestUnit("test 7", "Tests null matching", test_case_7)
 
-fn main() {
-    let arr1: Array = new Array(10)
-    arr1.push(1)
-    arr1.push(2)
-    arr1.push(3)
-    arr1.push(4)
-    arr1.push(5)
+    let test_8 = new TestUnit("test 8", "Tests generic variant matching", test_case_8<u32>)
+    let test_9 = new TestUnit("test 9", "Tests generic variant matching", test_case_8<i32>)
 
-    arr1.print()
-
-    let z = arr1[1]
-    println("element at index 0: "+z)
-    arr1[1, 1] = 100
-    println("element at index 0: "+arr1[2])
-
-
-
-    let arr: i32[] = [1, 10, 7, 8, 9, 1, 5]
-    printArray(arr)
-    let n: u64 = arr.length 
-    quickSort(arr, 0, n-1)
-    //print("Sorted array: ")
-    printArray(arr)
-
-    println("Hello "+"raet "+3.14f+", "+1+"😃😄"+fib(5))
-    println("fib 40: "+fib(1))
-
-    return
+    let set = new UnitSet("Matching tests", "Tests pattern matching expression and statements", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9])
+    return set.run()
 }

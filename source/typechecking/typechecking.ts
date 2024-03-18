@@ -546,7 +546,7 @@ function matchFunctionType(ctx: Context, t1: FunctionType, t2: FunctionType, sta
         /**
          * Same as with classes findMethodBySignature, we can accept a return type that unset
          */
-        if(t1.returnType.is(ctx, UnsetType)){
+        if(t1.returnType.is(ctx, UnsetType) || t2.returnType.is(ctx, UnsetType)){
             return Ok();
         }
         let res = matchDataTypesRecursive(ctx, t1.returnType, t2.returnType as DataType, strict, stack)
@@ -691,12 +691,18 @@ function matchClasses(ctx: Context, t1: ClassType, t2: ClassType, strict: boolea
         // we find the method in t2
         let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
         if(m.length === 0) {
+            let paramTypes = method.header.parameters.map(e => e.type);
+            t2.getMethodBySignature(ctx, method.name, paramTypes, method.header.returnType);
             return Err(`Method ${method.shortname()} not found in class ${t2.shortname()}`);
         }
         else if (m.length > 1) {
             return Err(`Ambiguous method ${method.shortname()} in class ${t2.shortname()}`);
         }
         else {
+            // TODO: make sure generic constraints match
+            if(m[0].isGeneric() && method.isGeneric()) {
+                continue;
+            }
             let res = matchFunctionType(ctx, method.header, m[0].header, stack, strict);
             if(!res.success) {
                 return res;
@@ -731,21 +737,13 @@ function matchVariants(ctx: Context, t1: VariantType, t2: VariantType, strict: b
         }
     }
 
-    // every constructor of t1 must match exactly one in t2
-    for(let constructor of t1Constructors) {
-        let found = false;
-        for(let constructor2 of t2Constructors) {
-            if(constructor.name === constructor2.name) {
-                let res = matchVariantConstructors(ctx, constructor, constructor2, strict, stack);
-                if(!res.success) {
-                    return res;
-                }
-                found = true;
-                break;
-            }
-        }
-        if(!found) {
-            return Err(`Constructor ${constructor.name} not found in variant ${t2.shortname()}`);
+    // every constructor of t1 must match exactly one in t2 and in the same order
+    for(let i = 0; i < t1Constructors.length; i++) {
+        let constructorLHS = t1Constructors[i];
+        let constructorRHS = t2Constructors[i];
+        let res = matchVariantConstructors(ctx, constructorLHS, constructorRHS, strict, stack);
+        if(!res.success) {
+            return res;
         }
     }
 

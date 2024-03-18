@@ -18,6 +18,10 @@
 - 17/03/2024: 
     - `Context.addSymbol` now sets the `parentContext` of the symbol added, if a symbol is imported, `Context.addExternalSymbol` is used instead, which does not set the `parentContext` of the symbol added.
     - `ReferenceType` now requires attribute `usageContext`, which points the context in which the reference is used, and Not where the reference is declared!
+    - Since generic class methods do not support overloading, the method `ClassType.getGenericMethodByName(name: string)` has been introduced and used in `FunctionCallExpression` to get the generic method to be called.
+    
+- 18/03/2024:
+    - Variant constructors are matched based not only on name and argument but at their position within the parent.
 
 
 
