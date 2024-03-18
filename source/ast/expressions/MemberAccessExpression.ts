@@ -61,7 +61,7 @@ import { Expression } from "./Expression";
 
 
         // lhs has nothing to do with hint, hence we do not use it 
-        let lhsType = this.left.infer(ctx);
+        let lhsType = this.left.infer(ctx, null);
 
         // case 1: array element
         if(lhsType.is(ctx, ArrayType)) {
@@ -212,7 +212,7 @@ import { Expression } from "./Expression";
 
             let typeArguments = this.right.typeArguments.length > 0 ? this.right.typeArguments : metaVariantType.typeArguments;
 
-            this.inferredType = new MetaVariantConstructorType(this.location, constructor, typeArguments);
+            this.inferredType = new MetaVariantConstructorType(this.location, constructor, metaVariantType.genericParameters, typeArguments);
             this.isConstant = false;
             this.checkHint(ctx);
             return this.inferredType;
