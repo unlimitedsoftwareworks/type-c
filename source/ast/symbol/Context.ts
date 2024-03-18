@@ -20,9 +20,11 @@ import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { ProcessType } from "../types/ProcessType";
 import { DeclaredFunction } from "./DeclaredFunction";
-import { DeclaredType } from "./DeclaredType";
+import { DeclaredVariable } from "./DeclaredVariable";
+import { FunctionArgument } from "./FunctionArgument";
 import { Symbol } from "./Symbol";
 import { SymbolLocation } from "./SymbolLocation";
+import { VariablePattern } from "./VariablePattern";
 
 /**
  * We do not distinguish between local and arguments within same scope.
@@ -273,21 +275,40 @@ export class Context {
      * Clones current context, clones the active symbols too,
      * requires a parent scope, so we do not need to clone parents recursively
      */
-    clone(parent: Context | null): Context {
+    clone(typeMap: {[key: string]: DataType}, parent: Context | null): Context {
         let newContext = new Context(this.location, this.parser, parent || this.parent, this.env);
+        newContext.activeClass = this.activeClass;
+        newContext.activeProcess = this.activeProcess;
+        newContext.owner = this.owner;
+        newContext.pkg = this.pkg;
 
-        /**
-         * TODO: check if we need to clone the symbols, or if we can just reference them
-         */
-        /*
-        for(let key in this.symbols) {
-            let v = this.symbols.get(key);
+        for(const [key, v] of this.symbols) {
 
-            if(v instanceof Vari) {
+            if(v instanceof DeclaredVariable) {
+                let v2 = v.clone(typeMap, newContext)
+                newContext.addSymbol(v2);
+            }
+            else if (v instanceof DeclaredFunction) {
+                let v2 = v.clone(typeMap, newContext);
+                newContext.addSymbol(v2);
+            }
+            else if (v instanceof FunctionArgument) {
+                let v2 = v.clone(typeMap);
+                newContext.addSymbol(v2);
+            }
+            else if (v instanceof VariablePattern) {
+                /* VariablePatterns will be set when inferred
+                let v2 = v.clone(typeMap);
+                newContext.addSymbol(v2);
+                */
+            }
+            else if (v !== undefined) {
                 newContext.addSymbol(v);
             }
+            else {
+                throw new Error("Unknown symbol type");
+            }
         }
-        */
 
         return newContext;
         

@@ -24,6 +24,8 @@ export class VariantType extends DataType {
     constructor(location: SymbolLocation, constructors: VariantConstructorType[]) {
         super(location, "variant");
         this.constructors = constructors;
+
+        this.constructors.forEach((c) => c.setParent(this));
     }
 
 
@@ -52,6 +54,8 @@ export class VariantType extends DataType {
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}){
-        return new VariantType(this.location, this.constructors.map((c) => c.clone(genericsTypeMap)));
+        let newV = new VariantType(this.location, this.constructors.map((c) => c.clone(genericsTypeMap)));
+        newV.constructors.forEach((c) => c.setParent(newV));
+        return newV;
     }
 }

@@ -37,4 +37,10 @@ export class StructVariablePatternExpression extends PatternExpression {
             ctx.addSymbol(this.symbolPointer);
         }
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): StructVariablePatternExpression{
+        let newVar = new StructVariablePatternExpression(this.location, this.name);
+        //newVar.symbolPointer = this.symbolPointer; // will be set when inferred
+        return newVar;
+    }
 }

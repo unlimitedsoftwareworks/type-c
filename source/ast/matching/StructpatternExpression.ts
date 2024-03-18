@@ -70,4 +70,9 @@ export class StructPatternExpression extends PatternExpression {
         }
         this._inferred = true;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): StructPatternExpression {
+        return new StructPatternExpression(this.location, this.fieldPatterns.map(f => ({ name: f.name, pattern: f.pattern.clone(typeMap, ctx) })), 
+        this.variablePattern ? this.variablePattern.clone(typeMap, ctx) : null);
+    }
 }

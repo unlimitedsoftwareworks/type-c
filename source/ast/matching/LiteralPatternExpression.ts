@@ -26,9 +26,13 @@ export class LiteralPatternExpression extends PatternExpression {
     }
 
     infer(ctx: Context, expressionType: DataType) {
-        let r = matchDataTypes(ctx, this.literal.infer(ctx, expressionType), expressionType);
+        let r = matchDataTypes(ctx, expressionType, this.literal.infer(ctx, expressionType));
         if(!r.success) {
-            throw ctx.parser.customError(`Cannot match ${expressionType.shortname()} again literal: ${r.success}`, this.location);
+            throw ctx.parser.customError(`Cannot match ${expressionType.shortname()} against literal: ${r.message}`, this.location);
         }
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): LiteralPatternExpression{
+        return new LiteralPatternExpression(this.location, this.literal.clone(typeMap, ctx));
     }
 }

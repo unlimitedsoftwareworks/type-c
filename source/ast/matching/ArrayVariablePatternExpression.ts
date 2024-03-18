@@ -36,6 +36,7 @@ export class ArrayVariablePatternExpression extends PatternExpression {
 
     infer(ctx: Context, expressionType: DataType) {
         if(!this.symbolPointer) {
+            // used to cause an error when cloned, fixed by not adding variable pattern within Context.clone
             this.symbolPointer = new VariablePattern(this.location, this.name, new ArrayType(this.location, expressionType));
             ctx.addSymbol(this.symbolPointer);
         }
@@ -43,5 +44,12 @@ export class ArrayVariablePatternExpression extends PatternExpression {
 
     setPosition(pos: number){ 
         this.position = pos;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ArrayVariablePatternExpression{
+        let newVar = new ArrayVariablePatternExpression(this.location, this.name);
+        newVar.position = this.position;
+        //newVar.symbolPointer = this.symbolPointer; will be set when inferred
+        return newVar;
     }
 }

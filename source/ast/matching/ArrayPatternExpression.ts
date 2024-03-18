@@ -44,4 +44,8 @@ export class ArrayPatternExpression extends PatternExpression {
             }
         }
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ArrayPatternExpression{
+        return new ArrayPatternExpression(this.location, this.elements.map(e => e.clone(typeMap, ctx)));
+    }
 }

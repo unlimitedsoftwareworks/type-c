@@ -23,4 +23,8 @@ export class WildCardPatternExpression extends PatternExpression {
     infer(ctx: Context, expressionType: DataType) {
         // Wildcard matches anything
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): WildCardPatternExpression{
+        return new WildCardPatternExpression(this.location);
+    }
 }

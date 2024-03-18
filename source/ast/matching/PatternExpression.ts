@@ -38,6 +38,6 @@ export class PatternExpression {
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): PatternExpression{
-        return this;
+        throw "Not implemented";
     }
 }

@@ -40,4 +40,10 @@ export class VariablePatternExpression extends PatternExpression {
             ctx.addSymbol(this.symbolPointer);
         }
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): VariablePatternExpression{
+        let newVar = new VariablePatternExpression(this.location, this.name);
+        newVar.position = this.position;
+        return newVar;
+    }
 }
