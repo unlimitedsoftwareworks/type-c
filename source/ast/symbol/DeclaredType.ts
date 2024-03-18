@@ -24,6 +24,12 @@ export class DeclaredType extends Symbol {
 
     parentContext: Context;
 
+    /** 
+     * Concrete types, incase the type declaration is a generic one.
+     * When a generic type is instantiated, it will be added here
+     */
+    concreteTypes: Map<string, DataType> = new Map();
+
     constructor(location: SymbolLocation, parentContext: Context, name: string, type: DataType, genericParameters: GenericType[] = [], parentPackage: string){
         super(location, "type_declaration", name);
         this.name = name;
