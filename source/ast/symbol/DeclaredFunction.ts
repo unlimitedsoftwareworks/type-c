@@ -68,7 +68,7 @@ export class DeclaredFunction extends Symbol {
     }
 
     infer(ctx: Context, typeArguments?: DataType[]): DeclaredFunction {
-        if(FunctionInferenceCache.has(this)) {
+        if(FunctionInferenceCache.has(this) && (typeArguments?.length === 0)) {
             return this;
         }
 
@@ -92,13 +92,16 @@ export class DeclaredFunction extends Symbol {
             let genericTypeMap: { [key: string]: DataType } = buildGenericsMaps(ctx, this.prototype.generics, typeArguments);
 
             // clone the function with the new type map
-            let newFn = this.clone(genericTypeMap, ctx);
+            let newFn = this.clone(genericTypeMap, this.context);
+
+            // set the generics to empty so we can properly infer its body and header by recalling this function
+            newFn.prototype.generics = [];
 
             // update cache
             this.concreteGenerics[signatureFromGenerics(typeArguments)] = newFn;
 
             // infer new function
-            newFn.infer(ctx);
+            newFn.infer(newFn.context);
 
             // refer to the original concrete generics
             newFn.concreteGenerics = this.concreteGenerics;
@@ -107,7 +110,7 @@ export class DeclaredFunction extends Symbol {
             return newFn;
         }
 
-        inferFunctionHeader(ctx, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        inferFunctionHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
         FunctionInferenceCache.pop(this);
         return this;
     }
@@ -128,7 +131,7 @@ export class DeclaredFunction extends Symbol {
 
         return newM;
         */
-        let newContext = this.context.clone(ctx);
+        let newContext = this.context.clone(typeMap, ctx);
         let newM = new DeclaredFunction(this.location, newContext, this.prototype.clone(typeMap), null, null);
         newM.declStatement = this.declStatement;
         newM.expression = this.expression;
