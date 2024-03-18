@@ -3,15 +3,15 @@ from std.concurrency.Promise import Promise
 from std.concurrency.Runnable import EmitResult
 
 type ProcessInput = variant {
-    Download(file: string)
+    Download(file: String)
 }
 
 type ProcessOutput = variant {
-    Downloaded(file: string),
+    Downloaded(file: String),
     Error(code: u32)
 }
 
-type Process = process<ProcessInput, ProcessOutput>(tempDir: string) {
+type Process = process<ProcessInput, ProcessOutput>(tempDir: String) {
     fn receive(input: ProcessInput) -> ProcessOutput {
         if input is ProcessInput.Download {
             let const path = (input as! ProcessInput.Download).file
@@ -21,7 +21,7 @@ type Process = process<ProcessInput, ProcessOutput>(tempDir: string) {
         }
     }
 
-    fn download(path: string) -> string {
+    fn download(path: String) -> String {
         return this.tempDir //+ "/" + "tmp.zip"
     }
 }

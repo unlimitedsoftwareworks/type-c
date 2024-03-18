@@ -86,7 +86,7 @@ type Response = enum {
 fn test_case_4(rn: TestUnit) {
     
     // todo investigate why const is ignored later on
-    let const r = Response.Ok
+    let r = Response.Ok
 
     match r {
         Response.Ok {
@@ -213,8 +213,8 @@ fn test_case_7(rn: TestUnit) {
 
     match x {
         // should match since u8 is a subtype of u16
-        interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u8) } {
-            let z = x as interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u8) }
+        interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u16) } {
+            let z = x as interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u16) }
             z.set(2, 3)
             rn.assert_eq<u16>(x.get(2), 3)
         }

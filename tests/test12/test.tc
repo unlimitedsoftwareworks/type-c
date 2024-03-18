@@ -1,7 +1,7 @@
 /*
 type Tree = variant {
-    BinaryNode(lhs: Tree, rhs: Tree, op: string),
-    Unary(uhs: Tree, op: string),
+    BinaryNode(lhs: Tree, rhs: Tree, op: String),
+    Unary(uhs: Tree, op: String),
     Number(n: i32)
 }
 
@@ -25,16 +25,16 @@ fn sum(t: Tree)  -> i32 = match t {
 let z = sum(tree)
 
 type User1 = interface {
-    fn name() -> string
+    fn name() -> String
 }
 
 type User2 = interface {
-    fn name2() -> string
+    fn name2() -> String
 }
 
 type User3 = class {
     fn init(){}
-    fn name3() -> string = "User3"
+    fn name3() -> String = "User3"
 }
 
 let x = new User3()

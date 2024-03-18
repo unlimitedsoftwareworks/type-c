@@ -67,7 +67,7 @@ type DataArray<T> = class {
 }
 
 type User = struct {
-    name: string,
+    name: String,
     data: DataArray<DataArray< DataArray<Byte> > >
 }
 

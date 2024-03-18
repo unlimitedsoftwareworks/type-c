@@ -71,7 +71,7 @@ type Integer = class {
 }
 
 fn test_case_1(rn: TestUnit) {
-    let myMap: Map<string, Integer> = new Map<string, Integer>()
+    let myMap: Map<String, Integer> = new Map<String, Integer>()
 
     myMap.insert("one", new Integer(1))
     myMap.insert("two", new Integer(2))
