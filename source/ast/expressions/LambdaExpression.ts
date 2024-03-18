@@ -53,7 +53,7 @@ export class LambdaExpression extends Expression {
         this.setHint(hint);
 
         this.inferredType = this.header;
-        inferFunctionHeader(ctx, 'function', this.returnStatements, this.header, this.body, this.expression);
+        inferFunctionHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
 
         this.checkHint(ctx);
         this.isConstant = false;
