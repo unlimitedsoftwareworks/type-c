@@ -65,7 +65,7 @@ export class NewExpression extends Expression {
                 this.hasInitMethod = false;
                 this.calledInitMethod = null;
             }
-            if(initMethod.length > 1) {
+            else if(initMethod.length > 1) {
                 throw ctx.parser.customError(`Ambiguous init method found for class ${classType.shortname()} with arguments ${this.arguments.map(a => a.inferredType!.shortname()).join(", ")}`, this.location);
             }
             else {
