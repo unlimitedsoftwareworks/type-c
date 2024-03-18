@@ -26,8 +26,9 @@ import { InterfaceType } from "../types/InterfaceType";
 import { FFIMethodType } from "../types/FFIMethodType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { buildGenericsMaps } from "../../typechecking/TypeInference";
-import { MetaClassType, MetaType, MetaVariantType } from "../types/MetaTypes";
+import { MetaClassType, MetaType, MetaVariantConstructorType, MetaVariantType } from "../types/MetaTypes";
 import { VariantType } from "../types/VariantType";
+import { ClassMethod } from "../other/ClassMethod";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -93,7 +94,13 @@ export class FunctionCallExpression extends Expression {
 
                     if(method.generics.length > 0) {
                         let map = buildGenericsMaps(ctx, method.generics, memberExpr.typeArguments);
-                        let m = baseClass.getMethodByIndex(baseClass.getMethodIndexBySignature(ctx, memberExpr.name, inferredArgTypes, hint));
+                        let m: ClassMethod | null = null;
+                        try {
+                            m = baseClass.getGenericMethodByName(ctx, memberExpr.name);
+                        }
+                        catch(e) {
+                            throw ctx.parser.customError(`Method ${memberExpr.name} does not support generics`, this.location);
+                        }
                         if(m === null) {
                             throw "unexpected null";
                         }
@@ -181,15 +188,33 @@ export class FunctionCallExpression extends Expression {
 
                 // case 2: variant constructor
                 else if(baseExprType.is(ctx, MetaVariantType)) {
+                    let variantConstructorMeta = this.lhs.infer(ctx, null);
+                    if(!variantConstructorMeta.is(ctx, MetaVariantConstructorType)){
+                        throw "Unreachable";
+                    }
+
+                    let metaVariantConstructor = variantConstructorMeta.to(ctx, MetaVariantConstructorType) as MetaVariantConstructorType;
                     let metaVariant = baseExprType.to(ctx, MetaVariantType) as MetaVariantType;
                     let variantType = metaVariant.variantType.to(ctx, VariantType) as VariantType;
-                    let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
 
-                    // TODO: variant constructor can have generics
+                    if(metaVariantConstructor.typeArguments.length !== memberExpr.typeArguments.length) {
+                        throw ctx.parser.customError(`Expected ${metaVariantConstructor.typeArguments.length} type arguments, got ${memberExpr.typeArguments.length}`, this.location);
+                    }
+
+                    if(metaVariantConstructor.typeArguments.length > 0) {
+                        let map = buildGenericsMaps(ctx, metaVariantConstructor.genericParameters, memberExpr.typeArguments);
+                        variantType = variantType.clone(map);
+                    }
+
+                    let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
 
                     if(variantConstructor === undefined) {
                         throw ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
                     }
+
+                    // if we have generics, we need to clone the variant type
+                    //let map = buildGenericsMaps(ctx, method.generics, memberExpr.typeArguments);
+                    
 
                     // make sure we have the right number of arguments
                     if(this.args.length !== variantConstructor.parameters.length) {
@@ -202,7 +227,7 @@ export class FunctionCallExpression extends Expression {
                     }
 
                     // set the inferred type
-                    this.inferredType = variantType;
+                    this.inferredType = variantConstructor;
                     this.checkHint(ctx);
                     return this.inferredType;
                 }
