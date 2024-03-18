@@ -2,10 +2,14 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation"
 import { ClassType } from "./ClassType"
 import { DataType, DataTypeKind } from "./DataType"
+import { GenericType } from "./GenericType";
 
 export class MetaType extends DataType {
-    constructor(location: SymbolLocation, kind: DataTypeKind) {
-        super(location, kind)
+    genericParameters: GenericType[];
+
+    constructor(location: SymbolLocation, kind: DataTypeKind, genericParameters: GenericType[]){
+        super(location, kind);
+        this.genericParameters = genericParameters;
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}): MetaType{
@@ -17,8 +21,8 @@ export class MetaClassType extends MetaType {
     classType: DataType;
     typeArguments: DataType[];
 
-    constructor(location: SymbolLocation, classType: DataType, genericTypes: DataType[] = []) {
-        super(location, "meta_class");
+    constructor(location: SymbolLocation, classType: DataType, genericParameters: GenericType[], genericTypes: DataType[] = []) {
+        super(location, "meta_class", genericParameters);
         this.classType = classType;
         this.typeArguments = genericTypes;
     }
@@ -36,7 +40,7 @@ export class MetaInterfaceType extends MetaType {
     interfaceType: DataType;
 
     constructor(location: SymbolLocation, interfaceType: DataType) {
-        super(location, "meta_interface");
+        super(location, "meta_interface", []);
         this.interfaceType = interfaceType;
     }
 
@@ -53,8 +57,8 @@ export class MetaVariantType extends MetaType {
     variantType: DataType;
     typeArguments: DataType[];
 
-    constructor(location: SymbolLocation, variantType: DataType, genericTypes: DataType[] = []) {
-        super(location, "meta_variant");
+    constructor(location: SymbolLocation, variantType: DataType, genericParameters: GenericType[], genericTypes: DataType[] = []) {
+        super(location, "meta_variant", genericParameters);
         this.variantType = variantType;
         this.typeArguments = genericTypes;
     }
@@ -72,8 +76,8 @@ export class MetaVariantConstructorType extends MetaType {
     variantConstructorType: DataType;
     typeArguments: DataType[];
 
-    constructor(location: SymbolLocation, variantConstructorType: DataType, genericTypes: DataType[] = []) {
-        super(location, "meta_variant_constructor");
+    constructor(location: SymbolLocation, variantConstructorType: DataType, genericParameters: GenericType[], genericTypes: DataType[] = []) {
+        super(location, "meta_variant_constructor", genericParameters);
         this.variantConstructorType = variantConstructorType;
         this.typeArguments = genericTypes;
     }
@@ -91,7 +95,7 @@ export class MetaEnumType extends MetaType {
     enumType: DataType;
 
     constructor(location: SymbolLocation, enumType: DataType) {
-        super(location, "meta_enum");
+        super(location, "meta_enum", []);
         this.enumType = enumType;
     }
 
