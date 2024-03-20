@@ -610,6 +610,7 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
     }
 
     // every method of t1 must match exactly one in t2
+    /*
     for(let method of t1Methods) {
         let found = false;
         for(let method2 of t2Methods) {
@@ -625,6 +626,18 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
         if(!found) {
             return Err(`Method ${method.name} not found in class ${t2.shortname()}`);
         }
+    }*/
+
+    for(let method of t1Methods) {
+        // method is from the interface, we try and find it in the class
+        let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
+        if(m.length === 0) {
+            return Err(`Method ${method.shortname()} not found in class ${t2.shortname()}`);
+        }
+        else if (m.length > 1) {
+            return Err(`Ambiguous method ${method.shortname()} in class ${t2.shortname()}`);
+        }
+        // OK!
     }
 
     return Ok();
