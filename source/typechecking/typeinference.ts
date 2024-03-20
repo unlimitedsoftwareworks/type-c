@@ -137,10 +137,21 @@ export function inferFunctionHeader(
                 ctx.parser.customError(`${type} is required to return a value`, body.location);
             }
 
-            let returnTypes = returnStatements.map((ret) => ret.stmt.returnExpression?.infer(ret.ctx, definedReturnType));
+            // all return types must match the defined return type
+            for (let i = 0; i < returnStatements.length; i++) {
+                let retType = returnStatements[i].stmt.getReturnType(returnStatements[i].ctx);
+                if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
+                    throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, returnStatements[i].stmt.location);
+                }
+                
+                returnStatements[i].stmt.returnExpression?.setHint(definedReturnType);
+            }
         }
         else {
             let retType = expr!.infer(ctx, definedReturnType);
+            if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
+                throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
+            }
         }
     }
 

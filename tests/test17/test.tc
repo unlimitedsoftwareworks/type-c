@@ -1,0 +1,19 @@
+
+/*
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+*/
+
+fn f1(x: u32) -> fn(x: u32) -> u32{
+    fn f2(y: u32) -> u32 {
+        return x + y
+    }
+
+    return f2
+}
+
+fn main() {
+    let f = f1(10)
+    let z = f(20)
+}
