@@ -44,3 +44,4 @@ Roadmap:
 - [] Add language level support for threads
 - [] Add language level support for processes
 - [] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
+- [] Add support Shadow Classes (requires VM integration too)
