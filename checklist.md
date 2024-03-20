@@ -1,5 +1,8 @@
 # Internal Checklist
 
+## Note:
+This checklist containts only major changes and updates, for minor changes and updates, please refer to the commit history.
+
 - 13/03/2024@18:20: 
     - Finding common types for multiple datatypes `typeinference.ts:findCompatibleTypes`
     - Casting generic types to specific types, such as getting an interface from a reference or an interface from a join types, using `DataType.is(InterfaceType)`, and `DataType.to(InterfaceType)`, these functions are implemented internally to return and perform the appropriate casting.
@@ -23,7 +26,8 @@
 - 18/03/2024:
     - Variant constructors are matched based not only on name and argument but at their position within the parent.
 
-
+- 20/03/2024:
+    - Added `getGenericParameters(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}):  {[key: string]: DataType} ` which returns the list of generic types with a compound type, this is used within `ClassType.getMethodBySignature` to create concrete method from generic method and a given signature. It makes sure that redudant generic usages are consistent and throws error on failure
 
 TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
@@ -33,5 +37,10 @@ TODOs:
     dt.callMe({"user", 20})
     ```
     In such case, the compiler will not infer the unnamed struct construction `{"user", 20}` with the method argument, due to method overload resolution.
-- Match Statements
-- Processes
+
+
+Roadmap:
+
+- [] Add language level support for threads
+- [] Add language level support for processes
+- [] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
