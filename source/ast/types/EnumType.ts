@@ -10,9 +10,11 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
+import { GenericType } from "./GenericType";
 
 export class EnumField {
     name: string;
@@ -145,8 +147,20 @@ export class EnumType extends DataType {
         return false;
     }
 
-
     clone(genericsTypeMap: {[key: string]: DataType}): EnumType{
         return new EnumType(this.location, this.fields.map(f => f.clone(genericsTypeMap)), this.as);
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is an EnumType
+        if(!originalType.is(ctx, EnumType)){
+            throw ctx.parser.customError(`Expected enum type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let enumType = originalType.to(ctx, EnumType) as EnumType;
+        let res = matchDataTypes(ctx, this, enumType);
+        if(!res.success){
+            throw ctx.parser.customError(`Expected enum type ${this.shortname()}, got ${enumType.shortname()} instead.`, this.location);
+        }
     }
 }

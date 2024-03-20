@@ -1,6 +1,7 @@
 import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
+import { GenericType } from "./GenericType";
 
 export class StructField {
     name: string;
@@ -58,5 +59,23 @@ export class StructType extends DataType {
 
     clone(typeMap: { [key: string]: DataType; }): DataType {
         return new StructType(this.location, this.fields.map(f => f.clone(typeMap)));
+    }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is a StructType
+        if(!originalType.is(ctx, StructType)){
+            throw ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let structType = originalType.to(ctx, StructType) as StructType;
+        for(let i = 0; i < this.fields.length; i++){
+            // make sure field names matches
+            if(this.fields[i].name != structType.fields[i].name){
+                throw ctx.parser.customError(`Expected field ${this.fields[i].name}, got ${structType.fields[i].name} instead.`, this.location);
+            }
+
+            this.fields[i].type.getGenericParametersRecursive(ctx, structType.fields[i].type, declaredGenerics, typeMap);
+        }
     }
 }

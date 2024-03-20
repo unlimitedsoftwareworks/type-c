@@ -3,6 +3,7 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import {InterfaceType} from "./InterfaceType";
 import { Context } from "../symbol/Context";
 import { InterfaceMethod } from "../other/InterfaceMethod";
+import { GenericType } from "./GenericType";
 
 
 export class JoinType extends DataType {
@@ -160,5 +161,10 @@ export class JoinType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}): JoinType{
         return new JoinType(this.location, this.left.clone(genericsTypeMap), this.right.clone(genericsTypeMap));
+    }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // nothing to do here since joins are used as interfaces, i hope at least
     }
 }

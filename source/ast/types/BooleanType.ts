@@ -13,6 +13,7 @@
 import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
+import { GenericType } from "./GenericType";
 
 export class BooleanType extends DataType {
     constructor(location: SymbolLocation){
@@ -35,5 +36,13 @@ export class BooleanType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}): BooleanType{
         return new BooleanType(this.location);
+    }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is a BooleanType
+        if(!originalType.is(ctx, BooleanType)){
+            throw ctx.parser.customError(`Expected boolean type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
     }
 }

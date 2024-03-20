@@ -1,6 +1,7 @@
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
+import { GenericType } from "./GenericType";
 
 
 /**
@@ -27,5 +28,9 @@ export class NullType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}): NullType{
         return new NullType(this.location);
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // nothing to do
     }
 }

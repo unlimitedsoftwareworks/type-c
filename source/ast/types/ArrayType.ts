@@ -13,6 +13,7 @@
 import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
+import { GenericType } from "./GenericType";
 
 export class ArrayType extends DataType {
     arrayOf: DataType;
@@ -42,5 +43,15 @@ export class ArrayType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}): ArrayType{
         return new ArrayType(this.location, this.arrayOf.clone(genericsTypeMap), this.length || 0);
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is an Array
+        if(!originalType.is(ctx, ArrayType)){
+            throw ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let arrayType = originalType.to(ctx, ArrayType) as ArrayType;
+        this.arrayOf.getGenericParametersRecursive(ctx, arrayType.arrayOf, declaredGenerics, typeMap);
     }
 }

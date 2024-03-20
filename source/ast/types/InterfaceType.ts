@@ -6,6 +6,7 @@ import { Context } from "../symbol/Context";
 import { FunctionType } from "./FunctionType";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
 import { globalTypeCache } from "../../typechecking/TypeCache";
+import { GenericType } from "./GenericType";
 
 
 export class InterfaceType extends DataType {
@@ -220,6 +221,30 @@ export class InterfaceType extends DataType {
     clone(genericsTypeMap: {[key: string]: DataType}): InterfaceType{
         let clone = new InterfaceType(this.location, this.methods.map((method) => method.clone(genericsTypeMap)), this.superTypes.map((superType) => superType.clone(genericsTypeMap)));
         return clone;
+    }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is an InterfaceType
+        if(!originalType.is(ctx, InterfaceType)){
+            throw ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        // make sure number of methods is the same
+        let interfaceType = originalType.to(ctx, InterfaceType) as InterfaceType;
+        if(this.methods.length != interfaceType.methods.length){
+            throw ctx.parser.customError(`Expected ${interfaceType.methods.length} methods, got ${this.methods.length} instead.`, this.location);
+        }
+
+        for(let i = 0; i < this.methods.length; i++){
+            // make sure method name is the same
+            if(this.methods[i].name != interfaceType.methods[i].name){
+                throw ctx.parser.customError(`Expected method ${interfaceType.methods[i].name}, got ${this.methods[i].name} instead.`, this.location);
+            }
+
+            // get generics for the method
+            this.methods[i].header.getGenericParametersRecursive(ctx, interfaceType.methods[i].header, declaredGenerics, typeMap);
+        }
     }
 }
 

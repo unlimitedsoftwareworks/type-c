@@ -1,6 +1,7 @@
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
+import { GenericType } from "./GenericType";
 
 /**
  * Represents a nullable type.
@@ -45,5 +46,15 @@ export class NullableType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}): NullableType{
         return new NullableType(this.location, this.type.clone(genericsTypeMap));
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is a NullableType
+        if(!originalType.is(ctx, NullableType)){
+            throw ctx.parser.customError(`Expected nullable type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let nullableType = originalType.to(ctx, NullableType) as NullableType;
+        this.type.getGenericParametersRecursive(ctx, nullableType.type, declaredGenerics, typeMap);
     }
 }

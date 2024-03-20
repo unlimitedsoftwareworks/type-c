@@ -20,6 +20,7 @@ import { buildGenericsMaps, signatureFromGenerics } from "../../typechecking/Typ
 import { globalTypeCache } from "../../typechecking/TypeCache";
 import { EnumType } from "./EnumType";
 import { VariantType } from "./VariantType";
+import { GenericType } from "./GenericType";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]
@@ -238,6 +239,27 @@ export class ReferenceType extends DataType{
         else {
             let r = new ReferenceType(this.location, this.pkg, this.typeArgs.map(t => t.clone(genericsTypeMap)), this._usageContext);
             return r;
+        }
+    }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // there are two cases:
+        // the reference itself is a generic type, in which case we add it to the list i.e T
+
+        // or the refrence holds a generic type, in which case we add the generic type to the list. X<T>
+
+        // or both duh!
+        
+        // we do not get the generic parameters of the base type, because that is specific to the reference
+        // instead we only get the generic parameters of concrete typed given to this reference
+        if(declaredGenerics[this.pkg[0]]){
+            let generic = declaredGenerics[this.pkg[0]];
+            generic.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+        }
+        else {
+            this.resolveIfNeeded(ctx);
+            this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
         }
     }
 }

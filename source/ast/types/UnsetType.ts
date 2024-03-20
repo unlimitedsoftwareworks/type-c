@@ -1,6 +1,7 @@
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
+import { GenericType } from "./GenericType";
 
 
 export class UnsetType extends DataType {
@@ -28,5 +29,9 @@ export class UnsetType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}){
         return new UnsetType(this.location);
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // nothing to do
     }
 }

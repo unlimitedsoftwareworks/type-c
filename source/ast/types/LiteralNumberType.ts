@@ -1,6 +1,7 @@
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
+import { GenericType } from "./GenericType";
 
 export class LiteralIntType extends DataType {
     private _byteSize: number;
@@ -27,8 +28,11 @@ export class LiteralIntType extends DataType {
         return "@literal_number"
     }
 
-
     clone(genericsTypeMap: {[key: string]: DataType}): LiteralIntType{
         return new LiteralIntType(this.location, "0");
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // nothing to do
     }
 }

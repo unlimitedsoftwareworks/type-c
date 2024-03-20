@@ -68,9 +68,11 @@ export class ClassMethod {
         }
 
         /**
-         * We do not add generics, since type checking is not done at this point, it will be done on the concrete
-         * method implementation
+         * We add generics to scope too
          */
+        for(const arg of imethod.generics) {
+            //this.context.addSymbol(arg);
+        }
 
     }
 

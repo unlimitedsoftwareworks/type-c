@@ -16,6 +16,7 @@ import { InterfaceMethod } from "../other/InterfaceMethod";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType";
+import { GenericType } from "./GenericType";
 
 export class FFIMethodType extends DataType {
     // reuse the interface method class
@@ -48,5 +49,10 @@ export class FFIMethodType extends DataType {
 
     serialize(): string {
         return `@ffi_method{${this.imethod.serialize()}}`
+    }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // nothing to do
     }
 }

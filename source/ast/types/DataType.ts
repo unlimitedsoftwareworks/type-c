@@ -13,6 +13,7 @@
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { xxHash32 } from 'js-xxhash';
+import { GenericType } from "./GenericType";
 
 export type DataTypeKind =
     "interface" | // InterfaceType
@@ -215,5 +216,45 @@ export class DataType {
     allowedNullable(ctx: Context): boolean {
         // default behavior is to return false
         return false;
+    }
+
+
+    /**
+     * Given a type that potentially has generic parameters, returns the mapping of which generic
+     * parameters are used in the type, and the type they are used with
+     * for example: 
+     * 
+     * 
+     * getGenericParameters(ctx, struct {x: u32, y: T}, stricy{x: u32, y: i64}) would fill typeMap with {x: [i64]}
+     * 
+     * This variant is used to recursively fill the typeMap
+     * 
+     * @param ctx 
+     * @param originalType 
+     * @param typeMap 
+     * @returns 
+     */
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        throw new Error("Method not implemented.");
+    }
+
+    /**
+     * Given a type that potentially has generic parameters, returns the mapping of which generic
+     * parameters are used in the type, and the type they are used with
+     * for example: 
+     * 
+     * 
+     * getGenericParameters(ctx, struct {x: u32, y: T}, stricy{x: u32, y: i64}) would fill typeMap with {x: [i64]}
+     * 
+     * @param ctx 
+     * @param originalType 
+     * @param genericNames List of generic names to fill, in case we find a reference type matching the generic name
+     * 
+     * @returns 
+     */
+    getGenericParameters(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}):  {[key: string]: DataType} {
+        let typeMap: {[key: string]: DataType} = {}
+        this.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+        return typeMap;
     }
 }

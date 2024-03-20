@@ -12,9 +12,11 @@
  */
 
 
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType";
+import { GenericType } from "./GenericType";
 
 export type BasicTypeKind = "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "f32" | "f64"
 
@@ -32,7 +34,7 @@ export class BasicType extends DataType {
     }
 
     serialize(): string {
-        return `@basic${this.kind}`
+        return `@basic:${this.kind}`
     }
 
     isAssignable(): boolean {
@@ -42,5 +44,18 @@ export class BasicType extends DataType {
 
     clone(genericsTypeMap: { [key: string]: DataType }): BasicType {
         return new BasicType(this.location, this.kind as BasicTypeKind)
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType matches this type
+        if(!originalType.is(ctx, BasicType)){
+            throw ctx.parser.customError(`Expected basic type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let basicType = originalType.to(ctx, BasicType) as BasicType;
+        let res = matchDataTypes(ctx, this, basicType);
+        if(!res.success){
+            throw ctx.parser.customError(`Expected basic type ${this.shortname()}, got ${basicType.shortname()} instead.`, this.location);
+        }
     }
 }

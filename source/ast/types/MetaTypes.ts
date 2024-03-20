@@ -15,6 +15,11 @@ export class MetaType extends DataType {
     clone(genericsTypeMap: {[key: string]: DataType}): MetaType{
         return this;
     }
+
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // nothing to do here, meta types don't have generic parameters
+    }
 }
 
 export class MetaClassType extends MetaType {

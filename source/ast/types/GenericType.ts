@@ -15,6 +15,7 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import { UnionType } from "./UnionType";
 import { Context } from "../symbol/Context";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { findCompatibleTypes } from "../../typechecking/TypeInference";
 
 export class GenericTypeConstraint {
     types: DataType[] = [];
@@ -76,7 +77,52 @@ export class GenericType extends DataType {
 
     
     clone(genericsTypeMap: {[key: string]: DataType}): DataType{
-        if(this.name in genericsTypeMap) return genericsTypeMap[this.name];
+        if(this.name in genericsTypeMap){
+            let concreteType = genericsTypeMap[this.name];
+            // make sure the concrete type matches the constraint
+            if(!this.constraint.checkType(this._declContext!, concreteType)){
+                throw this._declContext!.parser.customError(`Generic type ${this.name} does not match constraint`, this.location);
+            }
+
+            return concreteType;
+        }
         return new GenericType(this.location, this.name, this.constraint);
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure this is a declared generic
+        if(!(this.name in declaredGenerics)){
+            throw ctx.parser.customError(`Generic type ${this.name} is not declared`, this.location);
+        }
+
+        // make sure the original type matches the constraint
+        if(!this.constraint.checkType(ctx, originalType)){
+            throw ctx.parser.customError(`Generic type ${this.name} does not match constraint`, originalType.location);
+        }
+
+        if(this.name in typeMap){
+            // we do not allow generics to satisfy different constraints in one instance!
+            // hence we need to check if the specified type and the current type match
+            let res = matchDataTypes(ctx, typeMap[this.name], originalType);
+            if(!res.success){
+                // Find a common type
+                let commonType = findCompatibleTypes(ctx, [typeMap[this.name], originalType]);
+                if(commonType === null){
+                    throw ctx.parser.customError(`Generic type ${this.name} do not match its same instance: expected ${typeMap[this.name].shortname()}, but ${originalType.shortname()} found`, originalType.location);
+                }
+                else {
+                    // we match the common type against the constraint of the generic type
+                    if(!this.constraint.checkType(ctx, commonType)){
+                        throw ctx.parser.customError(`Inferred generic type ${this.name}: ${commonType.shortname()} does not match constraint, found multiple different usages of generic type: ${typeMap[this.name].shortname()} and ${originalType.shortname()}`, originalType.location);
+                    }
+                    
+                    // we update the type map
+                    typeMap[this.name] = commonType;
+                }
+            }
+        }
+        else {
+            typeMap[this.name] = originalType;
+        } 
     }
 }

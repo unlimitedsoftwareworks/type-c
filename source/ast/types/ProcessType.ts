@@ -5,6 +5,7 @@ import { ReturnStatement } from "../statements/ReturnStatement";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType"
+import { GenericType } from "./GenericType";
 
 export class ProcessType extends DataType {
 
@@ -38,5 +39,9 @@ export class ProcessType extends DataType {
 
     clone(genericsTypeMap: {[key: string]: DataType}): ProcessType{
         throw "Not implemented";
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        throw new Error("Method not implemented.");
     }
 }

@@ -8,6 +8,7 @@
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
+import { GenericType } from "./GenericType";
 import { VariantType } from "./VariantType";
 
 
@@ -63,5 +64,22 @@ export class VariantConstructorType  extends DataType{
 
     clone(typeMap: { [key: string]: DataType; }): VariantConstructorType {
         return new VariantConstructorType(this.location, this.name, this.parameters.map(f => f.clone(typeMap)));
+    }
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure originalType is a VariantConstructorType
+        if(!originalType.is(ctx, VariantConstructorType)){
+            throw ctx.parser.customError(`Expected variant constructor type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let variantConstructorType = originalType.to(ctx, VariantConstructorType) as VariantConstructorType;
+        for(let i = 0; i < this.parameters.length; i++){
+            // make sure parameter name matches
+            if(this.parameters[i].name != variantConstructorType.parameters[i].name){
+                throw ctx.parser.customError(`Expected parameter name ${this.parameters[i].name} but got ${variantConstructorType.parameters[i].name}`, this.location);
+            }
+
+            this.parameters[i].type.getGenericParametersRecursive(ctx, variantConstructorType.parameters[i].type, declaredGenerics, typeMap);
+        }
     }
 }
