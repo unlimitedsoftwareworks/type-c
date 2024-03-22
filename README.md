@@ -1,10 +1,6 @@
-Type-C
-===
 
 <img align="center" src='assets/logo.png' width='100%'>
 <br/>            
-<br/>
-<br/>
 
 Type-C is an expressive multi-paradigm programming language with emphasis on type safety and run-time performance. This repository contains the Type-C compiler, which can be installed by cloning this repo or installing it via npm.
 
