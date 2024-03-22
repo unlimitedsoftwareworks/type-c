@@ -1,32 +1,42 @@
 Type-C
 ===
 
-<table>
-    <tr>
-        <td>
-            <p align="center">
-                <img align="center" src='assets/logo.png' width='100%'>
-            </p>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <center>
-                <p>
-Type-C is a expressive programming language with emphasis on type safety and run-time performance. This repo hosts the type-c compiler which is written in TypeScript. The goal is to have a self hosted compiler in the future, however Type-V will always be written in C.
-                </p>
-            </center>
-        </td>
-    </tr>
-</table>
+<img align="center" src='assets/logo.png' width='100%'>
+<br/>            
+<br/>
+<br/>
+
+Type-C is an expressive multi-paradigm programming language with emphasis on type safety and run-time performance. This repository contains the Type-C compiler, which can be installed by cloning this repo or installing it via npm.
+
+For the Virtual Machine, please refer to the [Type-C VM](https://https://github.com/unlimitedsoftwareworks/type-v)
 
 
-How to run:
-1. Clone the repo
-3. Clone Type-C Standard Library: `https://github.com/project-type/stdlib`
-4. Clone & Build Type-V: `https://github.com/project-type/type-v`
-5. Configure runtime path and standard library paths
-6. Install dependencies: `npm install`  
-7. Build: `npx tsc`
-8. Run Tests: `node outs/index.js --run-tests`
-9. Run your own code: `node outs/index.js --c <path-to-your-code>`, use `--help` for more info
+## Getting started:
+
+```sh
+git clone https://github.com/unlimitedsoftwareworks/type-c
+git clone https://github.com/unlimitedsoftwareworks/type-v
+git clone https://github.com/unlimitedsoftwareworks/stdlib
+
+cd type-c
+npm install
+npx tsc
+
+cd ../type-v
+mkdir build
+cd build
+cmake ..
+make
+
+cd ../type-c
+node outs/index.js -c ./tests/test19 -o ./output -r
+```
+
+## Documentation
+Official docs: https://github.com/unlimitedsoftwareworks/tc-docs
+
+## Need help
+Open an issue
+
+## I want to help
+If you want to get aquinted with the codebase, please reach out to me directly via my email at my profile. I will be happy to help you get started.
