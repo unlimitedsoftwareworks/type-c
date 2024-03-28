@@ -1,0 +1,17 @@
+
+/*
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+*/
+
+let l1: lock<u32> = new lock(0)
+
+fn f1() -> i32 {
+    let z: i32 = 1
+
+    return z
+}
+
+let thread1 = spawn f1()
+let x: u64 = (await thread1) as u32

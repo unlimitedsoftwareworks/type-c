@@ -68,12 +68,12 @@ export class CastExpression extends Expression {
             this.inferredType = this.target;
         }
         else {
-            let res = matchDataTypes(ctx, hint, this.target);
+            let res = matchDataTypes(ctx, this.target, hint);
             if(!res.success && (this.castType !== 'force')) {
-                throw ctx.parser.customError(`Cannot cast ${this.target.shortname()} to ${hint.shortname()}: ${r.message}`, this.location);
+                throw ctx.parser.customError(`Cannot cast ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);
             }
             else if (!res.success && (this.castType === 'force')) {
-                ctx.parser.customWarning(`Dangerous forced cast from ${this.target.shortname()} to ${hint.shortname()}`, this.location);
+                ctx.parser.customWarning(`Dangerous forced cast from ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);
                 this.inferredType = hint;
             }
             else {

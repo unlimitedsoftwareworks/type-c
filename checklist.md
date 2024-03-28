@@ -35,7 +35,7 @@ This checklist containts only major changes and updates, for minor changes and u
     - Class checking is now based on location, until a better solution comes up
     - `getMethodBySignature` now also takes type arguments, so it can infer generics when not present, or just clone the methods when they are present.
 
-TODOs:
+## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.
 
@@ -45,8 +45,31 @@ TODOs:
     In such case, the compiler will not infer the unnamed struct construction `{"user", 20}` with the method argument, due to method overload resolution.
 
 
-Roadmap:
+## Roadmap:
 
 - [] Add language level support for threads
 - [] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
 - [] Add support Shadow Classes (requires VM integration too)
+
+
+## Cases to evaluate:
+### Case 1: Casting with hint
+```tc
+
+let l1: lock<u32> = new lock(0)
+
+fn f1() -> i32 {
+    let z: i32 = 1
+
+    return z
+}
+
+let thread1 = spawn f1()
+let x: u64 = (await thread1) as u32
+```
+results in: 
+```
+tests/test18/test.tc:17:30:Cannot cast u32 to u64: Type mismatch, expected u32, got u64
+let x: u64 = (await thread1) as u32
+```
+-> Casting with target u32 and a hint of u64.

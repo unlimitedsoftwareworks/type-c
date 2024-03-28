@@ -47,14 +47,18 @@ export class NewExpression extends Expression {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
-        if(hint) {
+        /**
+         * When we have a lock, its type is not necessarily known, so we have to infer it
+         * Hence we only infer this.type if it is not a lock
+         */
+
+        // types are resolved within matchDataTypes
+        if(hint && !this.type.is(ctx, LockType)) {
             let r = matchDataTypes(ctx, hint, this.type);
             if(!r.success) {
                 throw ctx.parser.customError(`Type mismatch in new expression, expected ${hint.shortname()} but found ${this.type.shortname()}: ${r.message}`, this.location);
             }
         }
-
-        this.type.resolve(ctx);
 
         /**
          * New expression is used to spawn a new class or process
