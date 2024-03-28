@@ -11,11 +11,9 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
-import { ProcessType } from "../types/ProcessType";
 import { Expression } from "./Expression";
 
 export class ThisExpression extends Expression {
@@ -46,10 +44,6 @@ export class ThisExpression extends Expression {
             this.inferredType = cls;
             this.checkHint(ctx);
             return this.inferredType;
-        }
-        else if (ctx.env.withinProcess) {
-            // TODO: implement
-            throw 'not implemented';
         }
         else {
             throw ctx.parser.customError(`'this' can only be used within a class or process`, this.location);

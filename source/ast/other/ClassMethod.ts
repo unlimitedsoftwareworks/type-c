@@ -86,6 +86,12 @@ export class ClassMethod {
 
     infer(ctx: Context) {
         if(this._wasInferred) return;
+        
+        /** removed in favor of location base type checking for classes
+        if(this.imethod.header.returnType instanceof UnsetType) {
+            throw ctx.parser.customError(`Method ${this.imethod.name} has no return type`, this.location);
+        }
+         */
 
         if(this.imethod.isGeneric()) {
             // we do not infer generic methods, we wait until they are called to perform type checking

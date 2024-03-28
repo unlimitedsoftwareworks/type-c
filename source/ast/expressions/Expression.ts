@@ -49,6 +49,7 @@ export type ExpressionKind =
     "named_struct_construction" | // { x: 1, y: 2 }
     "new" | // new X()
     "spawn" | // spawn x
+    "await" | // await x
     "this" | // this
     "unnamed_struct_construction" // { 1, 2 }
 ;

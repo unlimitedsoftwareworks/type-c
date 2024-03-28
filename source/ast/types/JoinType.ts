@@ -1,3 +1,16 @@
+/**
+ * Filename: JoinType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     Models a join of multiple interfaces,
+ *        at their core, a join of interfaces is an interface duh!
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {InterfaceType} from "./InterfaceType";
@@ -99,65 +112,6 @@ export class JoinType extends DataType {
         this.resolveIfNeeded(ctx);
         return this.interfaceType!.methodExists(ctx, methodName);
     }
-
-    isPromise(ctx: Context): boolean {
-        // recursively check lefts and rights, one is sufficient
-
-        let isLHSPromise = false;
-        let isRHSPromise = false;
-
-        if(this.left.is(ctx, JoinType)){
-            let lhs: JoinType = this.left.to(ctx, JoinType) as JoinType;
-            isLHSPromise = lhs.isPromise(ctx);
-        }
-        else {
-            let lhs: InterfaceType = this.left.to(ctx, InterfaceType) as InterfaceType;
-            isLHSPromise = lhs.isPromise(ctx);
-        }
-
-        if(isLHSPromise) return true;
-
-        if(this.right.is(ctx, JoinType)){
-            let rhs: JoinType = this.right.to(ctx, JoinType) as JoinType;
-            isRHSPromise = rhs.isPromise(ctx);
-        }
-        else {
-            let rhs: InterfaceType = this.right.to(ctx, InterfaceType) as InterfaceType;
-            isRHSPromise = rhs.isPromise(ctx);
-        }
-
-        return isLHSPromise || isRHSPromise;
-    }
-
-
-    getPromiseType(ctx: Context): DataType | null {
-
-        let lhsPromiseType: DataType | null = null;
-        let rhsPromiseType: DataType | null = null;
-
-        if(this.left.is(ctx, JoinType)){
-            let lhs: JoinType = this.left.to(ctx, JoinType) as JoinType;
-            lhsPromiseType = lhs.getPromiseType(ctx);
-        }
-        else {
-            let lhs: InterfaceType = this.left.to(ctx, InterfaceType) as InterfaceType;
-            lhsPromiseType = lhs.getPromiseType(ctx);
-        }
-
-        if(lhsPromiseType !== null) return lhsPromiseType;
-
-        if(this.right.is(ctx, JoinType)){
-            let rhs: JoinType = this.right.to(ctx, JoinType) as JoinType;
-            rhsPromiseType = rhs.getPromiseType(ctx);
-        }
-        else {
-            let rhs: InterfaceType = this.right.to(ctx, InterfaceType) as InterfaceType;
-            rhsPromiseType = rhs.getPromiseType(ctx);
-        }
-
-        return rhsPromiseType;
-    }
-
 
     clone(genericsTypeMap: {[key: string]: DataType}): JoinType{
         return new JoinType(this.location, this.left.clone(genericsTypeMap), this.right.clone(genericsTypeMap));

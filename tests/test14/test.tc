@@ -1,4 +1,4 @@
-from std.String import String
+from std.string import String
 
 fn print(mut d: String) -> i32{
     d = new String("hi")

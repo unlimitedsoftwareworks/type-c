@@ -152,7 +152,7 @@ export function isAddable(ctx: Context, dt: OverridableMethodType){
 export function getOperatorOverloadType(ctx: Context, __op__: string, dt: OverridableMethodType, types: DataType[]): InterfaceMethod | null{
     if(dt.is(ctx, ClassType)){
         let classType = dt.to(ctx, ClassType) as ClassType;
-        let method = classType.getMethodBySignature(ctx, __op__, types, null);
+        let method = classType.getMethodBySignature(ctx, __op__, types, null, []);
 
         if(method.length == 0){
             return null;
@@ -344,17 +344,4 @@ export function isInc(ctx: Context, dt: OverridableMethodType){
 
 export function isDec(ctx: Context, dt: OverridableMethodType){
     return dt.methodExists(ctx, "__dec__");
-}
-
-export function isPromise(ctx: Context, dt: OverridableMethodType){
-    return dt.isPromise(ctx);
-}
-
-export function getPromiseReturnType(ctx: Context, dt: OverridableMethodType){
-    let ret = dt.getPromiseType(ctx);
-    if(ret == null){
-        throw ctx.parser.customError(`Cannot use await operator on non-promise type ${dt.shortname()}`, dt.location);
-    }
-
-    return ret;
 }

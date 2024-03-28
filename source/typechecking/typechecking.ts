@@ -26,10 +26,10 @@ import { GenericType } from "../ast/types/GenericType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { JoinType } from "../ast/types/JoinType";
 import { LiteralIntType } from "../ast/types/LiteralNumberType";
+import { LockType } from "../ast/types/LockType";
 import { NullType } from "../ast/types/NullType";
 import { NullableType } from "../ast/types/NullableType";
-import { ProcessType } from "../ast/types/ProcessType";
-import { ReferenceType } from "../ast/types/ReferenceType";
+import { PromiseType } from "../ast/types/PromiseType";
 import { StructType } from "../ast/types/StructType";
 import { UnionType } from "../ast/types/UnionType";
 import { UnsetType } from "../ast/types/UnsetType";
@@ -316,7 +316,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
             return res;
         }
         
-        res = matchClasses(ctx, t1.to(ctx, ClassType) as ClassType, t2.to(ctx, ClassType) as ClassType, strict, stack);
+        res = matchClasses(ctx, t1, t2, strict, stack);
         scopeCache.set(typeKey, res);
         return res;
     }
@@ -332,16 +332,31 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     */
 
     /**
-     * case 15: ProcessType
+     * case 14: PromiseType
+     */
+    if(t1.is(ctx, PromiseType)) {
+        if(!t2.is(ctx, PromiseType)) {
+            res = Err(`Type mismatch, expected promise, got ${t2.shortname()}`);
+            scopeCache.set(typeKey, res);
+            return res;
+        }
+        res = matchDataTypesRecursive(ctx, (t1.to(ctx, PromiseType) as PromiseType).returnType, (t2.to(ctx, PromiseType) as PromiseType).returnType, strict, stack);
+        scopeCache.set(typeKey, res);
+        return res;
+    }
+
+    /**
+     * case 15: LockType
      * Similar to classes, a process is only compatible with another process with the exact same structure
      */
-    if(t1.is(ctx, ProcessType)) {
-        if(!t2.is(ctx, ProcessType)) {
+    if(t1.is(ctx, LockType)) {
+        if(!t2.is(ctx, LockType)) {
             res = Err(`Type mismatch, expected process, got ${t2.shortname()}`);
             scopeCache.set(typeKey, res);
             return res;
         }
-        res = matchProcesses(ctx, t1.to(ctx, ProcessType) as ProcessType, t2.to(ctx, ProcessType) as ProcessType, strict, stack);
+
+        res = matchDataTypesRecursive(ctx, (t1.to(ctx, LockType) as LockType).returnType, (t2.to(ctx, LockType) as LockType).returnType, strict, stack);
         scopeCache.set(typeKey, res);
         return res;
     }
@@ -630,7 +645,7 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
 
     for(let method of t1Methods) {
         // method is from the interface, we try and find it in the class
-        let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
+        let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType, []);
         if(m.length === 0) {
             return Err(`Method ${method.shortname()} not found in class ${t2.shortname()}`);
         }
@@ -643,94 +658,27 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
     return Ok();
 }
 
-function matchClasses(ctx: Context, t1: ClassType, t2: ClassType, strict: boolean, stack: string[]): TypeMatchResult {
+function matchClasses(ctx: Context, ct1: DataType, ct2: DataType, strict: boolean, stack: string[]): TypeMatchResult {
     /**
      * Some times, classes are not resolved due to circular dependencies, so we resolve them here
      */
+    let t1 = ct1.to(ctx, ClassType) as ClassType;
+    let t2 = ct1.to(ctx, ClassType) as ClassType
+
     t1.resolve(ctx);
     t2.resolve(ctx);
 
-    /**
-     * strict is irrelevant here, since classes matching is strict by default
-     */
-    let t1Attributes = t1.attributes;
-    let t2Attributes = t2.attributes;
-
-    if(strict) {
-        if(t1Attributes.length !== t2Attributes.length) {
-            return Err(`Type mismatch, expected class with ${t1Attributes.length} attributes, got ${t2Attributes.length}`);
-        }
-    }
-    else {
-        if(t1Attributes.length > t2Attributes.length) {
-            return Err(`Type mismatch, expected class with at most ${t1Attributes.length} attributes, got ${t2Attributes.length}`);
-        }
+    // types must be exactly the same!
+    // hence, we compared based on location .. for now
+    if((t1.location.col !== t2.location.col) || (t1.location.line !== t2.location.line) || (t1.location.file !== t2.location.file) || (t1.location.pos !== t2.location.pos)) {
+        return Err(`Type mismatch, expected class ${t1.shortname()}, got ${t2.shortname()}, classes are not the same as they are defined in separate locations: ${t1.location.toString()} and ${t2.location.toString()}`);
     }
 
-    // every attribute of t1 must match exactly one in t2
-    for(let attribute of t1Attributes) {
-        let found = false;
-        for(let attribute2 of t2Attributes) {
-            if(attribute.name === attribute2.name) {
-                let res = matchDataTypesRecursive(ctx, attribute.type, attribute2.type, strict, stack);
-                if(!res.success) {
-                    return res;
-                }
-                found = true;
-                break;
-            }
-        }
-        if(!found) {
-            return Err(`Attribute ${attribute.name} not found in class ${t2.shortname()}`);
-        }
-    }
-
-    let t1Methods = t1.methods.map(e => e.imethod);
-    let t2Methods = t2.methods.map(e => e.imethod);
-
-    if(strict) {
-        if(t1Methods.length !== t2Methods.length) {
-            return Err(`Type mismatch, expected class with ${t1Methods.length} methods, got ${t2Methods.length}`);
-        }
-    }
-    else {
-        if(t1Methods.length > t2Methods.length) {
-            return Err(`Type mismatch, expected class with at most ${t1Methods.length} methods, got ${t2Methods.length}`);
-        }
-    }
-
-    // every method of t1 must match exactly one in t2
-    for(let method of t1Methods) {
-        // we find the method in t2
-        let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
-        if(m.length === 0) {
-            let paramTypes = method.header.parameters.map(e => e.type);
-            t2.getMethodBySignature(ctx, method.name, paramTypes, method.header.returnType);
-            return Err(`Method ${method.shortname()} not found in class ${t2.shortname()}`);
-        }
-        else if (m.length > 1) {
-            return Err(`Ambiguous method ${method.shortname()} in class ${t2.shortname()}`);
-        }
-        else {
-            // TODO: make sure generic constraints match
-            if(m[0].isGeneric() && method.isGeneric()) {
-                continue;
-            }
-            let res = matchFunctionType(ctx, method.header, m[0].header, stack, strict);
-            if(!res.success) {
-                return res;
-            }
-        }
-    }
 
     return Ok();
 }
 
 function matchJoinType(ctx: Context, t1: JoinType, t2: DataType, strict: boolean, stack: string[]): TypeMatchResult {
-    throw new Error("Not implemented");
-}
-
-function matchProcesses(ctx: Context, t1: ProcessType, t2: ProcessType, strict: boolean, stack: string[]): TypeMatchResult {
     throw new Error("Not implemented");
 }
 

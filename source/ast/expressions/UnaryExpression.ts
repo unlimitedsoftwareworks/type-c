@@ -20,7 +20,7 @@ import { NullableType } from "../types/NullableType";
 import { unaryTypeCheckers } from "../../typechecking/UnaryExpressionInference";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 
-export type UnaryOperator = "-" | "!" | "!!" | "~" | "pre++" | "post++" | "pre--" | "post--" | "await"
+export type UnaryOperator = "-" | "!" | "!!" | "~" | "pre++" | "post++" | "pre--" | "post--"
 
 export class UnaryExpression extends Expression {
     expression: Expression;

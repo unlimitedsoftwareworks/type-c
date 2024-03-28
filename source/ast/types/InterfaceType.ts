@@ -193,31 +193,6 @@ export class InterfaceType extends DataType {
         return true;
     }
 
-    /**
-     * @returns true if the interface extends std.concurrency.Promise
-     */
-    isPromise(ctx: Context): boolean {
-        for(let i = 0; i < this.superTypes.length; i++){
-            if(this.superInterfaces[i].isPromise(ctx)){
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    getPromiseType(ctx: Context): DataType | null {
-        for(let i = 0; i < this.superTypes.length; i++){
-            let promiseType = this.superInterfaces[i].getPromiseType(ctx);
-            if(promiseType){
-                return promiseType;
-            }
-        }
-
-        return null;
-    }
-
-
     clone(genericsTypeMap: {[key: string]: DataType}): InterfaceType{
         let clone = new InterfaceType(this.location, this.methods.map((method) => method.clone(genericsTypeMap)), this.superTypes.map((superType) => superType.clone(genericsTypeMap)));
         return clone;

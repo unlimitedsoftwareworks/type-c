@@ -6,6 +6,7 @@
  * Description:
  *     Models a new Expression 
  *          new Array(10)
+ *     new expressions are also used to create locks
  *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
@@ -17,7 +18,8 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
-import { ProcessType } from "../types/ProcessType";
+import { LockType } from "../types/LockType";
+import { UnsetType } from "../types/UnsetType";
 import { Expression } from "./Expression";
 
 export class NewExpression extends Expression {
@@ -32,6 +34,8 @@ export class NewExpression extends Expression {
     // specifies if the class has an init method, or not
     hasInitMethod: boolean = false;
     calledInitMethod: InterfaceMethod | null = null;
+
+    _creatingLock = false;
 
     constructor(location: SymbolLocation, type: DataType, arguments_: Expression[]) {
         super(location, "new");
@@ -59,7 +63,7 @@ export class NewExpression extends Expression {
             // now we need to find init method matching the arguments given
             let classType = this.type.to(ctx, ClassType) as ClassType;
 
-            let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null)), null);
+            let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null)), null, []);
 
             if(initMethod.length === 0) {
                 this.hasInitMethod = false;
@@ -83,8 +87,27 @@ export class NewExpression extends Expression {
             this.isConstant = false;
             return this.inferredType;
         }
-        else if (this.type.is(ctx, ProcessType)) {
-            throw ctx.parser.customError(`Feature is not yet implemented`, this.location);
+        else if (this.type.is(ctx, LockType)) {
+            // syntax: new lock<T>(something of type T) or lock(something of type T), we will infer the type of the lock
+            let lockType = this.type.to(ctx, LockType) as LockType;
+            // make sure we have only one argument
+            if(this.arguments.length !== 1) {
+                throw ctx.parser.customError(`Expected one argument for lock creation, got ${this.arguments.length}`, this.location);
+            }
+
+            if(lockType.returnType.is(ctx, UnsetType)) {
+                lockType.returnType = this.arguments[0].infer(ctx, null);
+            }
+            else {
+                let r = matchDataTypes(ctx, lockType.returnType, this.arguments[0].infer(ctx, null));
+                if(!r.success) {
+                    throw ctx.parser.customError(`Type mismatch in lock creation, expected ${lockType.returnType.shortname()} but found ${this.arguments[0].inferredType!.shortname()}: ${r.message}`, this.location);
+                }
+            }
+
+            this.inferredType = this.type;
+            this.isConstant = false;
+            return this.inferredType;
         }
         else {
             throw ctx.parser.customError(`Cannot use new with type ${this.type.shortname()}`, this.location);

@@ -15,10 +15,8 @@ import { Parser } from "../../parser/Parser";
 import { BasePackage } from "../BasePackage";
 import { LambdaExpression } from "../expressions/LambdaExpression";
 import { ClassMethod } from "../other/ClassMethod";
-import { ProcessMethod } from "../other/ProcessMethod";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
-import { ProcessType } from "../types/ProcessType";
 import { DeclaredFunction } from "./DeclaredFunction";
 import { DeclaredVariable } from "./DeclaredVariable";
 import { FunctionArgument } from "./FunctionArgument";
@@ -34,11 +32,10 @@ export type SymbolScope = "local" | "global" | "upvalue";
 export type ContextEnvironment = {
     withinClass: boolean;
     withinFunction: boolean;
-    withinProcess: boolean;
     withinLoop: boolean;
 };
 
-type ContextOwner = BasePackage | LambdaExpression | ClassMethod | ProcessMethod | DeclaredFunction | null;
+type ContextOwner = BasePackage | LambdaExpression | ClassMethod |  DeclaredFunction | null;
 
 export class Context {
     /**
@@ -63,10 +60,6 @@ export class Context {
      */
     private activeClass: ClassType | null = null;
 
-    /**
-     * Same as activeClass but for processes
-     */
-    private activeProcess: ProcessType | null = null;
 
     /**
      * Pointer to the parser.
@@ -81,7 +74,6 @@ export class Context {
     env: ContextEnvironment = {
         withinClass: false,
         withinFunction: false,
-        withinProcess: false,
         withinLoop: false,
     };
 
@@ -109,14 +101,12 @@ export class Context {
             // inherit env
             this.env.withinClass = parent.env.withinClass || false;
             this.env.withinFunction = parent.env.withinFunction || false;
-            this.env.withinProcess = parent.env.withinProcess || false;
             this.env.withinLoop = parent.env.withinLoop || false;
         }
 
         // override with new env
         this.env.withinClass = env.withinClass || this.env.withinClass;
         this.env.withinFunction = env.withinFunction || this.env.withinFunction;
-        this.env.withinProcess = env.withinProcess || this.env.withinProcess;
         this.env.withinLoop = env.withinLoop || this.env.withinLoop;
     }
 
@@ -249,15 +239,6 @@ export class Context {
         }
     }
 
-    setActiveProcess(proc: ProcessType | null) {
-        this.activeProcess = proc;
-    }
-
-    getActiveProcess(): ProcessType | null {
-        return this.activeProcess;
-    }
-
-
     /**
      * Used to override parent, used after cloning a method, where the parent scope would point to the old method's root context, 
      * this is upated in the class consturctor to point to the new method's context.
@@ -278,7 +259,6 @@ export class Context {
     clone(typeMap: {[key: string]: DataType}, parent: Context | null): Context {
         let newContext = new Context(this.location, this.parser, parent || this.parent, this.env);
         newContext.activeClass = this.activeClass;
-        newContext.activeProcess = this.activeProcess;
         newContext.owner = this.owner;
         newContext.pkg = this.pkg;
 

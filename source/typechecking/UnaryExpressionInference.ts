@@ -6,7 +6,7 @@ import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { NullableType } from "../ast/types/NullableType";
-import { isNeg, getOperatorOverloadType, setUnaryOverrideMethodHint, isNot, isBNot, isInc, isDec, OverridableMethodType, isPromise, getPromiseReturnType } from "./OperatorOverload";
+import { isNeg, getOperatorOverloadType, setUnaryOverrideMethodHint, isNot, isBNot, isInc, isDec, OverridableMethodType } from "./OperatorOverload";
 
 // negation(-) requires a literal input and might elevate it toanother type
 function inferNegative(ctx: Context, uhs: DataType, expr: UnaryExpression): DataType {
@@ -131,16 +131,6 @@ function inferIncrementDecrement(ctx: Context, uhs: DataType, expr: UnaryExpress
     return uhs;
 }
 
-// await requires a promise input and returns the type of the promise
-function inferAwait(ctx: Context, uhs: DataType, expr: UnaryExpression): DataType {
-    if(uhs.is(ctx, ClassType) || uhs.is(ctx, InterfaceType)){
-        if(isPromise(ctx, uhs as OverridableMethodType)){
-            return getPromiseReturnType(ctx, uhs as OverridableMethodType);
-        }
-    }
-
-    throw ctx.parser.customError(`Cannot use await operator on non-promise type ${uhs.shortname()}`, expr.location);
-}
 
 type UnaryTypeChecker = (ctx: Context, uhsType: DataType, expr: UnaryExpression) => DataType;
 
@@ -153,5 +143,4 @@ export const unaryTypeCheckers: Record<UnaryOperator, UnaryTypeChecker> = {
     "post++": inferIncrementDecrement,
     "pre--": inferIncrementDecrement,
     "post--": inferIncrementDecrement,
-    "await": inferAwait
 }

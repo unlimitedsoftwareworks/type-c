@@ -23,7 +23,8 @@ export type DataTypeKind =
     "enum" | // EnumType
     "variant" | // VariantType
     "variant_constructor" | // VariantConstructorType
-    "process" | // ProcessType
+    "promise" | // PromiseType
+    "lock" | // LockType
     "fn" | // FunctionType
     "reference" |
     "generic" | // GenericType

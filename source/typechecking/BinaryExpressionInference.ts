@@ -59,6 +59,15 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
     
+    if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
+        if(isAddable(ctx, lhs as OverridableMethodType)){
+            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
+            if(method){
+                return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
+            }
+        }
+    }
+
     throw ctx.parser.customError(`Cannot operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 

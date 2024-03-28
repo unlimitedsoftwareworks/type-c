@@ -66,7 +66,6 @@ import { InterfaceType } from "../ast/types/InterfaceType";
 import { JoinType } from "../ast/types/JoinType";
 import { NullType } from "../ast/types/NullType";
 import { NullableType } from "../ast/types/NullableType";
-import { ProcessType } from "../ast/types/ProcessType";
 import { ReferenceType } from "../ast/types/ReferenceType";
 import { StructField, StructType } from "../ast/types/StructType";
 import { UnionType } from "../ast/types/UnionType";
@@ -75,7 +74,6 @@ import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
 import { Parser } from "./Parser";
-import { ProcessMethod } from "../ast/other/ProcessMethod";
 import { WildCardPatternExpression } from "../ast/matching/WildCardPatternExpression";
 import { CastExpression } from "../ast/expressions/CastExpression";
 import { NullableMemberAccessExpression } from "../ast/expressions/NullableMemberAccessExpression";
@@ -88,6 +86,9 @@ import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarat
 import { ForStatement } from "../ast/statements/ForStatement";
 import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarationStatement";
 import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
+import { PromiseType } from "../ast/types/PromiseType";
+import { LockType } from "../ast/types/LockType";
+import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 
 
 // <genericArgDecl> ::= '<' id (':' <type>)? (',' id (':' <type>)?)+ '>' 
@@ -660,10 +661,12 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         return parseTypeClass(parser, ctx);
     }
     
+    /*
     if(lexeme.type === "process") {
         parser.reject();
         return parseTypeProcess(parser, ctx);
     }
+    */
 
     if (["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64"].includes(lexeme.type)) {
         parser.accept();
@@ -683,6 +686,27 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
     if(lexeme.type === "null") {
         parser.accept();
         return new NullType(loc);
+    }
+
+    if(lexeme.type === "promise") {
+        parser.accept();
+        parser.expect("<");
+        let type = parseType(parser, ctx);
+        parser.expect(">");
+        return new PromiseType(loc, type);
+    }
+
+    if(lexeme.type === "lock") {
+        parser.accept();
+        // sometimes the lock type is not specified, in that case, we use unset
+        let lockType = new UnsetType(loc);
+        if(parser.peek().type == "<"){
+            parser.accept();
+            lockType = parseType(parser, ctx);
+            parser.expect(">");
+        }
+
+        return new LockType(loc, lockType);
     }
 
     throw parser.customError(`Unexpected token '${lexeme.type}'`, loc);
@@ -916,89 +940,6 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     return new ClassType(loc, superTypes as ReferenceType[], attributes, methods);
 }
 
-
-function parseTypeProcess(parser: Parser, ctx: Context): DataType {
-    let loc = parser.loc();
-    parser.expect("class");
-    let superTypes: DataType[] = []
-    let lexeme = parser.peek();
-    if (lexeme.type != "{") {
-        parser.reject();
-        superTypes = parseTypeList(parser, ctx);
-    }
-    else {
-        parser.reject();
-    }
-    parser.expect("{");
-
-    let canLoop = true;
-    let attributes: ClassAttribute[] = [];
-    let methods: ProcessMethod[] = [];
-    let staticBlock: BlockStatement | null = null;
-
-    while(canLoop) {
-        let tok = parser.peek();
-        if(tok.type === "let") {
-            parser.reject();
-            let attribute = parseClassAttribute(parser, ctx);
-            if(methods.find(m => m.imethod.name == attribute.name)){
-                throw parser.customError(`Duplicate attribute '${attribute.name}' in class`, attribute.location);
-            }
-            // also comapre it with attributes
-            if(attributes.find(a => a.name == attribute.name)){
-                throw parser.customError(`Duplicate name attributes '${attribute.name}' is already reserved by a method, in class`, attribute.location);
-            }
-            attributes.push(attribute);
-        }
-        else if (tok.type === "static") {
-            let tok2 = parser.peek();
-            if(tok2.type === "{") {
-                // Static block
-                // make sure we don't have more than one static block
-                if(staticBlock!=null){
-                    throw parser.customError("Duplicate static block in class, can only have one", tok.location);
-                }
-                parser.rejectOne();
-                parser.accept();
-                staticBlock = parseStatementBlock(parser, ctx);
-            }
-            else if (tok2.type === "fn"){
-                parser.reject();
-                let method = parseProcessMethod(parser, ctx);
-                method.imethod.isStatic = true;
-                // also comapre it with attributes
-                if(attributes.find(a => a.name == method.imethod.name)){
-                    throw parser.customError(`Duplicate name method '${method.imethod.name}' is already reserved by an attribute, in class`, method.location);
-                }
-                methods.push(method);
-            }
-        }
-        else if(tok.type === "fn") {
-            parser.reject();
-            let method = parseProcessMethod(parser, ctx);
-            // also comapre it with attributes
-            if(attributes.find(a => a.name == method.imethod.name)){
-                throw parser.customError(`Duplicate name method '${method.imethod.name}' is already reserved by an attribute, in class`, method.location);
-            }
-            methods.push(method);
-        }
-        else {
-            parser.reject();
-            canLoop = false;
-        }
-    }
-
-    parser.expect("}");
-    // assert all superTypes are reference types
-    for(let t of superTypes){
-        if(!(t instanceof ReferenceType)){
-            throw ctx.parser.customError("Interfaces can only inherit from other interfaces", loc);
-        }
-    }
-
-    return new ProcessType(loc, attributes, methods);
-}
-
 function parseTypeFunction(parser: Parser, ctx: Context): DataType {
     parser.expect("fn");
     let header = parseFnTypeBody(parser, ctx);
@@ -1036,7 +977,7 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod="cl
     let expression: Expression | null = null;
     
     // create method ctx and capture return statements
-    let methodScope = new Context(loc, parser, ctx, {withinClass: classOrProcessMethod=="class", withinProcess: classOrProcessMethod=="process", withinFunction: true});
+    let methodScope = new Context(loc, parser, ctx, {withinClass: classOrProcessMethod=="class", withinFunction: true});
     methodScope.location = loc;
 
     let fn = new ClassMethod(loc, methodScope, fnProto, null, null)
@@ -1056,33 +997,6 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod="cl
     return fn;
 }
 
-function parseProcessMethod(parser: Parser, ctx: Context, classOrProcessMethod="class"): ProcessMethod {
-    let loc = parser.loc();
-
-    let {proto, isEvent} = parseProcessFunctionPrototype(parser, ctx);
-    let body: BlockStatement | null = null;
-    let expression: Expression | null = null;
-    
-    // create method ctx and capture return statements
-    let methodScope = new Context(loc, parser, ctx, {withinClass: classOrProcessMethod=="class", withinProcess: classOrProcessMethod=="process", withinFunction: true});
-    methodScope.location = loc;
-
-    let fn = new ProcessMethod(loc, methodScope, new InterfaceMethod(proto.location, proto.name, proto.header, false, proto.generics), null, null, isEvent)
-    methodScope.setOwner(fn);
-
-    if(parser.peek().type === "=") {
-        parser.accept();
-        expression = parseExpression(parser, methodScope);
-    }
-    else {
-        parser.reject();
-        body = parseStatementBlock(parser, methodScope);
-    }
-    
-    fn.expression = expression;
-    fn.body = body;
-    return fn;
-}
 /**
  * Expressions
  */
@@ -1422,17 +1336,15 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
     else if (lexeme.type === "await") {
         parser.accept();
         let expression = parseExpressionUnary(parser, ctx);
-        return new UnaryExpression(loc, expression, "await");
+        return new AwaitExpression(loc, expression);
     }
     else if (lexeme.type === "spawn") {
         parser.accept();
-        let type = parseType(parser, ctx);
-        parser.expect("(");
-        lexeme = parser.peek();
-        parser.reject();
-        let args = lexeme.type == ")"?[]:parseExpressionList(parser, ctx);
-        parser.expect(")");
-        return new SpawnExpression(loc, type, args);
+        let expr = parseExpression(parser, ctx);
+        if(!expr) {
+            throw parser.customError("spawn requires a valid expression", loc);
+        }
+        return new SpawnExpression(loc, expr);
     }
     else if (lexeme.type === "new") {
         parser.accept();

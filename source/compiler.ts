@@ -72,7 +72,7 @@ export module TypeC {
             this.basePackage = parser.basePackage
             parser.parse();
 
-            //BuiltinModules.getStringClass(this);
+            BuiltinModules.getStringClass(this);
             //BuiltinModules.getRunnableInterface(this);
             //BuiltinModules.getArrayInterface(this);
 

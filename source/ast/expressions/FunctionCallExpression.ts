@@ -44,7 +44,7 @@ export class FunctionCallExpression extends Expression {
         this.args = args;
     }
 
-    infer(ctx: Context, hint: DataType | null){
+    infer(ctx: Context, hint: DataType | null) {
         this.setHint(hint);
 
         /**
@@ -53,13 +53,13 @@ export class FunctionCallExpression extends Expression {
          * meaning we check if we have FnCall(MemberAccess(...), [...])
          */
 
-        if(this.lhs instanceof MemberAccessExpression) {
+        if (this.lhs instanceof MemberAccessExpression) {
             let baseExpr = this.lhs.left;
             let baseExprType = this.lhs.left.infer(ctx, null);
 
             let memberExpr = this.lhs.right;
 
-            if(baseExprType.is(ctx, ClassType)) {
+            if (baseExprType.is(ctx, ClassType)) {
                 let baseClass = baseExprType.to(ctx, ClassType) as ClassType;
 
                 /**
@@ -67,7 +67,7 @@ export class FunctionCallExpression extends Expression {
                  * if it is an attribute, we need to proceed with the regular logic
                  */
                 let isAttribute = baseClass.attributes.find(a => a.name === memberExpr.name);
-                if(isAttribute === undefined) {
+                if (isAttribute === undefined) {
 
                     /**
                      * Since this is a function call, we expect the member to be a method,
@@ -75,44 +75,21 @@ export class FunctionCallExpression extends Expression {
                      */
 
                     let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
-                    let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
-                    if(candidateMethods.length === 0) {
+                    let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
+                    if (candidateMethods.length === 0) {
                         throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${baseClass.shortname()}`, this.location);
                     }
-                    if(candidateMethods.length > 1) {
+                    if (candidateMethods.length > 1) {
                         throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseClass.shortname()}`, this.location);
                     }
 
                     let method = candidateMethods[0];
 
-                    /**
-                     * if we have a generic method, we need to infer the generic types
-                     */
-                    if(method.generics.length !== memberExpr.typeArguments.length) {
-                        throw ctx.parser.customError(`Expected ${method.generics.length} type arguments, got ${memberExpr.typeArguments.length}`, this.location);
-                    }
-
-                    if(method.generics.length > 0) {
-                        let map = buildGenericsMaps(ctx, method.generics, memberExpr.typeArguments);
-                        let m: ClassMethod | null = null;
-                        try {
-                            m = baseClass.getGenericMethodByName(ctx, memberExpr.name);
-                        }
-                        catch(e) {
-                            throw ctx.parser.customError(`Method ${memberExpr.name} does not support generics`, this.location);
-                        }
-                        if(m === null) {
-                            throw "unexpected null";
-                        }
-
-                        let newM = m.generateConcreteMethod(ctx, map, memberExpr.typeArguments);
-                        method = newM.imethod;
-                    }
 
                     // since we might have a generic method, we need to re-infer the arguments of the call
-                    for(let i = 0; i < this.args.length; i++){
+                    for (let i = 0; i < this.args.length; i++) {
                         this.args[i].infer(ctx, method.header.parameters[i].type);
-                        if(!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
+                        if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
                             throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                         }
                     }
@@ -122,7 +99,7 @@ export class FunctionCallExpression extends Expression {
                     return this.inferredType;
                 }
             }
-            else if(baseExprType.is(ctx, InterfaceType)) {
+            else if (baseExprType.is(ctx, InterfaceType)) {
                 let baseInterface = baseExprType.to(ctx, InterfaceType) as InterfaceType;
 
                 /**
@@ -130,17 +107,17 @@ export class FunctionCallExpression extends Expression {
                  */
                 let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
                 let candidateMethods = baseInterface.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
-                if(candidateMethods.length === 0) {
+                if (candidateMethods.length === 0) {
                     throw ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseInterface.shortname()}`, this.location);
                 }
-                if(candidateMethods.length > 1) {
+                if (candidateMethods.length > 1) {
                     throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseInterface.shortname()}`, this.location);
                 }
 
                 let method = candidateMethods[0];
-                for(let i = 0; i < this.args.length; i++){
+                for (let i = 0; i < this.args.length; i++) {
                     this.args[i].infer(ctx, method.header.parameters[i].type);
-                    if(!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
+                    if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
                         throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                     }
                 }
@@ -157,26 +134,26 @@ export class FunctionCallExpression extends Expression {
                  */
 
                 // case 1: static method call
-                if(baseExprType.is(ctx, MetaClassType)) {
+                if (baseExprType.is(ctx, MetaClassType)) {
                     let metaClass = baseExprType.to(ctx, MetaClassType) as MetaClassType;
                     let classType = metaClass.classType.to(ctx, ClassType) as ClassType;
 
                     // find the method
                     let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
-                    let candidateMethods = classType.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
+                    let candidateMethods = classType.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
 
-                    if(candidateMethods.length === 0) {
+                    if (candidateMethods.length === 0) {
                         throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${classType.shortname()}`, this.location);
                     }
 
-                    if(candidateMethods.length > 1) {
+                    if (candidateMethods.length > 1) {
                         throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${classType.shortname()}`, this.location);
                     }
 
                     let method = candidateMethods[0];
-                    for(let i = 0; i < this.args.length; i++){
+                    for (let i = 0; i < this.args.length; i++) {
                         this.args[i].infer(ctx, method.header.parameters[i].type);
-                        if(!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
+                        if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
                             throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                         }
                     }
@@ -187,9 +164,9 @@ export class FunctionCallExpression extends Expression {
                 }
 
                 // case 2: variant constructor
-                else if(baseExprType.is(ctx, MetaVariantType)) {
+                else if (baseExprType.is(ctx, MetaVariantType)) {
                     let variantConstructorMeta = this.lhs.infer(ctx, null);
-                    if(!variantConstructorMeta.is(ctx, MetaVariantConstructorType)){
+                    if (!variantConstructorMeta.is(ctx, MetaVariantConstructorType)) {
                         throw "Unreachable";
                     }
 
@@ -197,32 +174,32 @@ export class FunctionCallExpression extends Expression {
                     let metaVariant = baseExprType.to(ctx, MetaVariantType) as MetaVariantType;
                     let variantType = metaVariant.variantType.to(ctx, VariantType) as VariantType;
 
-                    if(metaVariantConstructor.typeArguments.length !== memberExpr.typeArguments.length) {
+                    if (metaVariantConstructor.typeArguments.length !== memberExpr.typeArguments.length) {
                         throw ctx.parser.customError(`Expected ${metaVariantConstructor.typeArguments.length} type arguments, got ${memberExpr.typeArguments.length}`, this.location);
                     }
 
-                    if(metaVariantConstructor.typeArguments.length > 0) {
+                    if (metaVariantConstructor.typeArguments.length > 0) {
                         let map = buildGenericsMaps(ctx, metaVariantConstructor.genericParameters, memberExpr.typeArguments);
                         variantType = variantType.clone(map);
                     }
 
                     let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
 
-                    if(variantConstructor === undefined) {
+                    if (variantConstructor === undefined) {
                         throw ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
                     }
 
                     // if we have generics, we need to clone the variant type
                     //let map = buildGenericsMaps(ctx, method.generics, memberExpr.typeArguments);
-                    
+
 
                     // make sure we have the right number of arguments
-                    if(this.args.length !== variantConstructor.parameters.length) {
+                    if (this.args.length !== variantConstructor.parameters.length) {
                         throw ctx.parser.customError(`Expected ${variantConstructor.parameters.length} arguments, got ${this.args.length}`, this.location);
                     }
 
                     // infer the arguments
-                    for(let i = 0; i < this.args.length; i++){
+                    for (let i = 0; i < this.args.length; i++) {
                         this.args[i].infer(ctx, variantConstructor.parameters[i].type);
                     }
 
@@ -231,7 +208,7 @@ export class FunctionCallExpression extends Expression {
                     this.checkHint(ctx);
                     return this.inferredType;
                 }
-                
+
             }
         }
 
@@ -245,25 +222,25 @@ export class FunctionCallExpression extends Expression {
          * 4. Variant Constructor
          */
 
-        if(lhsType.is(ctx, FunctionType)) {
+        if (lhsType.is(ctx, FunctionType)) {
             let lhsT = lhsType as FunctionType;
             // regular function call
             // check if the number of arguments is correct
-            if(this.args.length !== lhsT.parameters.length){
+            if (this.args.length !== lhsT.parameters.length) {
                 throw ctx.parser.customError(`Expected ${lhsT.parameters.length} arguments, got ${this.args.length}`, this.location);
             }
 
-            for(let i = 0; i < this.args.length; i++){
+            for (let i = 0; i < this.args.length; i++) {
                 let paramType = lhsT.parameters[i].type;
                 let argType = this.args[i].infer(ctx, paramType);
 
                 let res = matchDataTypes(ctx, paramType, argType);
-                if(!res.success) {
+                if (!res.success) {
                     throw ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
                 }
 
                 // we also make sure that we respect the constraints of the parameter, i.e mutability
-                if(!checkExpressionArgConst(this.args[i], argType, lhsT.parameters[i], lhsType)) {
+                if (!checkExpressionArgConst(this.args[i], argType, lhsT.parameters[i], lhsType)) {
                     throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
             }
@@ -277,18 +254,18 @@ export class FunctionCallExpression extends Expression {
             let lhsT = lhsType as ClassType | InterfaceType;
             let iscallable = isCallable(ctx, lhsT);
 
-            if(!iscallable) {
+            if (!iscallable) {
                 throw ctx.parser.customError(`Type ${lhsT.shortname()} is not callable`, this.location);
             }
 
             let method = getOperatorOverloadType(ctx, "__call__", lhsT, this.args.map(e => e.infer(ctx, null)));
 
-            if(!method) {
+            if (!method) {
                 throw ctx.parser.customError(`Method __call__ not found in ${lhsT.shortname()}`, this.location);
             }
 
             // setup the hint for call arguments 
-            for(let i = 0; i < this.args.length; i++){
+            for (let i = 0; i < this.args.length; i++) {
                 this.args[i].setHint(method.header.parameters[i].type);
             }
 
@@ -305,21 +282,21 @@ export class FunctionCallExpression extends Expression {
             let interfaceMethod = lhsT.imethod;
 
             // check if the number of arguments is correct
-            if(this.args.length !== interfaceMethod.header.parameters.length){
+            if (this.args.length !== interfaceMethod.header.parameters.length) {
                 throw ctx.parser.customError(`Expected ${interfaceMethod.header.parameters.length} arguments, got ${this.args.length}`, this.location);
             }
 
-            for(let i = 0; i < this.args.length; i++){
+            for (let i = 0; i < this.args.length; i++) {
                 let paramType = interfaceMethod.header.parameters[i].type;
                 let argType = this.args[i].infer(ctx, paramType);
 
                 let res = matchDataTypes(ctx, paramType, argType);
-                if(!res.success) {
+                if (!res.success) {
                     throw ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
                 }
 
                 // we also make sure that we respect the constraints of the parameter, i.e mutability
-                if(!checkExpressionArgConst(this.args[i], argType, interfaceMethod.header.parameters[i], lhsType)) {
+                if (!checkExpressionArgConst(this.args[i], argType, interfaceMethod.header.parameters[i], lhsType)) {
                     throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
 

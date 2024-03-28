@@ -188,39 +188,6 @@ export class ReferenceType extends DataType{
         throw ctx.parser.customError("Reference is not a class neither an interface", this.location);
     }
 
-    /**
-     * Returns true if the reference is std.concurrency.Promise
-     */
-    isPromise(ctx: Context): boolean{
-        this.resolveIfNeeded(ctx);
-        if((this.baseDecl?.name == "Promise") && (this.baseDecl.parentPackage == "~std.concurrency.Promise")){
-            return true;
-        }
-        else if(this.baseType instanceof ReferenceType){
-            return this.baseType.isPromise(ctx);
-        }
-
-        return false;
-    }
-
-
-    getPromiseType(ctx: Context): DataType | null {
-        this.resolveIfNeeded(ctx);
-        if((this.baseDecl?.name == "Promise") && (this.baseDecl.parentPackage == "~std.concurrency.Promise")){
-            // assert we have one type argument
-            if(this.typeArgs.length != 1){
-                throw ctx.parser.customError("Promise type must have one type argument", this.location);
-            }
-            return this.typeArgs[0];
-        }
-        else if(this.baseType instanceof ReferenceType){
-            return this.baseType.getPromiseType(ctx);
-        }
-
-        return null;
-    }
-
-
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         this.resolveIfNeeded(ctx);
         return this.baseType!.to(ctx, targetType);

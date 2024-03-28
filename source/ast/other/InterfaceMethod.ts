@@ -30,7 +30,7 @@ export class InterfaceMethod extends FunctionPrototype {
     }
 
     serialize(): string {
-        return `@method{${this.name}:${this.header.serialize()},static:${this.isStatic}}`
+        return `@method{${this.name}:${this.header.serialize()},static:${this.isStatic},generics:[${this.generics.map(g => g.serialize()).join(",")}]`
     }
 
     /**

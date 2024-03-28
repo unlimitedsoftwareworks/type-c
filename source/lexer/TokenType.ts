@@ -36,7 +36,8 @@ export enum TokenType {
     TOK_IS = "is",
     TOK_INTERFACE = "interface",
     TOK_MUT = "mut",
-    TOK_PROCESS = "process",
+    TOK_LOCK = "lock",
+    TOK_PROMISE = "promise",
     TOK_SPAWN = "spawn",
 
     TOK_I8 = "i8",
