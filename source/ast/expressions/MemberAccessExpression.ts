@@ -68,7 +68,7 @@ import { Expression } from "./Expression";
         if(lhsType.is(ctx, ArrayType)) {
             let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
             /**
-             * Only one of the following are accepeted: length, extend and slice
+             * Only one of the following are accepted: length, extend and slice
              */
             if(this.right.name === "length") {
                 this.inferredType = new BasicType(this.location, "u64");
