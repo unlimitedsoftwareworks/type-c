@@ -22,6 +22,9 @@ export class PromiseType extends DataType {
     
     constructor(location: SymbolLocation, returnType: DataType) {
         super(location, "promise");
+        if(returnType == null){
+            throw new Error("Return type of promise cannot be null");
+        }
         this.returnType = returnType;
     }
 
