@@ -37,7 +37,7 @@ export class FunctionType extends DataType {
     }
 
     shortname(): string {
-        return "fn("+this.parameters.map((param) => param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
+        return "fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
     }
 
     serialize(): string {
