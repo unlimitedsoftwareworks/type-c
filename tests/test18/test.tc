@@ -14,4 +14,4 @@ fn f1() -> i32 {
 }
 
 let thread1 = spawn f1()
-let x: u64 = (await thread1) as u32
+let x: u64 = (await thread1) as u64
