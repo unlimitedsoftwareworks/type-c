@@ -13,5 +13,16 @@ fn f1() -> i32 {
     return z
 }
 
+
+fn f2() -> u64 {
+    let z: u64 = 1
+
+    return z
+}
+
 let thread1 = spawn f1()
-let x: u64 = (await thread1) as u64
+thread1.then< i32, promise<u64> >(fn(x: i32) -> promise<u64> {
+    return spawn f2()
+}).then(fn(x: u64) -> void {
+    return
+})
