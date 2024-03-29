@@ -22,14 +22,12 @@ fn f2() -> u64 {
 
 let thread1 = spawn f1()
 thread1.then(fn(x: i32) {
-    f2()
-    return
-})
-/*.then(fn(x: u64)  {
+    return spawn f2()
+}).then(fn(x: u64)  {
     return spawn f1()
 }).then<void>(fn(x: i32) {
     return
-})*/
+})
 
 let l: lock<u32> = new lock(0)
 

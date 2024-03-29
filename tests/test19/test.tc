@@ -1,0 +1,10 @@
+
+/*
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+*/
+
+let z: u32 = 0
+let x: u32 = 1
+let y: u32 = z ?? y
