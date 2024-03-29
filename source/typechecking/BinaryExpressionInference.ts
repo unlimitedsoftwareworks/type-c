@@ -246,6 +246,10 @@ function inferLogicalAndOr(ctx: Context, lhs: DataType, rhs: DataType, expr: Bin
     throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
 }
 
+function inferCoalescing(ctx: Context, lhs: DataType, rhs:DataType, expr: BinaryExpression): DataType {
+    throw "Not implemented";
+}
+
 
 // binary and(&), or(|), right shift(>>), left shift(<<) requires two integer inputs and returns an integer
 function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
@@ -344,6 +348,7 @@ export const binaryTypeCheckers: Record<BinaryExpressionOperator, BinaryTypeChec
     ">=": inferLessThan,
     "&&": inferLogicalAndOr,
     "||": inferLogicalAndOr,
+    "??": inferCoalescing,
     "&": inferBitwiseAnd,
     "|": inferBitwiseAnd,
     "^": inferBitwiseAnd,

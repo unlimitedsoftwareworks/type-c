@@ -1115,8 +1115,26 @@ function parseExpressionConditional(parser: Parser, ctx: Context): Expression {
     }
     else {
         parser.reject();
-        return parseExpressionLogicalOr(parser, ctx);
+        return parseCoalescingOp(parser, ctx);
     }
+}
+
+
+// ||
+function parseCoalescingOp(parser: Parser, ctx: Context): Expression {
+    let loc = parser.loc();
+    let left = parseExpressionLogicalOr(parser, ctx);
+    let lexeme = parser.peek();
+
+    while (lexeme.type === "??") {
+        parser.accept();
+        let right = parseExpressionLogicalOr(parser, ctx);
+        left = new BinaryExpression(loc, left, right, lexeme.type as BinaryExpressionOperator);
+        lexeme = parser.peek();
+    }
+
+    parser.reject();
+    return left;
 }
 
 // ||

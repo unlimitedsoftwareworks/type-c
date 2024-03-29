@@ -37,7 +37,8 @@ export type BinaryExpressionOperator =
     "&&" | "||" |
     "&" | "|" | "^" |
     ">>" | "<<"|
-    "=" | "!="
+    "=" | "!=" |
+    "??"
 ;
 
 

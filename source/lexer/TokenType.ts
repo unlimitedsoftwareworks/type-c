@@ -83,6 +83,7 @@ export enum TokenType {
     TOK_NOT = "!",
     TOK_EQUAL = "=",
     TOK_LOGICAL_OR = "||",
+    TOK_COALESCING = "??",
     TOK_LOGICAL_AND = "&&",
     TOK_NOT_EQUAL = "!=",
     TOK_CASE_EXPR = "=>",
