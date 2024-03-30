@@ -19,57 +19,57 @@ export enum BytecodeInstructionType{
      */
 
     /**
-     * op_mov_reg_reg dest: r, src: r, bits: s
+     * mov_reg_reg dest: r, src: r, bits: s
      * move 1byte from src to dest
      */
     mv_reg_reg = 0x00,
 
     /**
-     * op_mv_reg_mem dest: r, src: r
+     * mv_reg_mem dest: r, src: r
      */
     mv_reg_reg_ptr,
 
     /**
-     * op_mv_reg_null dest: r
+     * mv_reg_null dest: r
      * sets reg r to null
      */
     mv_reg_null,
 
     /**
-     * op_mv_reg_i: dest: r, value-size: z, value: i
+     * mv_reg_i: dest: r, value-size: z, value: i
      */
     mv_reg_i,
 
     /**
-     * op_mv_reg_const dest: r, offset-size: z, offset: i, bytesize: s
+     * mv_reg_const dest: r, offset-size: z, offset: i, bytesize: s
      */
     mv_reg_const,
     mv_reg_const_ptr,
 
 
     /**
-     * op_mv_global_reg_[size] offset-size: z, offset: i, source: r, bytesize: s
+     * mv_global_reg_[size] offset-size: z, offset: i, source: r, bytesize: s
      * moves s bytes from register r to global pool address offset
      */
     mv_global_reg,
     mv_global_reg_ptr,
 
     /**
-     * op_mv_reg_global_[size] dest: reg, offset-size: z, offset: i
+     * mv_reg_global_[size] dest: reg, offset-size: z, offset: i
      * moves s bytes from global pool address offset to register r
      */
     mv_reg_global,
     mv_reg_global_ptr,
 
     /**
-     * op_s_alloc dest: r, fields-count: i, struct-size: i (2bytes)
+     * s_alloc dest: r, fields-count: i, struct-size: i (2bytes)
      * creates new struct of given total ﬁelds count (arg1) and total memory
      * (arg2 and arg3), stores the address of the new struct into dest.
      */
     s_alloc,
 
     /**
-     * op_s_alloc_shadow dest: r, copy: r fields-count: i
+     * s_alloc_shadow dest: r, copy: r fields-count: i
      * creates a shadow copy of a struct (who's address is stored in copy),
      * a shadow copy is a copy that points to the same data but with different
      * offset table. copy address is stored given register
@@ -77,14 +77,14 @@ export enum BytecodeInstructionType{
     s_alloc_shadow,
 
     /**
-     * op_s_set_offset dest: r, fieldindex: i, offset-value: i (2 bytes)
+     * s_set_offset dest: r, fieldindex: i, offset-value: i (2 bytes)
      * sets the offset value of field i, of the struct stored in dest
      * to the given offset value
      */
     s_set_offset,
 
     /**
-     * op_s_set_offset_shadow src: r, fieldindexsrc: i, fieldindextarget: i
+     * s_set_offset_shadow src: r, fieldindexsrc: i, fieldindextarget: i
      * sets the offset value of field index fieldindexsrc, of the struct
      * stored in src to the offset value of field index fieldindextarget,
      * of the original struct referenced by the shadow copy
@@ -93,14 +93,14 @@ export enum BytecodeInstructionType{
     s_set_offset_shadow,
 
     /**
-     * op_s_loadf_[size] dest: r, src: r fieldindex: i, bytesize: s
+     * s_loadf_[size] dest: r, src: r fieldindex: i, bytesize: s
      * loads size bytes from field i of struct stored at src to register dest
      */
     s_loadf,
     s_loadf_ptr,
 
     /**
-     * op_s_storef_const_[size] dest: r, fieldindex: i, constant-offset: i (8 bytes), bytesize: s
+     * s_storef_const_[size] dest: r, fieldindex: i, constant-offset: i (8 bytes), bytesize: s
      * stores [size] bytes from constant pool address offset to field i of
      * struct stored at dest
      */
@@ -108,14 +108,14 @@ export enum BytecodeInstructionType{
     s_storef_const_ptr,
 
     /**
-     * op_s_storef_reg_[size] dest: r, fieldindex: i, source: r, bytesize: s
+     * s_storef_reg_[size] dest: r, fieldindex: i, source: r, bytesize: s
      * stores [size] bytes from register r to field i of struct stored at dest
      */
     s_storef_reg,
     s_storef_reg_ptr,
 
     /**
-     * op_c_alloc dest:
+     * c_alloc dest:
      * r num-methods: i, class-fields-size: i (2 bytes), classid-size: z, classid: i
      * allocates new class of given total ﬁelds count (arg1) and total fields
      * size of (arg2 and arg3), stores the address of the new class into dest.
@@ -123,33 +123,33 @@ export enum BytecodeInstructionType{
     c_alloc,
 
     /**
-     * op_c_storem destreg: r, methodindex: i, methodaddress: i(8 bytes)
+     * c_storem destreg: r, methodindex: i, methodaddress: i(8 bytes)
      * stores methodaddress into method table index methodindex of class stored in destreg
      */
     c_storem,
 
     /**
-     * op_c_loadm dest: r, classreg: r methodindex: i
+     * c_loadm dest: r, classreg: r methodindex: i
      * loads method address from method table of class stored in classreg to register r
      */
     c_loadm,
 
     /**
-     * op_cstoref_reg_[size] classreg: r, fieldoffset: i (2 bytes), r: source register, bytesize: s
+     * cstoref_reg_[size] classreg: r, fieldoffset: i (2 bytes), r: source register, bytesize: s
      * stores [size] bytes from register r to field i of class stored at classreg
      */
     c_storef_reg,
     c_storef_reg_ptr,
 
     /**
-     * op_c_storef_const_[size] classreg: r, fieldoffset: i (2 bytes), offset: i (8 bytes), bytesize: s
+     * c_storef_const_[size] classreg: r, fieldoffset: i (2 bytes), offset: i (8 bytes), bytesize: s
      */
     c_storef_const,
     c_storef_const_ptr,
 
 
     /**
-     * op_c_loadf_[size] dest: r, classreg: r, fieldoffset: i (2 bytes), bytesize: s
+     * c_loadf_[size] dest: r, classreg: r, fieldoffset: i (2 bytes), bytesize: s
      * loads [size] bytes from field i of class stored at classreg to register r
      */
     c_loadf,
@@ -157,7 +157,7 @@ export enum BytecodeInstructionType{
 
 
     /**
-     * op_i_alloc dest: r, num_methods: i, class: r
+     * i_alloc dest: r, num_methods: i, class: r
      * allocates new interface method table of given total methods count (arg1),
      * interface is based on class stored in dest. interface address is
      * stored in class
@@ -165,7 +165,7 @@ export enum BytecodeInstructionType{
     i_alloc,
 
     /**
-     * op_i_alloc_i dest: r, num_methods: i, interface: r
+     * i_alloc_i dest: r, num_methods: i, interface: r
      * allocates new interface from another interface,
      * inheriting its parent class, and storing the new interface
      * address in dest
@@ -173,20 +173,20 @@ export enum BytecodeInstructionType{
     i_alloc_i,
 
     /**
-     * op_i_set_offset dest: r, methodindex: i, offset-value: i (2bytes)
+     * i_set_offset dest: r, methodindex: i, offset-value: i (2bytes)
      * sets the offset value of method i, of the interface stored in dest
      */
     i_set_offset,
 
     /**
-     * op_i_set_offset_i dest: r, methodindexsrc: i, methodindextarget: i, src interface: r
+     * i_set_offset_i dest: r, methodindexsrc: i, methodindextarget: i, src interface: r
      * updates the offset value of method index methodindexsrc, of the interface src in
      * to the offset value of method index methodindextarget, of the interface stored in dest
      */
     i_set_offset_i,
 
     /**
-     * op_i_set_offset_m dest: r, methodid: i (8bytes), methodindex: i (2 bytes) jumpfailure: i (8 bytes)
+     * i_set_offset_m dest: r, methodid: i (8bytes), methodindex: i (2 bytes) jumpfailure: i (8 bytes)
      * find the method methodid from the base class of the interface stored in dest,
      * sets its offset in the current interface's methodindex to the given offset value. if the methodid
      * is not found, it jumps to the given address
@@ -194,20 +194,20 @@ export enum BytecodeInstructionType{
     i_set_offset_m,
 
     /**
-     * op_i_loadm dest: r, src: r methodindex: i
+     * i_loadm dest: r, src: r methodindex: i
      * loads method address from method table of interface stored in src to register dest
      */
     i_loadm,
 
     /**
-     * op_c_is_c dest: r, src: r, classid: i (8 bytes)
+     * c_is_c dest: r, src: r, classid: i (8 bytes)
      * checks if the given interface who's stored in src class id is the
      * same as the given id. stores the result in r
      */
     i_is_c,
 
     /**
-     * op_i_is_i method_id: i (8 bytes), src: r, jump-address: i (8 bytes)
+     * i_is_i method_id: i (8 bytes), src: r, jump-address: i (8 bytes)
      * checks if the base class of the interface which is stored in src has
      * a method with the same given id. if a method with the same id is found,
      * it continues. otherwise, it jumps to the given address.
@@ -215,38 +215,38 @@ export enum BytecodeInstructionType{
     i_is_i,
 
     /**
-     * op_i_get_c dest: r, interface: r
+     * i_get_c dest: r, interface: r
      * gets the class of the given interface, stores the address of the class in r
      */
     i_get_c,
 
     /**
-     * op_a_alloc dest: r, num_elements: i (8 bytes), element_size: z
+     * a_alloc dest: r, num_elements: i (8 bytes), element_size: z
      * allocate array of num_elements of size element_size
      * stores the address of the array in dest
      */
     a_alloc,
 
     /**
-     * op_a_extend array: r, num_elements-size: z, num_elements: i
+     * a_extend array: r, num_elements-size: z, num_elements: i
      * extends the array stored in r by num_elements
      */
     a_extend,
 
     /**
-     * op_a_len dest: r, array: r
+     * a_len dest: r, array: r
      * stores the length of the array stored in array in dest
      */
     a_len,
 
     /**
-     * op_a_slice dest: r, array: r, start: i, end: i
+     * a_slice dest: r, array: r, start: i, end: i
      * slices the array stored in array from start to end
      */
     a_slice,
 
     /**
-     * op_a_storef_reg_[size] dest: r, index: r, source: r, bytesize: s
+     * a_storef_reg_[size] dest: r, index: r, source: r, bytesize: s
      * stores [size] bytes from register src to field
      * index of array dest
      */
@@ -254,7 +254,7 @@ export enum BytecodeInstructionType{
     a_storef_reg_ptr,
 
     /**
-     * op_a_storef_const_[size] dest: r, index: r, offset: i (8 bytes), bytesize: s
+     * a_storef_const_[size] dest: r, index: r, offset: i (8 bytes), bytesize: s
      * stores [size] bytes from constant pool address offset to field
      * value stored in register index of array stored at dest
      */
@@ -262,7 +262,7 @@ export enum BytecodeInstructionType{
     a_storef_const_ptr,
 
     /**
-     * op_a_loadf dest: r, index: r, src: r, bytesize: s
+     * a_loadf dest: r, index: r, src: r, bytesize: s
      * loads [size] bytes from field value stored in register index
      * of array stored at src to register dest
      */
@@ -271,30 +271,30 @@ export enum BytecodeInstructionType{
 
 
     /**
-     * op_push register: r, bytes: s
+     * push register: r, bytes: s
      */
     push,
     push_ptr,
 
     /**
-     * op_push_const offset-size: z, offset: i, bytes: s
+     * push_const offset-size: z, offset: i, bytes: s
      */
     push_const,
 
     /**
-     * op_pop register: r, bytes: s
+     * pop register: r, bytes: s
      */
     pop,
-    pop_ptr,
+    pptr,
 
     /**
-     * op_fn_alloc
+     * fn_alloc
      * allocates a function state, which is the .next of the current active one
      */
     fn_alloc,
 
     /**
-     * op_fn_set_reg_[size] dest: r, source: r, bytesize: s
+     * fn_set_reg_[size] dest: r, source: r, bytesize: s
      * sets the value of the dest register in the .next function state to
      * the value of source register in the active function state
      */
@@ -304,14 +304,14 @@ export enum BytecodeInstructionType{
 
 
     /**
-     * op_fn_call function-address: r
+     * fn_call function-address: r
      * calls the function at the address stored in the given register
      * this function is called after the stack frame is initialized
      * and the arguments are pushed to the stack
      */
     fn_call,
     /**
-     * op_fn_calli function-address-size: z, function-address: i
+     * fn_calli function-address-size: z, function-address: i
      * calls the function at the given address
      * this function is called after the stack frame is initialized
      * and the arguments are pushed to the stack
@@ -320,12 +320,12 @@ export enum BytecodeInstructionType{
 
 
     /**
-     * op_fn_ret returns the current function state (.prev).
+     * fn_ret returns the current function state (.prev).
      */
     fn_ret,
 
     /**
-     * op_fn_get_ret_reg dest: r, src: r, size: b
+     * fn_get_ret_reg dest: r, src: r, size: b
      */
     fn_get_ret_reg,
     fn_get_ret_reg_ptr,
@@ -333,12 +333,12 @@ export enum BytecodeInstructionType{
     /** casting instructions*/
 
     /**
-     * op_cast_[d1]_[d2] dest: r
+     * cast_[d1]_[d2] dest: r
      * casts the value in register r from the given type
      * to the given type. overrides the value in r.
-     * op_cast is used to cast between types of the same
+     * cast is used to cast between types of the same
      * size
-     * example: op_cast_i8_u8 r0
+     * example: cast_i8_u8 r0
      *
      */
     cast_i8_u8,
@@ -356,10 +356,10 @@ export enum BytecodeInstructionType{
     cast_f64_i64,
 
     /**
-     * op_upcast_[i|u|f] dest: r, from: s, to: s
+     * upcast_[i|u|f] dest: r, from: s, to: s
      * up casts the value in register r from given bytes
      * to target bytes. overrides the value in r.
-     * example: op_upcast_i r0, 4, 8
+     * example: upcast_i r0, 4, 8
      * upcasts the value in r0 from 4 bytes to 8 bytes
      */
     upcast_i,
@@ -367,10 +367,10 @@ export enum BytecodeInstructionType{
     upcast_f,
 
     /**
-     * op_upcast_[i|u|f] dest: r, from: s, to: s
+     * upcast_[i|u|f] dest: r, from: s, to: s
      * down casts the value in register r from given bytes
      * to target bytes. overrides the value in r.
-     * example: op_downcast_i r0, 8, 4
+     * example: downcast_i r0, 8, 4
      * downcasts the value in r0 from 8 bytes to 4 bytes
      */
     dcast_i,
@@ -379,7 +379,7 @@ export enum BytecodeInstructionType{
 
     /***
      * math operations
-     * op_[math]_[type] dest: r, op1: r, op2: r
+     * [math]_[type] dest: r, op1: r, op2: r
      * performs the given math operation on op1 and op2
      * and stores the result in dest
      */
@@ -490,7 +490,7 @@ export enum BytecodeInstructionType{
 
     j,
     /**
-     * op_j_cmp_[type] arg1, arg2, cmptype: i(1 byte), jump-address: i (8 bytes)
+     * j_cmp_[type] arg1, arg2, cmptype: i(1 byte), jump-address: i (8 bytes)
      * compares arg1 and arg2 using the given comparison type
      * 0: equal
      * 1: not equal
@@ -513,25 +513,25 @@ export enum BytecodeInstructionType{
     j_cmp_ptr,
 
     /**
-     * op_reg_ffi nnameconst-offset-size: i, nameconst-offset: i, id: i (2 bytes),
+     * reg_ffi nnameconst-offset-size: i, nameconst-offset: i, id: i (2 bytes),
      * registers an ffi of the given name at code offset and with the given id
      */
     reg_ffi,
 
     /**
-     * op_open_ffi ffi-id: i (2 bytes)
+     * open_ffi ffi-id: i (2 bytes)
      * opens the ffi with the given id
      */
     open_ffi,
 
     /**
-     * op_ld_ffi dest: r, ffi-id i (2 bytes), fn-id: i (1b)
+     * ld_ffi dest: r, ffi-id i (2 bytes), fn-id: i (1b)
      * load an ffi method into dest register, from ffi-id and fn-id
      */
     ld_ffi,
 
     /**
-     * op_call_ffi reg: r
+     * call_ffi reg: r
      * calls a ffi stored in reg
      */
     call_ffi,
@@ -539,38 +539,38 @@ export enum BytecodeInstructionType{
     close_ffi,
 
     /**
-     * op_promise_alloc dest: rm
+     * promise_alloc dest: rm
      * allocates a new promise, stores its address in dest
      */
     promise_alloc,
 
     /**
-     * op_promise_resolve promise: rm, payload: rm
+     * promise_resolve promise: rm, payload: rm
      * resolves the given promise with the given payload
      */
     promise_resolve,
 
     /**
-     * op_promise_await promise: rm
+     * promise_await promise: rm
      * awaits the given promise
      */
     promise_await,
 
     /**
-     * op_promise_data dest: r, promise: rm,
+     * promise_data dest: r, promise: rm,
      * returns promise data into dest reg r of promise pm
      * promise must have been resolved, otherwise fails
      */
     promise_data,
 
     /**
-     * op_lock_alloc dest: rm, data: rm
+     * lock_alloc dest: rm, data: rm
      * allocates a new lock, containing data, stores its address in dest
      */
     lock_alloc,
 
     /**
-     * op_lock_acquire lock: rm, data: r,
+     * lock_acquire lock: rm, data: r,
      * acquires the given lock. will block if the lock is already acquired.
      * i.e waiting for lock promise to resolve. stores the lock data in
      * the given argument
@@ -578,7 +578,7 @@ export enum BytecodeInstructionType{
     lock_acquire,
 
     /**
-     * op_lock_release lock: rm
+     * lock_release lock: rm
      * releases the given lock.
      */
     lock_release,
@@ -587,35 +587,79 @@ export enum BytecodeInstructionType{
     debug_reg,
 
     /**
-     * op_halt code: i (4bytes)
+     * halt code: i (4bytes)
      */
     halt,
 
     /**
-     * op_load_std libid: i, fnid: i, dest: r
+     * load_std libid: i, fnid: i, dest: r
      * loads a standard library function into dest reg r
      */
     load_std,
 
     /**
-     * op_vm_health dest: r
+     * vm_health dest: r
      * returns vm health into dest reg r[u8]
      */
     vm_health,
 
     /**
-     * op_spill_alloc num_spills: i[2 bytes]
+     * spill_alloc num_spills: i[2 bytes]
      */
     spill_alloc,
 
     /**
-     * op_spill_reg spill_slot: i[2 bytes], reg: r
+     * spill_reg spill_slot: i[2 bytes], reg: r
      */
     spill_reg,
 
     /**
-     * op_unspill_reg reg: r, spill_slot: i[2 bytes]
+     * unspill_reg reg: r, spill_slot: i[2 bytes]
      */
     unspill_reg,
-};
+
+
+    /**
+     * closure_alloc, dest:R, fn_address: R, env-size: I
+     * Allocates a closure, setting its function pointer to the address in
+     * function-address and preparing an environment of environment-size slots.
+     */
+    closure_alloc,
+
+    /**
+     * capture_var, closure: R, source-reg: R, env-slot: I
+     * Copies the value from the specified register in the current function
+     * state to the specified environment slot in the closure.
+     */
+    capture_var,
+
+    /**
+     * closure_call, closure: R
+     * Similar to FN_RET, but includes additional logic to properly
+     * restore the previous function state's environment.
+     */
+    closure_call,
+
+    /**
+     * closure_ret
+     * Similar to FN_RET, but includes additional logic to properly restore
+     * the previous function state's environment.
+     */
+    closure_ret,
+
+    /**
+     * set_closure_env, closure: R
+     * Used to set up the function state's environment pointer to the environment
+     * of the specified closure.
+     */
+
+    set_closure_env,
+
+    /**
+     * get_closure_var, dest: R, closure: R, env-slot: I
+     * Retrieves a value from the specified slot in the closure's
+     * environment and stores it in the specified register.
+     */
+    get_closure_var
+}
 
