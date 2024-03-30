@@ -511,40 +511,6 @@ export class CodeSegment {
             case BytecodeInstructionType.close_ffi:
                 return this.writer.push_16(args[0]);
             
-            case BytecodeInstructionType.p_alloc:
-                this.writer.push_8(args[0]);
-                return this.writer.push_bytesNeeded(args[1]);
-
-            case BytecodeInstructionType.p_dequeue:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-            
-            case BytecodeInstructionType.p_queue_size:
-                return this.writer.push_8(args[0]);
-
-            case BytecodeInstructionType.p_emit:
-                this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]);
-                
-            case BytecodeInstructionType.p_wait_queue:
-                return -1
-
-            case BytecodeInstructionType.p_send_sig:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-
-        
-            case BytecodeInstructionType.p_id:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-            
-            case BytecodeInstructionType.p_cid:
-                return this.writer.push_8(args[0]);
-                
-            case BytecodeInstructionType.p_state:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
         
             case BytecodeInstructionType.promise_alloc:
                 return this.writer.push_8(args[0]);

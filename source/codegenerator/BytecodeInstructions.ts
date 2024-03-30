@@ -285,7 +285,7 @@ export enum BytecodeInstructionType{
      * pop register: r, bytes: s
      */
     pop,
-    pptr,
+    pop_ptr,
 
     /**
      * fn_alloc

@@ -74,3 +74,13 @@ tests/test18/test.tc:17:30:Cannot cast u32 to u64: Type mismatch, expected u32, 
 let x: u64 = (await thread1) as u32
 ```
 -> Casting with target u32 and a hint of u64.
+
+### Case 2: Mutable basic types
+```tc
+fn changeme(mut x: u32){ 
+    x = 1
+}
+
+let y: u32 = 0
+changeme(y) // doesn't work! compiler needs to get the value back and update
+```

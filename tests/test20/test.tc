@@ -1,0 +1,18 @@
+
+/*
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+*/
+
+fn closureTest() {
+    let z: u32 = 10
+    let f2 = fn(x: u32) {
+        return z + x
+    }
+
+    return f2
+}
+
+let y = closureTest()(10)
+let x = closureTest()(20)
