@@ -23,6 +23,7 @@ import { EnumType } from "../types/EnumType";
 import { FFINamespaceType } from "../types/FFINamespaceType";
 import { FunctionType } from "../types/FunctionType";
 import { MetaClassType, MetaEnumType, MetaVariantConstructorType, MetaVariantType } from "../types/MetaTypes";
+import { NullableType } from "../types/NullableType";
 import { StructType } from "../types/StructType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
@@ -63,6 +64,10 @@ import { Expression } from "./Expression";
 
         // lhs has nothing to do with hint, hence we do not use it 
         let lhsType = this.left.infer(ctx, null);
+
+        if(lhsType.is(ctx, NullableType)) {
+            throw ctx.parser.customError(`Cannot access member ${this.right.name} on nullable type`, this.location);
+        }
 
         // case 1: array element
         if(lhsType.is(ctx, ArrayType)) {

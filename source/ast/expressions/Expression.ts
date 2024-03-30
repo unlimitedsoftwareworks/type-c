@@ -16,6 +16,17 @@ import { DataType } from "../types/DataType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 
+/**
+ * InferenceMeta is used to store metadata about the inference process.
+ * 
+ * isWithinNullishCoalescing is true if the expression is within a nullish coalescing expression, this is used to allow the access of nullable members.
+ * fallbackDataType is the type that the expression should fallback to if the expression is null.
+ */
+export type InferenceMeta = {
+    isWithinNullishCoalescing?: boolean;
+    fallbackDataType?: DataType;
+}
+
 export type ExpressionKind = 
     "array_construction" | // [1, 2, 3]
     "binary_op" | // 1 + 2
@@ -115,7 +126,7 @@ export class Expression {
      * hint type of `null`.
      * in this 
      */
-    infer(ctx: Context, hint: DataType | null = null): DataType{
+    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType{
         throw new Error("infer is not implemented on abstract Expression");
     }
 

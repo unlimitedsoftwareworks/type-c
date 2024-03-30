@@ -5,6 +5,16 @@ from std.io import println
 from std.unit.test import TestUnit, UnitSet
 */
 
-let z: u32 = 0
-let x: u32 = 1
-let y: u32 = z ?? x
+
+type CustomStruct = {name: u32, age: u32, data: struct {
+    x: u32, y: u32
+}?}
+
+
+let z : CustomStruct? = {name: 13, age: 13, data: null}
+
+let a: u32 = z?.age ?? 0
+
+let a = z?.age ?? z?.age ?? 0
+
+let d = z?.name

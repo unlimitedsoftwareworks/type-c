@@ -20,7 +20,7 @@ import { NullableType } from "../types/NullableType";
 import { StructType } from "../types/StructType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { ElementExpression } from "./ElementExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
  export class NullableMemberAccessExpression extends Expression {
     left: Expression;
@@ -32,9 +32,14 @@ import { Expression } from "./Expression";
         this.right = right;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
+
+        let allowNullables = false;
+        if(meta && meta.isWithinNullishCoalescing) {
+            allowNullables = true;
+        }
         
         /**
          * NullableMemberAccessExpression is used to access a member of a nullable type, to return either the member or null
@@ -72,11 +77,17 @@ import { Expression } from "./Expression";
             }
 
             // we also need to make sure that the attribute is nullable
-            if(!attribute.type.allowedNullable(ctx)) {
+            if(!attribute.type.allowedNullable(ctx) && !allowNullables) {
                 throw ctx.parser.customError(`Attribute ${this.right.name} is not nullable in class ${classType}`, this.location);
             }
 
-            this.inferredType = new NullableType(this.location, attribute.type);
+            if(allowNullables) {
+                this.inferredType = attribute.type;
+            }
+            else {
+                this.inferredType = new NullableType(this.location, attribute.type);
+            }
+            
 
             this.checkHint(ctx);
             return this.inferredType;
@@ -92,11 +103,16 @@ import { Expression } from "./Expression";
             }
 
             // we also need to make sure that the field is nullable
-            if(!field.type.allowedNullable(ctx)) {
+            if(!field.type.allowedNullable(ctx) && !allowNullables) {
                 throw ctx.parser.customError(`Field ${this.right.name} is not nullable in struct ${structType.shortname()}`, this.location);
             }
 
-            this.inferredType = new NullableType(this.location, field.type);
+            if(allowNullables) {
+                this.inferredType = field.type;
+            }
+            else {
+                this.inferredType = new NullableType(this.location, field.type);
+            }
 
             this.checkHint(ctx);
             return this.inferredType;
@@ -112,11 +128,16 @@ import { Expression } from "./Expression";
             }
 
             // we also need to make sure that the parameter can be nullable
-            if(!parameter.type.allowedNullable(ctx)) {
+            if(!parameter.type.allowedNullable(ctx) && !allowNullables) {
                 throw ctx.parser.customError(`Parameter ${this.right.name} is not nullable in variant constructor ${variantConstructorType.shortname()}`, this.location);
             }
 
-            this.inferredType = new NullableType(this.location, parameter.type);
+            if(allowNullables) {
+                this.inferredType = parameter.type;
+            }
+            else {
+                this.inferredType = new NullableType(this.location, parameter.type);
+            }
 
             this.checkHint(ctx);
             return this.inferredType;

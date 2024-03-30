@@ -83,7 +83,7 @@ export class Lexer {
 
 
         [TokenType.TOK_COALESCING, /^\?\?/], // must be before TOK_NULLABLE
-
+        [TokenType.TOK_NULLDOT, /^\?\./],
         [TokenType.TOK_NULLABLE, /^\?/],
 
         // Literals and EOF
@@ -100,7 +100,6 @@ export class Lexer {
         [TokenType.TOK_IDENTIFIER, /^(?!_$)[a-zA-Z_][a-zA-Z0-9_]*/],
 
         // Operators and Punctuation (longer versions first)
-        [TokenType.TOK_NULLDOT, /^\?\./],
         [TokenType.TOK_DOTDOTDOT, /^\.\.\./],
         [TokenType.TOK_LESS_EQUAL, /^<=/],
         [TokenType.TOK_GREATER_EQUAL, /^>=/],

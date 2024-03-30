@@ -11,13 +11,12 @@
  */
 
 import { SymbolLocation } from "../symbol/SymbolLocation";
-import { InterfaceMethod } from "../other/InterfaceMethod";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { ThisExpression } from "./ThisExpression";
-import { Err, Ok, TypeMatchResult } from "../../typechecking/TypeChecking";
+import { Err, Ok, TypeMatchResult, matchDataTypes } from "../../typechecking/TypeChecking";
 import { ArrayType } from "../types/ArrayType";
 import { ElementExpression } from "./ElementExpression";
 import { IndexAccessExpression } from "./IndexAccessExpression";
@@ -58,7 +57,7 @@ export class BinaryExpression extends Expression {
         this.operator = operator;
     }
 
-    infer(ctx: Context, hint: DataType | null = null): DataType {
+    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType {
         if (this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -72,6 +71,67 @@ export class BinaryExpression extends Expression {
         if(!([">", "<", ">=", "<=", "==", "!="].includes(this.operator))){
             lhsHint = hint;
         }
+
+        // the nullish coalescing operator ?? must accept that the left hand side is potentially nullable, however the right hand side must not be nullable
+        /**
+         * Behavior: a ?? b ?? c =? (a ?? b) ?? (c)
+         * The first coalescing that will be evaluated, will not have a parent coalescing operator, meaning
+         * meta argument to `expression.infer` is undefined. Hence we start with evaluating the right hand side
+         * 
+         * If we encounter another coalescing operator within our tree, we can tolerate the right hand side being nullable
+         * 
+         * Another behavior is that when we use nullable member access: a?.b ?? c
+         * The behavior of ?. changes depending on whether it is used in a coalescing operator or not
+         * If it is used outside of a coalescing operator, it will return a nullable type, thus expecting <b> member to be a valid
+         * type that be nulled (i.e not basic, u32 for example cannot be null)
+         * 
+         * If it used within a coalescing operator, it will return the type of <b> since we have a guaranteed fallback
+         * 
+         * After that we build the meta argument and pass it to the left.infer() call
+         * 
+         */
+        if(this.operator === "??"){
+            if(meta === undefined){
+                // first infer the right hand side
+                let rhsType = this.right.infer(ctx, null);
+                // rhs can be nullable, if the hint is nullable or no hint is present
+
+                let meta: InferenceMeta = {
+                    isWithinNullishCoalescing: true,
+                    fallbackDataType: rhsType
+                }
+
+                // infer the left hand side
+                let leftType = this.left.infer(ctx, null, meta);
+
+
+                // make sure the types are compatible
+                let res = matchDataTypes(ctx, leftType, rhsType);
+                if(!res.success){
+                    ctx.parser.customError(`Cannot apply operator ?? to types ${leftType} and ${rhsType}: ${res.message}`, this.location);
+                }
+
+                this.inferredType = rhsType;
+                this.checkHint(ctx);
+                return rhsType;
+            }
+            else {
+                // we are within a coalescing operator
+                let leftType = this.left.infer(ctx, null, meta);
+                let rightType = this.right.infer(ctx, null, meta);
+
+                // make sure the types are compatible
+                let res = matchDataTypes(ctx, leftType, rightType);
+                if(!res.success){
+                    ctx.parser.customError(`Cannot apply operator ?? to types ${leftType} and ${rightType}: ${res.message}`, this.location);
+                }
+
+                this.inferredType = rightType;
+                this.checkHint(ctx);
+                return rightType;
+            }
+        }
+
 
         let lhsType = this.left.infer(ctx, lhsHint);
         let rhsType: DataType | null = null;

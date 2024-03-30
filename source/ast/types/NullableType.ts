@@ -69,4 +69,8 @@ export class NullableType extends DataType {
         let nullableType = originalType.to(ctx, NullableType) as NullableType;
         this.type.getGenericParametersRecursive(ctx, nullableType.type, declaredGenerics, typeMap);
     }
+
+    allowedNullable(ctx: Context): boolean {
+        return this.type.allowedNullable(ctx);
+    }
 }
