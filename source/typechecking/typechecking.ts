@@ -347,11 +347,11 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     /**
      * case 15: LockType
-     * Similar to classes, a process is only compatible with another process with the exact same structure
+     * Similar to classes, a lock is only compatible with another lock with the exact same structure
      */
     if(t1.is(ctx, LockType)) {
         if(!t2.is(ctx, LockType)) {
-            res = Err(`Type mismatch, expected process, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected lock, got ${t2.shortname()}`);
             scopeCache.set(typeKey, res);
             return res;
         }

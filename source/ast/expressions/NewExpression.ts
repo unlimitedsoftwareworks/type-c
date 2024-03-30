@@ -61,7 +61,7 @@ export class NewExpression extends Expression {
         }
 
         /**
-         * New expression is used to spawn a new class or process
+         * New expression is used to spawn a new class or lock
          */
         if(this.type.is(ctx, ClassType)) {
             // now we need to find init method matching the arguments given

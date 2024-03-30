@@ -17,7 +17,6 @@ import { DataType } from "../types/DataType";
 import { Expression } from "./Expression";
 
 export class ThisExpression extends Expression {
-    // TODO: parent process?
     parentClass: DataType | null = null;
 
     constructor(location: SymbolLocation) {
@@ -46,7 +45,7 @@ export class ThisExpression extends Expression {
             return this.inferredType;
         }
         else {
-            throw ctx.parser.customError(`'this' can only be used within a class or process`, this.location);
+            throw ctx.parser.customError(`'this' can only be used within a class or thread`, this.location);
         }
     }
 
