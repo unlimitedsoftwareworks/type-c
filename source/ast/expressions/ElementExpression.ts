@@ -16,6 +16,7 @@ import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { DeclaredType } from "../symbol/DeclaredType";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { FunctionArgument } from "../symbol/FunctionArgument";
+import { Symbol } from "../symbol/Symbol";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
 import { ClassType } from "../types/ClassType";
@@ -57,7 +58,8 @@ export class ElementExpression extends Expression {
         if (this.inferredType) return this.inferredType;
         this.setHint(hint);
 
-        let variable = ctx.lookup(this.name);
+        let scopedVar = ctx.lookupScope(this.name);
+        let variable: Symbol | null = scopedVar?.sym || null;
 
         if(variable === null){
             throw ctx.parser.customError(`Variable ${this.name} not found`, this.location);

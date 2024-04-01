@@ -62,6 +62,15 @@ export class Context {
 
 
     /**
+     * Used to track upvalues propagation
+     * for example: f1 has field x and a function f2, f2 has f3 which uses x,
+     * upvaluesDependencies of f2 and f3 will contain [x],
+     * will also be part of register allocation 
+     */
+    upvaluesDependencies: Map<string, Symbol> = new Map();
+
+
+    /**
      * Pointer to the parser.
      */
     parser: Parser;
@@ -214,6 +223,7 @@ export class Context {
                 let parentScope = this.parent.lookupScope(name);
 
                 if((this.owner != this.parent.owner) && (parentScope !== null)){
+                    this.upvaluesDependencies.set(name, parentScope.sym);
                     return {sym: parentScope.sym, scope: "upvalue"};
                 }
                 else {
@@ -250,6 +260,10 @@ export class Context {
 
     getParent(): Context | null {
         return this.parent;
+    }
+
+    addUpvalueDependency(symbol: Symbol) {
+
     }
 
     /**

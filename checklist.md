@@ -48,6 +48,7 @@ This checklist containts only major changes and updates, for minor changes and u
 ## Roadmap:
 
 - [x] Implement Nullish coalescing operator as a binary operator, will require additional parameter to `expresion.infer` so when we encounter nullable member access we can accept it knowing that there is a fallback value: `a?.b ?? 0`.
+- [] Add Short-circuiting logical operators and nullish coalescing operator
 - [] Add language level support for threads
 - [] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
 - [] Add support Shadow Classes (requires VM integration too)
@@ -56,7 +57,6 @@ This checklist containts only major changes and updates, for minor changes and u
 ## Cases to evaluate:
 ### Case 1: Casting with hint
 ```tc
-
 let l1: lock<u32> = new lock(0)
 
 fn f1() -> i32 {
