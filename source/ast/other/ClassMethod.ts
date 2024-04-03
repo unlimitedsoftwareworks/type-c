@@ -107,7 +107,7 @@ export class ClassMethod {
     }
 
     clone(typeMap: { [key: string]: DataType; }, removeGenerics: boolean = false): ClassMethod {
-        let newCtx = this.context.clone(typeMap, this.context);
+        let newCtx = this.context.clone(typeMap, this.context.getParent());
         let newProto = this.imethod.clone(typeMap);
 
         if(removeGenerics === true) {

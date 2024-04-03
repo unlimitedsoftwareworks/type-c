@@ -2166,7 +2166,6 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
 
     let fn = new DeclaredFunction(loc, newScope, proto, null, null);
     newScope.setOwner(fn);
-    ctx.addSymbol(fn);
 
     let exprBody: Expression | null = null;
     let stmtBody: BlockStatement | null = null;

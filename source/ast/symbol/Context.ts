@@ -71,6 +71,12 @@ export class Context {
 
 
     /**
+     * A unique identifier for this context
+     */
+    static contextCount = 0;
+    uuid = "ctx_"+Context.contextCount++ // Math.random().toString(36).substring(7);
+
+    /**
      * Pointer to the parser.
      */
     parser: Parser;
@@ -124,6 +130,16 @@ export class Context {
     }
 
     addSymbol(symbol: Symbol) {
+        let v = this.lookupLocal(symbol.name);
+        if(v !== null){
+            throw this.parser.customError(`Symbol ${symbol.name} already declared in this scope`, symbol.location);
+        }
+
+        let v2 = this.lookup(symbol.name);
+        if(v2 !== null){
+            this.parser.customWarning(`Symbol ${symbol.name} defined in ${symbol.location.toString()} shadows symbol defined in ${v2.location.toString()}`, symbol.location);
+        }
+
         this.symbols.set(symbol.name, symbol);
         symbol.parentContext = this;
     }
@@ -233,6 +249,16 @@ export class Context {
         }
     }
 
+    lookupLocal(name: string): Symbol | null {
+        let symbol = this.symbols.get(name);
+        if(symbol !== undefined){
+            return symbol;
+        }
+        else {
+            return null;
+        }
+    }
+
     setActiveClass(cls: ClassType | null) {
         this.activeClass = cls;
     }
@@ -287,8 +313,10 @@ export class Context {
                 newContext.addSymbol(v2);
             }
             else if (v instanceof FunctionArgument) {
+                /** will be set when inferred
                 let v2 = v.clone(typeMap);
                 newContext.addSymbol(v2);
+                */
             }
             else if (v instanceof VariablePattern) {
                 /* VariablePatterns will be set when inferred
