@@ -20,6 +20,25 @@ import { DataType } from "../types/DataType";
 export class InterfaceMethod extends FunctionPrototype {
     isStatic: boolean;
 
+
+
+    static methodUIDGenerator: Map<string, number> = new Map();
+    static methodUIDCounter: number = 0;
+
+    /**
+     * Generates a unique identifier for a method prototype, used by the code generator
+     * @param proto 
+     * @returns 
+     */
+    static getMethodUID(proto: FunctionPrototype){
+        let uid = InterfaceMethod.methodUIDGenerator.get(proto.toString());
+        if(uid == undefined){
+            uid = InterfaceMethod.methodUIDCounter++;
+            InterfaceMethod.methodUIDGenerator.set(proto.toString(), uid);
+        }
+        return uid;
+    }
+
     constructor(location: SymbolLocation, name: string, header: FunctionType, isStatic: boolean, generics: GenericType[] = []){
         super(location, name, header, generics);
         this.isStatic = isStatic;

@@ -38,6 +38,13 @@ export class ClassType extends DataType {
 
     private _resolved: boolean = false;
 
+    /**
+     * Each instance of a class is assigned a unique id,
+     * If two classes do not have the same ID, they are different.
+     */
+    static classCounter = 0;
+    classId = ClassType.classCounter++;
+
     constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[]) {
         super(location, "class");
         this.superTypes = superTypes;

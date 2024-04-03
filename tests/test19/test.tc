@@ -1,17 +1,18 @@
 
-/*
+
 from std.string import String
+/*
 from std.io import println
 from std.unit.test import TestUnit, UnitSet
 */
 
 
-type CustomStruct = {name: u32, age: u32, data: struct {
+type CustomStruct = {name: String, age: u32, data: struct {
     x: u32, y: u32
 }?}
 
 
-let z : CustomStruct? = {name: 13, age: 13, data: null}
+let z : CustomStruct? = {name: "Brian", age: 13, data: null}
 
 let a: u32 = z?.age ?? 0
 

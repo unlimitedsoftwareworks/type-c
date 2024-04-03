@@ -8,6 +8,7 @@ export class FunctionPrototype {
     generics: GenericType[]
     name: string;
     location: SymbolLocation;
+
     constructor(location: SymbolLocation, name: string, header: FunctionType, generics: GenericType[] = []){
         this.location = location;
         this.name = name;
@@ -17,5 +18,13 @@ export class FunctionPrototype {
 
     clone(typeMap: {[key: string]: DataType}): FunctionPrototype {
         return new FunctionPrototype(this.location, this.name, this.header.clone(typeMap), this.generics);
+    }
+
+    serialize() {
+        return `@functionprototype{name:${this.name},header:${this.header.serialize()},generics:[${this.generics.map(g => g.serialize()).join(",")}]`
+    }
+
+    toString() {
+        return this.serialize();
     }
 }
