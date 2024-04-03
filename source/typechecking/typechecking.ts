@@ -668,10 +668,8 @@ function matchClasses(ctx: Context, ct1: DataType, ct2: DataType, strict: boolea
     t1.resolve(ctx);
     t2.resolve(ctx);
 
-    // types must be exactly the same!
-    // hence, we compared based on location .. for now
-    if((t1.location.col !== t2.location.col) || (t1.location.line !== t2.location.line) || (t1.location.file !== t2.location.file) || (t1.location.pos !== t2.location.pos)) {
-        return Err(`Type mismatch, expected class ${t1.shortname()}, got ${t2.shortname()}, classes are not the same as they are defined in separate locations: ${t1.location.toString()} and ${t2.location.toString()}`);
+    if(t1.classId !== t2.classId) {
+        return Err(`Type mismatch, classes ${t1.shortname()} and ${t2.shortname()} are not compatible`);
     }
 
 
