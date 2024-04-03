@@ -30,6 +30,9 @@ export class Symbol {
     kind: SymbolKind;
     name: string;
     parentContext: Context | null = null;
+    
+    // the parent context will set the UID of the symbol
+    uid: string = "";
 
     constructor(location: SymbolLocation, kind: SymbolKind, name: string){
         this.location = location;

@@ -35,6 +35,10 @@ This checklist containts only major changes and updates, for minor changes and u
     - Class checking is now based on location, until a better solution comes up
     - `getMethodBySignature` now also takes type arguments, so it can infer generics when not present, or just clone the methods when they are present.
 
+- 04/03/2024:
+    - Context has `uuid` and it assigns a `uid` to all symbols it owns.
+    - `ClassMethod`, `LambdaExpression` and `DeclaredFunction` now have an attribute `codeGenProps: FunctionCodegenProps`, which contains all symbols (locals, arguments and upvalues) of that function to be used for code gen. This field is filled when the `Element` (terminal expression) is being resolved through `lookupScope`, and this new class `FunctionCodegenProps` is used to report unused arguments in the function.
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.

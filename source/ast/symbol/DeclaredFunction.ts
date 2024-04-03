@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 import { FunctionInferenceCache } from "../../typechecking/FunctionInference";
 import { buildGenericsMaps, inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { Expression } from "../expressions/Expression";
@@ -22,12 +23,16 @@ import { Context } from "./Context";
 import { Symbol } from "./Symbol";
 import { SymbolLocation } from "./SymbolLocation";
 
+
 export class DeclaredFunction extends Symbol {
     prototype: FunctionPrototype;
     expression: Expression | null;
     body: BlockStatement | null;
 
     context: Context;
+
+    // flag to check if the function was inferred, to avoid multiple inferences
+    wasInferred: boolean = false;
 
     // cache of return statements, used for type checking
     returnStatements: { stmt: ReturnStatement, ctx: Context }[] = [];
@@ -42,6 +47,12 @@ export class DeclaredFunction extends Symbol {
      * When a generic function is called, the generic arguments are used to instantiate a new function
      */
     concreteGenerics: { [key: string]: DeclaredFunction } = {};
+    
+    /**
+     * Code gen properties
+     */
+    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
+
 
     constructor(location: SymbolLocation, context: Context, prototype: FunctionPrototype, expression: Expression | null, body: BlockStatement | null) {
         super(location, "function", prototype.name);
@@ -109,9 +120,16 @@ export class DeclaredFunction extends Symbol {
             FunctionInferenceCache.pop(this);
             return newFn;
         }
+        else {
+            if(this.wasInferred) {
+                return this;
+            }
+        }
 
         inferFunctionHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        this.codeGenProps.reportUnusedSymbols(ctx, this.prototype.header);
         FunctionInferenceCache.pop(this);
+        this.wasInferred = true;
         return this;
     }
 

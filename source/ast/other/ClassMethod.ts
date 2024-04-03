@@ -19,6 +19,7 @@ import { Context } from "../symbol/Context";
 import { InterfaceMethod } from "./InterfaceMethod";
 import { inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { DataType } from "../types/DataType";
+import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 
 
 export class ClassMethod {
@@ -46,6 +47,12 @@ export class ClassMethod {
     private _concreteGenerics: {[key: string]: ClassMethod} = {};
 
     private _wasInferred: boolean = false;
+
+
+    /**
+     * Code gen properties
+     */
+    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
 
     constructor(location: SymbolLocation, context: Context, imethod: InterfaceMethod, body: BlockStatement | null, expression: Expression | null) {
         this.location = location;
@@ -100,6 +107,7 @@ export class ClassMethod {
         }
 
         inferFunctionHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
+        this.codeGenProps.reportUnusedSymbols(ctx, this.imethod.header);
     }
 
     getConcreteGenerics(){

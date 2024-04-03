@@ -18,11 +18,19 @@ import { DeclaredFFI } from "./symbol/DeclaredFFI";
 import { DeclaredType } from "./symbol/DeclaredType";
 import { Statement } from "./statements/Statement";
 import { VariantType } from "./types/VariantType";
+import { FunctionCodegenProps } from "../codegenerator/FunctionCodegenProps";
 
 export class BasePackage {
     ctx: Context;
     imports: ImportNode[] = [];
     statements: Statement[] = [];
+
+
+    /**
+     * Code gen properties, in a base package and only in a base package, 
+     * this represents global variables!
+     */
+    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
 
     constructor(parser: Parser) {
         this.ctx = new Context(new SymbolLocation(parser.lexer.filepath, 0, 0, 0), parser);
@@ -58,5 +66,7 @@ export class BasePackage {
         for(const statement of this.statements){
             statement.infer(this.ctx);
         }
+
+        //console.log("done infering base package "+this.ctx.location.toString())
     }
 }

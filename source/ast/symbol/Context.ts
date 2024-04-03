@@ -62,19 +62,13 @@ export class Context {
 
 
     /**
-     * Used to track upvalues propagation
-     * for example: f1 has field x and a function f2, f2 has f3 which uses x,
-     * upvaluesDependencies of f2 and f3 will contain [x],
-     * will also be part of register allocation 
-     */
-    upvaluesDependencies: Map<string, Symbol> = new Map();
-
-
-    /**
      * A unique identifier for this context
      */
     static contextCount = 0;
     uuid = "ctx_"+Context.contextCount++ // Math.random().toString(36).substring(7);
+
+    // number of symbols owned by this context.
+    symbolCount: number = 0;
 
     /**
      * Pointer to the parser.
@@ -140,6 +134,12 @@ export class Context {
             this.parser.customWarning(`Symbol ${symbol.name} defined in ${symbol.location.toString()} shadows symbol defined in ${v2.location.toString()}`, symbol.location);
         }
 
+        if(symbol.uid.length !== 0) {
+            throw new Error("Symbol already has a UID");
+        }
+
+        symbol.uid = this.uuid + "_" + symbol.name + "_" + this.symbolCount++;
+        
         this.symbols.set(symbol.name, symbol);
         symbol.parentContext = this;
     }
@@ -220,6 +220,13 @@ export class Context {
         }
     }
 
+    /**
+     * lookupScope is called when a terminal symbol is found, and is being resolved.
+     * This method not only resolves the symbol, but also injects the symbol into the parent function's local scope,
+     * preparing for code generation.
+     * @param name 
+     * @returns symbol and its scope if found, otherwise null.
+     */
     lookupScope(name: string): {sym: Symbol, scope: SymbolScope} | null {
         let symbol = this.symbols.get(name);
         
@@ -228,6 +235,18 @@ export class Context {
                 return {sym: symbol, scope: "global"};
             }
             else {
+                // register the local variable
+                let owner = this.findParentFunction();
+                if(owner !== null){
+                    if((symbol instanceof DeclaredVariable) || (symbol instanceof VariablePattern)) {
+                        // a variable pattern is a local variable too
+                        owner.codeGenProps.registerLocalSymbol(symbol);
+                    }
+                    else if (symbol instanceof FunctionArgument) {
+                        owner.codeGenProps.registerArgSymbol(symbol);
+                    }
+                }
+
                 return {sym: symbol, scope: "local"};
             }
         }
@@ -238,8 +257,7 @@ export class Context {
             else {
                 let parentScope = this.parent.lookupScope(name);
 
-                if((this.owner != this.parent.owner) && (parentScope !== null)){
-                    this.upvaluesDependencies.set(name, parentScope.sym);
+                if((this.owner != this.parent.owner) && (parentScope !== null)){ 
                     return {sym: parentScope.sym, scope: "upvalue"};
                 }
                 else {
@@ -288,6 +306,11 @@ export class Context {
         return this.parent;
     }
 
+    /**
+     * upvalue dependencies are already set by lookupScope,
+     * maybe we do not need this
+     * @param symbol 
+     */
     addUpvalueDependency(symbol: Symbol) {
 
     }

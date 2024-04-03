@@ -19,6 +19,7 @@ import { DataType } from "../types/DataType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ReturnStatement } from "../statements/ReturnStatement";
 import { inferFunctionHeader } from "../../typechecking/TypeInference";
+import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 
 export class LambdaExpression extends Expression {
     header: FunctionType;
@@ -31,6 +32,12 @@ export class LambdaExpression extends Expression {
     context: Context;
     // cache of return statements, used for type checking
     returnStatements: {stmt: ReturnStatement, ctx: Context}[] = [];
+
+
+    /**
+     * Code gen properties
+     */
+    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
 
     constructor(location: SymbolLocation, newContext: Context, header: FunctionType, body: BlockStatement | null, expression: Expression | null) {
         super(location, "lambda");
@@ -54,6 +61,7 @@ export class LambdaExpression extends Expression {
 
         this.inferredType = this.header;
         inferFunctionHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
+        this.codeGenProps.reportUnusedSymbols(ctx, this.header);
 
         this.checkHint(ctx);
         this.isConstant = false;
