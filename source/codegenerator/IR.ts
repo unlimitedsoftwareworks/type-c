@@ -399,5 +399,12 @@ export type IRInstructionType =
     
     "alloc_spill" | // allocate space for spilling
     "spill" | // spill 
-    "unspill" // unspill spill
+    "unspill" | // unspill spill
+
+    "closure_alloc" |
+    "closure_var" | 
+    "closure_call" |
+    "closure_ret" |
+    "set_closure_env" |
+    "get_closure_var"
 ;

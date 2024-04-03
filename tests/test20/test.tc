@@ -16,3 +16,4 @@ fn closureTest() {
 
 let y = closureTest()(10)
 let x = closureTest()(20)
+let z = 1

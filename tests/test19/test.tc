@@ -16,6 +16,6 @@ let z : CustomStruct? = {name: "Brian", age: 13, data: null}
 
 let a: u32 = z?.age ?? 0
 
-let a = z?.age ?? z?.age ?? 0
+let b = z?.age ?? z?.age ?? 0
 
 let d = z?.name
