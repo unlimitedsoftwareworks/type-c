@@ -38,6 +38,7 @@ This checklist containts only major changes and updates, for minor changes and u
 - 04/03/2024:
     - Context has `uuid` and it assigns a `uid` to all symbols it owns.
     - `ClassMethod`, `LambdaExpression` and `DeclaredFunction` now have an attribute `codeGenProps: FunctionCodegenProps`, which contains all symbols (locals, arguments and upvalues) of that function to be used for code gen. This field is filled when the `Element` (terminal expression) is being resolved through `lookupScope`, and this new class `FunctionCodegenProps` is used to report unused arguments in the function.
+    - Added a field `wasInferred` to `DeclaredFunction` instances to avoid inferring **non-generic** function declaration multiple times.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
