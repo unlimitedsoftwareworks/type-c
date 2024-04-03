@@ -64,7 +64,7 @@ export class GenericType extends DataType {
          * We throw an error because resolving generic types is not supported.
          * Resolving types must occur when all types are concrete.
          */
-        ctx.parser.customError("Generic type not resolved", this.location)
+        throw ctx.parser.customError("Generic type not resolved", this.location)
     }
 
     shortname(): string {

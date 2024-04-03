@@ -50,7 +50,6 @@ export class IndexAccessExpression extends Expression {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
             }
 
-            // TODO: remove the !
             let m = getOperatorOverloadType(ctx, "__index__", lhsT, this.indexes.map((index) => index.infer(ctx, null)));
             if(m === null) {
                 throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);

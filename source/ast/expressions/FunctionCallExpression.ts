@@ -117,8 +117,8 @@ export class FunctionCallExpression extends Expression {
         }
         // Variant Constructor
         else if (lhsType.is(ctx, VariantConstructorType)) {
-            // TODO: implement variant constructor
-            throw new Error("Not implemented");
+            // We should not reach this point since this should be already caught
+            throw new Error("Unreachable");
         }
 
         throw ctx.parser.customError(`Invalid function call`, this.location);

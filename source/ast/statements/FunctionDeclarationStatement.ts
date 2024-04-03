@@ -30,7 +30,6 @@ export class FunctionDeclarationStatement extends Statement {
     }
 
     infer(ctx: Context){
-        // TODO: need to infer the function prototype, return statements, etc. 
         let sym = this.symbolPointer;
         sym.infer(ctx)
     }

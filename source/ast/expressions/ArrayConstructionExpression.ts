@@ -44,10 +44,7 @@ export class ArrayConstructionExpression extends Expression {
         for(const element of this.elements){
             elementTypes.push(element.infer(ctx, baseHint?.arrayOf || null));
         }
-
-        // TODO:
-        // make sure all elements are of the same type
-
+        
         if(!baseHint && (elementTypes.length == 0)){
             ctx.parser.customError("Cannot infer an empty array without hint", this.location);
         }

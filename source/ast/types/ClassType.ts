@@ -202,7 +202,9 @@ export class ClassType extends DataType {
             }
 
             if (attribute.isStatic) {
-                // TODO: finish
+                // resolving a generic results in an error, and since it could be an array of array of generics,
+                // manually looking for generics makes no sense
+                attribute.type.resolve(ctx);
             }
         }
     }

@@ -68,7 +68,9 @@ export class DeclaredVariable extends Symbol {
         let sym = ctx.lookup(this.name);
         // TODO:
         // update the UID of the symbol
+        // not sure if this is needed, we will see!
         if(sym) {
+            // console.log("Updating UID of symbol", sym.uid, "to", newVar.uid);
             // sym.uid = newVar.uid;
         }
 

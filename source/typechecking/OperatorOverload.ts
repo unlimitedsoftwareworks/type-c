@@ -72,20 +72,6 @@ export function isCallable(ctx: Context, dt: OverridableMethodType){
     return dt.methodExists(ctx, "__call__");
 }
 
-export function getCallableType(ctx: Context, dt: OverridableMethodType): InterfaceMethod | null{
-    /*
-    TODO: implement
-    if(isCallable(ctx, dt)){
-        let type = dt.getMethod(ctx, "__call__");
-        return type;
-    }
-    else {
-        return null;
-    }
-    */
-   return null;
-}
-
 export function matchCall(ctx: Context, method: InterfaceMethod, exprList: Expression[]){
     if(method.header.parameters.length != exprList.length){
         throw ctx.parser.customError(`Type mismatch in __call__: expected ${method.header.parameters.length} arguments, got ${exprList.length}`, exprList[0].location);
