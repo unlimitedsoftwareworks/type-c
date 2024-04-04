@@ -43,6 +43,7 @@ This checklist containts only major changes and updates, for minor changes and u
 - 04/04/2024:
     - During `FunctionCallExpression` inference, if the LHS is an element, the arguments are inferred as `null` hint and the field `inferredArgumentsTypes: DataType[] | undefined = undefined` is set for the element. If the element is a generic function call, and has no type arguments, generics are extracted from the `inferredArgumentsTypes` field (similar to class methods).
     - Fix cloning of variable declarations and function declarations, also cloning scopes doesn't copy the symbols anymore. It only copies variables and functions since these are static and already set by the parser.
+    - `inferredArgumentsTypes` is only set in `FunctionCallExpression` only when lhs is an element and has no generic parameters. Next is to only set it if the LHS is generic and has no type arguments.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
