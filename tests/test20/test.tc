@@ -49,3 +49,21 @@ fn closureTest2<T2>(y: T2) -> fn(y: T2) -> T2{
 }
 
 let y2 = closureTest2([1, 2])([10])
+
+
+
+fn closureTest3<T2>(y: T2) -> fn(y: T2) -> T2{
+    let z: T2 = {name: 1, age: 2}
+     fn f2(x: T2) {
+        return x
+    }
+
+    if y.age == 0 {
+        return f2
+    }
+    else {
+        return closureTest3<T2>(y)
+    }
+}
+
+let y3 = closureTest3<{name: u32, age: i32}>({1, 2})({3, 4})

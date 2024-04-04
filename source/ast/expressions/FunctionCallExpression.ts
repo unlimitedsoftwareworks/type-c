@@ -93,7 +93,7 @@ export class FunctionCallExpression extends Expression {
             }
         }
 
-        if(this.lhs instanceof ElementExpression) {
+        if((this.lhs instanceof ElementExpression) && (this.lhs.typeArguments.length === 0)) {
             /**
              * TODO: perform partial inference, meaning check if we should infer the types of the arguments
              * based on the hint or null.
