@@ -93,6 +93,15 @@ export class FunctionCallExpression extends Expression {
             }
         }
 
+        if(this.lhs instanceof ElementExpression) {
+            /**
+             * TODO: perform partial inference, meaning check if we should infer the types of the arguments
+             * based on the hint or null.
+             * this.lhs.partialInfer(ctx, hint);
+             */
+            this.lhs.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null));
+        }
+
         let lhsType = this.lhs.infer(ctx, null);
 
         /**

@@ -19,6 +19,7 @@ import { BlockStatement } from "../statements/BlockStatement";
 import { FunctionDeclarationStatement } from "../statements/FunctionDeclarationStatement";
 import { ReturnStatement } from "../statements/ReturnStatement";
 import { DataType } from "../types/DataType";
+import { GenericType } from "../types/GenericType";
 import { Context } from "./Context";
 import { Symbol } from "./Symbol";
 import { SymbolLocation } from "./SymbolLocation";
@@ -75,18 +76,79 @@ export class DeclaredFunction extends Symbol {
      * Generates a unique hash for the function
      */
     hash() {
-        return this.prototype.name+this.location.file+this.location.pos+'-'+this.prototype.generics.map(g => g.name).join('-');
+        return this.prototype.name+'@'+this.location.file+':'+this.location.pos+'-'+this.prototype.generics.map(g => g.name).join('-');
     }
 
-    infer(ctx: Context, typeArguments?: DataType[]): DeclaredFunction {
-        if(FunctionInferenceCache.has(this) && (typeArguments?.length === 0)) {
+    infer(ctx: Context, typeArguments?: DataType[], parametersTypes?: DataType[]): DeclaredFunction {
+        let beingInferred = FunctionInferenceCache.has(this);
+        
+        /**
+         * parameter types will always be passed when inferring a function,
+         * no matter if it is generics or not. Hence if we are re-evaluating the same function,
+         * and it is concrete, we can return it directly.
+         * 
+         * We only re-infer when the function is generic and we have no type arguments
+         */
+        if(beingInferred && (typeArguments?.length === 0) && (this.prototype.generics.length === 0)/* && (parametersTypes?.length === 0)*/) {
             return this;
         }
 
         FunctionInferenceCache.push(this);
         if (this.prototype.generics.length > 0) {
-            if (!typeArguments) {
-                return this;
+            if (!typeArguments || ((parametersTypes?.length || 0) > 0)) {
+
+                // presume no arguments, in case a function has no parameter that uses its generics
+                if(!parametersTypes) {
+                    return this;
+                }
+
+                // infer from usage
+                let methodGenerics: { [key: string]: GenericType } = {};
+                for (let i = 0; i < this.prototype.generics.length; i++) {
+                    methodGenerics[this.prototype.generics[i].name] = this.prototype.generics[i];
+                }
+
+
+                /**
+                 * If we have a generic method, we need to extract the type map from the parameters and/or the return type
+                 */
+                let map: { [key: string]: DataType } = {};
+                for (let i = 0; i < parametersTypes.length; i++) {
+                    let p = this.prototype.header.parameters[i];
+                    p.type.getGenericParametersRecursive(this.context, parametersTypes[i], methodGenerics, map);
+                }
+
+                let newFn = this.clone(map, this.context.getParent()!);
+
+                // set the generics to empty so we can properly infer its body and header by recalling this function
+                newFn.prototype.generics = [];
+
+
+                /**
+                 * First we need to create an ordered, type arguments list, as declared in the method
+                 */
+                let typeArgs: DataType[] = [];
+
+                for (const generic of this.prototype.generics) {
+                    if (map[generic.name] === undefined) {
+                        throw ctx.parser.customError(`Required generic type ${generic.name} not found in type map`, this.location);
+                    }
+
+                    typeArgs.push(map[generic.name]);
+                }
+
+
+                // update cache
+                this.concreteGenerics[signatureFromGenerics(typeArgs)] = newFn;
+
+                // infer new function
+                newFn.infer(newFn.context);
+
+                // refer to the original concrete generics
+                newFn.concreteGenerics = this.concreteGenerics;
+
+                FunctionInferenceCache.pop(this);
+                return newFn;
             }
 
             if (this.prototype.generics.length !== typeArguments.length) {
@@ -103,7 +165,7 @@ export class DeclaredFunction extends Symbol {
             let genericTypeMap: { [key: string]: DataType } = buildGenericsMaps(ctx, this.prototype.generics, typeArguments);
 
             // clone the function with the new type map
-            let newFn = this.clone(genericTypeMap, this.context);
+            let newFn = this.clone(genericTypeMap, this.context.getParent()!);
 
             // set the generics to empty so we can properly infer its body and header by recalling this function
             newFn.prototype.generics = [];
@@ -133,6 +195,7 @@ export class DeclaredFunction extends Symbol {
         return this;
     }
 
+
     clone(typeMap: { [key: string]: DataType }, ctx: Context): DeclaredFunction {
         /**
         let ctxClone = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
@@ -151,8 +214,8 @@ export class DeclaredFunction extends Symbol {
         */
         let newContext = this.context.clone(typeMap, ctx);
         let newM = new DeclaredFunction(this.location, newContext, this.prototype.clone(typeMap), null, null);
-        newM.declStatement = this.declStatement;
-        newM.expression = this.expression;
+        newM.declStatement = new FunctionDeclarationStatement(this.location, newM);
+        newM.expression = this.expression?.clone(typeMap, newContext) || null;
         newM.body = this.body?.clone(typeMap, newContext) || null;
 
         if (newM.body) {

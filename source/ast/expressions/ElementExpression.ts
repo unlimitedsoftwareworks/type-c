@@ -34,6 +34,9 @@ export class ElementExpression extends Expression {
     // generics
     typeArguments: DataType[] = [];
 
+    // inferred types of arguments, this is filled by FunctionCallExpression
+    inferredArgumentsTypes: DataType[] | undefined = undefined
+
     /**
      * Used to check if this element is a variable, which means if it can be assigned 
      * a value
@@ -77,18 +80,41 @@ export class ElementExpression extends Expression {
             return this.inferredType!;
         }
         else if (variable instanceof DeclaredFunction) {
-            let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments);
-            this.inferredType = newDecl.prototype.header;
+            /**
+             * check if the function is generic and if we need type arguments
+             * There are few cases:
+             * 1. Function is not generic and we have type arguments: throw an error
+             * 2. Function is not generic and we have no type arguments: All good!
+             * 3. Function is generic and we have no type arguments: Infer the generics from usage
+             * 4. Function is generic and we have type arguments: Make sure all generics are provided! partial generics are not allowed
+             */
 
-            // check if the function is generic and if we need type arguments
-            // TODO: infer type arguments from hint, here
-            if(variable.prototype.generics.length > 0 && this.typeArguments.length === 0) {
-                throw ctx.parser.customError(`Function ${variable.name} is generic and expects ${variable.prototype.generics.length} type arguments`, this.location);
+            // case 1
+            if((variable.prototype.generics.length == 0) && (this.typeArguments.length > 0)) {
+                throw ctx.parser.customError(`Function ${variable.name} is not generic and does not expect type arguments`, this.location);
             }
 
-            this.checkHint(ctx);
-            this.isConstant = false;
-            return this.inferredType;
+            // case 2 and 3
+            if(((variable.prototype.generics.length == 0) && (this.typeArguments.length == 0)) || ((variable.prototype.generics.length > 0) && (this.typeArguments.length == 0))) {
+                let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments, this.inferredArgumentsTypes);
+                this.inferredType = newDecl.prototype.header;
+
+                this.checkHint(ctx);
+                this.isConstant = false;
+                return this.inferredType;
+            }
+
+            // case 4
+            if((variable.prototype.generics.length > 0) && (this.typeArguments.length > 0) && (this.typeArguments.length === variable.prototype.generics.length)) {
+                let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments);
+                this.inferredType = newDecl.prototype.header;
+
+                this.checkHint(ctx);
+                this.isConstant = false;
+                return this.inferredType;
+            }
+
+            throw ctx.parser.customError(`Function expected to have ${variable.prototype.generics.length} type arguments, got ${this.typeArguments.length}`, this.location);
         }
         else if (variable instanceof FunctionArgument) {
             this.inferredType = variable.type;
