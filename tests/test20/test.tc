@@ -5,13 +5,18 @@ from std.io import println
 from std.unit.test import TestUnit, UnitSet
 */
 
-fn closureTest(y: u32) {
-    let z: u32 = 10
-    let f2 = fn(x: u32) {
+fn closureTest<T2>(y: T2) -> fn(y:T2) -> T2{
+    let z: T2 = 10
+     fn f2(x: T2) {
         return z + x
     }
 
-    return f2
+    if y == 0 {
+        return f2
+    }
+    else {
+        return closureTest<T2>(y-1)
+    }
 }
 
 type T = class {
@@ -20,6 +25,27 @@ type T = class {
 }
 
 let y = closureTest(20)(10)
-let x = closureTest(30)(20)
-let z = new T()
-let a = new T()
+
+
+
+/*
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+*/
+
+fn closureTest2<T2>(y: T2) -> fn(y: T2) -> T2{
+    let z: T2 = [1, 2]
+     fn f2(x: T2) {
+        return x
+    }
+
+    if y == [0] {
+        return f2
+    }
+    else {
+        return closureTest2<T2>(y)
+    }
+}
+
+let y2 = closureTest2([1, 2])([10])

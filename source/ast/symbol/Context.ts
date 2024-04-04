@@ -326,7 +326,7 @@ export class Context {
         newContext.pkg = this.pkg;
 
         for(const [key, v] of this.symbols) {
-
+            // variables and functions are the only symbols that can be cloned, since they are set in the scope by the parser
             if(v instanceof DeclaredVariable) {
                 let v2 = v.clone(typeMap, newContext)
                 newContext.addSymbol(v2);
@@ -334,24 +334,6 @@ export class Context {
             else if (v instanceof DeclaredFunction) {
                 let v2 = v.clone(typeMap, newContext);
                 newContext.addSymbol(v2);
-            }
-            else if (v instanceof FunctionArgument) {
-                /** will be set when inferred
-                let v2 = v.clone(typeMap);
-                newContext.addSymbol(v2);
-                */
-            }
-            else if (v instanceof VariablePattern) {
-                /* VariablePatterns will be set when inferred
-                let v2 = v.clone(typeMap);
-                newContext.addSymbol(v2);
-                */
-            }
-            else if (v !== undefined) {
-                newContext.addSymbol(v);
-            }
-            else {
-                throw new Error("Unknown symbol type");
             }
         }
 

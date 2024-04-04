@@ -66,12 +66,12 @@ export class DeclaredVariable extends Symbol {
         let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation?.clone(typeMap) || null, this.isConst, this.isStrict);
         
         let sym = ctx.lookup(this.name);
-        // TODO:
-        // update the UID of the symbol
-        // not sure if this is needed, we will see!
+        /**
+         * Variable declarations are not **inserted into the context** when cloned,
+         * hence we have to manually set the uid of the cloned variable to the original variable
+         */
         if(sym) {
-            // console.log("Updating UID of symbol", sym.uid, "to", newVar.uid);
-            // sym.uid = newVar.uid;
+            newVar.uid = sym.uid;
         }
 
         return newVar;
