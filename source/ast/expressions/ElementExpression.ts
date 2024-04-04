@@ -212,6 +212,18 @@ export class ElementExpression extends Expression {
         throw ctx.parser.customError(`Not implemented`, this.location);
     }
 
+    /**
+     * Partially resolved the symbol to check if it a generic function
+     * @param ctx 
+     */
+    isGenericFunction(ctx: Context) {
+        let v = ctx.lookup(this.name);
+
+        if(v instanceof DeclaredFunction) {
+            return v.prototype.generics.length > 0;
+        }
+    }
+
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): ElementExpression {
         return new ElementExpression(this.location, this.name, this.typeArguments.map(t => t.clone(typeMap)));

@@ -67,3 +67,9 @@ fn closureTest3<T2>(y: T2) -> fn(y: T2) -> T2{
 }
 
 let y3 = closureTest3<{name: u32, age: i32}>({1, 2})({3, 4})
+
+fn randomF(x: {name: u32, age: i32}) {
+    return x
+}
+
+randomF({1, 2})

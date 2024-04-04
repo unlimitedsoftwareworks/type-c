@@ -42,8 +42,9 @@ This checklist containts only major changes and updates, for minor changes and u
 
 - 04/04/2024:
     - During `FunctionCallExpression` inference, if the LHS is an element, the arguments are inferred as `null` hint and the field `inferredArgumentsTypes: DataType[] | undefined = undefined` is set for the element. If the element is a generic function call, and has no type arguments, generics are extracted from the `inferredArgumentsTypes` field (similar to class methods).
-    - Fix cloning of variable declarations and function declarations, also cloning scopes doesn't copy the symbols anymore. It only copies variables and functions since these are static and already set by the parser.
+    - ~~ (old) Fix cloning of variable declarations and function declarations, also cloning scopes doesn't copy the symbols anymore. It only copies variables and functions since these are static and already set by the parser.~~
     - `inferredArgumentsTypes` is only set in `FunctionCallExpression` only when lhs is an element and has no generic parameters. Next is to only set it if the LHS is generic and has no type arguments.
+    - Now we infer the arguments of generics only if the function being called is generic and has no type arguments, otherwise we use the type arguments provided.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
@@ -60,7 +61,7 @@ This checklist containts only major changes and updates, for minor changes and u
 - [x] Implement Nullish coalescing operator as a binary operator, will require additional parameter to `expresion.infer` so when we encounter nullable member access we can accept it knowing that there is a fallback value: `a?.b ?? 0`.
 - [ ] Add Short-circuiting logical operators and nullish coalescing operator (codegen)
 - [ ] Add language level support for threads
-- [ ] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
+- [x] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
 - [ ] ~~Add support Shadow Classes (requires VM integration too)~~
 - [ ] Bytecode generation
 
