@@ -513,6 +513,12 @@ export enum BytecodeInstructionType{
     j_cmp_ptr,
 
     /**
+     * loop arg1, dest_address: i (8 bytes)
+     * jumps to the given address if the value in arg1 is not 0
+     */
+    loop,
+
+    /**
      * reg_ffi nnameconst-offset-size: i, nameconst-offset: i, id: i (2 bytes),
      * registers an ffi of the given name at code offset and with the given id
      */
