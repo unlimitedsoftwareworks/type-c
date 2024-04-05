@@ -16,6 +16,9 @@ export class FunctionCodegenProps {
     // arguments
     argSymbols: Map<string, Symbol> = new Map();
 
+    // registered arg symbols
+    usedArgSymbols: Map<string, Symbol> = new Map();
+
     // upvalues (for closures)
     upvalues: Map<string, Symbol> = new Map();
 
@@ -53,6 +56,11 @@ export class FunctionCodegenProps {
         this.upvalues.set(sym.uid, sym);
     }
 
+    markArgSymbolAsUsed(sym: Symbol) {
+        this.assertSymbolUID(sym);
+        this.usedArgSymbols.set(sym.uid, sym);
+    }
+
     /**
      * After a function has been inferred, it is possible that some symbols are not used,
      * which means that they are not present in the codegen properties, hence this method
@@ -61,7 +69,7 @@ export class FunctionCodegenProps {
     reportUnusedSymbols(ctx: Context, header: FunctionType) {
         // check for unused symbols
         for(const sym of header.parameters){
-            if(!this.argSymbols.has(sym.uid)){
+            if(!this.usedArgSymbols.has(sym.uid)){
                 ctx.parser.customWarning(`Unused argument ${sym.name}`, sym.location);
             }
         }

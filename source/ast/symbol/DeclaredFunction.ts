@@ -68,6 +68,7 @@ export class DeclaredFunction extends Symbol {
         // add the parameters to the context
         for (let i = 0; i < prototype.header.parameters.length; i++) {
             context.addSymbol(prototype.header.parameters[i]);
+            this.codeGenProps.registerArgSymbol(prototype.header.parameters[i]);
         }
     }
 

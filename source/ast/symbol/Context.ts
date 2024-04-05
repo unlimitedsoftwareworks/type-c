@@ -243,7 +243,10 @@ export class Context {
                         owner.codeGenProps.registerLocalSymbol(symbol);
                     }
                     else if (symbol instanceof FunctionArgument) {
-                        owner.codeGenProps.registerArgSymbol(symbol);
+                        // we do not need to register arguments, since they are already registered
+                        // when the method/function is created
+                        // instead we mark it as used
+                        owner.codeGenProps.markArgSymbolAsUsed(symbol);
                     }
                 }
 

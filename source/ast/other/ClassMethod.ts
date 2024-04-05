@@ -72,6 +72,7 @@ export class ClassMethod {
          */
         for(const arg of imethod.header.parameters) {
             this.context.addSymbol(arg);
+            this.codeGenProps.registerArgSymbol(arg);
         }
 
         /**

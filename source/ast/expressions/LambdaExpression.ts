@@ -52,6 +52,7 @@ export class LambdaExpression extends Expression {
         // add the parameters to the context
         for (let i = 0; i < header.parameters.length; i++) {
             newContext.addSymbol(header.parameters[i]);
+            this.codeGenProps.registerArgSymbol(header.parameters[i]);
         }
     }
 
