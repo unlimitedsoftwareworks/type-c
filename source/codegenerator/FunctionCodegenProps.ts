@@ -1,5 +1,8 @@
 import { Context } from "../ast/symbol/Context";
+import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { Symbol } from "../ast/symbol/Symbol";
+import { SymbolLocation } from "../ast/symbol/SymbolLocation";
+import { ClassType } from "../ast/types/ClassType";
 import { FunctionType } from "../ast/types/FunctionType";
 
 /**
@@ -16,8 +19,13 @@ export class FunctionCodegenProps {
     // upvalues (for closures)
     upvalues: Map<string, Symbol> = new Map();
 
+    /**
+     * if the function is a class method, "this" will need to be passed as an argument
+     */
+    _this: FunctionArgument | null = null;
+
     constructor() {
-        
+        // nothing todo here yet
     }
 
     /**
@@ -57,5 +65,10 @@ export class FunctionCodegenProps {
                 ctx.parser.customWarning(`Unused argument ${sym.name}`, sym.location);
             }
         }
+    }
+
+    assignThis(cl: ClassType, location: SymbolLocation) {
+        this._this = new FunctionArgument(location, "$this", cl, true);
+        this._this.uid = "$this";
     }
 }

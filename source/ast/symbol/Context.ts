@@ -293,6 +293,16 @@ export class Context {
         }
     }
 
+    getActiveMethod(): ClassMethod | null {
+        if(this.owner instanceof ClassMethod){
+            return this.owner;
+        }
+        if(this.parent){
+            return this.parent.getActiveMethod();
+        }
+        return null;
+    }
+
     /**
      * Used to override parent, used after cloning a method, where the parent scope would point to the old method's root context, 
      * this is upated in the class consturctor to point to the new method's context.

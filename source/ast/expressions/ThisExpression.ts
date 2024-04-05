@@ -40,6 +40,15 @@ export class ThisExpression extends Expression {
                 throw ctx.parser.customError(`Cannot use 'this' in a static method`, this.location);
             }
 
+            let activeMethod = ctx.getActiveMethod();
+            if(activeMethod) {
+                // assign this to the method
+                activeMethod.codeGenProps.assignThis(cls, this.location);
+            }
+            else {
+                throw ctx.parser.customError(`'this' can only be used within a class method`, this.location);
+            }
+
             this.inferredType = cls;
             this.checkHint(ctx);
             return this.inferredType;
