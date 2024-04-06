@@ -20,10 +20,10 @@ import { InterfaceMethod } from "./InterfaceMethod";
 import { inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { DataType } from "../types/DataType";
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
+import { Symbol } from "../symbol/Symbol";
 
 
-export class ClassMethod {
-    location: SymbolLocation;
+export class ClassMethod extends Symbol {
 
     // interface method
     imethod: InterfaceMethod;
@@ -55,7 +55,8 @@ export class ClassMethod {
     codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
 
     constructor(location: SymbolLocation, context: Context, imethod: InterfaceMethod, body: BlockStatement | null, expression: Expression | null) {
-        this.location = location;
+        super(location, "class_method", imethod.name);
+
         this.imethod = imethod;
         this.context = context;
         this.body = body;
@@ -82,6 +83,10 @@ export class ClassMethod {
             //this.context.addSymbol(arg);
         }
 
+        /**
+         * While being a symbol, a class method is actually not added to any Context, hence its ID is not set
+         */
+        this.uid = 'm-'+InterfaceMethod.getMethodUID(imethod);
     }
 
     shortname(): string {
@@ -172,6 +177,7 @@ export class ClassMethod {
         let newMethod = this.clone(typeMap, true);
         this._concreteGenerics[sig] = newMethod;
         newMethod._concreteGenerics = this._concreteGenerics;
+        newMethod.uid = this.uid+'<'+sig+'>';
         newMethod.infer(newMethod.context);
 
         return newMethod;
