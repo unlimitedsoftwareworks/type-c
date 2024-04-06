@@ -138,15 +138,20 @@ export class DeclaredFunction extends Symbol {
                     typeArgs.push(map[generic.name]);
                 }
 
+                let typeArgSignature = signatureFromGenerics(typeArgs);
+
+                // set the uid of the function
+                newFn.uid = this.uid+'<'+typeArgSignature+'>';
 
                 // update cache
-                this.concreteGenerics[signatureFromGenerics(typeArgs)] = newFn;
+                this.concreteGenerics[typeArgSignature] = newFn;
 
                 // infer new function
                 newFn.infer(newFn.context);
 
                 // refer to the original concrete generics
                 newFn.concreteGenerics = this.concreteGenerics;
+                ctx.registerToGlobalContext(newFn);
 
                 FunctionInferenceCache.pop(this);
                 return newFn;
