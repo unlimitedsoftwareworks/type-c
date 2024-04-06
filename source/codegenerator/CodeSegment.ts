@@ -1,6 +1,17 @@
+/**
+ * Filename: CodeSegment.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Models the segment portion of the bytecode
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { BytecodeInstructionType } from "./BytecodeInstructions";
 import { DataWriter } from "./DataWriter";
-
 
 export class CodeSegment {
     //instructions: PartialInstruction[] = [];

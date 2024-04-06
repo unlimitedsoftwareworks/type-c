@@ -1,3 +1,15 @@
+/**
+ * Filename: FunctionCodegenProps.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Codegen properties for a declared function/class method or a lambda function
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { Context } from "../ast/symbol/Context";
 import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { Symbol } from "../ast/symbol/Symbol";

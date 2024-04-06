@@ -1,7 +1,14 @@
 /**
- * Bytecode instructions, as in the VM.
+ * Filename: BytecodeInstructions.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Lists all VM bytecode instructions
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
  */
-
 export enum BytecodeInstructionType{
     /**
      * terminology:

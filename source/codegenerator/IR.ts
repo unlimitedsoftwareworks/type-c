@@ -1,5 +1,13 @@
 /**
- * Type-C Intermediate Representation
+ * Filename: ArrayConstructionExpression.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Compiler's intermediate representation (IR) instructions
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
  */
 
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";

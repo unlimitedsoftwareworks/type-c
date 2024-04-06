@@ -1,3 +1,15 @@
+/**
+ * Filename: DataWriter.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Writes bytecode instructions to a buffer
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 export class DataWriter {
     buffer: Buffer;
     writePosition: number;

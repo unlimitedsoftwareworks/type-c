@@ -1,3 +1,14 @@
+/**
+ * Filename: utils.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Utility functions for the code generator
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
 
 import { DataType } from "../ast/types/DataType";
 import { EnumType } from "../ast/types/EnumType";
