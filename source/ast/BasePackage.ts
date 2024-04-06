@@ -19,6 +19,7 @@ import { DeclaredType } from "./symbol/DeclaredType";
 import { Statement } from "./statements/Statement";
 import { VariantType } from "./types/VariantType";
 import { FunctionCodegenProps } from "../codegenerator/FunctionCodegenProps";
+import { GlobalContext } from "../codegenerator/GlobalContext";
 
 export class BasePackage {
     ctx: Context;
@@ -31,6 +32,8 @@ export class BasePackage {
      * this represents global variables!
      */
     codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
+
+    globalCtx: GlobalContext = new GlobalContext();
 
     constructor(parser: Parser) {
         this.ctx = new Context(new SymbolLocation(parser.lexer.filepath, 0, 0, 0), parser);
@@ -67,6 +70,6 @@ export class BasePackage {
             statement.infer(this.ctx);
         }
 
-        //console.log("done infering base package "+this.ctx.location.toString())
+        console.log("done infering base package "+this.ctx.location.toString())
     }
 }

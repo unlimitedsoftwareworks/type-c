@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { GlobalContext } from "../../codegenerator/GlobalContext";
 import { TypeC } from "../../compiler";
 import { Parser } from "../../parser/Parser";
 import { BasePackage } from "../BasePackage";
@@ -59,6 +60,13 @@ export class Context {
      * If the context is within a class, we need this when we are resolving `this` for example
      */
     private activeClass: ClassType | null = null;
+
+
+    /**
+     * Global context pointer,
+     * only exists in the highest level context and assigned from the base package
+     */
+    globalContext: GlobalContext | null = null;
 
 
     /**
@@ -352,5 +360,30 @@ export class Context {
 
         return newContext;
         
+    }
+
+    /**
+     * Adds a symbol to the global context.
+     * The global context contains everything that needs to be generated on a higher level,
+     * such as functions, classes, etc. For example, when a function is declared within another function
+     * the inner function is not available in the global context, but for the code generator, it is.
+     * It is treated as a regular function (or closure, if applicable) and has a global address etc.
+     * @param sym 
+     */
+    registerToGlobalContext(sym: Symbol) {
+        if(this.globalContext === null){
+            if(this.parent === null){
+                throw new Error("Global context not set");
+            }
+            this.parent.registerToGlobalContext(sym);
+        }
+
+        else {
+            if(!sym.uid || (sym.uid.length === 0)){
+                throw new Error("Symbol has no UID");
+            }
+
+            this.globalContext.registerSymbol(sym);
+        }
     }
 }
