@@ -6,7 +6,7 @@
 
 Type-C is an expressive multi-paradigm programming language with emphasis on type safety and run-time performance. This repository contains the Type-C compiler, which can be installed by cloning this repo or installing it via npm (in progress).
 
-For the Virtual Machine, please refer to the [Type-V Project](https://https://github.com/unlimitedsoftwareworks/type-v)
+For the Virtual Machine, please refer to the [Type-V Project](https://github.com/unlimitedsoftwareworks/type-v)
 
 ## Show some code!
 ![tc-snippet.png](assets/snippet.png)
