@@ -20,6 +20,26 @@ import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ReturnStatement } from "../statements/ReturnStatement";
 import { inferFunctionHeader } from "../../typechecking/TypeInference";
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
+import { Symbol } from "../symbol/Symbol";
+
+/**
+ * Since lambda expression are not registered in the symbol table, 
+ * We create a class that extends the Symbol and registers the lambda expression
+ * within the global context
+ */
+export class LambdaDefinition extends Symbol {
+    static counter: number = 0;
+    expression: LambdaExpression;
+
+    constructor(location: SymbolLocation, expression: LambdaExpression) {
+        let name = "lambda-"+(LambdaDefinition.counter++);
+        super(location, "lambda", name);
+        this.expression = expression;
+
+        this.uid = name;
+    }
+}
+
 
 export class LambdaExpression extends Expression {
     header: FunctionType;
@@ -32,6 +52,8 @@ export class LambdaExpression extends Expression {
     context: Context;
     // cache of return statements, used for type checking
     returnStatements: {stmt: ReturnStatement, ctx: Context}[] = [];
+
+    definition: LambdaDefinition;
 
 
     /**
@@ -54,6 +76,8 @@ export class LambdaExpression extends Expression {
             newContext.addSymbol(header.parameters[i]);
             this.codeGenProps.registerArgSymbol(header.parameters[i]);
         }
+
+        this.definition = new LambdaDefinition(location, this);
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
@@ -66,6 +90,9 @@ export class LambdaExpression extends Expression {
 
         this.checkHint(ctx);
         this.isConstant = false;
+
+        ctx.registerToGlobalContext(this.definition);
+
         return this.inferredType;
     }
 

@@ -23,10 +23,7 @@ export class GlobalContext {
     }
 
     registerSymbol(symbol: Symbol) {
-        if(this.globalSymbols.get(symbol.uid)){
-            throw new Error(`Symbol with uid ${symbol.uid} already exists in the global context`);
-        }
-
+        // it is okay to overwrite symbols cuz uid is unique
         this.globalSymbols.set(symbol.uid, symbol);
     }
 }

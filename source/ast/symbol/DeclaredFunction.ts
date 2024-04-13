@@ -151,7 +151,6 @@ export class DeclaredFunction extends Symbol {
 
                 // refer to the original concrete generics
                 newFn.concreteGenerics = this.concreteGenerics;
-                ctx.registerToGlobalContext(newFn);
 
                 FunctionInferenceCache.pop(this);
                 return newFn;
@@ -195,6 +194,7 @@ export class DeclaredFunction extends Symbol {
         }
 
         inferFunctionHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        ctx.registerToGlobalContext(this);
         this.codeGenProps.reportUnusedSymbols(ctx, this.prototype.header);
         FunctionInferenceCache.pop(this);
         this.wasInferred = true;
@@ -203,21 +203,6 @@ export class DeclaredFunction extends Symbol {
 
 
     clone(typeMap: { [key: string]: DataType }, ctx: Context): DeclaredFunction {
-        /**
-        let ctxClone = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
-
-        let newM = new DeclaredFunction(this.location, ctxClone, this.prototype.clone(typeMap), null, null);
-        newM.declStatement = this.declStatement;
-        newM.expression = this.expression;
-        newM.body = this.body?.clone(typeMap, ctxClone) || null;
-
-        if(newM.body) {
-            newM.body.context.setOwner(newM);
-            newM.body.context.overrideParent(newM.context);
-        }
-
-        return newM;
-        */
         let newContext = this.context.clone(typeMap, ctx);
         let newM = new DeclaredFunction(this.location, newContext, this.prototype.clone(typeMap), null, null);
         newM.declStatement = new FunctionDeclarationStatement(this.location, newM);

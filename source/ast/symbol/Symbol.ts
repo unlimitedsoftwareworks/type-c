@@ -22,6 +22,7 @@ export type SymbolKind =
     "class_attribute" |
     "class_method" |
     "function" |
+    "lambda" |
     "ffi";
 
 
