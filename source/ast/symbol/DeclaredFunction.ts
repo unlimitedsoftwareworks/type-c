@@ -171,6 +171,7 @@ export class DeclaredFunction extends Symbol {
 
             // clone the function with the new type map
             let newFn = this.clone(genericTypeMap, this.context.getParent()!);
+            newFn.uid = this.uid+'<'+signatureFromGenerics(typeArguments)+'>';
 
             // set the generics to empty so we can properly infer its body and header by recalling this function
             newFn.prototype.generics = [];
