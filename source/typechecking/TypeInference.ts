@@ -1,5 +1,5 @@
 /**
- * Filename: typeinference.ts
+ * Filename: TypeInference.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
  * 
