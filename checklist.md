@@ -45,6 +45,7 @@ This checklist containts only major changes and updates, for minor changes and u
     - ~~ (old) Fix cloning of variable declarations and function declarations, also cloning scopes doesn't copy the symbols anymore. It only copies variables and functions since these are static and already set by the parser.~~
     - `inferredArgumentsTypes` is only set in `FunctionCallExpression` only when lhs is an element and has no generic parameters. Next is to only set it if the LHS is generic and has no type arguments.
     - Now we infer the arguments of generics only if the function being called is generic and has no type arguments, otherwise we use the type arguments provided.
+    - Lambda expressions now have a symbol attached to them to be registered in global context
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
