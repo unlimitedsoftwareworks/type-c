@@ -7,7 +7,8 @@ from std.unit.test import TestUnit, UnitSet
 
 fn closureTest<T2>(y: T2) -> fn(y:T2) -> T2{
     let z: T2 = 10
-     fn f2(x: T2) {
+    
+    fn f2(x: T2) {
         return z + x
     }
 

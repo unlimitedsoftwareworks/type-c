@@ -39,6 +39,7 @@ export class BasePackage {
         this.ctx = new Context(new SymbolLocation(parser.lexer.filepath, 0, 0, 0), parser);
         // set the owner of the symbol table to this package
         this.ctx.setOwner(this);
+        this.ctx.globalContext = this.globalCtx;
     }
 
     addImport(node: ImportNode) {
@@ -70,6 +71,6 @@ export class BasePackage {
             statement.infer(this.ctx);
         }
 
-        console.log("done infering base package "+this.ctx.location.toString())
+        //console.log("done infering base package "+this.ctx.location.toString())
     }
 }

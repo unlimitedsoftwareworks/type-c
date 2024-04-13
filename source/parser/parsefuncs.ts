@@ -1670,7 +1670,6 @@ function parseVariableDeclaration(parser: Parser, ctx: Context): DeclaredVariabl
     parser.expect("=");
     let initializer = parseExpression(parser, ctx);
     let v = new DeclaredVariable(loc, name, initializer, type, isConst, isStrict);
-    ctx.addSymbol(v);
     return v;
 }
 
@@ -2189,7 +2188,6 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     fn.declStatement = fnStatement;
 
     //ctx.overrideSymbol(proto.name, fn.astNode);
-    ctx.addSymbol(fn);
     return fnStatement;
 }
 

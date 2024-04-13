@@ -31,6 +31,7 @@ export class FunctionDeclarationStatement extends Statement {
 
     infer(ctx: Context){
         let sym = this.symbolPointer;
+        ctx.addSymbol(sym);
         sym.infer(ctx)
     }
 

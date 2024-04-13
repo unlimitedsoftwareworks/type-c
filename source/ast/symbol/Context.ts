@@ -346,20 +346,7 @@ export class Context {
         newContext.owner = this.owner;
         newContext.pkg = this.pkg;
 
-        for(const [key, v] of this.symbols) {
-            // variables and functions are the only symbols that can be cloned, since they are set in the scope by the parser
-            if(v instanceof DeclaredVariable) {
-                let v2 = v.clone(typeMap, newContext)
-                newContext.addSymbol(v2);
-            }
-            else if (v instanceof DeclaredFunction) {
-                let v2 = v.clone(typeMap, newContext);
-                newContext.addSymbol(v2);
-            }
-        }
-
         return newContext;
-        
     }
 
     /**

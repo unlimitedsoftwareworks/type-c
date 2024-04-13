@@ -29,6 +29,7 @@ export class VariableDeclarationStatement extends Statement {
 
     infer(ctx: Context){
         for(let variable of this.variables){
+            ctx.addSymbol(variable);
             variable.infer(ctx);
         }
     }
