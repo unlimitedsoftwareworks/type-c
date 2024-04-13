@@ -239,7 +239,11 @@ export class Context {
         let symbol = this.symbols.get(name);
         
         if (symbol != undefined) {
-            if(this.parent === null){
+            /**
+             * A global symbol can be within a block, thus having a parent context,
+             * but it cannot be within a function/lambda or class.
+             */
+            if(this.findParentFunction() === null){
                 return {sym: symbol, scope: "global"};
             }
             else {
