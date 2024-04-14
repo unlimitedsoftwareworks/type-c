@@ -29,14 +29,26 @@ import { Symbol } from "../symbol/Symbol";
  */
 export class LambdaDefinition extends Symbol {
     static counter: number = 0;
-    expression: LambdaExpression;
+    lambdaExpression: LambdaExpression;
+
+
+    // copy of LambdaExpression properties
+    header: FunctionType;
+    expression: Expression | null = null;
+    body: BlockStatement | null = null;
+    context: Context;
 
     constructor(location: SymbolLocation, expression: LambdaExpression) {
         let name = "lambda-"+(LambdaDefinition.counter++);
         super(location, "lambda", name);
-        this.expression = expression;
+        this.lambdaExpression = expression;
 
         this.uid = name;
+
+        this.header = expression.header;
+        this.expression = expression.expression;
+        this.body = expression.body;
+        this.context = expression.context;
     }
 }
 
