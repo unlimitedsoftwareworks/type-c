@@ -12,23 +12,31 @@
 
 import { DataType } from "../types/DataType";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { Symbol } from "../symbol/Symbol";
 
 
-export class ClassAttribute {
+export class ClassAttribute extends Symbol {
     name: string;
     type: DataType;
     isStatic: boolean;
     location: SymbolLocation;
 
+    static uidCounter: number = 0;
+
+
     constructor(location: SymbolLocation, name: string, type: DataType, isStatic: boolean){
+        super(location, "class_attribute", name);
         this.location = location;
         this.name = name;
         this.type = type;
         this.isStatic = isStatic;
+
+        // set the unique identifier
+        this.uid = `ca_${ClassAttribute.uidCounter++}`;
     }
 
     serialize(): string {
-        return `@attribute{${this.name}:${this.type.serialize()}}`
+        return `@attribute{static:${this.isStatic},${this.name}:${this.type.serialize()}}`
     }
 
     clone(typeMap: { [key: string]: DataType; }): ClassAttribute {
