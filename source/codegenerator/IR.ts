@@ -391,6 +391,7 @@ export type IRInstructionType =
     "not" |
 
     "j" |
+    "loop" | // loops to given label if given value is not zero
 
     "debug" | // a debug instruction, meanless in bytecode generation
 
@@ -401,9 +402,9 @@ export type IRInstructionType =
     "promise_await" |
     "debug_reg" |
     "destroy_tmp" | // destroy a temporary variable, used for register allocation
-    "srcmap_push_loc" |  // sets the subsequent instruction's location to the given location
+    "src_map_push" |  // sets the subsequent instruction's location to the given location
                          // fmt: file, col, row
-    "srcmap_pop_loc" |     // pops the last trace location from the stack
+    "src_map_pop" |     // pops the last trace location from the stack
     
     "alloc_spill" | // allocate space for spilling
     "spill" | // spill 
