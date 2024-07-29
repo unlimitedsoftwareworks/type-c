@@ -61,7 +61,6 @@ export class StructType extends DataType {
         return new StructType(this.location, this.fields.map(f => f.clone(typeMap)));
     }
 
-
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a StructType
         if(!originalType.is(ctx, StructType)){
