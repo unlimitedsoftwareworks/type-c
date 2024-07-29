@@ -31,6 +31,7 @@ import { NullType } from "../ast/types/NullType";
 import { NullableType } from "../ast/types/NullableType";
 import { PromiseType } from "../ast/types/PromiseType";
 import { StructType } from "../ast/types/StructType";
+import { TupleType } from "../ast/types/TupleType";
 import { UnionType } from "../ast/types/UnionType";
 import { UnsetType } from "../ast/types/UnsetType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
@@ -415,6 +416,18 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         return res;
     }
 
+    if(t1.is(ctx, TupleType)) {
+        if(!(t2.is(ctx, TupleType))) {
+            res = Err(`Type mismatch, expected tuple, got ${t2.shortname()}`);
+        }
+        else {
+            res = matchTuples(ctx, t1.to(ctx, TupleType) as TupleType, t2.to(ctx, TupleType) as TupleType, strict, stack);
+        }
+
+        scopeCache.set(typeKey, res);
+        return res;
+    }
+
     /**
      * case 19: UnsetType
      * an unset type is used for methods who's return type is not set, hence we should not be here
@@ -784,6 +797,34 @@ function matchStructs(ctx: Context, t1: StructType, t2: StructType, strict: bool
         }
         if(!found) {
             return Err(`Field ${field.name} not found in struct ${t2.shortname()}`);
+        }
+    }
+
+    return Ok();
+}
+
+function matchTuples(ctx: Context, t1: TupleType, t2: TupleType, strict: boolean, stack: string[]): TypeMatchResult {
+    let t1Fields = t1.types;
+    let t2Fields = t2.types;
+
+    if(strict) {
+        if(t1Fields.length !== t2Fields.length) {
+            return Err(`Type mismatch, expected tuple with ${t1Fields.length} fields, got ${t2Fields.length}`);
+        }
+    }
+    else {
+        if(t1Fields.length > t2Fields.length) {
+            return Err(`Type mismatch, expected tuple with at most ${t1Fields.length} fields, got ${t2Fields.length}`);
+        }
+    }
+
+    // every field of t1 must match exactly one in t2
+    for(let i = 0; i < t1Fields.length; i++) {
+        let field = t1Fields[i];
+        let field2 = t2Fields[i];
+        let res = matchDataTypesRecursive(ctx, field, field2, strict, stack);
+        if(!res.success) {
+            return Err(`Field ${i} types do not match: ${res.message}`);
         }
     }
 
