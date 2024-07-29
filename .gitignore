@@ -2,3 +2,4 @@ outs/
 output/
 node_modules/
 assets/.DS_Store
+.DS_Store
