@@ -12,10 +12,8 @@
  */
 
 import { matchDataTypes } from "../../typechecking/TypeChecking";
-import { InterfaceMethod } from "../other/InterfaceMethod";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
-import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { PromiseType } from "../types/PromiseType";
 import { Expression } from "./Expression";
