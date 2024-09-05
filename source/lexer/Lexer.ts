@@ -31,6 +31,7 @@ export class Lexer {
         [TokenType.TOK_TYPE_CONVERSION, /^as\b/],
         [TokenType.TOK_BREAK, /^break\b/],
         [TokenType.TOK_CLASS, /^class\b/],
+        [TokenType.TOK_COROUTINE, /^coroutine\b/],
         [TokenType.TOK_CONTINUE, /^continue\b/],
         [TokenType.TOK_VARIANT, /^variant\b/],
         [TokenType.TOK_CONST, /^const\b/],

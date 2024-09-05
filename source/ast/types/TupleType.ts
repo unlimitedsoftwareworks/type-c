@@ -20,7 +20,7 @@ export class TupleType extends DataType {
     length: number = 0;
 
     constructor(location: SymbolLocation, types: DataType[]){
-        super(location, "array");
+        super(location, "tuple");
         this.types = types;
         this.length = types.length;
 

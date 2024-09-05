@@ -37,6 +37,7 @@ import { UnsetType } from "../ast/types/UnsetType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
+import { CoroutineType } from "../ast/types/CoroutineType";
 
 
 export type TypeMatchResult = {
@@ -434,6 +435,19 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if(t1 instanceof UnsetType) {
         throw new Error("Unset types should not be here");
+    }
+
+    /**
+     * case 20: CoroutineType
+     * a coroutine is only compatible with another coroutine, where both of their function types are compatible
+     */
+    if(t1.is(ctx, CoroutineType)) {
+        if(!t2.is(ctx, CoroutineType)) {
+            res = Err(`Type mismatch, expected coroutine, got ${t2.shortname()}`);
+        }
+        else {
+            res = matchDataTypesRecursive(ctx, (t1.to(ctx, CoroutineType) as CoroutineType).fnType, (t2.to(ctx, CoroutineType) as CoroutineType).fnType, strict, stack);
+        }
     }
 
     res = Err(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);

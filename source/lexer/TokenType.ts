@@ -20,6 +20,7 @@ export enum TokenType {
     TOK_CLASS = "class",
     TOK_CONTINUE = "continue",
     TOK_VARIANT = "variant",
+    TOK_COROUTINE = "coroutine",
     TOK_CONST = "const",
     TOK_DO = "do",
     TOK_ELSE = "else",

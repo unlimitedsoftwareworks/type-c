@@ -34,6 +34,7 @@ import { PromiseType } from "../types/PromiseType";
 import { FunctionArgument } from "../symbol/FunctionArgument";
 import { ElementExpression } from "./ElementExpression";
 import { VoidType } from "../types/VoidType";
+import { CoroutineType } from "../types/CoroutineType";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -123,6 +124,9 @@ export class FunctionCallExpression extends Expression {
         else if (lhsType.is(ctx, VariantConstructorType)) {
             // We should not reach this point since this should be already caught
             throw new Error("Unreachable");
+        }
+        else if (lhsType.is(ctx, CoroutineType)) {
+            return this.inferCoroutine(ctx, lhsType);
         }
 
         throw ctx.parser.customError(`Invalid function call`, this.location);
@@ -605,6 +609,22 @@ export class FunctionCallExpression extends Expression {
             this.inferredType = funcType.returnType;
         }
 
+        this.checkHint(ctx);
+        return this.inferredType;
+    }
+
+
+    inferCoroutine(ctx: Context, lhsType: DataType): DataType {
+        let coroutineType = lhsType.to(ctx, CoroutineType) as CoroutineType;
+
+        // make sure we have no arguments
+        // TODO: change this behaviour to allow argument changes
+        
+        if(this.args.length !== 0) {
+            throw ctx.parser.customError(`Expected 0 arguments, got ${this.args.length}`, this.location);
+        }
+
+        this.inferredType = coroutineType.fnType.returnType;
         this.checkHint(ctx);
         return this.inferredType;
     }

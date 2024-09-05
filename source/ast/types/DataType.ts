@@ -53,7 +53,9 @@ export type DataTypeKind =
     "meta_interface" | // MetaInterfaceType, used for meta interfaces
     "meta_variant" | // MetaVariantType, used for constructing variants
     "meta_variant_constructor" | // MetaVariantConstructorType, used for constructing variant constructors
-    "meta_enum" // MetaStructType, used for meta structs
+    "meta_enum" | // MetaStructType, used for meta structs 
+    "tuple" | // TupleType
+    "coroutine"; // CoroutineType
 
 
 export class DataType {

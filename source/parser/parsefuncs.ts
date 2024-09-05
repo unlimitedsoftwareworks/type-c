@@ -94,6 +94,8 @@ import { TupleConstructionExpression } from "../ast/expressions/TupleConstructio
 import { TokenType } from "../lexer/TokenType";
 import { IntLiteralExpression, LiteralExpression, TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
 import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstructionExpression";
+import { CoroutineType } from "../ast/types/CoroutineType";
+import { CoroutineConstructionExpression } from "../ast/expressions/CoroutineConstructionExpression";
 
 // represent a deconstructed variable, not all of them are declared variables, 
 // some of them are ignored (e.g _)
@@ -678,6 +680,11 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         parser.reject();
         return parseTypeClass(parser, ctx);
     }
+
+    if(lexeme.type === "coroutine") {
+        parser.reject();
+        return parseTypeCoroutine(parser, ctx);
+    }
     
     /*
     if(lexeme.type === "process") {
@@ -728,6 +735,15 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
     }
 
     throw parser.customError(`Unexpected token '${lexeme.type}'`, loc);
+}
+
+function parseTypeCoroutine(parser: Parser, ctx: Context): DataType {
+    let loc = parser.loc();
+    parser.expect("coroutine");
+    parser.expect("(");
+    let fnType = parseTypeFunction(parser, ctx);
+    parser.expect(")");
+    return new CoroutineType(loc, fnType as FunctionType);
 }
 
 function parseTypeEnum(parser: Parser, ctx: Context): DataType {
@@ -1423,6 +1439,22 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         let args = lexeme.type == ")"?[]:parseExpressionList(parser, ctx);
         parser.expect(")");
         return new NewExpression(loc, type, args);
+    }
+    else if (lexeme.type === "coroutine") {
+        parser.accept();
+        parser.expect("(");
+        let baseFn = parseExpression(parser, ctx);
+        let tok = parser.peek();
+        if(tok.type === ")"){
+            parser.accept();
+            return new CoroutineConstructionExpression(loc, baseFn, []);
+        }
+        parser.reject();
+        
+        parser.expect(",");
+        let args = parseExpressionList(parser, ctx);
+        parser.expect(")");
+        return new CoroutineConstructionExpression(loc, baseFn, args);
     }
     else {
         parser.reject();
