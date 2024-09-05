@@ -4,12 +4,12 @@
       {
         "type": "node",
         "request": "launch",
-        "name": "Launch Program",
+        "name": "Base Test",
         "preLaunchTask": "tsc: build - tsconfig.json",
         "program": "${workspaceFolder}/source/index.ts",
         "outFiles": ["${workspaceFolder}/outs/**/*.js"],
         "sourceMaps": true,
-        "args": ["-c", "./tests/test20", "-o", "./output", "-r", "--generate-ir"]//, "--run-tests"]
+        "args": ["-c", "./tests/test21", "-o", "./output", "-r", "--generate-ir"]//, "--run-tests"]
       },
       {
         "type": "node",

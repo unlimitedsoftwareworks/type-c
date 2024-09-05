@@ -84,6 +84,15 @@ export class Parser {
     }
 
     /**
+     * Same as peek().type == type
+     * Therefor must reject() if false
+     * @param type 
+     * @returns 
+     */
+    is(type: string) {
+        return this.peek().type == type;
+    }
+    /**
      * Asserts that a given token type is the next token in the stream.
      * If it is, it returns the token. Otherwise, it throws an error.
      * Same as peek + assert + accept

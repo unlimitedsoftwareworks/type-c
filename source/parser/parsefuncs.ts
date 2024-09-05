@@ -89,7 +89,18 @@ import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
 import { PromiseType } from "../ast/types/PromiseType";
 import { LockType } from "../ast/types/LockType";
 import { AwaitExpression } from "../ast/expressions/AwaitExpression";
+import { TupleType } from "../ast/types/TupleType";
+import { TupleConstructionExpression } from "../ast/expressions/TupleConstructionExpression";
+import { TokenType } from "../lexer/TokenType";
+import { IntLiteralExpression, LiteralExpression, TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
+import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstructionExpression";
 
+// represent a deconstructed variable, not all of them are declared variables, 
+// some of them are ignored (e.g _)
+type DeconstructedVariable = {
+    variable: DeclaredVariable | null;
+    isIgnored: boolean;
+};
 
 // <genericArgDecl> ::= '<' id (':' <type>)? (',' id (':' <type>)?)+ '>' 
 function parseGenericArgDecl(parser: Parser, ctx: Context): GenericType[] {
@@ -603,9 +614,16 @@ function parseTypeGroup(parser: Parser, ctx: Context): DataType {
 
     if (lexeme.type === '(') {
         parser.accept();
-        type = parseType(parser, ctx);
-        parser.expect(')');
+        // type = parseType(parser, ctx);
+        let types = parseTypeList(parser, ctx);
 
+        if(types.length > 1){
+            type = new TupleType(loc, types);
+        }
+        else {
+            type = types[0];
+        }
+        parser.expect(')');
     }
     else {
         parser.reject();
@@ -1000,6 +1018,38 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod="cl
 /**
  * Expressions
  */
+
+/**
+ * Parses a tuple construction expression.
+ * This expression can only exists after a return statement or a function body expression.
+ * such as return (1, 2, 3)
+ * or fn (u32) -> (u32, u32) = (1, 2)
+ */
+function parseExpressionTupleConstruction(parser: Parser, ctx: Context): Expression {
+    let loc = parser.loc();
+    // check if we have a tuple construction
+    let lexeme = parser.peek();
+    if (lexeme.type === "(") {
+        parser.accept();
+        let elements = parseExpressionList(parser, ctx);
+        parser.expect(")");
+
+        if(elements.length == 0){
+            throw parser.customError("Tuple construction must have at least one element", loc);
+        }
+
+        if(elements.length == 1){
+            return elements[0];
+        }
+
+        return new TupleConstructionExpression(loc, elements);
+    }
+
+    // else, parse regular expression
+    // reject 
+    parser.reject();
+    return parseExpressionLet(parser, ctx);
+}
 
 function parseExpression(parser: Parser, ctx: Context): Expression {
     return parseExpressionLet(parser, ctx);
@@ -1620,7 +1670,7 @@ function parseStructKeyValueExpressionList(parser: Parser, ctx: Context): KeyVal
 }
 
 
-function parseVariableDeclaration(parser: Parser, ctx: Context): DeclaredVariable {
+function parseVariableDeclaration(parser: Parser, ctx: Context): DeclaredVariable[] {
     let loc = parser.loc();
     let isConst = false;
     let token = parser.peek();
@@ -1632,61 +1682,229 @@ function parseVariableDeclaration(parser: Parser, ctx: Context): DeclaredVariabl
         parser.reject();
     }
 
-    token = parser.expect("identifier")
-    let name = token.value;
-    let type: DataType | null = null;
-    let isStrict = false;
+    /*
+        Here are the following ways a variable can be declared:
+        1. Regular:
+        ```
+        let x: u32 = 1, z: u32 = 1
+        let y = x
+        ```
 
-    token = parser.peek();
+        2. Array Deconstruction
+        ```
+        let z: u32[] = [1, 2, 3]
+        let [x, _, y] = z // ignoring element at index 1
+        ```
 
-    // let x: strict i32 = 1
-    // let x: strict = someFunc()
-    // let x = someFunc2()
-    if (token.type === ":") {
-        parser.accept();
-        let tok = parser.peek();
-        if (tok.type === "strict") {
+        3. Struct Deconstruction
+        ```
+        let a = {
+            x: 1 as u32, y: 2 as u32, z: 3 as u32
+        }
+
+        let {x, y, z} = a
+        let {ax: x, ay: y, az: z} = a
+        ```
+
+        4. Tuple Deconstruction: Tuple deconstruction is only used to unpack values from function returns, where functions return more than one value.
+        ```
+        fn f(x: u32) -> (u32, u32, u32) = (x+1, x+2, x+3)
+
+        // unpacking 1st and 3rd function return values
+        let (a, _, c) = f(1) 
+        ```
+    */
+
+    if (token.type === "[") {
+        return parseArrayDeconstruction(parser, ctx, isConst);
+    }
+
+    if (token.type === "{") {
+        return parseObjectDeconstruction(parser, ctx, isConst);
+    }
+
+    if (token.type === "(") {
+        return parseTupleDeconstruction(parser, ctx, isConst);
+    }
+
+    return parseRegularVariableDeclaration(parser, ctx, isConst);
+
+}
+function parseTupleDeconstruction(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {
+    let loc = parser.loc();
+    parser.expect("(");
+    let elements: (string | null)[] = [];
+    let tupleExpression: Expression;
+    
+    while (1) {
+        if (parser.peek().type == "_") {
             parser.accept();
-            isStrict = true;
-
-            tok = parser.peek();
-            if(tok.type == "="){
-                parser.reject();
-            }
-            else {
-                parser.reject();
-                type = parseType(parser, ctx);
-            }
+            elements.push(null);
+        } else {
+            parser.reject();
+            let name = parser.expect("identifier").value;
+            elements.push(name);
+        }
+        if (parser.peek().type != ")") {
+            parser.reject();
+            parser.expect(",");
         }
         else {
             parser.reject();
-            type = parseType(parser, ctx);
+            break;
         }
+    }
+    parser.expect(")");
+    
+    parser.expect("=");
+    tupleExpression = parseExpression(parser, ctx);
+    
+    return elements.filter(e => e !== null).map((name, index) => {
+        let tupleDeconstruction = new TupleDeconstructionExpression(
+            loc,
+            tupleExpression,
+            new IntLiteralExpression(loc, index.toString())
+        );
+        
+        return new DeclaredVariable(
+            loc,
+            name as string,
+            tupleDeconstruction,
+            null,  // type will be inferred later
+            isConst,
+            false
+        );
+    });
+}
+
+function parseObjectDeconstruction(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {
+    parser.expect("{");
+    let properties: DeclaredVariable[] = [];
+    let propertyNames: string[] = [];
+    while (1) {
+        let propertyName = parser.expect("identifier").value;
+        let variableName = propertyName;
+        
+        if (parser.is(":")) {
+            variableName = parser.expect("identifier").value;
+        }
+        else {
+            parser.reject();
+        }
+        
+       
+        properties.push(new DeclaredVariable(parser.loc(), variableName, new TrueLiteralExpression(parser.loc()), null, isConst, false));
+        propertyNames.push(propertyName);
+        
+        if (parser.is(",")) {
+            parser.accept();
+        }
+        else {
+            parser.reject();
+            break;
+        }
+    }
+    
+    parser.expect("}");
+    parser.expect("=");
+
+    let initializer = parseExpression(parser, ctx);
+    
+    properties.forEach((prop, i) => {
+        prop.initializer = new MemberAccessExpression(
+            prop.location,
+            initializer,
+            new ElementExpression(prop.location, propertyNames[i], [])
+        );
+    });
+    
+    return properties;
+}
+
+function parseArrayDeconstruction(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {
+    parser.expect("[");
+    let elements: DeconstructedVariable[] = [];
+    
+    while (1) {
+        if (parser.peek().type == "_") {
+            parser.accept();
+            elements.push({ variable: null, isIgnored: true });
+        } else {
+            parser.reject();
+            let name = parser.expect("identifier").value;
+            let type: DataType | null = null;
+            if (parser.peek().type == ":") {
+                parser.accept();
+                type = parseType(parser, ctx);
+            }
+            parser.reject();
+            elements.push({
+                // the initializer is a dummy value, the actual initializer will be set later
+                variable: new DeclaredVariable(parser.loc(), name, new TrueLiteralExpression(parser.loc()), type, isConst, false),
+                isIgnored: false
+            });
+        }
+        
+        if (parser.peek().type == ",") {
+            parser.accept();
+        }
+        else {
+            parser.reject();
+            break;
+        }
+    }
+    parser.expect("]");
+    parser.expect("=");
+    let initializer = parseExpression(parser, ctx);
+    
+    return elements.filter(e => !e.isIgnored).map((e, index) => {
+        if (e.variable) {
+            e.variable.initializer = new IndexAccessExpression(
+                e.variable.location,
+                initializer,
+                [new IntLiteralExpression(parser.loc(), index.toString())]
+            );
+            return e.variable;
+        }
+        throw new Error("Unexpected null variable in array deconstruction");
+    });
+}
+
+
+function parseRegularVariableDeclaration(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {
+    var loc = parser.loc();
+    var token = parser.expect("identifier");
+    parser.accept();
+    let name = token.value;
+    let type: DataType | null = null;
+    // let x: strict i32 = 1
+    // let x: strict = someFunc()
+    // let x = someFunc2()
+    token = parser.peek();
+    if (token.type === ":") {
+        parser.accept();
+        type = parseType(parser, ctx);
     }
     else {
         parser.reject();
     }
 
     parser.expect("=");
+    // TODO: make sure code gen doesn't generate this expression multipe times for deconstructed variables
     let initializer = parseExpression(parser, ctx);
-    let v = new DeclaredVariable(loc, name, initializer, type, isConst, isStrict);
-    return v;
+    let v = new DeclaredVariable(loc, name, initializer, type, isConst, false);
+    return [v];
 }
 
 function parseVariableDeclarationList(parser: Parser, ctx: Context): DeclaredVariable[] {
     let canLoop = true;
     let declarations: DeclaredVariable[] = [];
     while (canLoop) {
-        let decl = parseVariableDeclaration(parser, ctx);
-        // make sure same variable isn't redeclared twice or more in declarations array
-        declarations.forEach((d) => {
-            if(d.name == decl.name){
-                parser.customError("Variable " + decl.name + " already declared in this ctx", decl.location);
-            }
-        })
+        let decls = parseVariableDeclaration(parser, ctx);
         
-        declarations.push(decl);
-        let token = parser.peek();
+        declarations.push(...decls);
+
+        var token = parser.peek();
         canLoop = token.type === ",";
         if (canLoop) {
             parser.accept();
@@ -1762,7 +1980,6 @@ function parseMatchCases(parser: Parser, ctx: Context, form: "expr" | "stmt" = "
                 canLoop = false;
             }
             parser.reject();
-
         }
     }
     return cases;
@@ -1968,7 +2185,7 @@ function parseStatementReturn(parser: Parser, ctx: Context): Statement {
     let loc = parser.loc();
     parser.expect("return");
     parser.assert(ctx.env.withinFunction, "Cannot return outside of function");
-    let expression = parseExpression(parser, ctx);
+    let expression = parseExpressionTupleConstruction(parser, ctx); //parseExpression(parser, ctx);
 
     let ret = new ReturnStatement(loc, expression)
     ctx.findParentFunction()?.returnStatements.push({stmt: ret, ctx});
@@ -2176,7 +2393,7 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     else {
         parser.reject();
         parser.expect("=");
-        exprBody = parseExpression(parser, newScope);
+        exprBody = parseExpressionTupleConstruction(parser, newScope);
     }
 
     fn.body = stmtBody;

@@ -50,6 +50,12 @@ This checklist containts only major changes and updates, for minor changes and u
 - 13/04/2024:
     - Originally, variables and functions are added to their parent context during parsing. This behavior has been changed, they are now added to the context when their respective declaration statement is being resolved. This makes context cloning simpler, since we init the cloned context with empty symbols, the symbols will be added when the declaration is resolved when resolving the parenting cloned statement/expr.
 
+- 29/07/2024:
+    - Added Tuple data type.
+
+- 5/08/2024:
+    - Added destructuring assignment for tuples, structs and arrays.
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.

@@ -62,7 +62,8 @@ export type ExpressionKind =
     "spawn" | // spawn x
     "await" | // await x
     "this" | // this
-    "unnamed_struct_construction" // { 1, 2 }
+    "unnamed_struct_construction" | // { 1, 2 }
+    "tuple_deconstruction" // (a) = (1, 2, 3)
 ;
 
 export class Expression {

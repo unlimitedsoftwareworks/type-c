@@ -24,7 +24,16 @@ export class DeclaredVariable extends Symbol {
     initializer: Expression;
     annotation: DataType | null;
     isConst: boolean;
-    isStrict: boolean
+    isStrict: boolean;
+
+    isFromTuple: boolean = false;
+    isFromArray: boolean = false;
+    isFromStruct: boolean = false;
+
+    // used to identify the index of the variable in a deconstructed expression
+    indexInDeconstructedExpression = -1;
+    // used to identify the field name of the variable in a deconstructed struct
+    deconstructedFieldName: string | null = null;
 
     constructor(location: SymbolLocation, name: string, initializer: Expression, annotation: DataType | null, isConst: boolean, isStrict: boolean){
         super(location, "variable_declaration", name);
