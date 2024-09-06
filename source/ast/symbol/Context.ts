@@ -150,6 +150,11 @@ export class Context {
         
         this.symbols.set(symbol.name, symbol);
         symbol.parentContext = this;
+
+        // check if we need to register to global context
+        if (this.globalContext !== null) {
+            this.registerToGlobalContext(symbol);
+        }
     }
 
     // adds a symbol to the current context, but does not set the parent context
@@ -244,6 +249,9 @@ export class Context {
              * but it cannot be within a function/lambda or class.
              */
             if(this.findParentFunction() === null){
+                // we are in the global scope
+                // register the global variable
+                this.registerToGlobalContext(symbol);
                 return {sym: symbol, scope: "global"};
             }
             else {
@@ -342,14 +350,6 @@ export class Context {
         return this.parent;
     }
 
-    /**
-     * upvalue dependencies are already set by lookupScope,
-     * maybe we do not need this
-     * @param symbol 
-     */
-    addUpvalueDependency(symbol: Symbol) {
-
-    }
 
     /**
      * Clones current context, clones the active symbols too,
