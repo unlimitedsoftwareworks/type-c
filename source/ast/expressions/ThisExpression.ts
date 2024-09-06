@@ -43,7 +43,7 @@ export class ThisExpression extends Expression {
             let activeMethod = ctx.getActiveMethod();
             if(activeMethod) {
                 // assign this to the method
-                activeMethod.codeGenProps.assignThis(cls, this.location);
+                activeMethod.codeGenProps.assignThis(cls, this.location, activeMethod.context);
             }
             else {
                 throw ctx.parser.customError(`'this' can only be used within a class method`, this.location);
