@@ -254,7 +254,7 @@ export class ClassType extends DataType {
             if (method.imethod.generics.length > 0) {
                 let genericImpl = method.getConcreteGenerics()
                 for (let key in genericImpl) {
-                    allMethods.push(genericImpl[key]);
+                    allMethods.push(genericImpl.get(key)!);
                 }
             }
             else {

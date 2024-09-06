@@ -44,7 +44,7 @@ export class ClassMethod extends Symbol {
      * List of concrete generic methods, i.e when a generic method is called with concrete types, they are
      * cached here.
      */
-    private _concreteGenerics: {[key: string]: ClassMethod} = {};
+    private _concreteGenerics: Map<string, ClassMethod> = new Map();
 
     private _wasInferred: boolean = false;
 
@@ -116,7 +116,7 @@ export class ClassMethod extends Symbol {
         this.codeGenProps.reportUnusedSymbols(ctx, this.imethod.header);
     }
 
-    getConcreteGenerics(){
+    getConcreteGenerics(): Map<string, ClassMethod> {
         return this._concreteGenerics;
     }
 
@@ -151,8 +151,8 @@ export class ClassMethod extends Symbol {
      */
     generateConcreteMethod(ctx: Context, typeMap: { [key: string]: DataType}, typeArguments: DataType[]): ClassMethod {
         let sig = signatureFromGenerics(typeArguments);
-        if(this._concreteGenerics[sig] !== undefined) {
-            return this._concreteGenerics[sig];
+        if(this._concreteGenerics.has(sig)) {
+            return this._concreteGenerics.get(sig) as ClassMethod;
         }
 
         // else we have to construct it
@@ -175,7 +175,7 @@ export class ClassMethod extends Symbol {
 
         // all conditions are met, we can now clone the method
         let newMethod = this.clone(typeMap, true);
-        this._concreteGenerics[sig] = newMethod;
+        this._concreteGenerics.set(sig, newMethod);
         newMethod._concreteGenerics = this._concreteGenerics;
         newMethod.uid = this.uid+'<'+sig+'>';
         newMethod.infer(newMethod.context);

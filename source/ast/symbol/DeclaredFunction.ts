@@ -47,7 +47,7 @@ export class DeclaredFunction extends Symbol {
     /**
      * When a generic function is called, the generic arguments are used to instantiate a new function
      */
-    concreteGenerics: { [key: string]: DeclaredFunction } = {};
+    concreteGenerics: Map<string, DeclaredFunction> = new Map();
     
     /**
      * Code gen properties
@@ -144,7 +144,7 @@ export class DeclaredFunction extends Symbol {
                 newFn.uid = this.uid+'<'+typeArgSignature+'>';
 
                 // update cache
-                this.concreteGenerics[typeArgSignature] = newFn;
+                this.concreteGenerics.set(typeArgSignature, newFn);
 
                 // infer new function
                 newFn.infer(newFn.context);
@@ -161,7 +161,7 @@ export class DeclaredFunction extends Symbol {
             }
 
             // check if we have a cached version of this function with the given type arguments
-            let cached = this.concreteGenerics[signatureFromGenerics(typeArguments)];
+            let cached = this.concreteGenerics.get(signatureFromGenerics(typeArguments));
             if (cached) {
                 return cached;
             }
@@ -177,7 +177,7 @@ export class DeclaredFunction extends Symbol {
             newFn.prototype.generics = [];
 
             // update cache
-            this.concreteGenerics[signatureFromGenerics(typeArguments)] = newFn;
+            this.concreteGenerics.set(signatureFromGenerics(typeArguments), newFn);
 
             // infer new function
             newFn.infer(newFn.context);
@@ -217,5 +217,9 @@ export class DeclaredFunction extends Symbol {
 
         FunctionInferenceCache.pop(this);
         return newM;
+    }
+
+    isGeneric(): boolean {
+        return this.prototype.generics.length > 0;
     }
 }
