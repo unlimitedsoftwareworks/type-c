@@ -80,6 +80,7 @@ export class ClassMethod extends Symbol {
          * We add generics to scope too
          */
         for(const arg of imethod.generics) {
+            // OR DO WE?? TAN TAN DAAAAAAA!
             //this.context.addSymbol(arg);
         }
 

@@ -32,6 +32,7 @@ export class VariantConstructorType  extends DataType{
     parameters: VariantParameter[];
 
     _parent: VariantType | null = null;
+    _id: number | null = null;
 
     constructor(location: SymbolLocation, name: string, parameters: VariantParameter[]){
         super(location, "variant_constructor")
@@ -81,5 +82,26 @@ export class VariantConstructorType  extends DataType{
 
             this.parameters[i].type.getGenericParametersRecursive(ctx, variantConstructorType.parameters[i].type, declaredGenerics, typeMap);
         }
+    }
+
+    setId(id: number) {
+        this._id = id;
+    }
+
+    getId(): number {
+        return this._id!;
+    }
+
+    getParameterIndex(name: string): number {
+        for(let i = 0; i < this.parameters.length; i++){
+            if(this.parameters[i].name == name){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    getParameterType(i: number): DataType {
+        return this.parameters[i].type;
     }
 }

@@ -2,6 +2,7 @@ import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { GenericType } from "./GenericType";
+import { getDataTypeByteSize } from "../../codegenerator/utils";
 
 export class StructField {
     name: string;
@@ -52,6 +53,19 @@ export class StructType extends DataType {
         }
         return null;
     }
+    
+    getFieldIndex(fieldName: string){
+        // find the index of the field
+        let index = 0;
+        for(let field of this.fields){
+            if(field.name == fieldName){
+                return index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
 
     allowedNullable(ctx: Context): boolean {
         return true;
@@ -77,4 +91,13 @@ export class StructType extends DataType {
             this.fields[i].type.getGenericParametersRecursive(ctx, structType.fields[i].type, declaredGenerics, typeMap);
         }
     }
+
+    getStructSize(ctx: Context){
+        let sum: number = 0;
+        for(let field of this.fields){
+            sum += getDataTypeByteSize(field.type)
+        }
+        return sum;
+    }
+
 }

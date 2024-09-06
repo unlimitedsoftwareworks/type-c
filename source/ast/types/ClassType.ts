@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { getDataTypeByteSize } from "../../codegenerator/utils";
 import { globalTypeCache } from "../../typechecking/TypeCache";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
 import { ClassAttribute } from "../other/ClassAttribute";
@@ -35,6 +36,9 @@ export class ClassType extends DataType {
     superInterfaces: InterfaceType[] = [];
 
     staticBlock: BlockStatement | null = null;
+
+    // offset of each attribute in the class, as ordered within `attributes` field
+    attributeOffsetList: number[] = [];
 
     private _resolved: boolean = false;
 
@@ -598,8 +602,52 @@ export class ClassType extends DataType {
         }
     }
 
-    // accessor methods
+    /**
+     * Methods used by the bytecode generator
+     */
     getAttributes(){
         return this.attributes;
+    }
+
+    getAttribute(name: string){
+        for(const attr of this.attributes){
+            if(attr.name === name){
+                return attr;
+            }
+        }
+        return null;
+    }
+
+    getAttributeIndex(name: string): number {
+        for(let i = 0; i < this.attributes.length; i++){
+            if(this.attributes[i].name == name){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    getAttributesOffsetList(){
+        if(this.attributeOffsetList.length == 0){
+            let offset = 0;
+            
+            for(let attr of this.attributes){
+                // we do not consider static attributes
+                if(attr.isStatic) continue;
+                this.attributeOffsetList.push(offset);
+                offset += getDataTypeByteSize(attr.type.dereference());
+            }
+        }
+
+        return this.attributeOffsetList;
+    }
+
+    getAttributeOffset(ctx: Context, name: string){
+        let offsetList = this.getAttributesOffsetList();
+        let index = this.getAttributeIndex(name);
+        if(index == -1){
+            throw ctx.parser.customError(`Cannot find attribute ${name} in class ${this.shortname()}`, this.location);
+        }
+        return offsetList[index];
     }
 }

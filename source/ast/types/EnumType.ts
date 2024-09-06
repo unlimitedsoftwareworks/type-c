@@ -13,6 +13,7 @@
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
+import { BasicType, BasicTypeKind } from "./BasicType";
 import {DataType} from "./DataType";
 import { GenericType } from "./GenericType";
 
@@ -162,5 +163,25 @@ export class EnumType extends DataType {
         if(!res.success){
             throw ctx.parser.customError(`Expected enum type ${this.shortname()}, got ${enumType.shortname()} instead.`, this.location);
         }
+    }
+
+    getFieldValue(ctx: Context, name: string): number {
+        let field = this.fields.find((f) => f.name == name);
+        if(!field){
+            throw ctx.parser.customError("Enum " + this.shortname() + " does not have a field named " + name, this.location);
+        }
+
+        if(field.value == undefined){
+            throw ctx.parser.customError("Enum " + this.shortname() + " does not have a value for field " + name, this.location);
+        }
+
+        return field.toNumber()!;
+    }
+
+    toBasicType(ctx: Context): BasicType {
+        if (this.as == "unset") {
+            throw ctx.parser.customError("Cannot convert enum type to basic type", this.location);
+        }
+        return new BasicType(this.location, this.as as BasicTypeKind);
     }
 }

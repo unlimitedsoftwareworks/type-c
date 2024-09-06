@@ -221,6 +221,32 @@ export class InterfaceType extends DataType {
             this.methods[i].header.getGenericParametersRecursive(ctx, interfaceType.methods[i].header, declaredGenerics, typeMap);
         }
     }
+
+    /**
+     * checks whether the given interfaces matches the exact same method order
+     * (number can be less but not more)
+     * checking by name is enough because this is used in codegen phase 
+     * @param interface 
+     */
+    interfacesAlign(obj: InterfaceType): boolean {
+        if(obj.methods.length > this.methods.length){
+            return false;
+        }
+        for(let i = 0; i < obj.methods.length; i++){
+            if(obj.methods[i].name != this.methods[i].name){
+                return false;
+            }
+            // make sure they also match, in terms of prototype
+            // here we perform an exact match, maybe a compatible match in the future?
+            // TODO: compare with type checking for compatible match instead of exact match
+            let match = obj.methods[i].header.toString() == this.methods[i].header.toString()
+            if(!match){
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[]){

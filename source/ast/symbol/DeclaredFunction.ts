@@ -222,4 +222,12 @@ export class DeclaredFunction extends Symbol {
     isGeneric(): boolean {
         return this.prototype.generics.length > 0;
     }
+
+    getConcreteMethod(signature: string): DeclaredFunction {
+        let concrete = this.concreteGenerics.get(signature);
+        if(!concrete) {
+            throw new Error(`No concrete method found for signature ${signature}`);
+        }
+        return concrete;
+    }
 }

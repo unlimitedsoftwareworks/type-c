@@ -62,4 +62,8 @@ export class InterfaceMethod extends FunctionPrototype {
     clone(typeMap: { [key: string]: DataType; }): InterfaceMethod {
         return new InterfaceMethod(this.location, this.name, this.header.clone(typeMap) as FunctionType, this.isStatic, this.generics.map(g => g.clone(typeMap)) as GenericType[]);
     }
+
+    getUID(): number {
+        return InterfaceMethod.getMethodUID(this);
+    }
 }

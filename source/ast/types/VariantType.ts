@@ -27,6 +27,7 @@ export class VariantType extends DataType {
         this.constructors = constructors;
 
         this.constructors.forEach((c) => c.setParent(this));
+        this.constructors.forEach((c, idx) => c.setId(idx));
     }
 
 
@@ -81,5 +82,14 @@ export class VariantType extends DataType {
 
             this.constructors[i].getGenericParametersRecursive(ctx, variantType.constructors[i], declaredGenerics, typeMap);
         }
+    }
+
+    getConstructor(name: string): VariantConstructorType | null {
+        for(let constructor of this.constructors) {
+            if(constructor.name == name) {
+                return constructor;
+            }
+        }
+        return null;
     }
 }
