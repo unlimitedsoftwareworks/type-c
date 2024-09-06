@@ -5,33 +5,14 @@ from std.io import println
 from std.unit.test import TestUnit, UnitSet
 */
 
-fn f1(x: u32) -> fn(x: u32) -> u32{
-    fn f2(y: u32) -> u32 {
-        return x + y
+fn f1(x: u32) -> fn(x: u32) -> fn (z: u32) -> u32 {
+    let alpha: u32 = 10
+    fn f2(y: u32) -> fn (z: u32) -> u32 {
+        fn f3(z: u32) -> u32 {
+            return x
+        }
+        return f3
     }
 
     return f2
-}
-
-type Type = struct {
-    x: T,
-    y: T
-}
-
-type X = class {
-    fn get<T>(x: {name: T}) -> T {
-        return x.name
-    }
-
-    fn set<T>(x: Type<T>) -> T {
-        return x
-    }
-}
-
-
-let z: interface {fn get(x: {name: {age: u32, gap: u32}}) -> {age: u32}} = new X()
-
-fn main() {
-    let f = f1(10)
-    let z = f(20)
 }

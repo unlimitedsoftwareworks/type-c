@@ -15,6 +15,7 @@ let g = coroutine(f, [1, 2, 3, 4])
 let loop = true
 while loop {
     let (x, done) = g()
+    //io.println(x)
     if done {
         loop = false
     }
