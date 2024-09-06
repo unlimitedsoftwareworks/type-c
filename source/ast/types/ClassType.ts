@@ -597,4 +597,9 @@ export class ClassType extends DataType {
             this.methods[i].imethod.header.getGenericParametersRecursive(ctx, classType.methods[i].imethod.header, declaredGenerics, typeMap);
         }
     }
+
+    // accessor methods
+    getAttributes(){
+        return this.attributes;
+    }
 }
