@@ -15,7 +15,7 @@ import { LambdaDefinition } from "../ast/expressions/LambdaExpression";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
-import { IRInstruction, IRInstructionType } from "./IR";
+import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
