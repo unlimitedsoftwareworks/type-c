@@ -1,7 +1,7 @@
 import { ClassAttribute } from "../ast/other/ClassAttribute";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
-import { BytecodeInstructionType } from "./BytecodeInstructions";
+import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { CodeSegment } from "./CodeSegment";
 import { DataWriter } from "./DataWriter";
 import { FunctionGenerator } from "./FunctionGenerator";
@@ -168,20 +168,22 @@ class GlobalSegment {
      * @param variable variable or class attribute
      * @param attributeSize attribute size in case of class attribute
      */
-    addVariable(variable: DeclaredVariable | ClassAttribute, attributeSize?: number) {
+    addVariable(variable: DeclaredVariable | ClassAttribute) {
+        console.log(`Adding variable ${variable.name}/${variable.uid} to global segment at offset ${this.byteSize}`);
         // check if variable already exists
         if (this.variables.get(variable.uid)) {
             throw "Redefined global variable " + variable.name;
         }
         this.variables.set(variable.uid, this.byteSize);
+        
         if (variable instanceof DeclaredVariable) {
             this.byteSize += getDataTypeByteSize(variable.annotation!);
         }
+        else if (variable instanceof ClassAttribute) {
+            this.byteSize += getDataTypeByteSize(variable.type);
+        }
         else {
-            if (attributeSize == undefined) {
-                throw "Attribute size not defined";
-            }
-            this.byteSize += attributeSize!;
+            throw "Attribute is not a global variable";
         }
     }
 
@@ -210,6 +212,8 @@ export class BytecodeGenerator {
     resolvedOffsets: Map<string, number> = new Map();
 
     codeSegment: CodeSegment = new CodeSegment();
+
+
 
     /**
      * Spilled registers for tmp variables,
@@ -247,8 +251,8 @@ export class BytecodeGenerator {
         this.codeSegmentSrcMap[this.codeSegment.writer.writePosition] = { line: loc.line, file: loc.file, col: loc.col, func: loc.func };
     }
 
-    addGlobalVariable(variable: DeclaredVariable | ClassAttribute, attributeSize?: number) {
-        this.globalSegment.addVariable(variable, attributeSize);
+    addGlobalVariable(variable: DeclaredVariable | ClassAttribute) {
+        this.globalSegment.addVariable(variable);
     }
 
     getRegisterForVariable(fn: FunctionGenerator, variable: string): number {
@@ -328,5 +332,9 @@ export class BytecodeGenerator {
     }
 
     generateSourceMap(output: string) {
+    }
+
+    dumpIR() {
+        // dumps 
     }
 }

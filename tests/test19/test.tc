@@ -6,6 +6,14 @@ from std.io import println
 from std.unit.test import TestUnit, UnitSet
 */
 
+type RandomAssType = class {
+    let static x: u32
+    let static y: u32
+
+    fn __init__(){
+
+    }
+}
 
 type CustomStruct = {name: String, age: u32, data: struct {
     x: u32, y: u32

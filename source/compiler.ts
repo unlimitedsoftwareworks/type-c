@@ -7,6 +7,7 @@ import { BasePackage } from './ast/BasePackage';
 import { Parser } from './parser/Parser';
 import { ImportNode } from './ast/ImportNode';
 import { BuiltinModules } from './BuiltinModules';
+import { generateCode } from './codegenerator/CodeGenerator';
 
 export function readFile(filename: string): string {
     return fs.readFileSync(filename, 'utf-8');
@@ -72,6 +73,9 @@ export module TypeC {
             this.basePackage = parser.basePackage
             parser.parse();
 
+
+            this.packageBaseContextMap.set(entry, this.basePackage);
+
             BuiltinModules.getStringClass(this);
             //BuiltinModules.getRunnableInterface(this);
             //BuiltinModules.getArrayInterface(this);
@@ -91,6 +95,10 @@ export module TypeC {
             }
 
             this.basePackage.infer();
+
+            if(this.options.generateBinaries) {
+                this.generateBytecode();
+            }
         }
 
         resolveImport(imp: ImportNode) {
@@ -145,6 +153,10 @@ export module TypeC {
 
             basePackage.infer();
             return basePackage;
+        }
+
+        generateBytecode() {
+            generateCode(this);
         }
     }
 
