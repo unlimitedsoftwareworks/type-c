@@ -522,31 +522,6 @@ export class CodeSegment {
             case BytecodeInstructionType.close_ffi:
                 return this.writer.push_16(args[0]);
             
-        
-            case BytecodeInstructionType.promise_alloc:
-                return this.writer.push_8(args[0]);
-            
-            case BytecodeInstructionType.promise_resolve:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-                         
-            case BytecodeInstructionType.promise_await:
-                return this.writer.push_8(args[0]);
-        
-            case BytecodeInstructionType.promise_data:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-            
-            case BytecodeInstructionType.lock_alloc:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-                         
-            case BytecodeInstructionType.lock_acquire:
-                this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]);
-
-            case BytecodeInstructionType.lock_release:
-                return this.writer.push_8(args[0]);
             
             case BytecodeInstructionType.debug_reg:
                 return this.writer.push_8(args[0]);
@@ -558,10 +533,7 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
-                
-            case BytecodeInstructionType.vm_health:
-                return this.writer.push_8(args[0]);
-            
+
             case BytecodeInstructionType.spill_alloc:
                 return this.writer.push_16(args[0]);
             
@@ -573,6 +545,8 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 return this.writer.push_16(args[1]);
 
+            default:
+                throw new Error(`Unsupported instruction: ${BytecodeInstructionType[instruction]}`);
         }
     }
 }

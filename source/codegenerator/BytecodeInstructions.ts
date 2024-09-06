@@ -566,12 +566,6 @@ export enum BytecodeInstructionType{
     load_std,
 
     /**
-     * vm_health dest: r
-     * returns vm health into dest reg r[u8]
-     */
-    vm_health,
-
-    /**
      * spill_alloc num_spills: i[2 bytes]
      */
     spill_alloc,
