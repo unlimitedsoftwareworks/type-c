@@ -551,51 +551,6 @@ export enum BytecodeInstructionType{
 
     close_ffi,
 
-    /**
-     * promise_alloc dest: rm
-     * allocates a new promise, stores its address in dest
-     */
-    promise_alloc,
-
-    /**
-     * promise_resolve promise: rm, payload: rm
-     * resolves the given promise with the given payload
-     */
-    promise_resolve,
-
-    /**
-     * promise_await promise: rm
-     * awaits the given promise
-     */
-    promise_await,
-
-    /**
-     * promise_data dest: r, promise: rm,
-     * returns promise data into dest reg r of promise pm
-     * promise must have been resolved, otherwise fails
-     */
-    promise_data,
-
-    /**
-     * lock_alloc dest: rm, data: rm
-     * allocates a new lock, containing data, stores its address in dest
-     */
-    lock_alloc,
-
-    /**
-     * lock_acquire lock: rm, data: r,
-     * acquires the given lock. will block if the lock is already acquired.
-     * i.e waiting for lock promise to resolve. stores the lock data in
-     * the given argument
-     */
-    lock_acquire,
-
-    /**
-     * lock_release lock: rm
-     * releases the given lock.
-     */
-    lock_release,
-
 
     debug_reg,
 
@@ -639,40 +594,23 @@ export enum BytecodeInstructionType{
      */
     closure_alloc,
 
-    /**
-     * capture_var, closure: R, source-reg: R, env-slot: I
-     * Copies the value from the specified register in the current function
-     * state to the specified environment slot in the closure.
-     */
-    capture_var,
+    closure_capture,
 
-    /**
-     * closure_call, closure: R
-     * Similar to FN_RET, but includes additional logic to properly
-     * restore the previous function state's environment.
-     */
     closure_call,
 
-    /**
-     * closure_ret
-     * Similar to FN_RET, but includes additional logic to properly restore
-     * the previous function state's environment.
-     */
     closure_ret,
-
-    /**
-     * set_closure_env, closure: R
-     * Used to set up the function state's environment pointer to the environment
-     * of the specified closure.
-     */
 
     set_closure_env,
 
-    /**
-     * get_closure_var, dest: R, closure: R, env-slot: I
-     * Retrieves a value from the specified slot in the closure's
-     * environment and stores it in the specified register.
-     */
-    get_closure_var
+    mv_reg_upvalue,
+    mv_reg_upvalue_ptr,
+
+    mv_upvalue_reg,
+    mv_upvalue_reg_ptr,
+
+    coroutine_alloc,
+    coroutine_set_arg,
+    coroutine_call,
+    coroutine_yield
 }
 
