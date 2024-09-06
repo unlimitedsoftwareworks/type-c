@@ -10,12 +10,28 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { LambdaExpression } from "../ast/expressions/LambdaExpression";
 import { Context } from "../ast/symbol/Context";
+import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
+import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { Symbol } from "../ast/symbol/Symbol";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { ClassType } from "../ast/types/ClassType";
 import { FunctionType } from "../ast/types/FunctionType";
+import { getDataTypeByteSize } from "./utils";
+
+export class FunctionStackSymbol {
+    sym: Symbol;
+    byteSize: number;
+    offset: number;
+
+    constructor(sym: Symbol, byteSize: number, offset: number) {
+        this.sym = sym;
+        this.byteSize = byteSize;
+        this.offset = offset;
+    }
+}
 
 /**
  * This class represents the code generation properties for a declared function
@@ -39,6 +55,13 @@ export class FunctionCodegenProps {
      */
     _this: FunctionArgument | null = null;
 
+
+    // symbols as defined in the stack, filled during code gen
+    stackSymbols: Map<string, FunctionStackSymbol> = new Map();
+    localsByteSize: number = 0;
+    argsByteSize: number = 0;
+    totalByteSize: number = 0;
+
     constructor() {
         // nothing todo here yet
     }
@@ -52,6 +75,10 @@ export class FunctionCodegenProps {
             throw new Error("Symbol does not have a UID");
         }
     }
+
+    /**
+     * API Called by the analyzer
+     */
 
     registerLocalSymbol(sym: Symbol) {
         this.assertSymbolUID(sym);
@@ -91,4 +118,55 @@ export class FunctionCodegenProps {
         this._this = new FunctionArgument(location, "$this", cl, true);
         this._this.uid = "$this";
     }
+
+    /**
+     * APIs called by the Code Generator
+     */
+
+    /**
+     * Computes the stack layout for the function, fills the stackSymbols map
+     */
+    computeStack() {
+        this.localsByteSize = 0;
+        this.argsByteSize = 0;
+
+        for(const [_, sym] of this.argSymbols){
+            if(sym instanceof FunctionArgument){
+                const byteSize = getDataTypeByteSize(sym.type);
+                this.stackSymbols.set(sym.uid, new FunctionStackSymbol(sym, byteSize, this.argsByteSize));
+                this.argsByteSize += byteSize;
+            }
+            else {
+                throw new Error("Invalid symbol type");
+            }
+        }
+        
+        for (const [_, sym] of this.localSymbols) {
+            if(sym instanceof DeclaredFunction || sym instanceof LambdaExpression){
+                // declared functions and lambdas are registered to the global context
+                continue;
+            }
+            else if (sym instanceof DeclaredVariable) {
+                // supposed to be unreachable
+                if (sym.annotation == null) {
+                    throw new Error("Declared variable does not have an annotation, it should have been inferred!");
+                }
+
+                const byteSize = getDataTypeByteSize(sym.annotation!);
+                this.stackSymbols.set(sym.uid, new FunctionStackSymbol(sym, byteSize, this.localsByteSize));
+                this.localsByteSize += byteSize;
+            }
+            else {
+                throw new Error("Invalid symbol type");
+            }
+        }
+
+        this.totalByteSize = this.argsByteSize + this.localsByteSize;
+    }
+
+    isSymOnStack(sym: Symbol): boolean {
+        return this.stackSymbols.has(sym.uid);
+    }
+
+
 }

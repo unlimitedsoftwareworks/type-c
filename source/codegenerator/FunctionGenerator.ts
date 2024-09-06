@@ -41,17 +41,17 @@ export class FunctionGenerator  {
     // spilled variables maps
     spills: Map<string, number> = new Map();
 
+    constructor(fn: FunctionGenType, isGlobal: boolean = false) {
+        this.fn = fn;
+        this.isGlobal = isGlobal;
+    }
+    
     generateTmp(): string {
         return "tmp_" + (this.tmpCounter++);
     }
 
     generateLabel(): string {
         return "lbl_" + this.fn.uid + ("_" + this.lblCounter++);
-    }
-    
-    constructor(fn: FunctionGenType, isGlobal: boolean = false) {
-        this.fn = fn;
-        this.isGlobal = isGlobal;
     }
 
     // generates an IR instruction
@@ -61,5 +61,38 @@ export class FunctionGenerator  {
         }
 
         this.instructions.push(new IRInstruction(type, args));
+    }
+
+    srcMapPushLoc(loc: SymbolLocation){
+        this.i("srcmap_push_loc", loc.file, loc.line, loc.col, this.fn.name || "<unknown>");
+    }
+
+    srcMapPopLoc(){
+        this.i("srcmap_pop_loc");
+    }
+
+ 
+    destroyTmp(reg: string) {
+        this.i("destroy_tmp", reg);
+    }
+
+    generate() {
+        // generate IR instructions for the function
+        if (!this.isGlobal) {
+            this.fn.codeGenProps.computeStack();
+        }
+
+        this.srcMapPushLoc(this.fn.location);
+
+        if (!this.isGlobal) {
+            this.i("fn", this.fn.context.uuid);
+        }
+
+        this.i("ret_f32")
+        this.dumpIR();
+    }
+
+    dumpIR() {
+        console.log(this.instructions);
     }
 }
