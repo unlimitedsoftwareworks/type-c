@@ -215,6 +215,7 @@ export type IRInstructionType =
     "ret_f64" |
     "ret_ptr" |
     "ret_void" |
+    "exit_fn" | // since we can now return tuples, we can have multiple returns. Also return values are stored in registers. this logic is used for IR and analysis.
     
     "push_i8" |
     "push_u8" |
@@ -415,5 +416,9 @@ export type IRInstructionType =
     "closure_call" |
     "closure_ret" |
     "set_closure_env" |
-    "get_closure_var"
+    "get_closure_var" |
+
+    // source map instructions
+    "srcmap_push_loc" |
+    "srcmap_pop_loc"
 ;
