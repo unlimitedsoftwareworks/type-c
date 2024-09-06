@@ -151,6 +151,17 @@ export class Context {
         this.symbols.set(symbol.name, symbol);
         symbol.parentContext = this;
 
+        /**
+         * Functions need to be registered to the global context, 
+         * meaning in code gen, when we define a function, we need to 
+         * generate code for it in the global context, and call it 
+         * using its global address.
+         * TODO: figureout what to do with closures
+         */
+        if(symbol instanceof DeclaredFunction || symbol instanceof LambdaExpression) {
+            this.registerToGlobalContext(symbol);
+        }
+
         // check if we need to register to global context
         if (this.globalContext !== null) {
             this.registerToGlobalContext(symbol);
