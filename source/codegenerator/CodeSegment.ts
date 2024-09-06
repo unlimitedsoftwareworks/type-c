@@ -10,7 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { BytecodeInstructionType } from "./BytecodeInstructions";
+import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { DataWriter } from "./DataWriter";
 
 export class CodeSegment {
