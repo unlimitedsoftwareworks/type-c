@@ -130,6 +130,12 @@ export class FunctionCodegenProps {
         this.localsByteSize = 0;
         this.argsByteSize = 0;
 
+        // check if _this is needed
+        if(this._this) {
+            this.argsByteSize += getDataTypeByteSize(this._this.type);
+            this.stackSymbols.set(this._this.uid, new FunctionStackSymbol(this._this, getDataTypeByteSize(this._this.type), this.argsByteSize));
+        }
+
         for(const [_, sym] of this.argSymbols){
             if(sym instanceof FunctionArgument){
                 const byteSize = getDataTypeByteSize(sym.type);
