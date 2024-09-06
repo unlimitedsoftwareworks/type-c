@@ -38,6 +38,8 @@ export class LambdaDefinition extends Symbol {
     body: BlockStatement | null = null;
     context: Context;
 
+    codeGenProps: FunctionCodegenProps;
+
     constructor(location: SymbolLocation, expression: LambdaExpression) {
         let name = "lambda-"+(LambdaDefinition.counter++);
         super(location, "lambda", name);
@@ -49,6 +51,7 @@ export class LambdaDefinition extends Symbol {
         this.expression = expression.expression;
         this.body = expression.body;
         this.context = expression.context;
+        this.codeGenProps = expression.codeGenProps;
     }
 }
 
