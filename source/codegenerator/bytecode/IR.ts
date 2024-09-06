@@ -10,7 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { SymbolLocation } from "../ast/symbol/SymbolLocation";
+import { SymbolLocation } from "../../ast/symbol/SymbolLocation";
 
 export class IRInstruction {
     location: SymbolLocation | null = null;
