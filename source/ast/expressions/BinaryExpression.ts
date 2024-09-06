@@ -93,16 +93,17 @@ export class BinaryExpression extends Expression {
         if(this.operator === "??"){
             if(meta === undefined){
                 // first infer the right hand side
-                let rhsType = this.right.infer(ctx, null);
-                // rhs can be nullable, if the hint is nullable or no hint is present
 
                 let meta: InferenceMeta = {
-                    isWithinNullishCoalescing: true,
-                    fallbackDataType: rhsType
+                    isWithinNullishCoalescing: true
                 }
 
                 // infer the left hand side
                 let leftType = this.left.infer(ctx, null, meta);
+
+
+                let rhsType = this.right.infer(ctx, leftType);
+                // rhs can be nullable, if the hint is nullable or no hint is present
 
 
                 // make sure the types are compatible

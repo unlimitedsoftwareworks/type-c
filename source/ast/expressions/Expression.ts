@@ -24,7 +24,6 @@ import { matchDataTypes } from "../../typechecking/TypeChecking";
  */
 export type InferenceMeta = {
     isWithinNullishCoalescing?: boolean;
-    fallbackDataType?: DataType;
 }
 
 export type ExpressionKind = 
