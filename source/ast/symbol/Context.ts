@@ -272,7 +272,18 @@ export class Context {
             else {
                 let parentScope = this.parent.lookupScope(name);
 
-                if((this.owner != this.parent.owner) && (parentScope !== null)){ 
+                if(parentScope === null){
+                    return null;
+                }
+
+                let symParentFn = parentScope.sym.parentContext?.findParentFunction();
+                let owner = this.findParentFunction();
+                
+                /**
+                 * If the symbol comes from another function, then it is an upvalue
+                 */
+                if(symParentFn !== owner){ 
+                    owner!.codeGenProps.registerUpvalue(parentScope.sym);
                     return {sym: parentScope.sym, scope: "upvalue"};
                 }
                 else {
