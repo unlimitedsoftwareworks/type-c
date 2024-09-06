@@ -72,7 +72,7 @@ export function generateCode(compiler: TypeC.TCCompiler){
 
     // iterate over all packages and register global variables
     for(let [key, value] of compiler.packageBaseContextMap) {
-        console.log(`Registering global variables for ${key}/${value.ctx.parser.lexer.filepath}`);
+        console.log(`Registering global variables for ${key}`);
         generator.registerGlobalVariables(value);
         generator.generateFFI(value);
     }
