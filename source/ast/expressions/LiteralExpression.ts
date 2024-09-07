@@ -39,6 +39,26 @@ export type LiteralKind =
     "null" // null
 ;
 
+function unescapeCString(input: string): string {
+    // Remove surrounding double quotes if they exist
+    if (input.startsWith('"') && input.endsWith('"')) {
+        input = input.substring(1, input.length - 1);
+    }
+
+    // Replace C-style escape sequences
+    return input
+        .replace(/\\n/g, '\n')    // Newline
+        .replace(/\\t/g, '\t')    // Tab
+        .replace(/\\r/g, '\r')    // Carriage return
+        .replace(/\\b/g, '\b')    // Backspace
+        .replace(/\\f/g, '\f')    // Form feed
+        .replace(/\\v/g, '\v')    // Vertical tab
+        .replace(/\\0/g, '\0')    // Null byte
+        .replace(/\\'/g, '\'')    // Single quote
+        .replace(/\\"/g, '"')     // Double quote
+        .replace(/\\\\/g, '\\');  // Backslash
+}
+
 function parseTCInt(number: string): number | bigint {
     let value: number | bigint;
     if (number.startsWith("0b")) {
@@ -137,7 +157,7 @@ export class StringLiteralExpression extends LiteralExpression {
 
     constructor(location: SymbolLocation, value: string){
         super(location, "string_literal");
-        this.value = value;
+        this.value = unescapeCString(value);
     }
 
     infer(ctx: Context, hint: DataType | null = null): DataType {
