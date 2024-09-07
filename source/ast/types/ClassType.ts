@@ -155,6 +155,10 @@ export class ClassType extends DataType {
         globalTypeCache.set(this);
     }
 
+    getClassID(){
+        return this.classId;
+    }
+
     shortname(): string {
         return "class {" + this.methods.map(e => e.shortname()).join(",") + "}";
     }
@@ -258,10 +262,12 @@ export class ClassType extends DataType {
             if (method.imethod.generics.length > 0) {
                 let genericImpl = method.getConcreteGenerics()
                 for (let key in genericImpl) {
+                    genericImpl.get(key)!.indexInClass = allMethods.length;
                     allMethods.push(genericImpl.get(key)!);
                 }
             }
             else {
+                method.indexInClass = allMethods.length;
                 allMethods.push(method);
             }
         }
@@ -649,5 +655,89 @@ export class ClassType extends DataType {
             throw ctx.parser.customError(`Cannot find attribute ${name} in class ${this.shortname()}`, this.location);
         }
         return offsetList[index];
+    }
+
+    /**
+     * Finds a method by name and arguments. Only called during code generation, as
+     * it requires that all method concrete types have been enumerated and generated 
+     * beforehand. First tries to find an exact match, if not found, tries to find a 
+     * compatible one.
+     * 
+     * @param ctx - The context in which to resolve types.
+     * @param name - The name of the method to find.
+     * @param parameters - The parameters to match against the method's parameters.
+     * @param returnType - The return type to match against the method's return type.
+     * @returns The matching method or null if no match is found.
+     */
+    findMethodByNameAndArguments(
+        ctx: Context, 
+        name: string, 
+        parameters: DataType[], 
+        returnType: DataType | null
+    ): [number, ClassMethod] | null {
+        const allMethods = this.getAllMethods();
+
+        // Helper function to check if a method matches the given parameters and return type
+        const matches = (method: ClassMethod, strict: boolean): boolean => {
+            if (method.imethod.name !== name) return false;
+
+            if (method.imethod.header.parameters.length !== parameters.length) return false;
+
+            const allMatch = method.imethod.header.parameters.every((p, i) => {
+                const res = matchDataTypes(ctx, p.type, parameters[i], strict);
+                return res.success;
+            });
+
+            if (!allMatch) return false;
+
+            if (returnType !== null) {
+                if (!returnType.is(ctx, UnsetType) && !method.imethod.header.returnType.is(ctx, UnsetType)) {
+                    const res = matchDataTypes(ctx, returnType, method.imethod.header.returnType, strict);
+                    return res.success;
+                }
+            }
+
+            return true;
+        };
+
+        // First, try to find an exact match
+        for (const [i, method] of allMethods.entries()) {
+            if (matches(method, true)) {
+                return [i, method];
+            }
+        }
+
+        // If no exact match is found, try to find a compatible match
+        for (const [i, method] of allMethods.entries()) {
+            if (matches(method, false)) {
+                return [i, method];
+            }
+        }
+
+        return null;
+    }
+
+    getIndexesForInterfaceMethods(ctx: Context, interfaceType: InterfaceType): number[] {
+        let indexes: number[] = [];
+        for(const [i, method] of interfaceType.getMethods().entries()){
+            
+            let res = this.findMethodByNameAndArguments(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
+            if(res){
+                indexes.push(res[0]);
+            }
+
+        }
+        return indexes;
+    }
+
+
+    getAttributesBlockSize(){
+        let size = 0;
+        for(let attr of this.attributes){
+            // we do not consider static attributes
+            if(attr.isStatic) continue;
+            size += getDataTypeByteSize(attr.type.dereference());
+        }
+        return size;
     }
 }
