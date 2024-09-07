@@ -2441,6 +2441,7 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     
     let fnStatement = new FunctionDeclarationStatement(loc, fn);
     fn.declStatement = fnStatement;
+    ctx.addSymbol(fn);
 
     //ctx.overrideSymbol(proto.name, fn.astNode);
     return fnStatement;
