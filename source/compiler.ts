@@ -76,7 +76,7 @@ export module TypeC {
 
             this.packageBaseContextMap.set(entry, this.basePackage);
 
-            BuiltinModules.getStringClass(this);
+            //BuiltinModules.getStringClass(this);
             //BuiltinModules.getRunnableInterface(this);
             //BuiltinModules.getArrayInterface(this);
 
