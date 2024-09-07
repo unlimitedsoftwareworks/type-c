@@ -87,10 +87,15 @@ export class InterfaceType extends DataType {
         // combine all methods
         let allMethods = this.methods;
         superInterfaces.forEach((superInterface) => {
-            allMethods = allMethods.concat(superInterface.methods);
+            allMethods = allMethods.concat(superInterface.methods.map(e => e.clone({})));
         });
 
         this._allMethods = allMethods;
+
+        // set the index of the method in the interface
+        this._allMethods.forEach((method, index) => {
+            method._indexInInterface = index;
+        });
 
         /**
          * Checking for duplicated methods,
@@ -189,6 +194,18 @@ export class InterfaceType extends DataType {
         return candidates;
     }
 
+    getMethodIndexBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): number {
+        let candidates = this.getMethodBySignature(ctx, name, parameters, returnType);
+        
+        if (candidates.length === 0) {
+            return -1;
+        }
+        if (candidates.length > 1) {
+            throw ctx.parser.customError(`Ambiguous method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in interface ${this.shortname()}`, this.location);
+        }
+        return candidates[0]._indexInInterface;
+    }
+
     allowedNullable(ctx: Context): boolean {
         return true;
     }
@@ -207,18 +224,18 @@ export class InterfaceType extends DataType {
 
         // make sure number of methods is the same
         let interfaceType = originalType.to(ctx, InterfaceType) as InterfaceType;
-        if(this.methods.length != interfaceType.methods.length){
-            throw ctx.parser.customError(`Expected ${interfaceType.methods.length} methods, got ${this.methods.length} instead.`, this.location);
+        if(this._allMethods.length != interfaceType._allMethods.length){
+            throw ctx.parser.customError(`Expected ${interfaceType.methods.length} methods, got ${this._allMethods.length} instead.`, this.location);
         }
 
-        for(let i = 0; i < this.methods.length; i++){
+        for(let i = 0; i < this._allMethods.length; i++){
             // make sure method name is the same
-            if(this.methods[i].name != interfaceType.methods[i].name){
-                throw ctx.parser.customError(`Expected method ${interfaceType.methods[i].name}, got ${this.methods[i].name} instead.`, this.location);
+            if(this._allMethods[i].name != interfaceType.methods[i].name){
+                throw ctx.parser.customError(`Expected method ${interfaceType._allMethods[i].name}, got ${this._allMethods[i].name} instead.`, this.location);
             }
 
             // get generics for the method
-            this.methods[i].header.getGenericParametersRecursive(ctx, interfaceType.methods[i].header, declaredGenerics, typeMap);
+            this._allMethods[i].header.getGenericParametersRecursive(ctx, interfaceType._allMethods[i].header, declaredGenerics, typeMap);
         }
     }
 
@@ -229,17 +246,18 @@ export class InterfaceType extends DataType {
      * @param interface 
      */
     interfacesAlign(obj: InterfaceType): boolean {
-        if(obj.methods.length > this.methods.length){
+        if(obj._allMethods.length > this._allMethods.length){
             return false;
         }
-        for(let i = 0; i < obj.methods.length; i++){
-            if(obj.methods[i].name != this.methods[i].name){
+        // TODO: refactor this to use getMethodIndexBySignature
+        for(let i = 0; i < obj._allMethods.length; i++){
+            if(obj._allMethods[i].name != this._allMethods[i].name){
                 return false;
             }
             // make sure they also match, in terms of prototype
             // here we perform an exact match, maybe a compatible match in the future?
             // TODO: compare with type checking for compatible match instead of exact match
-            let match = obj.methods[i].header.toString() == this.methods[i].header.toString()
+            let match = obj._allMethods[i].header.toString() == this._allMethods[i].header.toString()
             if(!match){
                 return false;
             }
@@ -247,6 +265,37 @@ export class InterfaceType extends DataType {
 
         return true;
     }
+
+    getMethods(): InterfaceMethod[] {
+        return this._allMethods;
+    }
+
+    /**
+     * Returns the number of methods in the interface
+     * @returns 
+     */
+    getMethodsLength(): number {
+        return this._allMethods.length;
+    }
+
+    /**
+     * called when the obj doesn't align with this interface
+     * hence we need to generate offset swaps
+     * @param obj 
+     */
+    generateOffsetSwaps(ctx: Context, obj: InterfaceType) {
+        let swaps: number[] = [];
+        for(let i = 0; i < obj._allMethods.length; i++){
+            let method = obj.methods[i];
+            let index = this.getMethodIndexBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
+            if (index == -1) {
+                throw ctx.parser.customError(`Method ${method.name} not found in interface`, method.location);
+            }
+            swaps.push(index);
+        }
+
+        return swaps;
+        }
 }
 
 export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[]){
