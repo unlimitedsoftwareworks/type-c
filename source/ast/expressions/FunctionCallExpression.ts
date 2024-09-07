@@ -35,6 +35,7 @@ import { FunctionArgument } from "../symbol/FunctionArgument";
 import { ElementExpression } from "./ElementExpression";
 import { VoidType } from "../types/VoidType";
 import { CoroutineType } from "../types/CoroutineType";
+import { InterfaceMethod } from "../other/InterfaceMethod";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -43,6 +44,12 @@ export class FunctionCallExpression extends Expression {
     // capture the state of the operator overload, if any
     // default is not overloaded
     operatorOverloadState: OperatorOverloadState = new OperatorOverloadState();
+
+    // cache of the method in case of method call
+    // applicable class methods and static class method
+    _calledClassMethod: ClassMethod | null = null;
+
+    _calledInterfaceMethod: InterfaceMethod | null = null;
 
     constructor(location: SymbolLocation, lhs: Expression, args: Expression[]) {
         super(location, "function_call");
@@ -67,7 +74,7 @@ export class FunctionCallExpression extends Expression {
 
         if (this.lhs instanceof MemberAccessExpression) {
             let baseExpr = this.lhs.left;
-            let baseExprType = this.lhs.left.infer(ctx, null);
+            let baseExprType = baseExpr.infer(ctx, null);
 
             let memberExpr = this.lhs.right;
 
@@ -86,12 +93,14 @@ export class FunctionCallExpression extends Expression {
                     return returnType;
                 }
             }
+            /*
             else if (baseExprType.is(ctx, PromiseType)) {
                 return this.inferPromise(ctx, baseExprType, memberExpr);
             }
             else if (baseExprType.is(ctx, LockType)) {
                 return this.inferLockMethod(ctx, baseExprType, memberExpr);
             }
+            */
         }
 
         if((this.lhs instanceof ElementExpression) && (this.lhs.typeArguments.length === 0) && (this.lhs.isGenericFunction(ctx))) {
@@ -206,6 +215,11 @@ export class FunctionCallExpression extends Expression {
              * we search for a method matching the signature creating using the given arguments and hint as return type (which might be null)
              */
 
+
+            // TODO:
+            // check if we have only one method with the given name, then we infer arguments based on the method's parameters
+            // else we use the regular logic
+
             let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
@@ -225,6 +239,10 @@ export class FunctionCallExpression extends Expression {
                     throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
             }
+
+            // save the reference to the source method to be used in the code generator
+            this._calledClassMethod = method._sourceMethod;
+
 
             this.inferredType = method.header.returnType;
             this.checkHint(ctx);
@@ -268,6 +286,11 @@ export class FunctionCallExpression extends Expression {
          * similar to classes, interfaces ccan have method overloads but no generics
          */
         let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
+        // TODO:
+        // check if we have only one method with the given name, then we infer arguments based on the method's parameters
+        // else we use the regular logic
+
+
         let candidateMethods = baseInterface.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
         if (candidateMethods.length === 0) {
             throw ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseInterface.shortname()}`, this.location);
@@ -283,6 +306,9 @@ export class FunctionCallExpression extends Expression {
                 throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
             }
         }
+
+        // save the reference to the source method to be used in the code generator
+        this._calledInterfaceMethod = method;
 
         this.inferredType = method.header.returnType;
         this.checkHint(ctx);
@@ -321,6 +347,9 @@ export class FunctionCallExpression extends Expression {
                     throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
             }
+
+            // save the reference to the source method to be used in the code generator
+            this._calledClassMethod = method._sourceMethod;
 
             this.inferredType = method.header.returnType;
             this.checkHint(ctx);
@@ -377,242 +406,6 @@ export class FunctionCallExpression extends Expression {
             return null;
         }
     }
-
-    private inferLockMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression) {
-        /**
-         * There are 3 cases:
-         * 1. lock<T>.request() -> easy, returns promise<T> 
-         * 2. lock<T>.release() -> returns void
-         * 3. lock<U>.withLock<V>(fn(data: U) -> V {}) -> returns promise<V>
-         */
-
-        let baseLock = baseExprType.to(ctx, LockType) as LockType;
-
-        // case 1: lock<T>.request()
-        if (memberExpr.name === "request") {
-            // we make sure the function has no arguments
-            if (this.args.length !== 0) {
-                throw ctx.parser.customError(`Expected 0 arguments, got ${this.args.length}`, this.location);
-            }
-
-            let promiseType = new PromiseType(memberExpr.location, baseLock.returnType);
-            this.inferredType = promiseType;
-        }
-
-        // case 2: lock<T>.release()
-        else if (memberExpr.name === "release") {
-            // we make sure the function has no arguments
-            if (this.args.length !== 0) {
-                throw ctx.parser.customError(`Expected 0 arguments, got ${this.args.length}`, this.location);
-            }
-
-            this.inferredType = new VoidType(memberExpr.location);
-        }
-
-        else if (memberExpr.name === "withLock") {
-            /**
-             * Usage:
-             * let l = lock<U>
-             * l.withLock<V>(fn(data: U) -> V { ... })
-             * 
-             * if a type argument is present, it must the callback return type (which almost must be a promise! so we can chain .then())
-             * if none, we will infer it from the callback (and make sure it is a promise)
-             */
-
-            let typesArgumentsPresent = false;
-            
-            // this is our <U>
-            let lockType: DataType = (baseExprType.to(ctx, LockType) as LockType).returnType;
-            let returnType: DataType | null = null;
-
-            if(memberExpr.typeArguments.length > 0) {
-                typesArgumentsPresent = true;
-
-                // make sure there is only one
-                if (memberExpr.typeArguments.length !== 1) {
-                    throw ctx.parser.customError(`Expected 1 type argument, got ${memberExpr.typeArguments.length}`, memberExpr.location);
-                }
-
-                // make sure the type argument is a promise
-                returnType = memberExpr.typeArguments[0]
-                if(!returnType.is(ctx, PromiseType) && !returnType.is(ctx, VoidType)) {
-                    throw ctx.parser.customError(`Expected promise type argument or void`, memberExpr.location);
-                }
-            }
-
-            // now we make sure this function call is a valid callback function
-            if (this.args.length !== 1) {
-                throw ctx.parser.customError(`Expected 1 argument, got ${this.args.length}`, this.location);
-            }
-
-            let cb = this.args[0];
-
-            if(typesArgumentsPresent) {
-                // we know the return type of the callback, so we infer as function
-                let fnType = new FunctionType(this.location, [new FunctionArgument(this.location, "data", lockType, false)], returnType!);
-                let argType = cb.infer(ctx, fnType);
-                let res = matchDataTypes(ctx, fnType, argType);
-                if (!res.success) {
-                    throw ctx.parser.customError(`Expected ${fnType.shortname()}, got ${argType.shortname()}: ${res.message}`, cb.location);
-                }
-
-                this.inferredType = (argType.to(ctx, FunctionType) as FunctionType).returnType;
-
-                // also make sure the callback argument is the lock type
-                let res2 = matchDataTypes(ctx, lockType, (argType.to(ctx, FunctionType) as FunctionType).parameters[0].type);
-                if (!res2.success) {
-                    throw ctx.parser.customError(`Expected ${lockType.shortname()}, got ${argType.shortname()}: ${res2.message}`, cb.location);
-                }
-
-                this.inferredType = returnType!;
-            }
-            else {
-                // we have to make sure the callback is a function
-                let argType = cb.infer(ctx, null);
-                if (!argType.is(ctx, FunctionType)) {
-                    throw ctx.parser.customError(`Expected function, got ${argType.shortname()}`, cb.location);
-                }
-
-                // make sure the function has one argument
-                let funcType = argType as FunctionType;
-                if (funcType.parameters.length !== 1) {
-                    throw ctx.parser.customError(`Expected 1 argument, got ${funcType.parameters.length}`, cb.location);
-                }
-
-                // make sure it has one argument
-                if(funcType.parameters.length !== 1) {
-                    throw ctx.parser.customError(`Expected 1 argument, got ${funcType.parameters.length}`, cb.location);
-                }
-
-                // make sure parameter is immutable
-                if (funcType.parameters[0].isMutable) {
-                    throw ctx.parser.customError(`Expected immutable argument fall callback function`, cb.location);
-                }
-
-                // the callback input must be the lock type
-                let res = matchDataTypes(ctx, funcType.parameters[0].type, lockType);
-                if (!res.success) {
-                    throw ctx.parser.customError(`Expected ${lockType.shortname()}, got ${funcType.parameters[0].type.shortname()}: ${res.message}`, cb.location);
-                }
-
-                // the callback return type must be a promise or void
-                if(!funcType.returnType.is(ctx, PromiseType) && !funcType.returnType.is(ctx, VoidType)) {
-                    throw ctx.parser.customError(`Expected promise or void return type for callback function`, cb.location);
-                }
-
-                let promiseType = funcType.returnType;
-                this.inferredType = promiseType;
-            }
-        }
-        else {
-            throw ctx.parser.customError(`Method ${memberExpr.name} not found in lock`, this.location);
-        }
-
-        this.checkHint(ctx);
-        return this.inferredType;
-    }
-
-    private inferPromise(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression) {
-        /**
-         * Usage: 
-         * let x: promise<U> = ...
-         * x.then<U, V>(fn(data: U) -> V { .. }).then<V, W>(fn(data: V) -> W { .. }) ...
-         */
-
-        /**
-         * When it comes .then<U, V> (..), the types are not necessarily present, hence we need to infer them
-         */
-
-        let promiseReturnType = (baseExprType.to(ctx, PromiseType) as PromiseType).returnType;
-
-        let typesArgumentsPresent = false;
-        let outputType: DataType | null = null;
-
-        if (memberExpr.typeArguments.length > 0) {
-            typesArgumentsPresent = true;
-
-            // make sure they are two
-            if (memberExpr.typeArguments.length !== 1) {
-                throw ctx.parser.customError(`Expected 1 type arguments, got ${memberExpr.typeArguments.length}`, memberExpr.location);
-            }
-
-            outputType = memberExpr.typeArguments[0];
-            // make sure the type argument is a promise
-            if (!outputType.is(ctx, PromiseType) && !outputType.is(ctx, VoidType)) {
-                throw ctx.parser.customError(`Expected promise type argument or void`, memberExpr.location);
-            }
-        }
-
-        // now we make sure this function call is a valid callback function
-        if (this.args.length !== 1) {
-            throw ctx.parser.customError(`Expected 1 argument, got ${this.args.length}`, this.location);
-        }
-
-        if (typesArgumentsPresent) {
-            // now we expect our call back to be fn(x: inputType) -> outputType
-            // outputType is the return type of the callback
-
-            let callBackExpectedType = new FunctionType(this.location, [new FunctionArgument(this.location, "data", promiseReturnType, false)], outputType!);
-            // make sure the argument matches the callback
-            let argType = this.args[0].infer(ctx, callBackExpectedType);
-            let res = matchDataTypes(ctx, callBackExpectedType, argType);
-            if (!res.success) {
-                throw ctx.parser.customError(`Expected ${callBackExpectedType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[0].location);
-            }
-
-            let fnType = argType.to(ctx, FunctionType) as FunctionType;
-
-            // we also make sure that the argument to the callback function is that wrapped in a promise
-            let res2 = matchDataTypes(ctx, promiseReturnType, fnType.parameters[0].type);
-            if (!res2.success) {
-                throw ctx.parser.customError(`Expected ${promiseReturnType.shortname()}, got ${argType.shortname()}: ${res2.message}`, this.args[0].location);
-            }
-
-            /**
-             * Promise.then() does not necessarily return a promise, it returns the return type of the callback
-             * to chain .then, each must be a promise
-             */
-
-
-            this.inferredType = outputType!;
-        }
-        else {
-            // we infer the callback type
-            // first we make sure the argument is a function
-            let argType = this.args[0].infer(ctx, null);
-            if (!argType.is(ctx, FunctionType)) {
-                throw ctx.parser.customError(`Expected function, got ${argType.shortname()}`, this.args[0].location);
-            }
-
-            // make sure the function has one argument
-            let funcType = argType as FunctionType;
-            if (funcType.parameters.length !== 1) {
-                throw ctx.parser.customError(`Expected 1 argument, got ${funcType.parameters.length}`, this.args[0].location);
-            }
-
-            // make sure parameter is immutable
-            if (funcType.parameters[0].isMutable) {
-                throw ctx.parser.customError(`Expected immutable argument fall callback function`, this.args[0].location);
-            }
-
-            // the callback argument must match the return type of the base promise
-            let res = matchDataTypes(ctx, funcType.parameters[0].type, promiseReturnType);
-            if (!res.success) {
-                throw ctx.parser.customError(`Expected ${promiseReturnType.shortname()}, got ${funcType.parameters[0].type.shortname()}: ${res.message}`, this.args[0].location);
-            }
-
-            // the callback return type must be a promise or void
-            if(!funcType.returnType.is(ctx, PromiseType) && !funcType.returnType.is(ctx, VoidType)) {
-                throw ctx.parser.customError(`Expected promise or void return type for callback function`, this.args[0].location);
-            }
-
-            this.inferredType = funcType.returnType;
-        }
-
-        this.checkHint(ctx);
-        return this.inferredType;
-    }
-
 
     inferCoroutine(ctx: Context, lhsType: DataType): DataType {
         let coroutineType = lhsType.to(ctx, CoroutineType) as CoroutineType;
