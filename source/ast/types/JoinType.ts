@@ -69,12 +69,17 @@ export class JoinType extends DataType {
 
         let methods: InterfaceMethod[] = [];
 
+        // it is important to clone the methods, since they may be used in multiple places
+        // their ID and position in the parent interface is important
+        // so we should not override existing interface methods' data from different
+        // structures, for example, position of the interface method in the interface
+        // is set by the InterfaceType constructor, and we should not override it anywhere else
         for(let method of leftInterface.methods){
-            methods.push(method);
+            methods.push(method.clone({}));
         }
 
         for(let method of rightInterface.methods){
-            methods.push(method);
+            methods.push(method.clone({}));
         }
 
         return methods;
