@@ -523,7 +523,7 @@ export enum BytecodeInstructionType{
      * loop arg1, dest_address: i (8 bytes)
      * jumps to the given address if the value in arg1 is not 0
      */
-    loop,
+    //loop, NOT IN THE VM YET
 
     /**
      * reg_ffi nnameconst-offset-size: i, nameconst-offset: i, id: i (2 bytes),
