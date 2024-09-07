@@ -139,7 +139,20 @@ export class FunctionCodegenProps {
         // check if _this is needed
         if(this._this) {
             this.argsByteSize += getDataTypeByteSize(this._this.type);
-            this.stackSymbols.set(this._this.uid, new FunctionStackSymbol(this._this, getDataTypeByteSize(this._this.type), this.argsByteSize));
+            //this.stackSymbols.set(this._this.uid, new FunctionStackSymbol(this._this, getDataTypeByteSize(this._this.type), this.argsByteSize));
+            // tranform this into an argument and insert it at the beginning of the argSymbols map
+            let arg = new FunctionArgument(this._this.location, "$this", this._this.type, true);
+            arg.uid = this._this.uid;
+            
+            let newMap = new Map();
+            newMap.set(arg.uid, arg);
+            newMap.set(this._this.uid, this._this);
+
+            for(const [_, sym] of this.argSymbols){
+                newMap.set(sym.uid, sym);
+            }
+
+            this.argSymbols = newMap;
         }
 
         for(const [_, sym] of this.argSymbols){
@@ -180,5 +193,12 @@ export class FunctionCodegenProps {
         return this.stackSymbols.has(sym.uid);
     }
 
+    getSymbolStackOffset(symbolId: string) {
+        let symbol = this.stackSymbols.get(symbolId);
+        if(symbol == undefined){
+            throw new Error("Symbol does not exist");
+        }
+        return symbol.offset;
+    }
 
 }
