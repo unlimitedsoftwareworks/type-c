@@ -32,10 +32,8 @@ export class NewExpression extends Expression {
     arguments: Expression[];
 
     // specifies if the class has an init method, or not
-    hasInitMethod: boolean = false;
-    calledInitMethod: InterfaceMethod | null = null;
-
-    _creatingLock = false;
+    _hasInitMethod: boolean = false;
+    _calledInitMethod: InterfaceMethod | null = null;
 
     constructor(location: SymbolLocation, type: DataType, arguments_: Expression[]) {
         super(location, "new");
@@ -70,19 +68,19 @@ export class NewExpression extends Expression {
             let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null)), null, []);
 
             if(initMethod.length === 0) {
-                this.hasInitMethod = false;
-                this.calledInitMethod = null;
+                this._hasInitMethod = false;
+                this._calledInitMethod = null;
             }
             else if(initMethod.length > 1) {
                 throw ctx.parser.customError(`Ambiguous init method found for class ${classType.shortname()} with arguments ${this.arguments.map(a => a.inferredType!.shortname()).join(", ")}`, this.location);
             }
             else {
-                this.hasInitMethod = true;
-                this.calledInitMethod = initMethod[0];
+                this._hasInitMethod = true;
+                this._calledInitMethod = initMethod[0];
                 // init methods are already checked for sanity whithin the ClassType class.
                 // set the hint for our args
                 for(let i = 0; i < this.arguments.length; i++) {
-                    this.arguments[i].setHint(this.calledInitMethod.header.parameters[i].type);
+                    this.arguments[i].setHint(this._calledInitMethod.header.parameters[i].type);
                 }
             }
 
