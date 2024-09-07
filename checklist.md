@@ -55,6 +55,9 @@ This checklist containts only major changes and updates, for minor changes and u
 
 - 5/08/2024:
     - Added destructuring assignment for tuples, structs and arrays.
+- 6/08/2024:
+    - Added `external` attribute to symbols, to mark if a symbol is external or not. Was a bug that resulted in external symbols added to the global context and having their IR generated twice (one from original and one from context that imported it).
+    - Added `getAllMethods` and `buildAllMethods` to `ClassType` to build all methods for a class, including the implemenation of all generic methods static and not.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
