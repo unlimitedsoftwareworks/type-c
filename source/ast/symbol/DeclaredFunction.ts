@@ -197,6 +197,10 @@ export class DeclaredFunction extends Symbol {
         }
 
         inferFunctionHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        // adds imported functions to the global context
+        // and symbols are added to the global context when they are declared anyway if they are functions/lambdas
+        // or global level variables
+        // TODO: keep and eye on this
         ctx.registerToGlobalContext(this);
         this.codeGenProps.reportUnusedSymbols(ctx, this.prototype.header);
         FunctionInferenceCache.pop(this);
