@@ -96,7 +96,7 @@ export class ElementExpression extends Expression {
 
             // case 2 and 3
             if(((variable.prototype.generics.length == 0) && (this.typeArguments.length == 0)) || ((variable.prototype.generics.length > 0) && (this.typeArguments.length == 0))) {
-                let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments, this.inferredArgumentsTypes);
+                let newDecl = variable.infer(ctx, this.typeArguments, this.inferredArgumentsTypes);
                 this.inferredType = newDecl.prototype.header;
 
                 this.checkHint(ctx);
@@ -106,7 +106,7 @@ export class ElementExpression extends Expression {
 
             // case 4
             if((variable.prototype.generics.length > 0) && (this.typeArguments.length > 0) && (this.typeArguments.length === variable.prototype.generics.length)) {
-                let newDecl = variable.declStatement!.symbolPointer.infer(ctx, this.typeArguments);
+                let newDecl = variable.infer(ctx, this.typeArguments);
                 this.inferredType = newDecl.prototype.header;
 
                 this.checkHint(ctx);
