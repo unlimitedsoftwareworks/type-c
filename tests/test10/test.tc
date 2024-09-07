@@ -28,6 +28,23 @@ type Vector2D<T> = class Vector<T> {
     }
 }
 
+fn a(x: u32) {
+    if x == 0 {
+        return x
+    } else {
+        return b(x)
+    }
+}
+
+fn b(x: u32) {
+    if x == 0 {
+        return x
+    } else {
+        return x
+    }
+}
+
+
 fn main() -> i32 {
     let v: Vector2D<i32> = new Vector2D<i32>(3, 4)
     let a = v.length()

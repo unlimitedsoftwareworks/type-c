@@ -67,7 +67,6 @@ export class CodeGenerator {
                     byteSize: 1, // array, each element is 1 byte
                     arrayValue: Array.from(encoder.encode(dynlibName)) as number[]
                 })
-                console.log(`Registering FFI ${dynlibName} with FFI ID ${dynLibID} at constant segment position ${nameConstPos}`);
                 this.bytecodeGenerator.codeSegment.emit(BytecodeInstructionType.reg_ffi, nameConstPos, dynLibID);
             }
         }
@@ -242,7 +241,6 @@ export function generateCode(compiler: TypeC.TCCompiler) {
     generator.generateCallMain(compiler.basePackage!);
 
     for (let [key, value] of compiler.packageBaseContextMap) {
-        console.log(`Generating functions for ${key}`);
         generator.generateFunctions(value);
     }
 
