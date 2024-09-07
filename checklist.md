@@ -106,3 +106,13 @@ fn changeme(mut x: u32){
 let y: u32 = 0
 changeme(y) // doesn't work! compiler needs to get the value back and update
 ```
+
+### Case 3: Duplicate Class methods, generic and non-generic
+```tc
+class A {
+    fn f1<T>(x: T){}
+    fn f1(x: u32){}
+}
+```
+
+and call `new A().f1(0)`, should not have ambiguity, an error should be thrown.
