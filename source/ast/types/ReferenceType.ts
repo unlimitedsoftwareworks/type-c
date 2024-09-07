@@ -109,7 +109,9 @@ export class ReferenceType extends DataType{
             let signature = signatureFromGenerics(this.typeArgs);
 
             if(type.concreteTypes.has(signature)){
-                this.baseType = type.concreteTypes.get(signature)!.clone(map);
+                // TODO: if we clone, the methods are cloned their resulting context is different form 
+                // the original one. Why do we clone?
+                this.baseType = type.concreteTypes.get(signature)!//.clone(map);
                 this.baseDecl = type;
             }
             else {
