@@ -71,6 +71,7 @@ export class FunctionCallExpression extends Expression {
          *  lock.withLock()
          *  promise.then()
          */
+        // first, infer the LHS
 
         if (this.lhs instanceof MemberAccessExpression) {
             let baseExpr = this.lhs.left;
@@ -240,8 +241,15 @@ export class FunctionCallExpression extends Expression {
                 }
             }
 
+
             // save the reference to the source method to be used in the code generator
             this._calledClassMethod = method._sourceMethod;
+
+            // manually set the inferred type of the lhs, since 
+            // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
+            // this is because we do not allow class methods to be used except in a function call context
+            // meaning if only have x.print without (), it results in a property access, hence, failing
+            this.lhs.inferredType = method.header;
 
 
             this.inferredType = method.header.returnType;
