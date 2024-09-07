@@ -34,6 +34,7 @@ export type ContextEnvironment = {
     withinClass: boolean;
     withinFunction: boolean;
     withinLoop: boolean;
+    loopContext: boolean;
 };
 
 type ContextOwner = BasePackage | LambdaExpression | ClassMethod |  DeclaredFunction | null;
@@ -92,6 +93,8 @@ export class Context {
         withinClass: false,
         withinFunction: false,
         withinLoop: false,
+        loopContext: false, // indicates if this context is a loop context, used for break/continue.
+        // only set to true in the context that belongs to a loop and not the subsequent children contexts
     };
 
     /**
@@ -119,12 +122,14 @@ export class Context {
             this.env.withinClass = parent.env.withinClass || false;
             this.env.withinFunction = parent.env.withinFunction || false;
             this.env.withinLoop = parent.env.withinLoop || false;
+            this.env.loopContext = parent.env.loopContext || false;
         }
 
         // override with new env
         this.env.withinClass = env.withinClass || this.env.withinClass;
         this.env.withinFunction = env.withinFunction || this.env.withinFunction;
         this.env.withinLoop = env.withinLoop || this.env.withinLoop;
+        this.env.loopContext = env.loopContext || this.env.loopContext;
     }
 
     setOwner(owner: ContextOwner) {
@@ -398,5 +403,20 @@ export class Context {
 
             this.globalContext.registerSymbol(sym);
         }
+    }
+
+    getInnerLoopContext(): Context | null {
+        if(this.env.loopContext){
+            return this;
+        }
+        if(this.parent){
+            return this.parent.getInnerLoopContext();
+        }
+        return null;
+    }
+
+    // code generation
+    generateEndOfContextLabel(): string {
+        return "end_ctx_" + this.uuid;
     }
 }
