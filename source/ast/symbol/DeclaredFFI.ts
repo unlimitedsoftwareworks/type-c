@@ -28,5 +28,13 @@ export class DeclaredFFI extends Symbol {
         this.name = name;
         this.sharedObjectName = sharedObjectName;
         this.methods = methods;
+
+        this.methods.forEach((method) => {
+            method.parentFFI = this;
+        });
+    }
+
+    getMethodIndex(methodName: string): number {
+        return this.methods.findIndex((method) => method.imethod.name === methodName);
     }
 }
