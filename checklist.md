@@ -116,3 +116,46 @@ class A {
 ```
 
 and call `new A().f1(0)`, should not have ambiguity, an error should be thrown.
+
+### Allowing for class methods to be used as first class citizens
+
+If we somehow convert class methods into closures, we can allow for class methods to be used as fuctions, first class citizens.
+
+```
+class x {
+    let x = 1
+
+    fn addSomething(y: u32) {
+        x += y
+    }
+}
+```
+
+We transform `addSomething` into a closure, requiring `this` as an upvalue, meaning compiled code is 
+something as follows:
+
+```
+class x {
+    fn __compiler_init__() {
+        this = new X()
+        x.addSomething = fn(y: u32) {
+            this.x += y
+        }
+
+        return x
+    }
+}
+```
+
+Hence making `x.addSomething(1)` a method that is bound to the instance of the class.
+
+Even better, if we can add syntatic sugar to allow such things, because closures comes with overhead.
+
+```
+class x {
+    let x = 1
+
+    @closure
+    fn addSomething(y: u32) {
+    }
+}
