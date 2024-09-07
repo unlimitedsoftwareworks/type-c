@@ -24,11 +24,24 @@ export class IfElseExpression extends Expression {
     bodies: Expression[];
     elseBody: Expression;
 
+    /**
+     * A list of unique identifiers for each condition, used for conditional jumps
+     * by the code generator
+     */
+    conditionsUIDs: string[];
+    
+    // static counter for the unique identifiers of the conditions labels
+    static conditionsUIDCounter: number = 0;
+
     constructor(location: SymbolLocation, conditions: Expression[], bodies: Expression[], elseBody: Expression) {
         super(location, "if_else");
         this.conditions = conditions;
         this.bodies = bodies;
         this.elseBody = elseBody;
+
+        this.conditionsUIDs = conditions.map(() => {
+            return "iec_" + IfElseExpression.conditionsUIDCounter++;
+        });
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
