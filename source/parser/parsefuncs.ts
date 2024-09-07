@@ -2279,6 +2279,8 @@ function parseStatementWhile(parser: Parser, ctx: Context): WhileStatement {
     parser.expect("while");
     let expression = parseExpression(parser, ctx);
     let statement = parseStatementBlock(parser, ctx, true);
+    // mark the statement block as a loop context
+    statement.context.env.loopContext = true;
     return new WhileStatement(loc, expression, statement);
 }
 
@@ -2286,6 +2288,8 @@ function parseStatementDo(parser: Parser, ctx: Context): DoWhileStatement {
     let loc = parser.loc();
     parser.expect("do");
     let statement = parseStatementBlock(parser, ctx, true);
+    // mark the statement block as a loop context
+    statement.context.env.loopContext = true;
     parser.expect("while");
     let expression = parseExpression(parser, ctx);
 
@@ -2333,7 +2337,7 @@ function parseStatementFor(parser: Parser, ctx: Context): ForStatement {
     }
 
     let body = parseStatementBlock(parser, newScope);
-
+    // mark the statement block as a loop context
     return new ForStatement(loc, newScope, initializers, condition, incrementors, body);
 }
 
@@ -2345,6 +2349,8 @@ function parseStatementForEach(parser: Parser, ctx: Context): ForeachStatement {
     parser.expect("in");
     let expression = parseExpression(parser, ctx);
     let body = parseStatementBlock(parser, ctx);
+    // mark the statement block as a loop context
+    body.context.env.loopContext = true;
     //return new ForeachStatement(loc, ctx, name, expression, body);
     throw parser.error("Not implemented", loc, 1);
 }
