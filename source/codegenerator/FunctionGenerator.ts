@@ -75,11 +75,13 @@ import { NullableType } from "../ast/types/NullableType";
 import { StructType } from "../ast/types/StructType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
+import { VoidType } from "../ast/types/VoidType";
 import { canCastTypes } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
 import { arrayGetIndexType, arraySetIndexType, classGetFieldType, classSetFieldType, constType, fnSetArgType, getBinaryInstruction, getUnaryInstruction, globalType, popStackType, pushStackType, retType, structGetFieldType, structSetFieldType, tmpType } from "./CodeGenTypes";
+import { allocateRegisters } from "./RegisterAllocator";
 import { getDataTypeByteSize } from "./utils";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
@@ -230,6 +232,8 @@ export class FunctionGenerator {
 
         this.srcMapPushLoc(this.fn.location);
 
+
+        this.i("debug", "fn " + this.fn.context.uuid+ ":"+this.fn.name);
         if (!this.isGlobal) {
             this.i("fn", this.fn.context.uuid);
         }
@@ -255,8 +259,29 @@ export class FunctionGenerator {
             this.srcMapPopLoc();
         }
 
-    
+
         this.dumpIR();
+        this.allocateRegisters();
+    
+    }
+
+    allocateRegisters(){
+        // allocate registers
+        //this.instructions = this.instructions.filter((i) => !i.type.startsWith("debug") && !i.type.startsWith("srcmap"));
+        //this.instructions = this.instructions.filter((i) => !i.type.startsWith("srcmap"));
+        //this.instructions = instructions;
+        //console.log(this.instructions.map(e => e.toString()).join("\n"))
+        let {coloring, spills, instructions} = allocateRegisters(this.fn.codeGenProps, this.instructions);
+        this.instructions = instructions;
+        this.applyColoring(coloring);
+        this.applySpills(spills);
+    }
+    applyColoring(coloring: Map<string, number>){
+        this.coloring = coloring
+    }
+
+    applySpills(spills: Map<string, number>){
+        this.spills = spills
     }
 
     /**
@@ -276,32 +301,30 @@ CastExpression			IfElseExpression			LetInExpression			NewExpression			TupleDecon
 CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			NullableMemberAccessExpression	UnaryExpression
          */
         if (expr instanceof ArrayConstructionExpression) tmp = this.visitArrayConstructionExpression(expr, ctx);
-        if (expr instanceof ElementExpression) tmp = this.visitElementExpression(expr, ctx);
-        if (expr instanceof IndexAccessExpression) tmp = this.visitIndexAccessExpression(expr, ctx);
-        if (expr instanceof IndexSetExpression) tmp = this.visitIndexSetExpression(expr, ctx);
-        if (expr instanceof MatchExpression) tmp = this.visitMatchExpression(expr, ctx);
-        if (expr instanceof UnnamedStructConstructionExpression) tmp = this.visitUnnamedStructConstructionExpression(expr, ctx);
-        if (expr instanceof InstanceCheckExpression) tmp = this.visitInstanceCheckExpression(expr, ctx);
-        if (expr instanceof MemberAccessExpression) tmp = this.visitMemberAccessExpression(expr, ctx);
-        if (expr instanceof ThisExpression) tmp = this.visitThisExpression(expr, ctx);
-        if (expr instanceof BinaryExpression) tmp = this.visitBinaryExpression(expr, ctx);
-        if (expr instanceof FunctionCallExpression) tmp = this.visitFunctionCallExpression(expr, ctx);
-        if (expr instanceof LambdaExpression) tmp = this.visitLambdaExpression(expr, ctx);
-        if (expr instanceof NamedStructConstructionExpression) tmp = this.visitNamedStructConstructionExpression(expr, ctx);
-        if (expr instanceof TupleConstructionExpression) tmp = this.visitTupleConstructionExpression(expr, ctx);
-        if (expr instanceof TupleDeconstructionExpression) tmp = this.visitTupleDeconstructionExpression(expr, ctx);
-        if (expr instanceof CastExpression) tmp = this.visitCastExpression(expr, ctx);
-        if (expr instanceof IfElseExpression) tmp = this.visitIfElseExpression(expr, ctx);
-        if (expr instanceof LetInExpression) tmp = this.visitLetInExpression(expr, ctx);
-        if (expr instanceof NewExpression) tmp = this.visitNewExpression(expr, ctx);
-        if (expr instanceof CoroutineConstructionExpression) tmp = this.visitCoroutineConstructionExpression(expr, ctx);
-        if (expr instanceof LiteralExpression) tmp = this.visitLiteralExpression(expr, ctx);
-        if (expr instanceof NullableMemberAccessExpression) tmp = this.visitNullableMemberAccessExpression(expr, ctx);
-        if (expr instanceof UnaryExpression) tmp = this.visitUnaryExpression(expr, ctx);
-
-        if (tmp == "") {
-            throw new Error("Invalid expression " + expr.toString());
-        }
+        else if (expr instanceof ElementExpression) tmp = this.visitElementExpression(expr, ctx);
+        else if (expr instanceof IndexAccessExpression) tmp = this.visitIndexAccessExpression(expr, ctx);
+        else if (expr instanceof IndexSetExpression) tmp = this.visitIndexSetExpression(expr, ctx);
+        else if (expr instanceof MatchExpression) tmp = this.visitMatchExpression(expr, ctx);
+        else if (expr instanceof UnnamedStructConstructionExpression) tmp = this.visitUnnamedStructConstructionExpression(expr, ctx);
+        else if (expr instanceof InstanceCheckExpression) tmp = this.visitInstanceCheckExpression(expr, ctx);
+        else if (expr instanceof MemberAccessExpression) tmp = this.visitMemberAccessExpression(expr, ctx);
+        else if (expr instanceof ThisExpression) tmp = this.visitThisExpression(expr, ctx);
+        else if (expr instanceof BinaryExpression) tmp = this.visitBinaryExpression(expr, ctx);
+        else if (expr instanceof FunctionCallExpression) tmp = this.visitFunctionCallExpression(expr, ctx);
+        else if (expr instanceof LambdaExpression) tmp = this.visitLambdaExpression(expr, ctx);
+        else if (expr instanceof NamedStructConstructionExpression) tmp = this.visitNamedStructConstructionExpression(expr, ctx);
+        else if (expr instanceof TupleConstructionExpression) tmp = this.visitTupleConstructionExpression(expr, ctx);
+        else if (expr instanceof TupleDeconstructionExpression) tmp = this.visitTupleDeconstructionExpression(expr, ctx);
+        else if (expr instanceof CastExpression) tmp = this.visitCastExpression(expr, ctx);
+        else if (expr instanceof IfElseExpression) tmp = this.visitIfElseExpression(expr, ctx);
+        else if (expr instanceof LetInExpression) tmp = this.visitLetInExpression(expr, ctx);
+        else if (expr instanceof NewExpression) tmp = this.visitNewExpression(expr, ctx);
+        else if (expr instanceof CoroutineConstructionExpression) tmp = this.visitCoroutineConstructionExpression(expr, ctx);
+        else if (expr instanceof LiteralExpression) tmp = this.visitLiteralExpression(expr, ctx);
+        else if (expr instanceof NullableMemberAccessExpression) tmp = this.visitNullableMemberAccessExpression(expr, ctx);
+        else if (expr instanceof UnaryExpression) tmp = this.visitUnaryExpression(expr, ctx);
+        else throw new Error("Invalid expression " + expr.toString());
+        
 
         if ((tmp != "")) {
             let inferredType = expr.inferredType?.dereference();
@@ -381,7 +404,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
     }
 
     visitIndexAccessExpression(expr: IndexAccessExpression, ctx: Context): string {
-        let inferredType = expr.inferredType!;
+        let inferredType = expr.lhs.inferredType!.dereference();
         if (inferredType.is(ctx, ArrayType)) {
             let arrayType = inferredType.to(ctx, ArrayType) as ArrayType;
 
@@ -1045,7 +1068,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
                 // check if the function returns a value
                 let hasReturn = true;
-                if ((expr.inferredType instanceof BasicType) && (expr.inferredType.kind == "void")) {
+                if ((expr.inferredType instanceof VoidType)) {
                     hasReturn = false;
                 }
 
@@ -1063,7 +1086,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 let reg = this.visitExpression(expr.lhs, ctx);
                 // check if the function returns a value
                 let hasReturn = true;
-                if ((expr.inferredType instanceof BasicType) && (expr.inferredType.kind == "void")) {
+                if ((expr.inferredType instanceof VoidType)) {
                     hasReturn = false;
                 }
 
@@ -1088,6 +1111,8 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
             let baseType = baseExpression.left.inferredType?.dereference();
             if (baseType instanceof ClassType) {
                 let classType = baseType as ClassType;
+                classType.buildAllMethods();
+
                 let baseClass = baseExpression.left;
                 let accessElement = (baseExpression.right as ElementExpression).name;
 
@@ -1120,7 +1145,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                     }
 
                     let hasReturn = true;
-                    if ((expr.inferredType instanceof BasicType) && (expr.inferredType.kind == "void")) {
+                    if ((expr.inferredType instanceof VoidType)) {
                         hasReturn = false;
                     }
 
@@ -1197,7 +1222,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                     }
 
                     let hasReturn = true;
-                    if ((expr.inferredType?.dereference() instanceof BasicType) && (expr.inferredType?.dereference()!.kind == "void")) {
+                    if ((expr.inferredType?.dereference() instanceof VoidType)) {
                         hasReturn = false;
                     }
 
@@ -1274,7 +1299,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 }
 
                 let hasReturn = true;
-                if ((expr.inferredType?.dereference() instanceof BasicType) && (expr.inferredType?.dereference()!.kind == "void")) {
+                if ((expr.inferredType?.dereference() instanceof VoidType)) {
                     hasReturn = false;
                 }
 
@@ -1344,7 +1369,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                     }
 
                     let hasReturn = true;
-                    if ((expr.inferredType instanceof BasicType) && (expr.inferredType.kind == "void")) {
+                    if ((expr.inferredType instanceof VoidType)) {
                         hasReturn = false;
                     }
 
@@ -1449,7 +1474,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
 
             let hasReturn = true;
-            if ((expr.inferredType instanceof BasicType) && (expr.inferredType.kind == "void")) {
+            if ((expr.inferredType instanceof VoidType)) {
                 hasReturn = false;
             }
 
@@ -2394,10 +2419,10 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
     dumpIR() {
         for(let [i, inst] of this.instructions.entries()){
-            if(inst.type == "debug") {
-                continue
-            }
-            console.log(`[${i}] ${inst.type} ${inst.args.join(",")}`);
+            //if(inst.type == "debug") {
+            //    continue
+            //}
+            // console.log(`[${i}] ${inst.type} ${inst.args.join(",")}`);
         }
     }
 }
