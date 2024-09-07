@@ -176,6 +176,7 @@ export class Context {
     // adds a symbol to the current context, but does not set the parent context
     // i.e does not take ownership of the symbol
     addExternalSymbol(symbol: Symbol, name: string) {
+        symbol.external = true;
         this.symbols.set(name, symbol);
     }
 
@@ -267,7 +268,12 @@ export class Context {
             if(this.findParentFunction() === null){
                 // we are in the global scope
                 // register the global variable
-                this.registerToGlobalContext(symbol);
+
+                if(!symbol.external){
+                    this.registerToGlobalContext(symbol);
+                }
+
+                
                 return {sym: symbol, scope: "global"};
             }
             else {

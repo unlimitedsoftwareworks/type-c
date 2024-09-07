@@ -31,6 +31,7 @@ export class Symbol {
     kind: SymbolKind;
     name: string;
     parentContext: Context | null = null;
+    external: boolean = false;
     
     // the parent context will set the UID of the symbol
     uid: string = "";
