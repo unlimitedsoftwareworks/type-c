@@ -76,9 +76,13 @@ export module TypeC {
 
             this.packageBaseContextMap.set(entry, this.basePackage);
 
-            //BuiltinModules.getStringClass(this);
+            //et sym = BuiltinModules.getStringClass(this);
             //BuiltinModules.getRunnableInterface(this);
             //BuiltinModules.getArrayInterface(this);
+            
+            // add built-in symbols
+
+            BuiltinModules.getStringClass(this);
 
             for(let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
