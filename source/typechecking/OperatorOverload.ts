@@ -102,10 +102,7 @@ export function matchCall(ctx: Context, method: InterfaceMethod, exprList: Expre
  */
 export function setBinaryOverrideMethodHint(ctx: Context, lhs: DataType, rhs: DataType, method: InterfaceMethod, expr: BinaryExpression) {
     expr.right.setHint(method.header.parameters[0].type);
-
-    // TODO:
-    //expr.isMethodCall = true;
-    //expr.methodRef = method;
+    expr.operatorOverloadState.setMethodRef(method)
     return method.header.returnType;
 }
 
@@ -120,9 +117,7 @@ export function setBinaryOverrideMethodHint(ctx: Context, lhs: DataType, rhs: Da
  * @returns 
  */
 export function setUnaryOverrideMethodHint(ctx: Context, uhs: DataType, method: InterfaceMethod, expr: UnaryExpression) {
-    // TODO:
-    // expr.isMethodCall = true;
-    // expr.methodRef = method;
+    expr.operatorOverloadState.setMethodRef(method)
     return method.header.returnType;
 }
 
