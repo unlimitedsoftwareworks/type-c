@@ -14,12 +14,14 @@
 
 import { InterfaceMethod } from "../other/InterfaceMethod";
 import { Context } from "../symbol/Context";
+import { DeclaredFFI } from "../symbol/DeclaredFFI";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType";
 import { GenericType } from "./GenericType";
 
 export class FFIMethodType extends DataType {
     // reuse the interface method class
+    parentFFI: DeclaredFFI | null = null;
     imethod: InterfaceMethod;
 
     constructor(location: SymbolLocation, imethod: InterfaceMethod) {
