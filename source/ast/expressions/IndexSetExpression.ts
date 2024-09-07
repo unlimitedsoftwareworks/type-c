@@ -21,6 +21,7 @@ import { ClassType } from "../types/ClassType";
 import { getOperatorOverloadType, isIndexSettable, setIndexesHint, setIndexesSetHint } from "../../typechecking/OperatorOverload";
 import { ArrayType } from "../types/ArrayType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { BasicType } from "../types/BasicType";
 
 export class IndexSetExpression extends Expression {
     lhs: Expression;
@@ -78,6 +79,17 @@ export class IndexSetExpression extends Expression {
             let res = matchDataTypes(ctx, arrayType.arrayOf, valueType);
             if(!res.success) {
                 throw ctx.parser.customError(`Type mismatch in array index set: ${res.message}`, this.location);
+            }
+
+            // infer the type of the index
+            let indexType = this.indexes[0].infer(ctx, null);
+            if(!indexType.is(ctx, BasicType)) {
+                throw ctx.parser.customError(`Array index must be of type int, got ${indexType.shortname()}`, this.location);
+            }
+            
+            let basicIndexType = indexType.to(ctx, BasicType) as BasicType;
+            if(["u8", "u16", "u32", "u64"].indexOf(basicIndexType.kind) == -1) {
+                throw ctx.parser.customError(`Array index must be of type int, got ${basicIndexType.kind}`, this.location);
             }
         }
         else {
