@@ -49,6 +49,10 @@ export class ClassType extends DataType {
     static classCounter = 0;
     classId = ClassType.classCounter++;
 
+    // used after parsing and analysis and prior to code gen
+    // contains all methods, with all concrete types etc
+    _allMethods: ClassMethod[] = [];
+
     constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[]) {
         super(location, "class");
         this.superTypes = superTypes;
@@ -252,11 +256,7 @@ export class ClassType extends DataType {
     }
 
 
-    /**
-     * Returns All methods present in the class, generic methods are replaced with
-     * their implementation.
-     */
-    getAllMethods() {
+    buildAllMethods() {
         let allMethods: ClassMethod[] = [];
         for (const method of this.methods) {
             if (method.imethod.generics.length > 0) {
@@ -271,8 +271,19 @@ export class ClassType extends DataType {
                 allMethods.push(method);
             }
         }
+        this._allMethods = allMethods;
+    }
 
-        return allMethods;
+    /**
+     * Returns All methods present in the class, generic methods are replaced with
+     * their implementation.
+     */
+    getAllMethods() {
+        if(this._allMethods.length === 0) {
+            this.buildAllMethods();
+        }
+
+        return this._allMethods;
     }
 
     /**
