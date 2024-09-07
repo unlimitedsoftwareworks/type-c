@@ -54,7 +54,7 @@ export class ClassMethod extends Symbol {
     /**
      * Code gen properties
      */
-    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
+    codeGenProps: FunctionCodegenProps
 
     constructor(location: SymbolLocation, context: Context, imethod: InterfaceMethod, body: BlockStatement | null, expression: Expression | null) {
         super(location, "class_method", imethod.name);
@@ -64,7 +64,7 @@ export class ClassMethod extends Symbol {
         this.body = body;
         this.expression = expression;
 
-
+        this.codeGenProps = new FunctionCodegenProps(imethod.header);
         /**
          * Mark this method as the owner of the context
          */

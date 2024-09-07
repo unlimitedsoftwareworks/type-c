@@ -74,7 +74,7 @@ export class LambdaExpression extends Expression {
     /**
      * Code gen properties
      */
-    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
+    codeGenProps: FunctionCodegenProps
 
     constructor(location: SymbolLocation, newContext: Context, header: FunctionType, body: BlockStatement | null, expression: Expression | null) {
         super(location, "lambda");
@@ -85,6 +85,8 @@ export class LambdaExpression extends Expression {
         // configure the context
         this.context = newContext;
         this.context.setOwner(this);
+        
+        this.codeGenProps = new FunctionCodegenProps(header);
 
         // add the parameters to the context
         for (let i = 0; i < header.parameters.length; i++) {

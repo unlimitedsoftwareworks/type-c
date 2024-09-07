@@ -11,6 +11,7 @@
  */
 
 import { LambdaExpression } from "../ast/expressions/LambdaExpression";
+import { FunctionPrototype } from "../ast/other/FunctionPrototype";
 import { Context } from "../ast/symbol/Context";
 import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
@@ -55,6 +56,8 @@ export class FunctionCodegenProps {
      */
     _this: FunctionArgument | null = null;
 
+    parentFnType: FunctionType | null = null;
+
 
     // symbols as defined in the stack, filled during code gen
     stackSymbols: Map<string, FunctionStackSymbol> = new Map();
@@ -62,8 +65,11 @@ export class FunctionCodegenProps {
     argsByteSize: number = 0;
     totalByteSize: number = 0;
 
-    constructor() {
+    constructor(proto?: FunctionType) {
         // nothing todo here yet
+        if(proto) {
+            this.parentFnType = proto;
+        }
     }
 
     /**

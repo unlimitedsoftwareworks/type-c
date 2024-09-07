@@ -52,7 +52,7 @@ export class DeclaredFunction extends Symbol {
     /**
      * Code gen properties
      */
-    codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
+    codeGenProps: FunctionCodegenProps
 
 
     constructor(location: SymbolLocation, context: Context, prototype: FunctionPrototype, expression: Expression | null, body: BlockStatement | null) {
@@ -62,6 +62,8 @@ export class DeclaredFunction extends Symbol {
         this.body = body;
         this.context = context;
 
+        this.codeGenProps = new FunctionCodegenProps(prototype.header);
+        
         // add the function to the context
         context.setOwner(this);
 
