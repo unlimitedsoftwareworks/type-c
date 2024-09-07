@@ -1,0 +1,33 @@
+
+
+fn abs(x: i32) -> i32 {
+    if(x < 0) {
+        return -x
+    }
+    return x
+}
+
+type Vector<T> = interface {
+    fn length() -> T
+}
+
+type Vector2D<T> = class Vector<T> {
+    let x: T
+    let y: T
+
+    fn init(x: T, y: T) {
+        this.x = x
+        this.y = y
+    }
+
+
+    fn length() -> T {
+        return this.x + this.y
+    }
+}
+
+fn test() {
+    let v: Vector2D<i32> = new Vector2D<i32>(3, 4)
+    let a = v.length()
+}
+    

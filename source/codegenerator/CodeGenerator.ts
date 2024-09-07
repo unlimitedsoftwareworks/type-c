@@ -1,15 +1,17 @@
 import { BasePackage } from "../ast/BasePackage";
-import { ClassMethod } from "../ast/other/ClassMethod";
 import { DeclaredFFI } from "../ast/symbol/DeclaredFFI";
 import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
 import { DeclaredType } from "../ast/symbol/DeclaredType";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { ClassType } from "../ast/types/ClassType";
 import { TypeC } from "../compiler";
+import { ControlFlowGraph } from "./analysis/ControlFlowGraph";
 import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
+import { IRInstruction } from "./bytecode/IR";
 import { BytecodeGenerator } from "./BytecodeGenerator";
 import { FunctionGenerator } from "./FunctionGenerator";
-
+import * as path from "path"
+import * as fs from "fs"
 
 export class CodeGenerator {
     functions: Map<string, FunctionGenerator> = new Map();
@@ -117,6 +119,32 @@ export class CodeGenerator {
         }
     }
 
+    generateCFG(){
+        let funcs: FunctionGenerator[] = []
+        this.functions.forEach((fn) => {
+            funcs.push(fn);
+        });
+        let cfg = new ControlFlowGraph(funcs);
+        return cfg.generateDotGraph();
+    }
+
+    dump(save_debug=false) {
+        // save the instructions to a file
+        let dir = "./output/ir.txt";
+        
+        // join all functions into one array
+        let all: IRInstruction[] = [];
+        this.functions.forEach((fn) => {
+            all = all.concat(fn.instructions);
+        });
+
+        fs.writeFileSync(dir, all.map((inst) => {
+            if(inst.type == "debug" && !save_debug) return "";
+            if(inst.type == "srcmap_push_loc") return "";
+            if(inst.type == "srcmap_pop_loc") return "";
+            return inst.toString();
+        }).filter(str => str != "").join("\n"));
+    }
 }
 
 export function generateCode(compiler: TypeC.TCCompiler) {
@@ -128,9 +156,34 @@ export function generateCode(compiler: TypeC.TCCompiler) {
         generator.registerGlobalVariables(value);
         console.log(`Generating FFI for ${key}`);
         generator.generateFFI(value);
+
+        // generator.generateGlobalScope(value)
+    }
+
+    for(let [key, value] of compiler.packageBaseContextMap){
         console.log(`Generating functions for ${key}`);
         generator.generateFunctions(value);
     }
 
-    console.log(generator.functions);
+    if(compiler.options.generateIR){
+        generator.dump(true);
+        let data = generator.generateCFG();
+        //toFile(data, path.join(compiler.options.outputFolder || ".",'graph.png'), { format: 'png' });
+
+        data.forEach((d) => {
+            let basedir = path.join(compiler.options.outputFolder || ".", "ir")
+
+            let dir = path.join(basedir, d.name+".dot");
+            let folder = path.dirname(dir);
+
+            if (!fs.existsSync(folder)){
+                fs.mkdirSync(folder, { recursive: true });
+            }
+
+            fs.writeFileSync(dir, d.graph);
+        })
+        
+        
+        //console.log("IR generated")
+    }
 }
