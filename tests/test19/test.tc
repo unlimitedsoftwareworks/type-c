@@ -19,9 +19,11 @@ type CustomStruct = {name: String, age: u32, data: struct {
     x: u32, y: u32
 }?}
 
-fn callMe() {
-    return 1 as u32
+fn callMe<T>(x: T) {
+    return 1 as T
 }
+
+let zzz = callMe(1 as u32)
 
 let z : CustomStruct? = {name: "Brian", age: 13, data: null}
 
