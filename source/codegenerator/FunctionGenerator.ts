@@ -63,6 +63,7 @@ import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { VariablePattern } from "../ast/symbol/VariablePattern";
 import { ArrayType } from "../ast/types/ArrayType";
 import { BasicType } from "../ast/types/BasicType";
+import { BooleanType } from "../ast/types/BooleanType";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { EnumType } from "../ast/types/EnumType";
@@ -233,7 +234,28 @@ export class FunctionGenerator {
             this.i("fn", this.fn.context.uuid);
         }
 
-        this.i("ret_f32")
+        if(this.fn.body) {
+            this.visitStatement(this.fn.body, this.fn.context);
+            if(!this.instructions[this.instructions.length - 1].type.startsWith("ret") && !this.isGlobal) {
+                this.i("ret_void")
+            }
+        }
+        else {
+            this.srcMapPushLoc(this.fn.location);
+            let tmp = this.visitExpression(this.fn.expression!, this.fn.context);
+            // check if the function is not void
+            if((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")){
+                let instr = retType(this.fn.context, this.fn.codeGenProps.parentFnType.returnType);
+                this.i(instr, tmp);
+            }
+            else {
+                this.destroyTmp(tmp);
+                this.i("ret_void");
+            }
+            this.srcMapPopLoc();
+        }
+
+    
         this.dumpIR();
     }
 
@@ -878,7 +900,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
         }
 
 
-        if (!(expr.inferredType instanceof BasicType)) {
+        if (!(expr.inferredType instanceof BasicType) && !(expr.inferredType instanceof BooleanType)) {
             throw ctx.parser.customError("Binary operation " + expr.operator + " is not yet implemented for " + expr.inferredType?.shortname(), expr.location);
         }
 
@@ -1863,7 +1885,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
             // last call the constructor
             let constructor = expr._calledInitMethod;
             if (constructor != null) {
-                let constructorIndex = constructor._sourceMethod?.indexInClass || -1;
+                let constructorIndex = constructor._sourceMethod?.indexInClass ?? -1;
 
                 if (constructorIndex == -1) {
                     throw new Error("Constructor not found in class");
@@ -2137,9 +2159,9 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
     visitBlockStatement(stmt: BlockStatement, ctx: Context) {
         this.i("debug", "Entering block " + stmt.context.uuid);
-        stmt.statements.forEach((s) => {
+        for(const [i, s] of stmt.statements.entries()){
             this.visitStatement(s, stmt.context);
-        });
+        }
         this.i("debug", "Exiting block " + stmt.context.uuid);
     }
     visitBreakStatement(stmt: BreakStatement, ctx: Context) {
@@ -2371,6 +2393,11 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
 
     dumpIR() {
-        console.log(this.instructions);
+        for(let [i, inst] of this.instructions.entries()){
+            if(inst.type == "debug") {
+                continue
+            }
+            console.log(`[${i}] ${inst.type} ${inst.args.join(",")}`);
+        }
     }
 }
