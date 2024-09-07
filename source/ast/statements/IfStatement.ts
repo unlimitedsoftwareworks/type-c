@@ -22,6 +22,13 @@ import { Statement } from "./Statement";
 export class IfStatement extends Statement {
     ifBlocks: {expression: Expression, statement: BlockStatement}[];
     elseBody: BlockStatement | null;
+    
+
+    // code generation
+    static _endOfBlockLabelCounter: number = 0;
+    _endOfBlockLabel: string = `eoif-${IfStatement._endOfBlockLabelCounter++}`;
+
+
 
     constructor(location: SymbolLocation, ifBlocks: {expression: Expression, statement: BlockStatement}[], elseBody: BlockStatement | null){
         super(location, "ifelse");
