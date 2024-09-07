@@ -127,7 +127,7 @@ export class ReferenceType extends DataType{
                     this.baseType = type.type.clone(map);
                     this.baseDecl = type;
                 }
-
+                this.baseType.resolve(ctx);
                 type.concreteTypes.set(signature, this.baseType);
             }
         }
