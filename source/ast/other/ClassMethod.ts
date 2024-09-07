@@ -48,6 +48,8 @@ export class ClassMethod extends Symbol {
 
     private _wasInferred: boolean = false;
 
+    indexInClass: number = -1;
+
 
     /**
      * Code gen properties
@@ -88,6 +90,7 @@ export class ClassMethod extends Symbol {
          * While being a symbol, a class method is actually not added to any Context, hence its ID is not set
          */
         this.uid = 'm-'+InterfaceMethod.getMethodUID(imethod);
+        this.imethod._sourceMethod = this;
     }
 
     shortname(): string {
