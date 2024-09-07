@@ -30,6 +30,8 @@ export class CastExpression extends Expression {
     // expression to cast
     expression: Expression;
 
+    isCastUnnecessary: boolean = false;
+
     constructor(location: SymbolLocation, expression: Expression, target: DataType, castType: "safe" | "regular" | "force" = "regular") {
         super(location, "cast_op");
         this.target = target;
@@ -52,10 +54,12 @@ export class CastExpression extends Expression {
 
         if(r.success && (this.castType === 'force')) {
             ctx.parser.customWarning(`Unnecessary forced cast from ${expressionType.shortname()} to ${this.target.shortname()}`, this.location);
+            this.isCastUnnecessary = true;
         }
 
         if(r.success && (this.castType === 'safe')) {
             ctx.parser.customWarning(`Unnecessary safe cast from ${expressionType.shortname()} to ${this.target.shortname()}`, this.location);
+            this.isCastUnnecessary = true;
         }
 
         // post process this.target
