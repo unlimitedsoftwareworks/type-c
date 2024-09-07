@@ -16,11 +16,22 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import {GenericType} from "../types/GenericType";
 import {FunctionType} from "../types/FunctionType";
 import { DataType } from "../types/DataType";
+import { ClassMethod } from "./ClassMethod";
 
 export class InterfaceMethod extends FunctionPrototype {
     isStatic: boolean;
 
 
+    /**
+     * A cache of the method in case it belongs to a class method,
+     * set by the ClassMethod constructor
+     */
+    _sourceMethod: ClassMethod | null = null;
+
+    /**
+     * The index of the method in the interface, set by the InterfaceType constructor
+     */
+    _indexInInterface: number = -1;
 
     static methodUIDGenerator: Map<string, number> = new Map();
     static methodUIDCounter: number = 0;
