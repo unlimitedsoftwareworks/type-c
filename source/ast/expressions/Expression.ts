@@ -91,6 +91,9 @@ export class Expression {
      */
     isConstant: boolean = false;
 
+    static _expressionCounter: number = 0;
+    id: number = Expression._expressionCounter++;
+
     constructor(location: SymbolLocation, kind: ExpressionKind){
         this.location = location;
         this.kind = kind;
