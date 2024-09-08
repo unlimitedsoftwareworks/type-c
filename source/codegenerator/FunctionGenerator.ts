@@ -77,7 +77,7 @@ import { StructType } from "../ast/types/StructType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
-import { canCastTypes } from "../typechecking/TypeChecking";
+import { canCastTypes, matchDataTypes } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
@@ -333,7 +333,15 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
             if ((hintType != undefined) && (hintType.kind != "void")) {
                 let requireSafe = (inferredType instanceof NullableType) || (hintType instanceof NullableType);
-                tmp = this.visitCastExpression(new CastExpression(expr.location, expr, hintType, requireSafe ? "safe" : "regular"), ctx, tmp);
+                
+                let r = matchDataTypes(ctx, hintType, inferredType!, true);
+                if(r.success) {
+                    // types are exact, no need to cast
+                }
+                else {
+                    this.i("debug", "casting from " + inferredType?.shortname() + " to " + hintType?.shortname());
+                    tmp = this.visitCastExpression(new CastExpression(expr.location, expr, hintType, requireSafe ? "safe" : "regular"), ctx, tmp);
+                }
             }
         }
         this.srcMapPopLoc()

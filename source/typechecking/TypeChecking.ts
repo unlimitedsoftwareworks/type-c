@@ -789,30 +789,47 @@ function matchStructs(ctx: Context, t1: StructType, t2: StructType, strict: bool
         if(t1Fields.length !== t2Fields.length) {
             return Err(`Type mismatch, expected struct with ${t1Fields.length} fields, got ${t2Fields.length}`);
         }
+        // fields must be exactly the same
+        for(let i = 0; i < t1Fields.length; i++) {
+            let field1 = t1Fields[i];
+            let field2 = t2Fields[i];
+            
+
+            if(field1.name !== field2.name) {
+                return Err(`Field ${field1.name} names do not match: ${field1.name} and ${field2.name}`);
+            }
+
+            let res = matchDataTypesRecursive(ctx, field1.type, field2.type, strict, stack);
+            if(!res.success) {
+                return Err(`Field ${field1.name}:${field1.type.shortname()} does not match ${field2.name}:${field2.type.shortname()}: ${res.message}`);
+            }
+        }
     }
     else {
         if(t1Fields.length > t2Fields.length) {
             return Err(`Type mismatch, expected struct with at most ${t1Fields.length} fields, got ${t2Fields.length}`);
         }
-    }
 
-    // every field of t1 must match exactly one in t2
-    for(let field of t1Fields) {
-        let found = false;
-        for(let field2 of t2Fields) {
-            if(field.name === field2.name) {
-                let res = matchDataTypesRecursive(ctx, field.type, field2.type, strict, stack);
-                if(!res.success) {
-                    return Err(`Field ${field.name} types do not match: ${res.message}: ${res.message}`);
+
+        // every field of t1 must match exactly one in t2
+        for(let field of t1Fields) {
+            let found = false;
+            for(let field2 of t2Fields) {
+                if(field.name === field2.name) {
+                    let res = matchDataTypesRecursive(ctx, field.type, field2.type, strict, stack);
+                    if(!res.success) {
+                        return Err(`Field ${field.name} types do not match: ${res.message}: ${res.message}`);
+                    }
+                    found = true;
+                    break;
                 }
-                found = true;
-                break;
+            }
+            if(!found) {
+                return Err(`Field ${field.name} not found in struct ${t2.shortname()}`);
             }
         }
-        if(!found) {
-            return Err(`Field ${field.name} not found in struct ${t2.shortname()}`);
-        }
     }
+
 
     return Ok();
 }

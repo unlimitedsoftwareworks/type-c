@@ -10,7 +10,7 @@ fn main() {
     return 0
 }
 */
-
+/*
 from std.string import String
 from std.io import println
 
@@ -38,4 +38,15 @@ fn main() {
     // but the casting doesn't work when the array is fed into the function
     let users = [{name: "John", age: 35}, {name: "Jane", age: 21}, {name: "Doe", age: 22, potato:-1}, {name: "John", age: 20, number: -1}]
     stuff(users)
+}
+*/
+
+fn stuff(a: {y: u32, x: u32}[]){
+    return a[0].x + a[1].y
+}
+
+fn main(){
+    let z: {x: u32, y:u32}[] = [{ y:100, x:1}, {x:2, y:200}]
+    return stuff(z)
+    // should return 201
 }
