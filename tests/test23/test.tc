@@ -1,0 +1,11 @@
+
+fn main() {
+    let x: {x: u32, y: u32} = do {
+        if true {
+            return {x: 1, y: 2}
+        }
+        return {x: 0, y: 0, z:3.14f}
+    }
+
+    return 0
+}
