@@ -175,7 +175,7 @@ fn test_case_2(runner: TestUnit) {
     let gt_arr: i32[] = [1, 1, 5, 7, 8, 9, 10]
 
     println(serializeArray(arr))
-    //println(serializeArray(gt_arr))
+    println(serializeArray(gt_arr))
 
     let expectedArray = new BasicArray(gt_arr)
     let actualArray = new BasicArray(arr)
