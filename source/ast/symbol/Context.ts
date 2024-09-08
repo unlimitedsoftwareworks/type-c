@@ -76,6 +76,9 @@ export class Context {
     static contextCount = 0;
     uuid = "ctx_"+Context.contextCount++ // Math.random().toString(36).substring(7);
 
+    //static _contextMap = new Map<string, Context>();
+    //contextMap = Context._contextMap;
+
     // number of symbols owned by this context.
     symbolCount: number = 0;
 
@@ -130,6 +133,8 @@ export class Context {
         this.env.withinFunction = env.withinFunction || this.env.withinFunction;
         this.env.withinLoop = env.withinLoop || this.env.withinLoop;
         this.env.loopContext = env.loopContext || this.env.loopContext;
+
+        //Context._contextMap.set(this.uuid, this);
     }
 
     setOwner(owner: ContextOwner) {
@@ -265,7 +270,7 @@ export class Context {
              * A global symbol can be within a block, thus having a parent context,
              * but it cannot be within a function/lambda or class.
              */
-            if(this.findParentFunction() === null){
+            if(this.parent === null){
                 // we are in the global scope
                 // register the global variable
 
@@ -306,18 +311,29 @@ export class Context {
                     return null;
                 }
 
-                let symParentFn = parentScope.sym.parentContext?.findParentFunction();
-                let owner = this.findParentFunction();
                 
                 /**
                  * If the symbol comes from another function, then it is an upvalue
+                 * this.parent?.parent makes sure the symbol doesn't come from a global 
+                 * scope and mistakably be registered as an upvalue
                  */
-                if(symParentFn !== owner){ 
-                    owner!.codeGenProps.registerUpvalue(parentScope.sym);
-                    return {sym: parentScope.sym, scope: "upvalue"};
+
+
+                if(this.parent?.parent == null || parentScope.scope === "global"){
+                    return parentScope;
                 }
                 else {
-                    return parentScope;
+                    let symParentFn = parentScope.sym.parentContext?.findParentFunction();
+                    let owner = this.findParentFunction();
+                    
+                    // if we went from one function to another, we need to register the upvalue
+                    if ((symParentFn !== owner) && (symParentFn !== null)){
+                        owner!.codeGenProps.registerUpvalue(parentScope.sym);
+                        return {sym: parentScope.sym, scope: "upvalue"};
+                    }
+                    else {
+                        return parentScope;
+                    }
                 }
             }
         }
