@@ -2407,7 +2407,7 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     else {
         parser.reject();
         parser.expect("=");
-        exprBody = parseExpression(parser, ctx);
+        exprBody = parseExpression(parser, newScope);
     }
 
     fn.body = stmtBody;
