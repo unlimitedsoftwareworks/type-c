@@ -10,9 +10,11 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { Expression } from "../expressions/Expression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
+import { PatternToExpression } from "./PatternUtils";
 
 export type PatternExpressionType = 
     "array" |  // [1, 2, 3]
@@ -38,6 +40,16 @@ export class PatternExpression {
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): PatternExpression{
+        throw "Not implemented";
+    }
+
+    /**
+     * Converts pattern matching logic into an expression that can be used to evaluate it,
+     * as well any variable assignments that need to be made.
+     * @param ctx 
+     * @param baseExpression the expression that is being matched against
+     */
+    generateExpression(ctx: Context, baseExpression: Expression): PatternToExpression {
         throw "Not implemented";
     }
 }

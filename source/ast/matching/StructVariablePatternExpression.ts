@@ -16,6 +16,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
 import { DataType } from "../types/DataType";
 import { PatternExpression } from "./PatternExpression";
+import { StructPatternExpression } from "./StructPatternExpression";
 
 export class StructVariablePatternExpression extends PatternExpression {
     name: string;
@@ -24,10 +25,15 @@ export class StructVariablePatternExpression extends PatternExpression {
      * Pointer to the symbol table entry for this variable
      */
     symbolPointer: VariablePattern | null = null;
+    parent: StructPatternExpression | null = null;
 
     constructor(location: SymbolLocation, name: string) {
         super(location, "variable");
         this.name = name;
+    }
+
+    setParent(parent: StructPatternExpression){
+        this.parent = parent;
     }
 
 

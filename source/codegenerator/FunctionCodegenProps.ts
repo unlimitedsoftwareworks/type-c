@@ -18,6 +18,7 @@ import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { Symbol } from "../ast/symbol/Symbol";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
+import { VariablePattern } from "../ast/symbol/VariablePattern";
 import { ClassType } from "../ast/types/ClassType";
 import { FunctionType } from "../ast/types/FunctionType";
 import { getDataTypeByteSize } from "./utils";
@@ -178,6 +179,11 @@ export class FunctionCodegenProps {
                 }
 
                 const byteSize = getDataTypeByteSize(sym.annotation!);
+                this.stackSymbols.set(sym.uid, new FunctionStackSymbol(sym, byteSize, this.localsByteSize));
+                this.localsByteSize += byteSize;
+            }
+            else if (sym instanceof VariablePattern) {
+                const byteSize = getDataTypeByteSize(sym.type);
                 this.stackSymbols.set(sym.uid, new FunctionStackSymbol(sym, byteSize, this.localsByteSize));
                 this.localsByteSize += byteSize;
             }

@@ -37,6 +37,7 @@ import { TupleConstructionExpression } from "../ast/expressions/TupleConstructio
 import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstructionExpression";
 import { UnaryExpression } from "../ast/expressions/UnaryExpression";
 import { UnnamedStructConstructionExpression } from "../ast/expressions/UnnamedStructConstructionExpression";
+import { checkSubPattern } from "../ast/matching/PatternUtils";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { BlockStatement } from "../ast/statements/BlockStatement";
@@ -504,7 +505,83 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
     }
 
     visitMatchExpression(expr: MatchExpression, ctx: Context): string {
-        throw new Error("Method not implemented.");
+        let tmp = this.visitExpression(expr.expression, ctx);
+        this.i("debug", "match expression");
+
+        let switchLabels = expr.cases.map(() => this.generateLabel())
+        let caseLabels = expr.cases.map(() => this.generateLabel())
+        let endLabel = this.generateLabel()
+
+        caseLabels.push(endLabel)
+        switchLabels.push(endLabel)
+
+
+        let tmpRes = this.generateTmp();
+        
+        let counter = 0;
+        for(let case_ of expr.cases) { 
+            let e = checkSubPattern(case_.context, expr.expression, case_.pattern);
+            let cond = e.condition || TrueLiteralExpression.makeLiteral(case_.location);
+            let variables = e.variableAssignments;
+
+            cond.infer(case_.context, new BooleanType(case_.location));
+            // generate the condition
+            this.i("label", switchLabels[counter])
+            let tmp = this.visitExpression(cond, case_.context);
+            // fill in the variables
+            if(variables.length > 0){
+                // we add a cmp to avoid filling in the variables if the condition is false
+                let tmp2 = this.generateTmp();
+                this.i("const_u8", tmp2, 0)
+                this.i("j_cmp_u8", tmp, tmp2, 0, switchLabels[counter+1]);
+                this.destroyTmp(tmp2)
+
+                // now we fill in the variables
+                for(let variable of variables){
+                    let tmp2 = this.visitExpression(variable, case_.context);
+                    this.destroyTmp(tmp2);
+                }
+            }
+
+            if(case_.guard) {
+                let guardTmp = this.visitExpression(case_.guard, case_.context);
+                let andTmp = this.generateTmp();
+                this.i("and", andTmp, tmp, guardTmp);
+                this.destroyTmp(tmp);
+                this.destroyTmp(guardTmp)
+
+                let tmp2 = this.generateTmp();
+                this.i("const_u8", tmp2, 0)
+                this.i("j_cmp_u8", andTmp, tmp2, 1, caseLabels[counter]);
+                this.destroyTmp(tmp2)
+            }
+            else {
+                let tmp2 = this.generateTmp();
+                this.i("const_u8", tmp2, 0)
+                this.i("j_cmp_u8", tmp, tmp2, 1, caseLabels[counter]);
+                this.destroyTmp(tmp2)
+                this.destroyTmp(tmp);
+            }
+            counter++;
+        }
+
+        counter = 0;
+        for(let case_ of expr.cases) {
+            this.i("label", caseLabels[counter]);
+            
+            if(case_.expression) {
+                let reg = this.visitExpression(case_.expression, case_.context);
+                let instruction = tmpType(ctx, expr.inferredType!);
+                this.i(instruction, tmpRes, "reg", reg);
+                this.destroyTmp(tmp);
+            }
+
+            this.i("j", endLabel);
+            counter++;
+        }
+
+        this.i("label", endLabel);
+        return tmpRes;
     }
 
     visitSpawnExpression(expr: SpawnExpression, ctx: Context): string {
@@ -1876,7 +1953,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
             let tmp = this.visitExpression(decl.initializer, ctx);
             let inst = (this.isGlobal?globalType:localType)(ctx, decl.annotation!);
             this.i(inst, decl.uid, tmp); // local_[type] = tmp
-            this.emitDestroy(tmp);
+            this.destroyTmp(tmp);
             */
 
             let left: Expression = new ElementExpression(decl.location, decl.name);
@@ -2360,7 +2437,89 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
     }
     visitMatchStatement(stmt: MatchStatement, ctx: Context) {
-        throw new Error("Method not implemented.");
+           // first generate the expression
+           let tmp = this.visitExpression(stmt.expression, ctx);
+
+           // now we perform the matching, we will have different block per case.
+           // case checking is done through structure first, then value
+           // meaning [a, ...b], will check if the array is of length 1 at least
+           // then assigns the values (if present)
+           // then checks the guard (if present)
+           // then jumps to the body
+   
+           
+           let switchLabels = stmt.cases.map((c) => this.generateLabel());
+           let caseLabels = stmt.cases.map((c) => this.generateLabel());
+           let endLabel = this.generateLabel();
+           caseLabels.push(endLabel);
+           switchLabels.push(endLabel);
+           
+   
+           let counter = 0;
+           for(let case_ of stmt.cases) { 
+               let expr = checkSubPattern(case_.context, stmt.expression, case_.pattern);
+               let cond = expr.condition || TrueLiteralExpression.makeLiteral(case_.location);
+               let variables = expr.variableAssignments;
+   
+   
+               cond.infer(case_.context, new BooleanType(case_.location));
+               // generate the condition
+               this.i("label", switchLabels[counter])
+               let tmp = this.visitExpression(cond, case_.context);
+               // fill in the variables
+               if(variables.length > 0){
+                   // we add a cmp to avoid filling in the variables if the condition is false
+                   let tmp2 = this.generateTmp();
+                   this.i("const_u8", tmp2, 0)
+                   this.i("j_cmp_u8", tmp, tmp2, 0, switchLabels[counter+1]);
+                   this.destroyTmp(tmp2)
+   
+                   // now we fill in the variables
+                   for(let variable of variables){
+                       let tmp2 = this.visitExpression(variable, case_.context);
+                       this.destroyTmp(tmp2);
+                   }
+               }
+   
+               if(case_.guard) {
+                   let guardTmp = this.visitExpression(case_.guard, case_.context);
+                   let andTmp = this.generateTmp();
+                   this.i("and", andTmp, tmp, guardTmp);
+                   this.destroyTmp(tmp);
+                   this.destroyTmp(guardTmp)
+   
+                   let tmp2 = this.generateTmp();
+                   this.i("const_u8", tmp2, 0)
+                   this.i("j_cmp_u8", andTmp, tmp2, 1, caseLabels[counter]);
+                   this.destroyTmp(tmp2)
+               }
+               else {
+                   let tmp2 = this.generateTmp();
+                   this.i("const_u8", tmp2, 0)
+                   this.i("j_cmp_u8", tmp, tmp2, 1, caseLabels[counter]);
+                   this.destroyTmp(tmp2)
+                   this.destroyTmp(tmp);
+               }
+               counter++;
+           }
+   
+           counter = 0;
+           for(let case_ of stmt.cases) {
+               this.i("label", caseLabels[counter]);
+               
+               if(case_.expression) {
+                   let tmp = this.visitExpression(case_.expression, case_.context);
+                   this.destroyTmp(tmp);
+               }
+               else {
+                   this.visitStatement(case_.block!, case_.context);
+               }
+   
+               this.i("j", endLabel);
+               counter++;
+           }
+   
+           this.i("label", endLabel);
     }
     visitReturnStatement(stmt: ReturnStatement, ctx: Context) {
         if (stmt.returnExpression) {

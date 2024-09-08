@@ -242,6 +242,14 @@ export class IntLiteralExpression extends LiteralExpression {
 
         return this.inferredType;
     }
+
+
+    static makeLiteral(location: SymbolLocation, value: number, 
+        kind: "u8"| "u16"| "u32"| "u64"| "i8"| "i16"| "i32"| "i64"| "f32"| "f64"): IntLiteralExpression {
+        let literal = new IntLiteralExpression(location, value.toString());
+        literal.inferredType = new BasicType(location, kind);
+        return literal;
+    }
     
 }
 
@@ -377,6 +385,12 @@ export class TrueLiteralExpression extends LiteralExpression {
 
         this.checkHint(ctx);
         return this.inferredType;
+    }
+
+    static makeLiteral(location: SymbolLocation): TrueLiteralExpression {
+        let literal = new TrueLiteralExpression(location);
+        literal.inferredType = new BooleanType(location);
+        return literal;
     }
 }
 
