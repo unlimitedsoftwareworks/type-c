@@ -28,6 +28,10 @@ export class TupleConstructionExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
+        throw ctx.parser.customError("Tuple construction is only allowed in function return types", this.location);
+    }
+
+    inferReturn(ctx: Context, hint: DataType | null): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 

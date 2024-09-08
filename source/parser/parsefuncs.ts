@@ -1035,37 +1035,7 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod="cl
  * Expressions
  */
 
-/**
- * Parses a tuple construction expression.
- * This expression can only exists after a return statement or a function body expression.
- * such as return (1, 2, 3)
- * or fn (u32) -> (u32, u32) = (1, 2)
- */
-function parseExpressionTupleConstruction(parser: Parser, ctx: Context): Expression {
-    let loc = parser.loc();
-    // check if we have a tuple construction
-    let lexeme = parser.peek();
-    if (lexeme.type === "(") {
-        parser.accept();
-        let elements = parseExpressionList(parser, ctx);
-        parser.expect(")");
 
-        if(elements.length == 0){
-            throw parser.customError("Tuple construction must have at least one element", loc);
-        }
-
-        if(elements.length == 1){
-            return elements[0];
-        }
-
-        return new TupleConstructionExpression(loc, elements);
-    }
-
-    // else, parse regular expression
-    // reject 
-    parser.reject();
-    return parseExpressionLet(parser, ctx);
-}
 
 function parseExpression(parser: Parser, ctx: Context): Expression {
     return parseExpressionLet(parser, ctx);
@@ -1528,9 +1498,15 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
     // parenthesis
     if (lexeme.type === '(') {
         parser.accept();
-        let expression = parseExpression(parser, ctx);
+        let expressionList = parseExpressionList(parser, ctx);
         parser.expect(')');
-        return expression;
+
+        if(expressionList.length == 1){
+            return expressionList[0];
+        }
+        else {
+            return new TupleConstructionExpression(loc, expressionList);
+        }
     }
 
     if (lexeme.type === "[") {
@@ -2217,7 +2193,7 @@ function parseStatementReturn(parser: Parser, ctx: Context): Statement {
     let loc = parser.loc();
     parser.expect("return");
     parser.assert(ctx.env.withinFunction, "Cannot return outside of function");
-    let expression = parseExpressionTupleConstruction(parser, ctx); //parseExpression(parser, ctx);
+    let expression = parseExpression(parser, ctx); //parseExpression(parser, ctx);
 
     let ret = new ReturnStatement(loc, expression)
     ctx.findParentFunction()?.returnStatements.push({stmt: ret, ctx});
@@ -2431,7 +2407,7 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     else {
         parser.reject();
         parser.expect("=");
-        exprBody = parseExpressionTupleConstruction(parser, newScope);
+        exprBody = parseExpression(parser, ctx);
     }
 
     fn.body = stmtBody;
