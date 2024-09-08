@@ -199,7 +199,7 @@ export class FunctionGenerator {
     }
 
     generateLabel(): string {
-        return "lbl_" + this.fn.uid + ("_" + this.lblCounter++);
+        return "lbl_" + this.fn.context.uuid + ("_" + this.lblCounter++);
     }
 
     // generates an IR instruction
@@ -360,7 +360,8 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 this.i(instruction, tmp, "local", sym.uid);
             }
             else {
-                throw new Error(`Scope ${symScope.scope} not yet implemented`);
+                ctx.lookupScope(expr.name)
+                throw ctx.parser.customError("Upvalues are not supported in bytecode generation", expr.location);
             }
 
             return tmp;
