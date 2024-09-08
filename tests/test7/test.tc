@@ -107,11 +107,11 @@ type UserClass = class {
 }
 
 fn test_case_2(rn: TestUnit) {
-    //let z1: strict interface { fn greet()  fn walk() } = new UserClass("John") // should fail
+    //let z1: interface { fn greet()  fn walk() } = new UserClass("John") // should fail
     let z: i32 = 1
     let s: String = "John"
-    let z2: strict = new UserClass(s) // should succeed, auto inferred type to strict
-    let z3: strict (interface { fn greet() -> String  fn swim() } & interface {fn walk()}) & interface { fn run() } = new UserClass("John")  // should succeed
+    let z2 = new UserClass(s) // should succeed, auto inferred type to strict
+    let z3: (interface { fn greet() -> String  fn swim() } & interface {fn walk()}) & interface { fn run() } = new UserClass("John")  // should succeed
 
     let msg = z3.greet()
     rn.assert_obj_eq<String>(msg, "Hello, my name is John")

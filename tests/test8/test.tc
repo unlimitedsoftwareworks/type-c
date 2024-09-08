@@ -120,7 +120,6 @@ fn test_case_2(rn: TestUnit) {
 
     rn.assert_eq<u64>(u1.inventory.length, 10)
     rn.assert_eq<u64>(user1.inventory.length, 10)
-
 }
 
 
