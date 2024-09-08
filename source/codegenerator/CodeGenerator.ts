@@ -128,6 +128,11 @@ export class CodeGenerator {
             }
             else if (sym instanceof DeclaredType) {
                 let baseType = sym.type;
+                // just in case
+                if(sym.genericParameters.length == 0){
+                    baseType.resolve(sym.parentContext);
+                }
+                
                 if (baseType instanceof ClassType) {
                     // call getAllMethods to generate all methods
 

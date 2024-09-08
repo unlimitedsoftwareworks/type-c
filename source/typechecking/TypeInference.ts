@@ -155,7 +155,7 @@ export function inferFunctionHeader(
         }
     }
 
-
+    header.resolve(ctx);
     // We must update the hints of all return values, with the common type,
     // so the code generator can generate the correct code to cast to the final adequate type
     for (const ret of returnStatements) {

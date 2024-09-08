@@ -96,13 +96,31 @@ export class EnumType extends DataType {
     
         // Rule 1: Check if the first element is unset
         if(this.fields[0].value === null){
-            for (let field of this.fields) {
+            for (const [i, field] of this.fields.entries()) {
                 if (field.value !== null) {
                     ctx.parser.customError("All enum fields must be unset if the first one is unset", field.location);
                     return;
                 }
+                this.fields[i].value = i.toString();
+                this.fields[i].literal_type = "int_literal";
+            }
+
+            // find the smallest type that can hold all the values
+            let len = this.fields.length;
+            if(len <= 255){
+                this.as = "u8";
+            }
+            else if(len <= 65535){
+                this.as = "u16";
+            }
+            else if(len <= 4294967295){
+                this.as = "u32";
+            }
+            else {
+                throw ctx.parser.customError("Enum fields cannot be more than 4294967295", this.location);
             }
         } else {
+            // TODO: fix literal types etc
             let seenValues: number[] = [];
             // Rule 2: If only the first element has a value
             let currentValue = parseInt(this.fields[0].value);

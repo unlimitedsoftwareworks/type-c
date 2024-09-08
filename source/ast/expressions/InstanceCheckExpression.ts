@@ -38,6 +38,9 @@ export class InstanceCheckExpression extends Expression {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
+        // resolve the type to ensure it is fully resolved
+        this.type.resolve(ctx);
+
 
         /**
          * Instance checking is applicable to classes, interfaces and variants

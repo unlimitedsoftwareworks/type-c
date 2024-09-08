@@ -213,11 +213,11 @@ export class ClassType extends DataType {
                 ctx.parser.customError("Class attributes cannot be called `init`", attribute.location);
             }
 
-            if (attribute.isStatic) {
+            //if (attribute.isStatic) {
                 // resolving a generic results in an error, and since it could be an array of array of generics,
                 // manually looking for generics makes no sense
                 attribute.type.resolve(ctx);
-            }
+            //}
         }
     }
 
@@ -261,9 +261,9 @@ export class ClassType extends DataType {
         for (const method of this.methods) {
             if (method.imethod.generics.length > 0) {
                 let genericImpl = method.getConcreteGenerics()
-                for (let key in genericImpl) {
-                    genericImpl.get(key)!.indexInClass = allMethods.length;
-                    allMethods.push(genericImpl.get(key)!);
+                for (const [i, m] of genericImpl) {
+                    m.indexInClass = allMethods.length;
+                    allMethods.push(m);
                 }
             }
             else {
