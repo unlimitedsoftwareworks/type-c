@@ -8,10 +8,17 @@ import { Parser } from './parser/Parser';
 import { ImportNode } from './ast/ImportNode';
 import { BuiltinModules } from './BuiltinModules';
 import { generateCode } from './codegenerator/CodeGenerator';
+import { spawnSync } from 'child_process';
+import { colors } from './utils/termcolors';
 
 export function readFile(filename: string): string {
     return fs.readFileSync(filename, 'utf-8');
 }
+
+function normalizePath(filePath: string): string {
+    return path.resolve(filePath).toLowerCase();
+}
+
 
 
 export module TypeC {
@@ -59,7 +66,8 @@ export module TypeC {
 
         readPackage(path: string) {
             let data = readFile(path);
-            this.packageSourceMap.set(path, data);
+            let key = normalizePath(path);
+            this.packageSourceMap.set(key, data);
             return data;
         }
 
@@ -74,7 +82,8 @@ export module TypeC {
             parser.parse();
 
 
-            this.packageBaseContextMap.set(entry, this.basePackage);
+            let entryKey = normalizePath(entry);
+            this.packageBaseContextMap.set(entryKey, this.basePackage);
 
             //et sym = BuiltinModules.getStringClass(this);
             //BuiltinModules.getRunnableInterface(this);
@@ -127,8 +136,9 @@ export module TypeC {
                 }
             }
 
-            if(this.packageBaseContextMap.has(filepath)) {
-                return this.packageBaseContextMap.get(filepath)!;
+            let key = normalizePath(filepath);
+            if(this.packageBaseContextMap.has(key)) {
+                return this.packageBaseContextMap.get(key)!;
             }
 
             let data = this.readPackage(filepath);
@@ -138,7 +148,8 @@ export module TypeC {
             let basePackage = parser.basePackage;
             parser.parse();
 
-            this.packageBaseContextMap.set(filepath, basePackage);
+            key = normalizePath(filepath);
+            this.packageBaseContextMap.set(key, basePackage);
 
             // resolve imports
             for(let imp of basePackage.imports) {
@@ -160,7 +171,7 @@ export module TypeC {
         }
 
         generateBytecode() {
-            generateCode(this);
+            return generateCode(this);
         }
     }
 
@@ -168,6 +179,25 @@ export module TypeC {
         let compiler = TCCompiler.create(options);
         compiler.compile();
 
+        if (options.generateBinaries) {
+            let [binFile, srcMapFile] = compiler.generateBytecode();
+            if (options.runOutput) {
+                let interpreterPath = "/Users/praisethemoon/projects/type-c/type-v/cmake-build-debug/";
+                const command = `cd ${interpreterPath} && ./type_v ${binFile} ${srcMapFile}`;
+                
+                const result = spawnSync(command, { shell: true });
+
+                if(result.stdout){
+                    console.log(colors.BgBlue, "stdout: ", colors.Reset);
+                    console.log(result.stdout.toString());
+                }
+                if(result.stderr){
+                    console.log(colors.BgRed, "stderr: ", colors.Reset);
+                    console.log(result.stderr.toString());
+                }
+                return result.status || 0;
+            }
+        }
         return 0
     }
 }
