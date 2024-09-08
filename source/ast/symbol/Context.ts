@@ -14,6 +14,7 @@ import { GlobalContext } from "../../codegenerator/GlobalContext";
 import { TypeC } from "../../compiler";
 import { Parser } from "../../parser/Parser";
 import { BasePackage } from "../BasePackage";
+import { DoExpression } from "../expressions/DoExpression";
 import { LambdaExpression } from "../expressions/LambdaExpression";
 import { ClassMethod } from "../other/ClassMethod";
 import { ClassType } from "../types/ClassType";
@@ -35,9 +36,10 @@ export type ContextEnvironment = {
     withinFunction: boolean;
     withinLoop: boolean;
     loopContext: boolean;
+    withinDoExpression: boolean;
 };
 
-type ContextOwner = BasePackage | LambdaExpression | ClassMethod |  DeclaredFunction | null;
+type ContextOwner = BasePackage | LambdaExpression | ClassMethod |  DeclaredFunction | DoExpression | null;
 
 export class Context {
     /**
@@ -98,6 +100,7 @@ export class Context {
         withinLoop: false,
         loopContext: false, // indicates if this context is a loop context, used for break/continue.
         // only set to true in the context that belongs to a loop and not the subsequent children contexts
+        withinDoExpression: false,
     };
 
     /**
@@ -126,6 +129,7 @@ export class Context {
             this.env.withinFunction = parent.env.withinFunction || false;
             this.env.withinLoop = parent.env.withinLoop || false;
             this.env.loopContext = parent.env.loopContext || false;
+            this.env.withinDoExpression = parent.env.withinDoExpression || false;
         }
 
         // override with new env
@@ -133,6 +137,7 @@ export class Context {
         this.env.withinFunction = env.withinFunction || this.env.withinFunction;
         this.env.withinLoop = env.withinLoop || this.env.withinLoop;
         this.env.loopContext = env.loopContext || this.env.loopContext;
+        this.env.withinDoExpression = env.withinDoExpression || this.env.withinDoExpression;
 
         //Context._contextMap.set(this.uuid, this);
     }
@@ -226,6 +231,16 @@ export class Context {
         else {
             return null;
         }
+    }
+
+    findParentDoExpression(): DoExpression | null {
+        if(this.owner instanceof DoExpression){
+            return this.owner;
+        }
+        if(this.parent){
+            return this.parent.findParentDoExpression();
+        }
+        return null;
     }
 
     /**

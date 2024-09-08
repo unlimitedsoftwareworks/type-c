@@ -63,7 +63,8 @@ export type ExpressionKind =
     "this" | // this
     "unnamed_struct_construction" | // { 1, 2 }
     "tuple_deconstruction"  | // (a) = (1, 2, 3)
-    "coroutine_construction" // coroutine ( ... )
+    "coroutine_construction" | // coroutine ( ... )
+    "do_expression" // do { ... }
 ;
 
 export class Expression {

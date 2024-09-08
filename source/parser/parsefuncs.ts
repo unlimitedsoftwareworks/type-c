@@ -96,6 +96,7 @@ import { IntLiteralExpression, LiteralExpression, TrueLiteralExpression } from "
 import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstructionExpression";
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { CoroutineConstructionExpression } from "../ast/expressions/CoroutineConstructionExpression";
+import { DoExpression } from "../ast/expressions/DoExpression";
 
 // represent a deconstructed variable, not all of them are declared variables, 
 // some of them are ignored (e.g _)
@@ -1564,7 +1565,16 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
 
         return new ElementExpression(loc, lexeme.value, genericArgs);
     }
+    else if (lexeme.type === "do") {
+        parser.accept()
+        let newCtx = new Context(loc, parser, ctx, { withinDoExpression: true });
+        let doExpr = new DoExpression(loc, newCtx, null);
+        newCtx.setOwner(doExpr);
+        let block = parseStatementBlock(parser, newCtx);
+        doExpr.block = block;
 
+        return doExpr;
+    }
 
     // @ts-ignore
     return null;
@@ -2162,7 +2172,7 @@ function parseStatement(parser: Parser, ctx: Context): Statement {
         case "while":
             return parseStatementWhile(parser, ctx);
         case "do":
-            return parseStatementDo(parser, ctx);
+            return parseStatementRepeat(parser, ctx);
         case "for":
             return parseStatementFor(parser, ctx);
         case "foreach":
@@ -2171,8 +2181,6 @@ function parseStatement(parser: Parser, ctx: Context): Statement {
             return parseStatementMatch(parser, ctx);
         case "fn":
             return parseStatementFn(parser, ctx);
-        case "match":
-            return parseStatementMatch(parser, ctx);
         case "{":
             return parseStatementBlock(parser, ctx);
         default:
@@ -2192,12 +2200,21 @@ function parseStatementLet(parser: Parser, ctx: Context): VariableDeclarationSta
 function parseStatementReturn(parser: Parser, ctx: Context): Statement {
     let loc = parser.loc();
     parser.expect("return");
-    parser.assert(ctx.env.withinFunction, "Cannot return outside of function");
+    parser.assert(ctx.env.withinFunction || ctx.env.withinDoExpression, "Cannot return outside of function");
     let expression = parseExpression(parser, ctx); //parseExpression(parser, ctx);
 
-    let ret = new ReturnStatement(loc, expression)
-    ctx.findParentFunction()?.returnStatements.push({stmt: ret, ctx});
+    if(ctx.env.withinDoExpression){
+        parser.assert(expression != null, "Cannot return void from a do-expression, must always return an expression");
+    }
 
+    let ret = new ReturnStatement(loc, expression)
+    if(ctx.env.withinDoExpression){
+        ctx.findParentDoExpression()!.returnStatements.push({stmt: ret, ctx});
+    }
+    else {
+        ctx.findParentFunction()?.returnStatements.push({stmt: ret, ctx});
+    }
+    
     return ret;
 }
 
@@ -2260,9 +2277,9 @@ function parseStatementWhile(parser: Parser, ctx: Context): WhileStatement {
     return new WhileStatement(loc, expression, statement);
 }
 
-function parseStatementDo(parser: Parser, ctx: Context): DoWhileStatement {
+function parseStatementRepeat(parser: Parser, ctx: Context): DoWhileStatement {
     let loc = parser.loc();
-    parser.expect("do");
+    parser.expect("repeat");
     let statement = parseStatementBlock(parser, ctx, true);
     // mark the statement block as a loop context
     statement.context.env.loopContext = true;
