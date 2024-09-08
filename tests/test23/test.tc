@@ -1,4 +1,4 @@
-
+/*
 fn main() {
     let x: {x: u32, y: u32} = do {
         if true {
@@ -8,4 +8,34 @@ fn main() {
     }
 
     return 0
+}
+*/
+
+from std.string import String
+from std.io import println
+
+fn stuff(x: {name: String, age: u32}[]){
+    match x {
+        [{name: "John", ...johnData}, b, ...z] {
+            //println("Found a {"+a.name+", "+a.age+"} and b {"+b.name+", "+b.age+"}")
+            println("json is {"+johnData.age+"},  and b {"+b.name+", "+b.age+"}")
+            println("remainings are "+z.length+" elements long")
+            for let i: u64 = 0; i < z.length; i+= 1 {
+                println("element "+i+" is {"+z[i].name+", "+z[i].age+"}")
+            }
+        }
+        _ {
+            println("other")
+        }
+    }
+}
+
+
+
+fn main() {
+    // so far there is an issue with upcasting array elements here, it should be fixed
+    // users :{name: String, age: u32}[] = ... works
+    // but the casting doesn't work when the array is fed into the function
+    let users = [{name: "John", age: 35}, {name: "Jane", age: 21}, {name: "Doe", age: 22, potato:-1}, {name: "John", age: 20, number: -1}]
+    stuff(users)
 }

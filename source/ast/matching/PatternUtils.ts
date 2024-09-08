@@ -7,12 +7,10 @@ import { MemberAccessExpression } from "../expressions/MemberAccessExpression";
 import { KeyValueExpressionPair, NamedStructConstructionExpression } from "../expressions/NamedStructConstructionExpression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
-import { VariablePattern } from "../symbol/VariablePattern";
 import { StructType } from "../types/StructType";
 import { ArrayVariablePatternExpression } from "./ArrayVariablePatternExpression";
 import { LiteralPatternExpression } from "./LiteralPatternExpression";
 import { PatternExpression } from "./PatternExpression";
-import { StructPatternExpression } from "./StructPatternExpression";
 import { StructVariablePatternExpression } from "./StructVariablePatternExpression";
 import { VariablePatternExpression } from "./VariablePatternExpression";
 import { WildCardPatternExpression } from "./WildCardPatternExpression";
@@ -70,6 +68,9 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
         // we fill out the struct with the base expression
         // base is a struct, we need to check which fields matched
 
+        // infer the base since we need the type
+        // currently the expression is not inferred, as long as we are here
+        base.infer(ctx);
 
         let structPattern = pattern.parent;
         let structType = base.inferredType?.to(ctx, StructType) as StructType;

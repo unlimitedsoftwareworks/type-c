@@ -165,3 +165,14 @@ class x {
     fn addSomething(y: u32) {
     }
 }
+
+### Pattern matching over custom types:
+bytecode generation for pattern matching uses primitive types such as array slicing in case
+`[x, y, ...rest]`
+
+Inorder to allow matching over custom types, we need to add custom overloads for pattern matching,
+for instance for array matching we need the index access override and a custom slice implementation.
+
+Maybe even a built-in range class? like python x[0:3] -> x[Range(0, 3)] by overloading the index access operator.
+
+Lots of potential work here, but also low priority.
