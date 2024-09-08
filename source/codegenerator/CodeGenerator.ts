@@ -291,4 +291,6 @@ export function generateCode(compiler: TypeC.TCCompiler) {
 
         //console.log("IR generated")
     }
+
+    return ["", ""]
 }
