@@ -1242,11 +1242,12 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 }
 
             }
-            else if (baseType instanceof InterfaceType) {
+            else if (baseType?.is(ctx, InterfaceType)) {
+                baseType = baseType.to(ctx, InterfaceType) as InterfaceType;
                 let accessElement = (expr.lhs.right as ElementExpression).name;
                 // interface, must be a method
                 this.i("debug", "interface method call");
-                let interfaceType = baseType as InterfaceType;
+                let interfaceType = baseType.to(ctx, InterfaceType) as InterfaceType;
 
                 if (expr._calledInterfaceMethod == null) {
                     throw new Error("Method not found in cache");
@@ -1496,7 +1497,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
             //this.i("allow_spill")
         }
 
-        throw new Error("Non-direct function calls are not yet implemented");
+        throw ctx.parser.customError("Invalid expression", expr.location);
     }
 
     visitLambdaExpression(expr: LambdaExpression, ctx: Context): string {
@@ -1573,7 +1574,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
              * Safe cast is done to cast an interface to a base class or an interface to another interface
              */
             let nonNullType = (hintType as NullableType).type.dereference();
-            if ((nonNullType instanceof ClassType) && (inferredType instanceof InterfaceType)) {
+            if ((nonNullType instanceof ClassType) && (inferredType?.is(ctx, InterfaceType))) {
                 // we will have to check if the interface contains all the class methods
                 // using: i_is_i interface_reg, method_uid, fail_jump_address
 
@@ -1612,7 +1613,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
                 return tmp;
             }
-            else if ((nonNullType instanceof InterfaceType) && (inferredType instanceof ClassType)) {
+            else if ((nonNullType.is(ctx, InterfaceType)) && (inferredType instanceof ClassType)) {
                 // usually this happens when an interface is declared nullable and we want to assign a class to it
                 // the type checker already checked that the class implements the interface, so we just 
                 // check if the class is null, else we change this cast to a regular one
@@ -1633,7 +1634,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 this.i("label", endLabel);
                 return casted;
             }
-            else if ((nonNullType instanceof InterfaceType) && (inferredType instanceof NullableType)) {
+            else if ((nonNullType.is(ctx, InterfaceType) && (inferredType instanceof NullableType))) {
                 // called when we want to assign a nullable interface to a nullable interface
                 // same as class, we check if the interface is null, else we change this cast to a regular one
                 let tmp = this.generateTmp();
@@ -1655,7 +1656,10 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 this.i("label", endLabel);
                 return casted;
             }
-            else if ((nonNullType instanceof InterfaceType) && (inferredType instanceof InterfaceType)) {
+            else if ((nonNullType.is(ctx, InterfaceType)) && (inferredType?.is(ctx, InterfaceType))) {
+                // convert nonNullType to interface
+                let nonNullInterface = nonNullType.to(ctx, InterfaceType) as InterfaceType;
+
                 // check if the interfaces align
                 if (expr.isCastUnnecessary) {
                     // replace with regular cast
@@ -1670,7 +1674,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 //this.i("i_get_c", baseClassReg, castReg);
 
                 let newInterface = this.generateTmp();
-                this.i("i_alloc_i", newInterface, nonNullType.getMethodsLength(), castReg);
+                this.i("i_alloc_i", newInterface, nonNullInterface.getMethodsLength(), castReg);
 
                 //this.destroyTmp(baseClassReg);
                 this.destroyTmp(castReg);
@@ -1679,8 +1683,8 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 let endLabel = this.generateLabel();
 
                 // now we need to set each method into the new interface
-                for (let i = 0; i < nonNullType.methods.length; i++) {
-                    let method = nonNullType.methods[i];
+                for (let i = 0; i < nonNullInterface.methods.length; i++) {
+                    let method = nonNullInterface.methods[i];
                     this.i("i_set_offset_m", newInterface, method.getUID(), i, failLabel);
                 }
 
@@ -1765,9 +1769,9 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
         }
 
         else if (inferredType instanceof ClassType) {
-            if (hintType instanceof InterfaceType) {
+            if (hintType.is(ctx, InterfaceType)) {
                 this.i("debug", "Converted class to interface");
-                let interfaceType = hintType as InterfaceType;
+                let interfaceType = hintType.to(ctx, InterfaceType) as InterfaceType;
                 let classType = inferredType as ClassType;
 
                 let tmpReg = this.generateTmp();
@@ -1781,14 +1785,17 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
                 castReg = tmpReg;
             }
         }
-        else if (inferredType instanceof InterfaceType) {
-            if (hintType instanceof InterfaceType) {
+        else if (inferredType?.is(ctx, InterfaceType)) {
+            if (hintType.is(ctx, InterfaceType)) {
+                let hintInterface = hintType.to(ctx, InterfaceType) as InterfaceType;
+                let inferredInterface = inferredType!.to(ctx, InterfaceType) as InterfaceType;
+                
                 // check if they align
-                if (!inferredType.interfacesAlign(hintType)) {
+                if (!inferredInterface.interfacesAlign(hintInterface)) {
                     this.i("debug", "re-aligning interfaces");
-                    let offsetSwaps = inferredType.generateOffsetSwaps(ctx, hintType);
+                    let offsetSwaps = inferredInterface.generateOffsetSwaps(ctx, hintInterface);
                     let tmpReg = this.generateTmp();
-                    this.i("i_alloc_i", tmpReg, inferredType.getMethodsLength(), castReg);
+                    this.i("i_alloc_i", tmpReg, inferredInterface.getMethodsLength(), castReg);
                     for (let i = 0; i < offsetSwaps.length; i++) {
                         this.i("i_set_offset_i", tmpReg, i, offsetSwaps[i], castReg);
                     }
