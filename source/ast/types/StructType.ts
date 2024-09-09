@@ -141,4 +141,11 @@ export class StructType extends DataType {
         return offsets;
     }
 
+    buildOffsetArray(struct: StructType){
+        let offsets: number[] = [0];
+        for(let i = 1; i < struct.fields.length; i++){
+            offsets.push(offsets[i-1] + getDataTypeByteSize(struct.fields[i-1].type));
+        }
+        return offsets;
+    }
 }

@@ -77,7 +77,7 @@ import { StructType } from "../ast/types/StructType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
-import { canCastTypes, matchDataTypes } from "../typechecking/TypeChecking";
+import { areDataTypesIdentical, canCastTypes, matchDataTypes } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
@@ -234,14 +234,14 @@ export class FunctionGenerator {
         this.srcMapPushLoc(this.fn.location);
 
 
-        this.i("debug", "fn " + this.fn.context.uuid+ ":"+this.fn.name);
+        this.i("debug", "fn " + this.fn.context.uuid + ":" + this.fn.name);
         if (!this.isGlobal) {
             this.i("fn", this.fn.context.uuid);
         }
 
-        if(this.fn.body) {
+        if (this.fn.body) {
             this.visitStatement(this.fn.body, this.fn.context);
-            if(!this.instructions[this.instructions.length - 1].type.startsWith("ret") && !this.isGlobal) {
+            if (!this.instructions[this.instructions.length - 1].type.startsWith("ret") && !this.isGlobal) {
                 this.i("ret_void")
             }
         }
@@ -249,7 +249,7 @@ export class FunctionGenerator {
             this.srcMapPushLoc(this.fn.location);
             let tmp = this.visitExpression(this.fn.expression!, this.fn.context);
             // check if the function is not void
-            if((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")){
+            if ((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")) {
                 let instr = retType(this.fn.context, this.fn.codeGenProps.parentFnType.returnType);
                 this.i(instr, tmp);
             }
@@ -263,25 +263,25 @@ export class FunctionGenerator {
 
         this.dumpIR();
         this.allocateRegisters();
-    
+
     }
 
-    allocateRegisters(){
+    allocateRegisters() {
         // allocate registers
         //this.instructions = this.instructions.filter((i) => !i.type.startsWith("debug") && !i.type.startsWith("srcmap"));
         //this.instructions = this.instructions.filter((i) => !i.type.startsWith("srcmap"));
         //this.instructions = instructions;
         //console.log(this.instructions.map(e => e.toString()).join("\n"))
-        let {coloring, spills, instructions} = allocateRegisters(this.fn.codeGenProps, this.instructions);
+        let { coloring, spills, instructions } = allocateRegisters(this.fn.codeGenProps, this.instructions);
         this.instructions = instructions;
         this.applyColoring(coloring);
         this.applySpills(spills);
     }
-    applyColoring(coloring: Map<string, number>){
+    applyColoring(coloring: Map<string, number>) {
         this.coloring = coloring
     }
 
-    applySpills(spills: Map<string, number>){
+    applySpills(spills: Map<string, number>) {
         this.spills = spills
     }
 
@@ -295,11 +295,11 @@ export class FunctionGenerator {
         let tmp = ""; // placeholder for the result of the expression
         /**
          * Checks for all the following expressions and calls the corresponding visit method:
-         * ArrayConstructionExpression		ElementExpression			IndexSetExpression			MatchExpression			SpawnExpression			UnnamedStructConstructionExpression
-AwaitExpression			Expression				InstanceCheckExpression		MemberAccessExpression		ThisExpression
-BinaryExpression			FunctionCallExpression		LambdaExpression			NamedStructConstructionExpression	TupleConstructionExpression
-CastExpression			IfElseExpression			LetInExpression			NewExpression			TupleDeconstructionExpression
-CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			NullableMemberAccessExpression	UnaryExpression
+         *  ArrayConstructionExpression		ElementExpression			IndexSetExpression			MatchExpression			SpawnExpression			UnnamedStructConstructionExpression
+            AwaitExpression			Expression				InstanceCheckExpression		MemberAccessExpression		ThisExpression
+            BinaryExpression			FunctionCallExpression		LambdaExpression			NamedStructConstructionExpression	TupleConstructionExpression
+            CastExpression			IfElseExpression			LetInExpression			NewExpression			TupleDeconstructionExpression
+            CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			NullableMemberAccessExpression	UnaryExpression
          */
         if (expr instanceof ArrayConstructionExpression) tmp = this.visitArrayConstructionExpression(expr, ctx);
         else if (expr instanceof ElementExpression) tmp = this.visitElementExpression(expr, ctx);
@@ -325,7 +325,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
         else if (expr instanceof NullableMemberAccessExpression) tmp = this.visitNullableMemberAccessExpression(expr, ctx);
         else if (expr instanceof UnaryExpression) tmp = this.visitUnaryExpression(expr, ctx);
         else throw new Error("Invalid expression " + expr.toString());
-        
+
 
         if ((tmp != "")) {
             let inferredType = expr.inferredType?.dereference();
@@ -333,15 +333,15 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
             if ((hintType != undefined) && (hintType.kind != "void")) {
                 let requireSafe = (inferredType instanceof NullableType) || (hintType instanceof NullableType);
-                
-                let r = matchDataTypes(ctx, hintType, inferredType!, true);
-                if(r.success) {
+
+                //let r = matchDataTypes(ctx, hintType, inferredType!, true);
+                //if (r.success) {
                     // types are exact, no need to cast
-                }
-                else {
+                //}
+                //else {
                     this.i("debug", "casting from " + inferredType?.shortname() + " to " + hintType?.shortname());
                     tmp = this.visitCastExpression(new CastExpression(expr.location, expr, hintType, requireSafe ? "safe" : "regular"), ctx, tmp);
-                }
+                //}
             }
         }
         this.srcMapPopLoc()
@@ -525,9 +525,9 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
 
         let tmpRes = this.generateTmp();
-        
+
         let counter = 0;
-        for(let case_ of expr.cases) { 
+        for (let case_ of expr.cases) {
             let e = checkSubPattern(case_.context, expr.expression, case_.pattern);
             let cond = e.condition || TrueLiteralExpression.makeLiteral(case_.location);
             let variables = e.variableAssignments;
@@ -537,21 +537,21 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
             this.i("label", switchLabels[counter])
             let tmp = this.visitExpression(cond, case_.context);
             // fill in the variables
-            if(variables.length > 0){
+            if (variables.length > 0) {
                 // we add a cmp to avoid filling in the variables if the condition is false
                 let tmp2 = this.generateTmp();
                 this.i("const_u8", tmp2, 0)
-                this.i("j_cmp_u8", tmp, tmp2, 0, switchLabels[counter+1]);
+                this.i("j_cmp_u8", tmp, tmp2, 0, switchLabels[counter + 1]);
                 this.destroyTmp(tmp2)
 
                 // now we fill in the variables
-                for(let variable of variables){
+                for (let variable of variables) {
                     let tmp2 = this.visitExpression(variable, case_.context);
                     this.destroyTmp(tmp2);
                 }
             }
 
-            if(case_.guard) {
+            if (case_.guard) {
                 let guardTmp = this.visitExpression(case_.guard, case_.context);
                 let andTmp = this.generateTmp();
                 this.i("and", andTmp, tmp, guardTmp);
@@ -574,10 +574,10 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
         }
 
         counter = 0;
-        for(let case_ of expr.cases) {
+        for (let case_ of expr.cases) {
             this.i("label", caseLabels[counter]);
-            
-            if(case_.expression) {
+
+            if (case_.expression) {
                 let reg = this.visitExpression(case_.expression, case_.context);
                 let instruction = tmpType(ctx, expr.inferredType!);
                 this.i(instruction, tmpRes, "reg", reg);
@@ -1595,36 +1595,58 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
     visitNamedStructConstructionExpression(expr: NamedStructConstructionExpression, ctx: Context): string {
         /**
-         * s_alloc [dest] [num_fields] [struct_size]
-         * s_set_offset [dest] [field_index] [offset]
-         * a_set_field_[type] [dest] [field_index] [value
-         */
+                 * s_alloc [dest] [num_fields] [struct_size]
+                 * s_set_offset [dest] [field_index] [offset]
+                 * a_set_field_[type] [dest] [field_index] [value
+                 */
         let structType = expr.inferredType as StructType;
+        let hintType = expr.hintType?.to(ctx, StructType) as StructType;
+
         let tmp = this.generateTmp();
         let structSize = structType.getStructSize(ctx);
         this.i("debug", "named struct construction expression ");
         this.i("s_alloc", tmp, structType.fields.length, structSize);
+
+        let offsetArray = structType.generateOffsetSwaps(hintType);
+        let originalOffsetArray = hintType.buildOffsetArray(structType);
+
 
         let offsetCounter = 0
         this.i("debug", "named struct field offset");
         for (let i = 0; i < structType.fields.length; i++) {
             let field = structType.fields[i];
 
-            this.i("s_set_offset", tmp, i, offsetCounter);
+            if (i < offsetArray.length) {
+                this.i("s_set_offset", tmp, i, originalOffsetArray[offsetArray[i]]);
+            }
+            else {
+                this.i("s_set_offset", tmp, i, originalOffsetArray[i]);
+            }
+
             offsetCounter += getDataTypeByteSize(field.type)
         }
 
         this.i("debug", "named struct field values");
 
+
         for (let i = 0; i < structType.fields.length; i++) {
             let field = structType.fields[i];
 
-            let res = this.visitExpression(expr.fields[i].value, ctx);
+            let index = i;
+            if (i < offsetArray.length) {
+                index = offsetArray[i];
+            }
 
+            let res = this.visitExpression(expr.fields[index].value, ctx);
             let inst = structSetFieldType(ctx, field.type);
             this.i(inst, tmp, i, res);
             this.destroyTmp(res);
         }
+
+
+
+        // do it at the end so it doesn't interfere with origin
+        expr.inferredType = expr.hintType;
 
         return tmp;
     }
@@ -1874,7 +1896,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
             if (hintType.is(ctx, InterfaceType)) {
                 let hintInterface = hintType.to(ctx, InterfaceType) as InterfaceType;
                 let inferredInterface = inferredType!.to(ctx, InterfaceType) as InterfaceType;
-                
+
                 // check if they align
                 if (!inferredInterface.interfacesAlign(hintInterface)) {
                     this.i("debug", "re-aligning interfaces");
@@ -2060,7 +2082,12 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
     visitLiteralExpression(expr: LiteralExpression, ctx: Context): string {
         let tmp = this.generateTmp();
         let tmpIndexReg = this.generateTmp();
-        let c = constType(ctx, expr.inferredType!);
+        // if hint is available, use it
+        let c = constType(ctx, expr?.hintType ?? expr?.inferredType!);
+
+        if(expr.hintType) {
+            expr.inferredType = expr.hintType;
+        }
 
 
         if (expr instanceof StringLiteralExpression) {
@@ -2270,14 +2297,14 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
         else if (stmt instanceof ReturnStatement) this.visitReturnStatement(stmt, ctx);
         else if (stmt instanceof VariableDeclarationStatement) this.visitVariableDeclarationStatement(stmt, ctx);
         else if (stmt instanceof WhileStatement) this.visitWhileStatement(stmt, ctx);
-        else { 
+        else {
             throw new Error("Unknown statement type " + stmt.constructor.name);
         }
     }
 
     visitBlockStatement(stmt: BlockStatement, ctx: Context) {
         this.i("debug", "Entering block " + stmt.context.uuid);
-        for(const [i, s] of stmt.statements.entries()){
+        for (const [i, s] of stmt.statements.entries()) {
             this.visitStatement(s, stmt.context);
         }
         this.i("debug", "Exiting block " + stmt.context.uuid);
@@ -2380,7 +2407,7 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
     visitFunctionDeclarationStatement(stmt: FunctionDeclarationStatement, ctx: Context) {
         // function declarations are already generated, as they are moved to the base global context
         // and generated there
-        return ;
+        return;
     }
     visitIfStatement(stmt: IfStatement, ctx: Context) {
         this.i("debug", "if-statement");
@@ -2445,89 +2472,89 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
 
     }
     visitMatchStatement(stmt: MatchStatement, ctx: Context) {
-           // first generate the expression
-           let tmp = this.visitExpression(stmt.expression, ctx);
+        // first generate the expression
+        let tmp = this.visitExpression(stmt.expression, ctx);
 
-           // now we perform the matching, we will have different block per case.
-           // case checking is done through structure first, then value
-           // meaning [a, ...b], will check if the array is of length 1 at least
-           // then assigns the values (if present)
-           // then checks the guard (if present)
-           // then jumps to the body
-   
-           
-           let switchLabels = stmt.cases.map((c) => this.generateLabel());
-           let caseLabels = stmt.cases.map((c) => this.generateLabel());
-           let endLabel = this.generateLabel();
-           caseLabels.push(endLabel);
-           switchLabels.push(endLabel);
-           
-   
-           let counter = 0;
-           for(let case_ of stmt.cases) { 
-               let expr = checkSubPattern(case_.context, stmt.expression, case_.pattern);
-               let cond = expr.condition || TrueLiteralExpression.makeLiteral(case_.location);
-               let variables = expr.variableAssignments;
-   
-   
-               cond.infer(case_.context, new BooleanType(case_.location));
-               // generate the condition
-               this.i("label", switchLabels[counter])
-               let tmp = this.visitExpression(cond, case_.context);
-               // fill in the variables
-               if(variables.length > 0){
-                   // we add a cmp to avoid filling in the variables if the condition is false
-                   let tmp2 = this.generateTmp();
-                   this.i("const_u8", tmp2, 0)
-                   this.i("j_cmp_u8", tmp, tmp2, 0, switchLabels[counter+1]);
-                   this.destroyTmp(tmp2)
-   
-                   // now we fill in the variables
-                   for(let variable of variables){
-                       let tmp2 = this.visitExpression(variable, case_.context);
-                       this.destroyTmp(tmp2);
-                   }
-               }
-   
-               if(case_.guard) {
-                   let guardTmp = this.visitExpression(case_.guard, case_.context);
-                   let andTmp = this.generateTmp();
-                   this.i("and", andTmp, tmp, guardTmp);
-                   this.destroyTmp(tmp);
-                   this.destroyTmp(guardTmp)
-   
-                   let tmp2 = this.generateTmp();
-                   this.i("const_u8", tmp2, 0)
-                   this.i("j_cmp_u8", andTmp, tmp2, 1, caseLabels[counter]);
-                   this.destroyTmp(tmp2)
-               }
-               else {
-                   let tmp2 = this.generateTmp();
-                   this.i("const_u8", tmp2, 0)
-                   this.i("j_cmp_u8", tmp, tmp2, 1, caseLabels[counter]);
-                   this.destroyTmp(tmp2)
-                   this.destroyTmp(tmp);
-               }
-               counter++;
-           }
-   
-           counter = 0;
-           for(let case_ of stmt.cases) {
-               this.i("label", caseLabels[counter]);
-               
-               if(case_.expression) {
-                   let tmp = this.visitExpression(case_.expression, case_.context);
-                   this.destroyTmp(tmp);
-               }
-               else {
-                   this.visitStatement(case_.block!, case_.context);
-               }
-   
-               this.i("j", endLabel);
-               counter++;
-           }
-   
-           this.i("label", endLabel);
+        // now we perform the matching, we will have different block per case.
+        // case checking is done through structure first, then value
+        // meaning [a, ...b], will check if the array is of length 1 at least
+        // then assigns the values (if present)
+        // then checks the guard (if present)
+        // then jumps to the body
+
+
+        let switchLabels = stmt.cases.map((c) => this.generateLabel());
+        let caseLabels = stmt.cases.map((c) => this.generateLabel());
+        let endLabel = this.generateLabel();
+        caseLabels.push(endLabel);
+        switchLabels.push(endLabel);
+
+
+        let counter = 0;
+        for (let case_ of stmt.cases) {
+            let expr = checkSubPattern(case_.context, stmt.expression, case_.pattern);
+            let cond = expr.condition || TrueLiteralExpression.makeLiteral(case_.location);
+            let variables = expr.variableAssignments;
+
+
+            cond.infer(case_.context, new BooleanType(case_.location));
+            // generate the condition
+            this.i("label", switchLabels[counter])
+            let tmp = this.visitExpression(cond, case_.context);
+            // fill in the variables
+            if (variables.length > 0) {
+                // we add a cmp to avoid filling in the variables if the condition is false
+                let tmp2 = this.generateTmp();
+                this.i("const_u8", tmp2, 0)
+                this.i("j_cmp_u8", tmp, tmp2, 0, switchLabels[counter + 1]);
+                this.destroyTmp(tmp2)
+
+                // now we fill in the variables
+                for (let variable of variables) {
+                    let tmp2 = this.visitExpression(variable, case_.context);
+                    this.destroyTmp(tmp2);
+                }
+            }
+
+            if (case_.guard) {
+                let guardTmp = this.visitExpression(case_.guard, case_.context);
+                let andTmp = this.generateTmp();
+                this.i("and", andTmp, tmp, guardTmp);
+                this.destroyTmp(tmp);
+                this.destroyTmp(guardTmp)
+
+                let tmp2 = this.generateTmp();
+                this.i("const_u8", tmp2, 0)
+                this.i("j_cmp_u8", andTmp, tmp2, 1, caseLabels[counter]);
+                this.destroyTmp(tmp2)
+            }
+            else {
+                let tmp2 = this.generateTmp();
+                this.i("const_u8", tmp2, 0)
+                this.i("j_cmp_u8", tmp, tmp2, 1, caseLabels[counter]);
+                this.destroyTmp(tmp2)
+                this.destroyTmp(tmp);
+            }
+            counter++;
+        }
+
+        counter = 0;
+        for (let case_ of stmt.cases) {
+            this.i("label", caseLabels[counter]);
+
+            if (case_.expression) {
+                let tmp = this.visitExpression(case_.expression, case_.context);
+                this.destroyTmp(tmp);
+            }
+            else {
+                this.visitStatement(case_.block!, case_.context);
+            }
+
+            this.i("j", endLabel);
+            counter++;
+        }
+
+        this.i("label", endLabel);
     }
     visitReturnStatement(stmt: ReturnStatement, ctx: Context) {
         if (stmt.returnExpression) {
@@ -2590,10 +2617,40 @@ CoroutineConstructionExpression	IndexAccessExpression		LiteralExpression			Nulla
     }
 
 
+    /**
+     * Deep cast expression to target type
+     * @param ctx 
+     * @param expr expr to cast
+     * @param exprReg register where expr is stored
+     * @param target type to cast to
+     * @returns 
+     */
+    deepCast(ctx: Context, expr: Expression, exprReg: string, target: DataType) {
+        if(areDataTypesIdentical(ctx, expr.inferredType!, target)) {
+            return expr;
+        }
 
+        if(expr.inferredType!.is(ctx, ArrayType)) {
+            // cast every element in the array
+            let loopLabel = this.generateLabel();
+            this.i("label", loopLabel);
+            
+            // get array length
+            let lengthReg = this.generateTmp();
+            this.i("a_len", lengthReg, exprReg);
+
+            // cmp length with 0
+            let tmp = this.generateTmp();
+            this.i("const_u8", tmp, 0);
+            this.i("j_cmp_u8", lengthReg, tmp, 0, loopLabel);
+            
+        }
+    }
+        
+        
 
     dumpIR() {
-        for(let [i, inst] of this.instructions.entries()){
+        for (let [i, inst] of this.instructions.entries()) {
             //if(inst.type == "debug") {
             //    continue
             //}

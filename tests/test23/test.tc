@@ -1,3 +1,7 @@
+
+from std.string import String
+from std.io import println
+
 /*
 fn main() {
     let x: {x: u32, y: u32} = do {
@@ -41,12 +45,79 @@ fn main() {
 }
 */
 
-fn stuff(a: {y: u32, x: u32}[]){
-    return a[0].x + a[1].y
+
+type Animal = interface {
+    fn quack() -> void
+    fn walk() -> void
+}
+
+type Duck = class Animal {
+    fn init(){
+        println("duck init")
+    }
+
+
+    fn quack() -> void {
+        println("quack")
+    }
+
+    fn walk() -> void {
+        println("walk")
+    }
+}
+
+type Dog = class Animal {
+    fn init(){
+        println("dog init")
+    }
+    
+    fn quack() -> void {
+        println("bark")
+    }
+
+    fn walk() -> void {
+        println("jug")
+    }
+
+}
+
+fn stuff(x: {instance: Animal, name: String}[]){
+    x[0].instance.quack()
 }
 
 fn main(){
-    let z: {x: u32, y:u32}[] = [{ y:100, x:1}, {x:2, y:200}]
-    return stuff(z)
-    // should return 201
+    let d = new Dog()
+    d.quack()
+    let I1: Animal = new Dog()
+    let I2: Animal = new Duck()
+    I1.quack()
+    I2.quack()
+    let animals = [{instance: I1, name: "Snoop"}, {instance: I2, name: "Scoop"}]
+
+    stuff(animals)
+
+    return 1
 }
+
+/*
+
+fn f() {
+    let x: {x: u32, y: u32}[] = [{x: 1, y: 2}, {x: 3, y: 4}]
+
+    fn g(data: {y: u32, x: u32}[]){
+        return data[0].x + data[0].y
+    }
+
+}
+
+fn f() {
+    let x: {x: u32, y: u32}[] = [{x: 1, y: 2}, {x: 3, y: 4}]
+
+    fn g(data: {y: u32, x: u32}[]){
+        return data[0].x + x[0].y
+    }
+
+    g(x)
+
+}
+*/

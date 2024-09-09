@@ -563,6 +563,18 @@ function matchBasicLiteralIntType(ctx: Context, t1: BasicType, t2: LiteralIntTyp
     return Ok();
 }
 
+/**
+ * Matches two function types. Function types are compatible if:
+ * 1. they have the same number of parameters
+ * 2. each parameter in t1 is exactly the same as the parameter in t2
+ * 3. the return type of t1 is exactly the same as the return type of t2
+ * @param ctx 
+ * @param t1 
+ * @param t2 
+ * @param stack 
+ * @param strict 
+ * @returns 
+ */
 function matchFunctionType(ctx: Context, t1: FunctionType, t2: FunctionType, stack: string[], strict: boolean): TypeMatchResult {
     if (t1.parameters.length != t2.parameters.length) {
         return Err(`Function parameter counts do not match, ${t1.parameters.length} and ${t2.parameters.length} are not compatible`)
@@ -573,7 +585,7 @@ function matchFunctionType(ctx: Context, t1: FunctionType, t2: FunctionType, sta
             return Err(`Function parameter ${i} mutability does not match, ${(t1.parameters[i].isMutable ? "mut " : "const ") +
                 t1.parameters[i].name} and ${(t2.parameters[i].isMutable ? "mut " : "const ") + t2.parameters[i].name} are not compatible`)
         }
-        let res = matchDataTypesRecursive(ctx, t2.parameters[i].type, t1.parameters[i].type, strict, stack)
+        let res = matchDataTypesRecursive(ctx, t2.parameters[i].type, t1.parameters[i].type, true, stack)
         if (!res.success) {
             return Err(`Function parameter ${i} types do not match: ${res.message}`);
         }
@@ -591,7 +603,7 @@ function matchFunctionType(ctx: Context, t1: FunctionType, t2: FunctionType, sta
         if(t1.returnType.is(ctx, UnsetType) || t2.returnType.is(ctx, UnsetType)){
             return Ok();
         }
-        let res = matchDataTypesRecursive(ctx, t1.returnType, t2.returnType as DataType, strict, stack)
+        let res = matchDataTypesRecursive(ctx, t1.returnType, t2.returnType as DataType, true, stack)
         if (!res.success) {
             return Err(`Function return types do not match: ${res.message}`)
         }

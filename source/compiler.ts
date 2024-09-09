@@ -91,7 +91,7 @@ export module TypeC {
             
             // add built-in symbols
 
-            //BuiltinModules.getStringClass(this);
+            BuiltinModules.getStringClass(this);
 
             for(let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
@@ -186,6 +186,7 @@ export module TypeC {
                 const command = `cd ${interpreterPath} && ./type_v ${binFile} ${srcMapFile}`;
                 
                 const result = spawnSync(command, { shell: true });
+                console.log("Result: "+result.status)
 
                 if(result.stdout){
                     console.log(colors.BgBlue, "stdout: ", colors.Reset);
