@@ -43,7 +43,6 @@ fn main() {
     let users = [{name: "John", age: 35}, {name: "Jane", age: 21}, {name: "Doe", age: 22, potato:-1}, {name: "John", age: 20, number: -1}]
     stuff(users)
 }
-*/
 
 
 type Animal = interface {
@@ -98,26 +97,18 @@ fn main(){
 
     return 1
 }
-
-/*
-
-fn f() {
-    let x: {x: u32, y: u32}[] = [{x: 1, y: 2}, {x: 3, y: 4}]
-
-    fn g(data: {y: u32, x: u32}[]){
-        return data[0].x + data[0].y
-    }
-
-}
-
-fn f() {
-    let x: {x: u32, y: u32}[] = [{x: 1, y: 2}, {x: 3, y: 4}]
-
-    fn g(data: {y: u32, x: u32}[]){
-        return data[0].x + x[0].y
-    }
-
-    g(x)
-
-}
 */
+
+
+
+fn g(data: {y: u32, x: u32}[]){
+    return data[1].x
+}
+
+fn main() {
+    let x: {x: u32, y: u32}[] = [{x: 1, y: 2}, {y: 4, x: 3}]
+
+
+    return g(x)
+
+}

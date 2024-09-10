@@ -76,28 +76,12 @@ export enum BytecodeInstructionType{
     s_alloc,
 
     /**
-     * s_alloc_shadow dest: r, copy: r fields-count: i
-     * creates a shadow copy of a struct (who's address is stored in copy),
-     * a shadow copy is a copy that points to the same data but with different
-     * offset table. copy address is stored given register
+     * s_reg_field: dest: R,  local_field_index: I(1byte), globalFieldID: I (4 bytes), field offset: I (2 bytes)
+     * Registers a new field in the struct stored in dest, with the given global field ID
+     * and field offset (local), must not exceed the total fields count of the struct
      */
-    s_alloc_shadow,
+    s_reg_field,
 
-    /**
-     * s_set_offset dest: r, fieldindex: i, offset-value: i (2 bytes)
-     * sets the offset value of field i, of the struct stored in dest
-     * to the given offset value
-     */
-    s_set_offset,
-
-    /**
-     * s_set_offset_shadow src: r, fieldindexsrc: i, fieldindextarget: i
-     * sets the offset value of field index fieldindexsrc, of the struct
-     * stored in src to the offset value of field index fieldindextarget,
-     * of the original struct referenced by the shadow copy
-     * ie. shadow_copy.offsets[fieldindexsrc] = original.offsets[fieldindextarget]
-     */
-    s_set_offset_shadow,
 
     /**
      * s_loadf_[size] dest: r, src: r fieldindex: i, bytesize: s

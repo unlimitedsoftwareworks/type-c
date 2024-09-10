@@ -90,9 +90,7 @@ export type IRInstructionType =
     "tmp_ptr" |
 
     "s_alloc" |
-    "s_alloc_shadow" |
-    "s_set_offset" |
-    "s_set_offset_shadow" |
+    "s_reg_field" |
 
     "s_get_field_i8" |
     "s_get_field_u8" |

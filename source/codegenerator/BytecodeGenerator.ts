@@ -630,20 +630,15 @@ export class BytecodeGenerator {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 this.emit(BytecodeInstructionType.s_alloc, reg, instruction.args[1] as number, instruction.args[2] as number);
             }
-            else if (instruction.type == "s_alloc_shadow") {
+            else if (instruction.type == "s_reg_field") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let reg2 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let localFieldID = instruction.args[1] as number;
+                let globalFieldID = instruction.args[2] as number;
+                let offset = instruction.args[3] as number;
 
-                this.emit(BytecodeInstructionType.s_alloc_shadow, reg, reg2, instruction.args[2] as number);
+                this.emit(BytecodeInstructionType.s_reg_field, reg, localFieldID, globalFieldID, offset);
             }
-            else if (instruction.type == "s_set_offset") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.s_set_offset, dest, instruction.args[1] as number, instruction.args[2] as number);
-            }
-            else if (instruction.type == "s_set_offset_shadow") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.s_set_offset_shadow, dest, instruction.args[1] as number, instruction.args[2] as number);
-            }
+            
             else if (instruction.type == "s_get_field_i8" || instruction.type == "s_get_field_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string);

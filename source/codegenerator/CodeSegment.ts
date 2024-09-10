@@ -116,53 +116,44 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 return this.writer.push_16(args[2]);
 
-            case BytecodeInstructionType.s_alloc_shadow:
+            case BytecodeInstructionType.s_reg_field:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]);
-
-            case BytecodeInstructionType.s_set_offset:
-                this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
-                return this.writer.push_16(args[2]);
-                
-            case BytecodeInstructionType.s_set_offset_shadow:
-                this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]);
+                this.writer.push_32(args[2]);
+                return this.writer.push_16(args[3]);
 
             case BytecodeInstructionType.s_loadf:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_8(args[2]);
+                this.writer.push_32(args[2]);
                 return this.writer.push_8(args[3]);
 
 
             case BytecodeInstructionType.s_loadf_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]);
+                return this.writer.push_32(args[2]);
                 
             case BytecodeInstructionType.s_storef_const:
                 this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
+                this.writer.push_32(args[1]);
                 this.writer.push_64(args[2]);
                 return this.writer.push_8(args[3]);
                 
             case BytecodeInstructionType.s_storef_const_ptr:
                 this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
+                this.writer.push_32(args[1]);
                 return this.writer.push_64(args[2]);
                 
             case BytecodeInstructionType.s_storef_reg:
                 this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
+                this.writer.push_32(args[1]);
                 this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
                 
             case BytecodeInstructionType.s_storef_reg_ptr:
                 this.writer.push_8(args[0]);
-                this.writer.push_8(args[1]);
+                this.writer.push_32(args[1]);
                 return this.writer.push_8(args[2]);
                 
             case BytecodeInstructionType.c_alloc:

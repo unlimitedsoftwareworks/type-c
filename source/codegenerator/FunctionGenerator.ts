@@ -611,9 +611,9 @@ export class FunctionGenerator {
 
         let offsetCounter = 0
         this.i("debug", "anonymous struct field offset");
-        for (let i = 0; i < structType.fields.length; i++) {
+        for (const [i, field] of structType.fields.entries()) {
             let field = structType.fields[i];
-            this.i("s_set_offset", tmp, i, offsetCounter);
+            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter);
             offsetCounter += getDataTypeByteSize(field.type);
         }
 
@@ -625,7 +625,7 @@ export class FunctionGenerator {
             let res = this.visitExpression(expr.elements[i], ctx);
 
             let inst = structSetFieldType(ctx, field.type);
-            this.i(inst, tmp, i, res);
+            this.i(inst, tmp, field.getFieldID(), res);
             this.destroyTmp(res);
         }
 
@@ -823,12 +823,12 @@ export class FunctionGenerator {
         if (baseType instanceof StructType) {
             let structType = baseType as StructType;
             let fieldType = structType.getFieldTypeByName(rhs.name);
-            let fieldIndex = structType.getFieldIndex(rhs.name);
+            let field = structType.getField(rhs.name);
 
             let tmp = this.generateTmp();
             let instr = structGetFieldType(ctx, fieldType!);
 
-            this.i(instr, tmp, lhsReg, fieldIndex);
+            this.i(instr, tmp, lhsReg, field!.getFieldID());
             this.destroyTmp(lhsReg);
 
             return tmp;
@@ -958,10 +958,10 @@ export class FunctionGenerator {
                     this.i("debug", "struct field assignment, struct member " + element.name);
 
                     let fieldType = structType.getFieldTypeByName(element.name)!;
-                    let fieldIndex = structType.getFieldIndex(element.name)!;
+                    let field = structType.getField(element.name);
 
                     let instr = structSetFieldType(ctx, fieldType);
-                    this.i(instr, structExpr, fieldIndex, right);
+                    this.i(instr, structExpr, field!.getFieldID(), right);
                     this.destroyTmp(structExpr);
                     //this.i("s_set_field_f32", "struct field assignment, struct member");
                     return right
@@ -1515,7 +1515,8 @@ export class FunctionGenerator {
                     this.i("debug", `setting variant field offset ${variantType.parameters[i - 1].name}`);
                 }
 
-                this.i("s_set_offset", variantReg, i, argsOffset[i]);
+                this.i("s_reg_field", variantReg, i, argsOffset[i]);
+                //this.i("s_reg_field", variantReg, i, variantType.parameters[i].getFieldID(), argsOffset[i]);
             }
             this.i("debug", `setting variant field tag`);
             let variantIdReg = this.generateTmp();
@@ -1599,29 +1600,20 @@ export class FunctionGenerator {
                  * s_set_offset [dest] [field_index] [offset]
                  * a_set_field_[type] [dest] [field_index] [value
                  */
-        let structType = expr.inferredType as StructType;
-        let hintType = expr.hintType?.to(ctx, StructType) as StructType;
-
+        let structType = (expr.inferredType as StructType)
+        let sortedStruct = structType.toSortedStruct();
+        
         let tmp = this.generateTmp();
         let structSize = structType.getStructSize(ctx);
         this.i("debug", "named struct construction expression ");
         this.i("s_alloc", tmp, structType.fields.length, structSize);
 
-        let offsetArray = structType.generateOffsetSwaps(hintType);
-        let originalOffsetArray = hintType.buildOffsetArray(structType);
-
-
         let offsetCounter = 0
         this.i("debug", "named struct field offset");
-        for (let i = 0; i < structType.fields.length; i++) {
-            let field = structType.fields[i];
+        for (let i = 0; i < sortedStruct.fields.length; i++) {
+            let field = sortedStruct.fields[i];
 
-            if (i < offsetArray.length) {
-                this.i("s_set_offset", tmp, i, originalOffsetArray[offsetArray[i]]);
-            }
-            else {
-                this.i("s_set_offset", tmp, i, originalOffsetArray[i]);
-            }
+            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter);
 
             offsetCounter += getDataTypeByteSize(field.type)
         }
@@ -1629,17 +1621,15 @@ export class FunctionGenerator {
         this.i("debug", "named struct field values");
 
 
-        for (let i = 0; i < structType.fields.length; i++) {
-            let field = structType.fields[i];
+        for (let i = 0; i < expr.fields.length; i++) {
+            
+            let exprField = expr.fields[i];
+            let fieldInSortedStruct = sortedStruct.getField(exprField.name)!;
 
-            let index = i;
-            if (i < offsetArray.length) {
-                index = offsetArray[i];
-            }
 
-            let res = this.visitExpression(expr.fields[index].value, ctx);
-            let inst = structSetFieldType(ctx, field.type);
-            this.i(inst, tmp, i, res);
+            let res = this.visitExpression(exprField.value, ctx);
+            let inst = structSetFieldType(ctx, fieldInSortedStruct.type);
+            this.i(inst, tmp, fieldInSortedStruct.getFieldID(), res);
             this.destroyTmp(res);
         }
 
@@ -1852,26 +1842,7 @@ export class FunctionGenerator {
         }
         else if (inferredType instanceof StructType) {
             if ((hintType != undefined) && (hintType instanceof StructType)) {
-                let destType = inferredType as StructType;
-                let srcType = hintType as StructType;
-
-                if (destType.fieldsAligned(srcType, ctx)) {
-                    // we do nothing
-                }
-                else {
-                    // we will have to generate a new struct with the fields in the right order
-                    this.i("debug", "struct assignment with different field order");
-                    let offsetDiff = destType.generateOffsetSwaps(srcType);
-                    let tmpReg = this.generateTmp();
-                    this.i("s_alloc_shadow", tmpReg, castReg, srcType.fields.length);
-                    this.destroyTmp(castReg);
-                    for (let i = 0; i < srcType.fields.length; i++) {
-                        let offset = offsetDiff[i];
-
-                        this.i("s_set_offset_shadow", tmpReg, i, offset);
-                    }
-                    castReg = tmpReg
-                }
+                // we do nothing no more!
             }
         }
 
