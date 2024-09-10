@@ -167,8 +167,8 @@ export class ClassType extends DataType {
         return "class {" + this.methods.map(e => e.shortname()).join(",") + "}";
     }
 
-    serialize(): string {
-        return `@class{@attributes[${this.attributes.map(e => e.serialize())}],@methods[${this.methods.map(e => e.serialize()).join(",")}],@superTypes[${this.superTypes.map(e => e.serialize())}`
+    serialize(unpack: boolean = false): string {
+        return `@class{@attributes[${this.attributes.map(e => e.serialize(unpack))}],@methods[${this.methods.map(e => e.serialize(unpack)).join(",")}],@superTypes[${this.superTypes.map(e => e.serialize(unpack))}]`
     }
 
     /**

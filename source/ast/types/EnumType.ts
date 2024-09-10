@@ -158,7 +158,7 @@ export class EnumType extends DataType {
         return "enum{"+this.fields.map(f => f.name).join(", ")+"}";
     }
 
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         return `@enum{${this.fields.map(f => f.name + (f.value !== null ? " = " + f.value : "")).join(", ")}}`;
     }
 

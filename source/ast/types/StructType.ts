@@ -61,8 +61,8 @@ export class StructType extends DataType {
         return "struct{"+this.fields.map(f => f.name+":"+f.type.shortname()).join(",")+"}"
     }
 
-    serialize(): string {
-        return `@struct{${this.fields.map(f => `${f.name}:${f.type.serialize()}`).join(",")}}`
+    serialize(unpack: boolean = false): string {
+        return `@struct{${this.fields.map(f => `${f.name}:${f.type.serialize(unpack)}`).join(",")}}`
     }
 
 

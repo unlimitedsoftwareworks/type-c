@@ -36,8 +36,8 @@ export class PromiseType extends DataType {
         return `promise<${this.returnType.shortname()}>`
     }
 
-    serialize(): string {
-        return `@promise<${this.returnType.serialize()}>`
+    serialize(unpack: boolean = false): string {
+        return `@promise<${this.returnType.serialize(unpack)}>`
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}): PromiseType{

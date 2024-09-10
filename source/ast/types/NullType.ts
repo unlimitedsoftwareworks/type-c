@@ -22,7 +22,7 @@ export class NullType extends DataType {
         return "null"
     }
 
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         return "@null"
     }
 

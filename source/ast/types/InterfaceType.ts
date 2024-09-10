@@ -40,9 +40,9 @@ export class InterfaceType extends DataType {
         return "interface"
     }
 
-    serialize(): string {
-        let superType = this.superTypes.map((superType) => superType.serialize()).join(",");
-        let methods = this.methods.map((method) => method.serialize()).join(",");
+    serialize(unpack: boolean = false): string {
+        let superType = this.superTypes.map((superType) => superType.serialize(unpack)).join(",");
+        let methods = this.methods.map((method) => method.serialize(unpack)).join(",");
         return `@interface{${superType}:${methods}}`
     }
 

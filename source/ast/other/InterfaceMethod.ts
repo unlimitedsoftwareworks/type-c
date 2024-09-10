@@ -42,6 +42,11 @@ export class InterfaceMethod extends FunctionPrototype {
      * @returns 
      */
     static getMethodUID(proto: FunctionPrototype){
+
+        if(proto.generics.length > 0){
+            throw new Error("Cannot generate UID for generic method prototype");
+        }
+        
         let uid = InterfaceMethod.methodUIDGenerator.get(proto.toString());
         if(uid == undefined){
             uid = InterfaceMethod.methodUIDCounter++;
@@ -59,8 +64,8 @@ export class InterfaceMethod extends FunctionPrototype {
         return this.name+"("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.shortname()).join(",")+") -> "+this.header.returnType.shortname();
     }
 
-    serialize(): string {
-        return `@method{${this.name}:${this.header.serialize()},static:${this.isStatic},generics:[${this.generics.map(g => g.serialize()).join(",")}]`
+    serialize(unpack: boolean = false): string {
+        return `@method{${this.name}:${this.header.serialize(unpack)},static:${this.isStatic},generics:[${this.generics.map(g => g.serialize(unpack)).join(",")}]`
     }
 
     /**

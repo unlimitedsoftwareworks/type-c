@@ -33,8 +33,8 @@ export class ArrayType extends DataType {
         return this.arrayOf.shortname() + "[]";
     }
 
-    serialize(): string {
-        return `@array{${this.arrayOf.serialize()}`;
+    serialize(unpack: boolean = false): string {
+        return `@array{${this.arrayOf.serialize(unpack)}}`;
     }
 
     allowedNullable(ctx: Context): boolean {
