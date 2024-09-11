@@ -17,7 +17,8 @@ export class VariantParameter {
     type: DataType;
     location: SymbolLocation;
 
-    static globalFieldID = 0;
+    // ID 0 is reserved for the constructor tag stored in the first 16bits of the structs bytecode
+    static globalFieldID = 1;
     static fieldIdMap: { [key: string]: number } = {};
     static getFieldID(name: string): number {
         if (VariantParameter.fieldIdMap[name] == undefined) {
