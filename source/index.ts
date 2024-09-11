@@ -62,6 +62,8 @@ function printHelp(){
     █████████████▒▓████████▓███████▒▒▓██████████▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒░▒▒▒▓▒░▒▒▒▒▒▒▓▓░▒▒▒▓░▒▒▒▒▒▒▒▓██▒█
     ███████████████▓░      ░▒███████████▓▒▒░▒▒▒▒▒▒░▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒░▒▒▒▒▒░▒▒▒▒▒▒▒▒░▒▒▒▒░▒▒▒▒▒▒▒▓██▒█
     ██████▓▒▒░░░░░░▒▓██████████▓▓▒▒▒ ▒▒▒▒▒▒░▒▒▒▒▒▒░▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒░▒▒▒▒▒░▒▒▒▒▒▒▒▓░▒▒▒▒░▒▒▒▒▒▒▒▓██▒█
+    ████▓▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▓▓▓█████
+    
 
     
 Type-c compiler, version ${compilerVersion}.
@@ -80,10 +82,12 @@ if(args.includes('--help') || args.includes('-h')) {
     printHelp();
 }
 else if (args.includes('--run-tests')) {
-    throw new Error("Not implemented yet");
-    //const options = parseRunTestsOptions(args);
+    // const options = parseRunTestsOptions(args);
     //let code = TypeC.runTests();
     //exit(code)
+    throw new Error("Not implemented yet");
+
+    
 } else if (args.includes('--compile') || args.includes('-c')) {
     const options = parseCompileOptions(args);
     TypeC.compile(options);
