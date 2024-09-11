@@ -182,7 +182,6 @@ export module TypeC {
                 const command = `cd ${interpreterPath} && ./type_v ${binFile} ${srcMapFile}`;
                 
                 const result = spawnSync(command, { shell: true });
-                console.log("Result: "+result.status)
 
                 if(result.stdout){
                     console.log(colors.BgBlue, "stdout: ", colors.Reset);
@@ -192,9 +191,9 @@ export module TypeC {
                     console.log(colors.BgRed, "stderr: ", colors.Reset);
                     console.log(result.stderr.toString());
                 }
-                return result.status || 0;
+                process.exit(result.status || 0);
             }
         }
-        return 0
+        process.exit(0);
     }
 }
