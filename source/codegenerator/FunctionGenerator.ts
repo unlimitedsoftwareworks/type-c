@@ -74,6 +74,7 @@ import { InterfaceType } from "../ast/types/InterfaceType";
 import { MetaClassType, MetaType, MetaVariantConstructorType } from "../ast/types/MetaTypes";
 import { NullableType } from "../ast/types/NullableType";
 import { StructType } from "../ast/types/StructType";
+import { TupleType } from "../ast/types/TupleType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
@@ -81,7 +82,7 @@ import { areDataTypesIdentical, canCastTypes, matchDataTypes } from "../typechec
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
-import { arrayGetIndexType, arraySetIndexType, classGetFieldType, classSetFieldType, constType, fnSetArgType, getBinaryInstruction, getUnaryInstruction, globalType, popStackType, pushStackType, retType, structGetFieldType, structSetFieldType, tmpType } from "./CodeGenTypes";
+import { arrayGetIndexType, arraySetIndexType, classGetFieldType, classSetFieldType, constType, fnGetRetType, fnSetArgType, getBinaryInstruction, getUnaryInstruction, globalType, popStackType, pushStackType, retType, structGetFieldType, structSetFieldType, tmpType } from "./CodeGenTypes";
 import { allocateRegisters } from "./RegisterAllocator";
 import { getDataTypeByteSize } from "./utils";
 
@@ -225,6 +226,16 @@ export class FunctionGenerator {
         this.i("destroy_tmp", reg);
     }
 
+    getLastInstruction(): IRInstruction {
+        // return last non debug instruction
+        for (let i = this.instructions.length - 1; i >= 0; i--) {
+            if ((this.instructions[i].type != "debug") && !(this.instructions[i].type.startsWith("srcmap"))) {
+                return this.instructions[i];
+            }
+        }
+        return this.instructions[0];
+    }
+
     generate() {
         // generate IR instructions for the function
         if (!this.isGlobal) {
@@ -241,7 +252,7 @@ export class FunctionGenerator {
 
         if (this.fn.body) {
             this.visitStatement(this.fn.body, this.fn.context);
-            if (!this.instructions[this.instructions.length - 1].type.startsWith("ret") && !this.isGlobal) {
+            if (!this.getLastInstruction().type.startsWith("ret_") && !this.isGlobal) {
                 this.i("ret_void")
             }
         }
@@ -251,7 +262,8 @@ export class FunctionGenerator {
             // check if the function is not void
             if ((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")) {
                 let instr = retType(this.fn.context, this.fn.codeGenProps.parentFnType.returnType);
-                this.i(instr, tmp);
+                // TODO: handle tuple for expression-functions return here
+                this.i(instr, tmp, 0);
             }
             else {
                 this.destroyTmp(tmp);
@@ -261,7 +273,6 @@ export class FunctionGenerator {
         }
 
 
-        this.dumpIR();
         this.allocateRegisters();
 
     }
@@ -910,6 +921,7 @@ export class FunctionGenerator {
         this.i("debug", "binary expression " + expr.operator);
 
         if (expr.operator == "=") {
+            
             // generate the right expression
             let right = this.visitExpression(expr.right, ctx);
 
@@ -1156,7 +1168,10 @@ export class FunctionGenerator {
             this.i("fn_alloc")
             for (let i = 0; i < instructions.length; i++) {
                 this.i(instructions[i], i, regs[i]);
+                // mut regs not used for now..
+                //if(!mutRegs.includes(regs[i])){
                 this.destroyTmp(regs[i]);
+                //}
             }
 
             if (sym instanceof DeclaredFunction) {
@@ -1166,9 +1181,10 @@ export class FunctionGenerator {
 
                 // check if the function returns a value
                 let hasReturn = true;
-                if ((expr.inferredType instanceof VoidType)) {
+                if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                     hasReturn = false;
                 }
+
 
                 if (hasReturn) {
                     let tmp = this.generateTmp();
@@ -1944,7 +1960,29 @@ export class FunctionGenerator {
     visitLetInExpression(expr: LetInExpression, ctx: Context): string {
         this.i("debug", "let-in expression: " + expr.variables.map(v => v.name).join(", "));
         // generate the variables
+        var processed: DeclaredVariable[] = [];
         for (let decl of expr.variables) {
+            // since we sometime look forward in the list of variables
+            // we might group some variables decl that share the same base expression
+            // such as tuple deconstructions, array deconstructions, etc.
+            // so if they are already processed (means pushed into processed), we skip them
+            if(processed.includes(decl)) {
+                continue;
+            }
+
+            if(decl.isFromTuple) {
+                let group: DeclaredVariable[] = [];
+                // find all tuple deconstructions in the initializer
+                for (let decl_ of expr.variables) {
+                    if(decl_.initGroupID == decl.initGroupID) {
+                        processed.push(decl_);
+                        group.push(decl_);
+                    }
+                }
+
+                this.visitTupeDeconstructionGroup(ctx, group);
+                continue;
+            }
 
             /*
             let tmp = this.visitExpression(decl.initializer, ctx);
@@ -2527,10 +2565,25 @@ export class FunctionGenerator {
     }
     visitReturnStatement(stmt: ReturnStatement, ctx: Context) {
         if (stmt.returnExpression) {
-            let tmp = this.visitExpression(stmt.returnExpression, ctx);
-            this.i("debug", "return statement " + tmp);
-            let retInst = retType(ctx, stmt.returnExpression.inferredType!);
-            this.i(retInst, tmp);
+
+            if(stmt.returnExpression instanceof TupleConstructionExpression) {
+                // we return elements one by one
+                for(let [i, el] of stmt.returnExpression.elements.entries()) {
+                    this.i("debug", "return tuple element #" + i);
+                    let tmp = this.visitExpression(el, ctx);
+                    let retInst = retType(ctx, el.inferredType!);
+                    this.i(retInst, tmp, i);
+                    this.destroyTmp(tmp);
+                }
+            }
+            else {
+                let tmp = this.visitExpression(stmt.returnExpression, ctx);
+                this.i("debug", "return statement " + tmp);
+                let retInst = retType(ctx, stmt.returnExpression.inferredType!);
+                this.i(retInst, tmp, 0);
+            }
+            // add a ret void to mark the end of the function
+            this.i("ret_void");
         }
         else {
             this.i("debug", "return statement void");
@@ -2538,7 +2591,31 @@ export class FunctionGenerator {
         }
     }
     visitVariableDeclarationStatement(stmt: VariableDeclarationStatement, ctx: Context) {
+        var processed: DeclaredVariable[] = [];
         for (let decl of stmt.variables) {
+            // since we sometime look forward in the list of variables
+            // we might group some variables decl that share the same base expression
+            // such as tuple deconstructions, array deconstructions, etc.
+            // so if they are already processed (means pushed into processed), we skip them
+            if(processed.includes(decl)) {
+                continue;
+            }
+
+            if(decl.isFromTuple) {
+                let group: DeclaredVariable[] = [];
+                // find all tuple deconstructions in the initializer
+                for (let decl_ of stmt.variables) {
+                    if(decl_.initGroupID == decl.initGroupID) {
+                        processed.push(decl_);
+                        group.push(decl_);
+                    }
+                }
+
+                this.visitTupeDeconstructionGroup(ctx, group);  
+                continue;
+            }
+
+
             // translate the expression into <left> = <right>
             let left: Expression = new ElementExpression(decl.location, decl.name);
             let right = decl.initializer;
@@ -2585,45 +2662,25 @@ export class FunctionGenerator {
         this.i("label", stmt.body.context.generateEndOfContextLabel());
     }
 
+    visitTupeDeconstructionGroup(ctx: Context, group: DeclaredVariable[]) {
+        // (a, b) = f()
 
-    /**
-     * Deep cast expression to target type
-     * @param ctx 
-     * @param expr expr to cast
-     * @param exprReg register where expr is stored
-     * @param target type to cast to
-     * @returns 
-     */
-    deepCast(ctx: Context, expr: Expression, exprReg: string, target: DataType) {
-        if(areDataTypesIdentical(ctx, expr.inferredType!, target)) {
-            return expr;
-        }
+        // first generate the expression
+        this.i("debug", "tuple deconstruction group");
+        let fnReg = this.visitExpression((group[0].initializer as TupleDeconstructionExpression).tupleExpression, ctx);
+        this.destroyTmp(fnReg);
 
-        if(expr.inferredType!.is(ctx, ArrayType)) {
-            // cast every element in the array
-            let loopLabel = this.generateLabel();
-            this.i("label", loopLabel);
-            
-            // get array length
-            let lengthReg = this.generateTmp();
-            this.i("a_len", lengthReg, exprReg);
+        let fnType = group[0].initializer.inferredType! as TupleType;
 
-            // cmp length with 0
-            let tmp = this.generateTmp();
-            this.i("const_u8", tmp, 0);
-            this.i("j_cmp_u8", lengthReg, tmp, 0, loopLabel);
-            
-        }
-    }
-        
-        
+        // we do not perform a direct assignment, rather we a fn_get_reg_u32 and such
+        for (const decl of group) {
+            let expr: Expression = new ElementExpression(decl.location, decl.name);
+            let elementReg = this.visitExpression(expr, ctx);
 
-    dumpIR() {
-        for (let [i, inst] of this.instructions.entries()) {
-            //if(inst.type == "debug") {
-            //    continue
-            //}
-            // console.log(`[${i}] ${inst.type} ${inst.args.join(",")}`);
+            let returnIndex = (decl.initializer as TupleDeconstructionExpression).index;
+
+            let inst = fnGetRetType(ctx, decl.annotation!);
+            this.i(inst, elementReg, 255-returnIndex);
         }
     }
 }

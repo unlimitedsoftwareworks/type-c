@@ -1,0 +1,18 @@
+from std.io import println
+from std.string import String
+
+fn f(x: String) -> (String, String) {
+    x = "WHY"
+    return (x, x+"WHY")
+}
+
+fn main() {
+    let const x = "world"
+    let (y, z) = f(x)
+
+    let const a = y
+    a = y
+
+    println(y)
+    println(z)
+}

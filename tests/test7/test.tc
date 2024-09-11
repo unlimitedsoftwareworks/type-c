@@ -44,8 +44,6 @@ type DataArray<T> = class {
         return v
     }
     
-
-    
     fn reduce(f: fn (x: T, y: T) -> T) -> T {
         return this.data[0]
     }

@@ -190,6 +190,35 @@ export type IRInstructionType =
     "fn_set_reg_f32" |
     "fn_set_reg_f64" |
     "fn_set_reg_ptr" |
+
+    "fn_get_reg_u8" | // init args pre function call
+    "fn_get_reg_u16" |
+    "fn_get_reg_u32" |
+    "fn_get_reg_u64" |
+    "fn_get_reg_i8" |
+    "fn_get_reg_i16" |
+    "fn_get_reg_i32" |
+    "fn_get_reg_i64" |
+    "fn_get_reg_f32" |
+    "fn_get_reg_f64" |
+    "fn_get_reg_ptr" |
+
+    /**
+     * Function returns are done through the registers, hence we need to keep track of which registers we will push
+     * the IR for function call is as follows
+     * call jump_id ret_1, ret_2, ret_3
+     * 
+     * for example:
+     * fn f(mut x: u32, y: u32) -> (a:u32, b:u32)  // returns a tuple byt also has a mut arg
+     * -> call f a_reg (255), b_reg (254), x_reg (0)
+     * -> mut arguments are ready from whichever register they were passed in
+     * -> the return values are read from register 255 downwards
+     * 
+     * calling f will generate the following IR:
+     * call f 1, 2
+     * 
+     * 
+     */
     "call" |      // direct call based on offset
     "call_ptr" |  // call based on address stored in a pointer
     "label" |

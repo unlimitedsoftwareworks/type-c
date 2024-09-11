@@ -46,7 +46,12 @@ export class ReturnStatement extends Statement {
     getReturnType(ctx: Context): DataType {
         if(this.returnExpression){
             // we need to infer the expression to get the return type
-            return this.returnExpression.infer(ctx, null);
+            if(this.returnExpression instanceof TupleConstructionExpression) {
+                return this.returnExpression.inferReturn(ctx, null);
+            }
+            else {
+                return this.returnExpression.infer(ctx, null);
+            }
         }
         else {
             return new VoidType(this.location);

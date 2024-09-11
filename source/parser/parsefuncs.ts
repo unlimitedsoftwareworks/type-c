@@ -105,6 +105,8 @@ type DeconstructedVariable = {
     isIgnored: boolean;
 };
 
+let INTIALIZER_GROUP_ID = 1;
+
 // <genericArgDecl> ::= '<' id (':' <type>)? (',' id (':' <type>)?)+ '>' 
 function parseGenericArgDecl(parser: Parser, ctx: Context): GenericType[] {
     let generics: GenericType[] = [];
@@ -1818,10 +1820,10 @@ function parseTupleDeconstruction(parser: Parser, ctx: Context, isConst: boolean
         let tupleDeconstruction = new TupleDeconstructionExpression(
             loc,
             tupleExpression,
-            new IntLiteralExpression(loc, index.toString())
+            index
         );
         
-        return new DeclaredVariable(
+        let d= new DeclaredVariable(
             loc,
             name as string,
             tupleDeconstruction,
@@ -1829,7 +1831,12 @@ function parseTupleDeconstruction(parser: Parser, ctx: Context, isConst: boolean
             isConst,
             false
         );
+
+        d.isFromTuple = true;
+        d.initGroupID = INTIALIZER_GROUP_ID;
+        return d
     });
+    INTIALIZER_GROUP_ID++;
 }
 
 function parseObjectDeconstruction(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {

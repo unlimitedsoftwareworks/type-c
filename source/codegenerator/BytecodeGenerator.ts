@@ -339,7 +339,7 @@ export class BytecodeGenerator {
 
         if (mainHasReturn) {
             this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, 8);
-            //this.emit(BytecodeInstructionType.debug_reg, 255);
+            this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
         //this.emit(BytecodeInstructionType.debug_reg, i);
@@ -621,6 +621,33 @@ export class BytecodeGenerator {
                 let reg1 = instruction.args[0] as number;
                 let reg2 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 this.emit(BytecodeInstructionType.fn_set_reg_ptr, reg1, reg2);
+            }
+
+            // get return value from function
+            else if (instruction.type == "fn_get_reg_i8" || instruction.type == "fn_get_reg_u8") {
+                let reg1 = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let reg2 = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.fn_get_ret_reg, reg1, reg2, 1);
+            }
+            else if (instruction.type == "fn_get_reg_i16" || instruction.type == "fn_get_reg_u16") {
+                let reg1 = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let reg2 = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.fn_get_ret_reg, reg1, reg2, 2);
+            }
+            else if (instruction.type == "fn_get_reg_i32" || instruction.type == "fn_get_reg_f32" || instruction.type == "fn_get_reg_u32") {
+                let reg1 = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let reg2 = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.fn_get_ret_reg, reg1, reg2, 4);
+            }
+            else if (instruction.type == "fn_get_reg_i64" || instruction.type == "fn_get_reg_u64" || instruction.type == "fn_get_reg_f64") {
+                let reg1 = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let reg2 = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.fn_get_ret_reg, reg1, reg2, 8);
+            }
+            else if (instruction.type == "fn_get_reg_ptr") {
+                let reg1 = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let reg2 = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.fn_get_ret_reg_ptr, reg1, reg2);
             }
 
             /**
@@ -913,16 +940,26 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.fn_get_ret_reg, returnReg, 255, 8);
                 }
             }
-            else if (instruction.type == "ret_i8" || instruction.type == "ret_u8"
-                || instruction.type == "ret_i16" || instruction.type == "ret_u16"
-                || instruction.type == "ret_i32" || instruction.type == "ret_u32"
-                || instruction.type == "ret_f32" || instruction.type == "ret_i64"
-                || instruction.type == "ret_u64" || instruction.type == "ret_f64"
-                || instruction.type == "ret_ptr") {
-                this.emit(BytecodeInstructionType.mv_reg_reg, 255, this.getRegisterForVariable(fn, instruction.args[0] as string), 8);
-                this.emit(BytecodeInstructionType.fn_ret);
+            else if (instruction.type == "ret_i8" || instruction.type == "ret_u8") {
+                let i = instruction.args[1] as number
+                this.emit(BytecodeInstructionType.mv_reg_reg, 255-i, this.getRegisterForVariable(fn, instruction.args[0] as string), 2);
             }
-
+            else if (instruction.type == "ret_i16" || instruction.type == "ret_u16") {
+                let i = instruction.args[1] as number
+                this.emit(BytecodeInstructionType.mv_reg_reg, 255-i, this.getRegisterForVariable(fn, instruction.args[0] as string), 2);
+            }
+            else if (instruction.type == "ret_i32" || instruction.type == "ret_u32" || instruction.type == "ret_f32") {
+                let i = instruction.args[1] as number
+                this.emit(BytecodeInstructionType.mv_reg_reg, 255-i, this.getRegisterForVariable(fn, instruction.args[0] as string), 4);
+            }
+            else if (instruction.type == "ret_i64" || instruction.type == "ret_u64" || instruction.type == "ret_f64") {
+                let i = instruction.args[1] as number
+                this.emit(BytecodeInstructionType.mv_reg_reg, 255-i, this.getRegisterForVariable(fn, instruction.args[0] as string), 8);
+            }
+            else if (instruction.type == "ret_ptr") {
+                let i = instruction.args[1] as number
+                this.emit(BytecodeInstructionType.mv_reg_reg_ptr, 255-i, this.getRegisterForVariable(fn, instruction.args[0] as string));
+            }
             else if (instruction.type == "ret_void") {
                 this.emit(BytecodeInstructionType.fn_ret);
             }

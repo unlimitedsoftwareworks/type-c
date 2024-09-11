@@ -3,13 +3,13 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
 import { TupleType } from "../types/TupleType";
-import { IntLiteralExpression } from "./LiteralExpression";
 
 export class TupleDeconstructionExpression extends Expression {
+    
     constructor(
         location: SymbolLocation,
         public tupleExpression: Expression,
-        public index: IntLiteralExpression
+        public index: number
     ) {
         super(location, "tuple_deconstruction");
     }
@@ -24,7 +24,7 @@ export class TupleDeconstructionExpression extends Expression {
         }
 
         let tuple = tupleType.to(ctx, TupleType) as TupleType;
-        let indexValue = parseInt(this.index.value);
+        let indexValue = this.index
 
         if (indexValue < 0 || indexValue >= tuple.types.length) {
             throw ctx.parser.customError(`Tuple index out of bounds: ${indexValue}`, this.location);
@@ -39,7 +39,7 @@ export class TupleDeconstructionExpression extends Expression {
         return new TupleDeconstructionExpression(
             this.location,
             this.tupleExpression.clone(typeMap, ctx),
-            this.index.clone(typeMap, ctx) as IntLiteralExpression
+            this.index
         );
     }
 }

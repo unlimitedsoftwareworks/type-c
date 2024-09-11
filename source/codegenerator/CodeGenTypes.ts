@@ -242,6 +242,29 @@ export function fnSetArgType(ctx: Context, v: DataType): IRInstructionType {
     return "fn_set_reg_ptr";
 }
 
+
+export function fnGetRetType(ctx: Context, v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if(u instanceof BasicType) {
+        if(u.kind == "i8") return "fn_get_reg_i8";
+        if(u.kind == "u8") return "fn_get_reg_u8";
+        if(u.kind == "i16") return "fn_get_reg_i16";
+        if(u.kind == "u16") return "fn_get_reg_u16";
+        if(u.kind == "i32") return "fn_get_reg_i32";
+        if(u.kind == "u32") return "fn_get_reg_u32";
+        if(u.kind == "i64") return "fn_get_reg_i64";
+        if(u.kind == "u64") return "fn_get_reg_u64";
+        if(u.kind == "f32") return "fn_get_reg_f32";
+        if(u.kind == "f64") return "fn_get_reg_f64";
+        if(u.kind == "array") return "fn_get_reg_ptr";
+        if(u.kind == "bool") return "fn_get_reg_u8";
+    }
+    if(u instanceof EnumType){
+        return ("fn_get_reg_"+u.as) as IRInstructionType;
+    }
+    return "fn_get_reg_ptr";
+}
+
 export function pushStackType(ctx: Context, v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {

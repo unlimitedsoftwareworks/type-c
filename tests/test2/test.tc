@@ -42,9 +42,4 @@ fn main(){
     let set = new UnitSet("STD Test 2", "Tests random stuff", [test_1])
 
     return set.run()
-    /**
-     * TODO: returning void should not be allowed
-
-    //return set.run()
-    */
 }

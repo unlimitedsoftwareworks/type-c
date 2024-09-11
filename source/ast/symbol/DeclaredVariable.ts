@@ -30,6 +30,8 @@ export class DeclaredVariable extends Symbol {
     isFromArray: boolean = false;
     isFromStruct: boolean = false;
 
+    initGroupID: number = 0;
+
     // used to identify the index of the variable in a deconstructed expression
     indexInDeconstructedExpression = -1;
     // used to identify the field name of the variable in a deconstructed struct
