@@ -69,7 +69,7 @@ export class ClassType extends DataType {
     }
 
     resolve(ctx: Context, hint: DataType | null = null) {
-        if (this._resolved) return;
+        //if (this._resolved) return;
 
         if (globalTypeCache.get(this)) {
             return;
