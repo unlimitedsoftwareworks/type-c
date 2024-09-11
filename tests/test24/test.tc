@@ -37,11 +37,7 @@ type Data<T> = class {
         this.length -= 1
         return this.data[this.length]
     }
-
-
 }
-
-
 
 fn main() {
     let arr: Data<u32> = new Data<u32>()
