@@ -339,7 +339,7 @@ export class BytecodeGenerator {
 
         if (mainHasReturn) {
             this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, 8);
-            this.emit(BytecodeInstructionType.debug_reg, 255);
+            //this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
         //this.emit(BytecodeInstructionType.debug_reg, i);
@@ -404,8 +404,8 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_null, reg)
                 }
                 else {
-                    //let c = this.constantSegment.addConstant({ byteSize: 4, floatValue: intVal });
-                    this.emit(BytecodeInstructionType.mv_reg_i, reg, intVal);
+                    let c = this.constantSegment.addConstant({ byteSize: 4, floatValue: intVal });
+                    this.emit(BytecodeInstructionType.mv_reg_const, reg, c, 4);
                 }
             }
             else if (instruction.type == "const_i64" || instruction.type == "const_u64") {
@@ -426,8 +426,8 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_null, reg)
                 }
                 else {
-                    //let c = this.constantSegment.addConstant({ byteSize: 8, floatValue: intVal });
-                    this.emit(BytecodeInstructionType.mv_reg_i, reg, intVal);
+                    let c = this.constantSegment.addConstant({ byteSize: 8, floatValue: intVal });
+                    this.emit(BytecodeInstructionType.mv_reg_const, reg, c, 8);
                 }
             }
             else if (instruction.type == "const_ptr") {

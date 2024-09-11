@@ -60,6 +60,6 @@ fn main() {
     let test_3 = new TestUnit("test 3", "Tests basic if-else expression usage", test3)
 
     let set = new UnitSet("STD Test 0", "Tests basic language constructors", [test_1, test_2, test_3])
-    set.run()
+    return set.run()
 }
 

@@ -15,8 +15,8 @@ fn test2(runner: TestUnit) {
     let s3: String = "bye"
     runner.assert_obj_neq<String>(s1, s3)
 
-    let x1: X = 1
-    let x2: X = 2
+    let x1: X = 3
+    let x2: X = 1
 
     runner.assert_neq<u32>(x1, x2)
 }
@@ -63,6 +63,6 @@ fn main() {
 
     let set = new UnitSet("STD Test 1", "Tests random stuff", [test_1, test_2, test_3])
 
-    set.run()
+    return set.run()
 }
 
