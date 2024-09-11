@@ -10,7 +10,6 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { basicTypePromotionMap } from "../../typechecking/BinaryExpressionInference";
 import { Context } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
