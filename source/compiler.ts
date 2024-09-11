@@ -108,10 +108,6 @@ export module TypeC {
             }
 
             this.basePackage.infer();
-
-            if(this.options.generateBinaries) {
-                this.generateBytecode();
-            }
         }
 
         resolveImport(imp: ImportNode) {
