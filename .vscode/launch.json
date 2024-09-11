@@ -9,7 +9,7 @@
         "program": "${workspaceFolder}/source/index.ts",
         "outFiles": ["${workspaceFolder}/outs/**/*.js"],
         "sourceMaps": true,
-        "args": ["-c", "./tests/test12", "-o", "./output", "-r", "--generate-ir"]//, "--run-tests"]
+        "args": ["-c", "./tests/test25", "-o", "./output", "-r", "--generate-ir"]//, "--run-tests"]
       },
       {
         "type": "node",
