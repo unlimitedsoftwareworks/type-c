@@ -146,6 +146,13 @@ export class LiteralExpression extends Expression {
         this.literalKind = literalKind;
     }
 
+    setInferredToHint() {
+        if(this.hintType) {
+            // for literal expressions, the inferred type is the hint type when available,
+            // so that literals are stored as the expected type in the bytecode
+            this.inferredType = this.hintType;
+        }
+    }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): LiteralExpression {
         return this;   
@@ -239,7 +246,7 @@ export class IntLiteralExpression extends LiteralExpression {
             this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
             throw ctx.parser.customError(`Unexpected type, ${hint.shortname()} expected but found ${this.inferredType?.shortname()}`, this.location);
         }
-
+        this.setInferredToHint();
         return this.inferredType;
     }
 
@@ -276,6 +283,7 @@ export class BinaryIntLiteralExpression extends LiteralExpression {
             throw new Error("Hint for integer literal must be a basic type or a boolean type");
         }
 
+        this.setInferredToHint();
         return this.inferredType;
     }
 }
@@ -304,6 +312,7 @@ export class OctIntLiteralExpression extends LiteralExpression {
             throw new Error("Hint for integer literal must be a basic type or a boolean type");
         }
 
+        this.setInferredToHint();
         return this.inferredType;
     }
 }
@@ -332,6 +341,7 @@ export class HexIntLiteralExpression extends LiteralExpression {
             throw new Error("Hint for integer literal must be a basic type or a boolean type");
         }
 
+        this.setInferredToHint();
         return this.inferredType;
     }
 }
@@ -350,6 +360,12 @@ export class FloatLiteralExpression extends LiteralExpression {
         this.inferredType = new BasicType(this.location, "f32");
 
         this.checkHint(ctx);
+        if(hint) {
+            // for literal expressions, the inferred type is the hint type when available,
+            // so that literals are stored as the expected type in the bytecode
+            this.inferredType = hint;
+        }
+        this.setInferredToHint();
         return this.inferredType;
     }
 }
