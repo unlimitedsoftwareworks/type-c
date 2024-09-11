@@ -58,7 +58,7 @@ export class BinaryExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType {
-        if (this.inferredType) return this.inferredType;
+        //if (this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         /**
@@ -140,6 +140,12 @@ export class BinaryExpression extends Expression {
         if(this.operator == "="){
             rhsType = this.right.infer(ctx, lhsType);
         } else {
+            // check if we need to promote the rhs type to the lhs type
+            /*if(lhsType.is(ctx, BasicType) && (["+" , "+=","-" , "-=" , "*" , "*=" , "/" , "/=" , "%" , "%=" ,"==" , "!="].includes(this.operator))){
+                // chech if we can promote the rhs type to the lhs type
+            }*/
+
+
             let rhsHint: DataType | null = null;
 
             if(lhsType.is(ctx, BasicType) && (this.operator != "&&") && (this.operator != "||")){
