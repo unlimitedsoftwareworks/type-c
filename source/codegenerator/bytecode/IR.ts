@@ -144,17 +144,10 @@ export type IRInstructionType =
     "c_set_field_f64" |
     "c_set_field_ptr" |
 
-    "i_alloc" |
-    "i_alloc_i" | // allocate an interface from another, inheriting its class pointer only
-    "i_set_offset" |
-    "i_set_offset_i" |
-    "i_set_offset_m" | // same as i_is_i but updates the interface offset. used for casting interface to interface. Must be
 
      /// used with safe casting since it requires a fail jump label
-    "i_load_m" |
     "i_is_c" | // interface vs class instanceof checking
-    "i_is_i" | // interface vs interface instanceof checking
-    "i_get_c" | // returns the base class reference of a given interface
+    "i_has_m" | // interface vs interface instanceof checking
     
     "a_alloc" |
     "a_extend" |

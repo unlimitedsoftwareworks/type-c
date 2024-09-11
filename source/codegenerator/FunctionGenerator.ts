@@ -292,6 +292,7 @@ export class FunctionGenerator {
      * @param ctx active context of the expression
      */
     visitExpression(expr: Expression, ctx: Context): string {
+        this.srcMapPushLoc(expr.location);
         let tmp = ""; // placeholder for the result of the expression
         /**
          * Checks for all the following expressions and calls the corresponding visit method:
@@ -339,7 +340,7 @@ export class FunctionGenerator {
                     // types are exact, no need to cast
                 //}
                 //else {
-                    this.i("debug", "casting from " + inferredType?.shortname() + " to " + hintType?.shortname());
+                    this.i("debug", "casting from " + inferredType?.kind + " to " + hintType?.kind);
                     tmp = this.visitCastExpression(new CastExpression(expr.location, expr, hintType, requireSafe ? "safe" : "regular"), ctx, tmp);
                 //}
             }
@@ -603,7 +604,7 @@ export class FunctionGenerator {
          * a_set_field_[type] [dest] [field_index] [value
          */
 
-        let structType = expr.inferredType as StructType;
+        let structType = expr.inferredType!.to(ctx, StructType) as StructType;
         let tmp = this.generateTmp();
         let structSize = structType.getStructSize(ctx);
         this.i("debug", "anonymous struct construction expression ");
@@ -656,7 +657,7 @@ export class FunctionGenerator {
             this.destroyTmp(reg);
             let tmp = this.generateTmp();
             //let castable = actualType.canCast(castType, ctx).success;
-            let castable = canCastTypes(ctx, actualType, castType).success;
+            let castable = canCastTypes(ctx, castType, actualType).success;
             this.i("debug", "Class -> Interface Check")
             this.i("const_u8", tmp, castable ? 1 : 0);
 
@@ -695,9 +696,19 @@ export class FunctionGenerator {
 
                     let tmp = this.generateTmp();
                     this.i("debug", "Interface -> Interface Check")
-                    for (let i = 0; i < castTypeInterface.methods.length; i++) {
-                        this.i("i_is_i", castTypeInterface.methods[i].getUID(), reg, failLabel);
+                    
+                        
+                    let allMethods = [...castTypeInterface.getMethods()];
+                    // sort by UID
+                    allMethods.sort((a, b) => a.getUID() - b.getUID());
+
+                    for(let i = 0; i < allMethods.length; i++){
+                        let method = allMethods[i];
+                        let methodUID = method.getUID();
+                        this.i("i_has_m", methodUID, reg, failLabel);
                     }
+
+
                     this.destroyTmp(reg);
                     this.i("const_u8", tmp, 1);
                     this.i("j", endLabel);
@@ -855,6 +866,7 @@ export class FunctionGenerator {
             this.i("debug", `variant constructor parameter access ${rhs.name}`);
             let variantType = baseType as VariantConstructorType;
             let parameterIndex = variantType.getParameterIndex(rhs.name);
+            let param = variantType.parameters[parameterIndex];
             if (parameterIndex == -1) {
                 throw new Error("Unknown parameter " + rhs.name);
             }
@@ -864,7 +876,7 @@ export class FunctionGenerator {
 
             let tmp = this.generateTmp();
             let instr = structGetFieldType(ctx, parameterType);
-            this.i(instr, tmp, lhsReg, parameterIndex);
+            this.i(instr, tmp, lhsReg, param.getFieldID());
             this.destroyTmp(lhsReg);
             return tmp;
         }
@@ -1277,7 +1289,7 @@ export class FunctionGenerator {
                     }
 
                     this.i("debug", `class method call ${method.name}`);
-                    this.i("c_load_m", methodReg, class_pointer_reg, methodIndex);
+                    this.i("c_load_m", methodReg, class_pointer_reg, method.getUID());
 
 
 
@@ -1352,7 +1364,7 @@ export class FunctionGenerator {
                 // now we need to get the method
                 let methodReg = this.generateTmp();
 
-                this.i("i_load_m", methodReg, interfacePointer, methodIndex);
+                this.i("c_load_m", methodReg, interfacePointer, method.getUID());
 
                 this.i("debug", "set up args");
 
@@ -1373,9 +1385,8 @@ export class FunctionGenerator {
                 if (!isStatic) {
                     // get class
                     let classReg = this.generateTmp();
-                    this.i("i_get_c", classReg, interfacePointer);
                     // push the base object into the stack as parameter
-                    this.i("fn_set_reg_ptr", 0, classReg);
+                    this.i("fn_set_reg_ptr", 0, interfacePointer);
                     this.destroyTmp(classReg);
                 }
                 this.destroyTmp(interfacePointer);
@@ -1435,6 +1446,7 @@ export class FunctionGenerator {
                         throw ctx.parser.customError("Unknown method " + (expr.lhs.right as ElementExpression).name, lhsType.location);
                     }
 
+                    this.i("debug", `static class method call ${method.name}`);
 
                     let instructions: IRInstructionType[] = [];
                     let regs: string[] = [];
@@ -1488,16 +1500,24 @@ export class FunctionGenerator {
             // variant constructor
 
             // first we need to get the variant type
-            let variantType = lhsType.variantConstructorType.dereference() as VariantConstructorType;
+            let variantType = expr.inferredType?.to(ctx, VariantConstructorType) as VariantConstructorType;
 
             // now we need to get the variant ID
             let variantID = variantType.getId();
 
+
+            let parameters = [...variantType.parameters]
+            parameters.sort((a, b) => a.getFieldID() - b.getFieldID())
+
+            // each parameter maps to the index of the parameter in the variant constructor
+            let parameterMapping = parameters.map((x) => variantType.parameters.indexOf(x));
+
             // evaluate the arguments
-            let args = expr.args.map((x) => this.visitExpression(x, ctx))
+            //let args = expr.args.map((x) => this.visitExpression(x, ctx))
             let argsOffset = [0];
             let variantSize = [2];
-            variantType.parameters.forEach((param, i) => {
+
+            parameters.forEach((param, i) => {
                 let fsize = getDataTypeByteSize(param.type);
                 variantSize.push(fsize);
                 argsOffset.push(argsOffset[i] + variantSize[i]);
@@ -1506,28 +1526,31 @@ export class FunctionGenerator {
             // allocate the variant
             let variantReg = this.generateTmp();
             this.i("debug", "allocating variant");
-            this.i("s_alloc", variantReg, argsOffset.length, variantSize.reduce((a, b) => a + b, 0));
-            for (let i = 0; i < argsOffset.length; i++) {
-                if (i == 0) {
-                    this.i("debug", `setting variant field offset tag`);
-                }
-                else {
-                    this.i("debug", `setting variant field offset ${variantType.parameters[i - 1].name}`);
-                }
 
-                this.i("s_reg_field", variantReg, i, argsOffset[i]);
-                //this.i("s_reg_field", variantReg, i, variantType.parameters[i].getFieldID(), argsOffset[i]);
+            this.i("s_alloc", variantReg, argsOffset.length, variantSize.reduce((a, b) => a + b, 0));
+            this.i("s_reg_field", variantReg, 0, 0); // TAG
+            
+            //console.log(parameters.map((x) => x.name + ': '+x.getFieldID()))
+            for (let i = 0; i < parameters.length; i++) {
+                let param = parameters[i];
+                this.i("debug", `setting variant field offset ${param.name}`);
+                //console.log(">    s_reg_field", variantReg, i+1, param.getFieldID(), argsOffset[i+1])
+                this.i("s_reg_field", variantReg, i+1, param.getFieldID(), argsOffset[i+1]);
             }
+
             this.i("debug", `setting variant field tag`);
             let variantIdReg = this.generateTmp();
             this.i("const_u16", variantIdReg, variantID);
             this.i("s_set_field_u16", variantReg, 0, variantIdReg);
             this.destroyTmp(variantIdReg);
-            for (let i = 0; i < args.length; i++) {
-                this.i("debug", `setting variant field ${variantType.parameters[i].name}`);
-                let instr = structSetFieldType(ctx, variantType.parameters[i].type);
-                this.i(instr, variantReg, i + 1, args[i]);
-                this.destroyTmp(args[i]);
+
+            for (let i = 0; i < expr.args.length; i++) {
+                this.i("debug", `setting variant field ${parameters[i].name}`);
+                let idx = parameterMapping[i];
+                let arg = this.visitExpression(expr.args[idx], ctx);
+                let instr = structSetFieldType(ctx, parameters[i].type);
+                this.i(instr, variantReg, parameters[i].getFieldID(), arg);
+                this.destroyTmp(arg);
             }
 
             return variantReg;
@@ -1596,11 +1619,13 @@ export class FunctionGenerator {
 
     visitNamedStructConstructionExpression(expr: NamedStructConstructionExpression, ctx: Context): string {
         /**
-                 * s_alloc [dest] [num_fields] [struct_size]
-                 * s_set_offset [dest] [field_index] [offset]
-                 * a_set_field_[type] [dest] [field_index] [value
-                 */
-        let structType = (expr.inferredType as StructType)
+         * s_alloc [dest] [num_fields] [struct_size]
+         * s_set_offset [dest] [field_index] [offset]
+         * a_set_field_[type] [dest] [field_index] [value
+         */
+        // important: we need to use hint type to infer the size of the struct
+        // since elements within it could be promoted
+        let structType = (expr.hintType ?? expr.inferredType)!.to(ctx, StructType) as StructType
         let sortedStruct = structType.toSortedStruct();
         
         let tmp = this.generateTmp();
@@ -1636,7 +1661,9 @@ export class FunctionGenerator {
 
 
         // do it at the end so it doesn't interfere with origin
-        expr.inferredType = expr.hintType;
+        if(expr.hintType) {
+            expr.inferredType = expr.hintType;
+        }
 
         return tmp;
     }
@@ -1693,22 +1720,19 @@ export class FunctionGenerator {
 
                 // if we reached this point, it means that the interface contains all the methods
                 // we can now cast
-                let tmp = this.generateTmp();
-                this.i("i_get_c", tmp, castReg);
-                this.destroyTmp(castReg);
                 // now jump
                 this.i("j", jmpEnd);
 
                 // if we reached this point, it means that the interface does not contain all the methods
                 // we will return null
                 this.i("label", jmpFail);
-                this.i("const_ptr", tmp, 0);
+                this.i("const_ptr", castReg, 0);
                 this.i("j", jmpEnd);
 
                 // end label
                 this.i("label", jmpEnd);
 
-                return tmp;
+                return castReg;
             }
             else if ((nonNullType.is(ctx, InterfaceType)) && (inferredType instanceof ClassType)) {
                 // usually this happens when an interface is declared nullable and we want to assign a class to it
@@ -1764,34 +1788,32 @@ export class FunctionGenerator {
                     return this.visitCastExpression(new CastExpression(expr.location, expr.expression, expr.target, "regular"), ctx, castReg);
                 }
 
-                // now we need to cast the interface to the other interface
-                // we dont go through base class because it inherit it from the interface
-                // using i_alloc_i
-                //let baseClassReg = this.generateTmp();
-                //this.i("i_get_c", baseClassReg, castReg);
 
-                let newInterface = this.generateTmp();
-                this.i("i_alloc_i", newInterface, nonNullInterface.getMethodsLength(), castReg);
-
-                //this.destroyTmp(baseClassReg);
-                this.destroyTmp(castReg);
-
+                // interface to interface requires checking if the methods are the same
+                // meaning if we want to cast an interface to another interface, 
+                // we need to make sure that all methods in target, are present in the source
                 let failLabel = this.generateLabel();
                 let endLabel = this.generateLabel();
 
-                // now we need to set each method into the new interface
-                for (let i = 0; i < nonNullInterface.methods.length; i++) {
-                    let method = nonNullInterface.methods[i];
-                    this.i("i_set_offset_m", newInterface, method.getUID(), i, failLabel);
+                let allMethods = [...nonNullInterface.getMethods()];
+                // sort by UID
+                allMethods.sort((a, b) => a.getUID() - b.getUID());
+
+                for(let i = 0; i < allMethods.length; i++){
+                    let method = allMethods[i];
+                    let methodUID = method.getUID();
+                    this.i("i_has_m", methodUID, castReg, failLabel);
                 }
+
 
                 // if we reached this point, it means that the interface does contain all the methods
                 // we can now jump to end
                 this.i("j", endLabel);
                 this.i("label", failLabel);
-                this.i("const_ptr", newInterface, 0);
+                this.i("const_ptr", castReg, 0);
                 this.i("label", endLabel);
-                return newInterface;
+                return castReg;
+
             }
             else if (inferredType instanceof NullableType) {
                 // this happens when visitCast is called manually within visit expression
@@ -1848,38 +1870,12 @@ export class FunctionGenerator {
 
         else if (inferredType instanceof ClassType) {
             if (hintType.is(ctx, InterfaceType)) {
-                this.i("debug", "Converted class to interface");
-                let interfaceType = hintType.to(ctx, InterfaceType) as InterfaceType;
-                let classType = inferredType as ClassType;
-
-                let tmpReg = this.generateTmp();
-                this.i("i_alloc", tmpReg, inferredType.getAllMethods().length, castReg);
-                this.destroyTmp(castReg);
-                let offsetTable = classType.getIndexesForInterfaceMethods(ctx, interfaceType);
-                for (let i = 0; i < offsetTable.length; i++) {
-                    this.i("i_set_offset", tmpReg, i, offsetTable[i]);
-                }
-
-                castReg = tmpReg;
+                this.i("debug", "Converted class to interface, nothing to do");
             }
         }
         else if (inferredType?.is(ctx, InterfaceType)) {
             if (hintType.is(ctx, InterfaceType)) {
-                let hintInterface = hintType.to(ctx, InterfaceType) as InterfaceType;
-                let inferredInterface = inferredType!.to(ctx, InterfaceType) as InterfaceType;
-
-                // check if they align
-                if (!inferredInterface.interfacesAlign(hintInterface)) {
-                    this.i("debug", "re-aligning interfaces");
-                    let offsetSwaps = inferredInterface.generateOffsetSwaps(ctx, hintInterface);
-                    let tmpReg = this.generateTmp();
-                    this.i("i_alloc_i", tmpReg, inferredInterface.getMethodsLength(), castReg);
-                    for (let i = 0; i < offsetSwaps.length; i++) {
-                        this.i("i_set_offset_i", tmpReg, i, offsetSwaps[i], castReg);
-                    }
-                    this.destroyTmp(castReg);
-                    castReg = tmpReg;
-                }
+                this.i("debug", "Casting interface to interface, nothing to do");
             }
         }
 
@@ -1980,17 +1976,21 @@ export class FunctionGenerator {
             let tmp = this.generateTmp();
             let num_attrs = classType.attributes.length;
             let size_attrs = classType.getAttributesBlockSize();
-            let classMethods = classType.getAllMethods()
+            // !!! IMPORTANT: we have to create new array as some other methods awaiting to be generated
+            let classMethods = [...classType.getAllMethods()] 
             let num_methods = classMethods.length;
 
             this.i("debug", `class allocation\nnum methods: ${num_methods} \ndata size: ${size_attrs}`);
             this.i("c_alloc", tmp, num_methods, size_attrs, classType.getClassID());
 
             // initialize the methods
+            // sort class methods by UID
+            classMethods.sort((a, b) => a.imethod.getUID() - b.imethod.getUID());
+            
             for (let i = 0; i < classMethods.length; i++) {
                 let method = classMethods[i];
                 this.i("debug", `setting class method ${i}:${method.imethod.name}`);
-                this.i("c_store_m", tmp, i, method.context.uuid);
+                this.i("c_store_m", tmp, i, method.imethod.getUID(), method.context.uuid);
             }
 
             // last call the constructor
@@ -2009,7 +2009,7 @@ export class FunctionGenerator {
 
                 this.i("debug", "class allocation, calling constructor");
                 let tmp_constructor = this.generateTmp();
-                this.i("c_load_m", tmp_constructor, tmp, constructorIndex);
+                this.i("c_load_m", tmp_constructor, tmp, constructor.getUID());
 
                 // generate the arguments, backwards
                 for (let i = 0; i < expr.arguments.length; i++) {
@@ -2055,10 +2055,6 @@ export class FunctionGenerator {
         let tmpIndexReg = this.generateTmp();
         // if hint is available, use it
         let c = constType(ctx, expr?.hintType ?? expr?.inferredType!);
-
-        if(expr.hintType) {
-            expr.inferredType = expr.hintType;
-        }
 
 
         if (expr instanceof StringLiteralExpression) {
@@ -2252,6 +2248,7 @@ export class FunctionGenerator {
      * Statements
      */
     visitStatement(stmt: Statement, ctx: Context) {
+        this.srcMapPushLoc(stmt.location);
         if (stmt instanceof ExpressionStatement) {
             let res = this.visitExpression(stmt.expression, ctx);
             this.destroyTmp(res);
@@ -2271,6 +2268,7 @@ export class FunctionGenerator {
         else {
             throw new Error("Unknown statement type " + stmt.constructor.name);
         }
+        this.srcMapPopLoc();
     }
 
     visitBlockStatement(stmt: BlockStatement, ctx: Context) {
