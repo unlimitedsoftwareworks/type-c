@@ -71,7 +71,7 @@ export class ArrayPatternExpression extends PatternExpression {
          */
 
         let minOrExactCondition: "min" | "exact" = "min";
-
+        let lenValue = this.elements.length;
         // first check for empty array, if so we can return the condition that array length == 0
         if(this.elements.length == 0) {
             return {
@@ -85,7 +85,9 @@ export class ArrayPatternExpression extends PatternExpression {
         // [a, b, c, d] -> exact
         let lastElement = this.elements[this.elements.length - 1];
         if(lastElement instanceof ArrayVariablePatternExpression) {
+            lenValue = lastElement.position-1;
             minOrExactCondition = "min";
+
         }
         else {
             minOrExactCondition = "exact";
@@ -101,7 +103,7 @@ export class ArrayPatternExpression extends PatternExpression {
             return checkSubPattern(ctx, idxExpr, e);
         });
 
-        let lengthCondition = buildLengthCheckExpression(this.location, baseExpression, minOrExactCondition, this.elements.length);
+        let lengthCondition = buildLengthCheckExpression(this.location, baseExpression, minOrExactCondition, lenValue);
 
         // we build a base condition that be used to join all the other conditions with &&
         let baseJoinExpr = lengthCondition
