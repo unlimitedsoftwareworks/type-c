@@ -43,14 +43,16 @@ export class InterfaceMethod extends FunctionPrototype {
      */
     static getMethodUID(proto: FunctionPrototype){
 
-        if(proto.generics.length > 0){
+        /*if(proto.generics.length > 0){
             throw new Error("Cannot generate UID for generic method prototype");
-        }
+        }*/
         
-        let uid = InterfaceMethod.methodUIDGenerator.get(proto.toString());
+        // TODO: double check this, might cause issues with types that are not unpacked, i.e String vs {class ....}
+        let serial = proto.serialize(false)
+        let uid = InterfaceMethod.methodUIDGenerator.get(serial);
         if(uid == undefined){
             uid = InterfaceMethod.methodUIDCounter++;
-            InterfaceMethod.methodUIDGenerator.set(proto.toString(), uid);
+            InterfaceMethod.methodUIDGenerator.set(serial, uid);
         }
         return uid;
     }
