@@ -80,7 +80,7 @@ export class NewExpression extends Expression {
                 // init methods are already checked for sanity whithin the ClassType class.
                 // set the hint for our args
                 for(let i = 0; i < this.arguments.length; i++) {
-                    this.arguments[i].setHint(this._calledInitMethod.header.parameters[i].type);
+                    this.arguments[i].infer(ctx,this._calledInitMethod.header.parameters[i].type);
                 }
             }
 

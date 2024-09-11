@@ -16,14 +16,34 @@ export class VariantParameter {
     name: string;
     type: DataType;
     location: SymbolLocation;
+
+    // ID 0 is reserved for the constructor tag stored in the first 16bits of the structs bytecode
+    static globalFieldID = 1;
+    static fieldIdMap: { [key: string]: number } = {};
+    static getFieldID(name: string): number {
+        if (VariantParameter.fieldIdMap[name] == undefined) {
+            throw new Error(`Field ${name} does not exist`);
+        }
+        return VariantParameter.fieldIdMap[name];
+    }
+
     constructor(location: SymbolLocation, name: string, type: DataType){
         this.location = location;
         this.name = name;
         this.type = type;
+
+        if (VariantParameter.fieldIdMap[name] == undefined) {
+            VariantParameter.fieldIdMap[name] = VariantParameter.globalFieldID;
+            VariantParameter.globalFieldID++;
+        }
     }
 
     clone(typeMap: { [key: string]: DataType; }): VariantParameter {
         return new VariantParameter(this.location, this.name, this.type.clone(typeMap));
+    }
+
+    getFieldID(): number {
+        return VariantParameter.getFieldID(this.name);
     }
 }
 
@@ -55,8 +75,8 @@ export class VariantConstructorType  extends DataType{
         return this.name+"("+this.parameters.map(f => f.name+":"+f.type.shortname()).join(",")+")"
     }
 
-    serialize(): string {
-        return `@variant_constructor{name:${this.name},parameters:[${this.parameters.map(f => `${f.name}:${f.type.serialize()}`).join(",")}]}`;
+    serialize(unpack: boolean = false): string {
+        return `@variant_constructor{name:${this.name},parameters:[${this.parameters.map(f => `${f.name}:${f.type.serialize(unpack)}`).join(",")}]}`;
     }
 
     allowedNullable(ctx: Context): boolean {

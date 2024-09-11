@@ -97,8 +97,8 @@ export class ClassMethod extends Symbol {
         return this.imethod.shortname();
     }
 
-    serialize(): string {
-        return `@method{${this.imethod.serialize()}}`
+    serialize(unpack: boolean = false): string {
+        return `@method{${this.imethod.serialize(unpack)}}`
     }
 
     infer(ctx: Context) {

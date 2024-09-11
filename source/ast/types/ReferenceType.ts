@@ -54,7 +54,8 @@ export class ReferenceType extends DataType{
 
     resolve(ctx: Context) {
         if(globalTypeCache.isChecking(this)) {
-            return;
+            // TODO:double check this
+            return this;
         }
         globalTypeCache.startChecking(this);
 
@@ -129,7 +130,7 @@ export class ReferenceType extends DataType{
                     this.baseType = type.type.clone(map);
                     this.baseDecl = type;
                 }
-                this.baseType.resolve(ctx);
+                //this.baseType.resolve(ctx);
                 type.concreteTypes.set(signature, this.baseType);
             }
         }
@@ -169,8 +170,13 @@ export class ReferenceType extends DataType{
         return this.pkg.join(".") + (this.typeArgs.length > 0 ? "<" + this.typeArgs.map(t => t.shortname()).join(", ") + ">" : "");
     }
 
-    serialize(): string {
-        return `@reference{pkg:${this.pkg.join(".")},typeArgs:${this.typeArgs.map(t => t.serialize()).join(",")}}`
+    serialize(unpack: boolean = false): string {
+        if(unpack){
+            return this.baseType!.serialize(unpack);
+        }
+        else {
+            return `@reference{pkg:${this.pkg.join(".")},typeArgs:${this.typeArgs.map(t => t.serialize()).join(",")}}`
+        }
     }
     
     /**

@@ -29,7 +29,7 @@ export class BooleanType extends DataType {
         return "bool"
     }
 
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         return "@bool"
     }
 

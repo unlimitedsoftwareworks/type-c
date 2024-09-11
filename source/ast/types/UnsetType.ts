@@ -23,7 +23,7 @@ export class UnsetType extends DataType {
         return "unset"
     }
 
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         return "@unset"
     }
 

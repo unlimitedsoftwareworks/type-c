@@ -40,8 +40,8 @@ export class FunctionType extends DataType {
         return "fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
     }
 
-    serialize(): string {
-        return `@fn{@parameters[${this.parameters.map(e => e.serialize())}],@returnType[${this.returnType.serialize()}]}`
+    serialize(unpack: boolean = false): string {
+        return `@fn{@parameters[${this.parameters.map(e => e.serialize(unpack))}],@returnType[${this.returnType.serialize(unpack)}]}`
     }
 
     clone(typeMap: {[key: string]: DataType}): FunctionType {

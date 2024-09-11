@@ -16,7 +16,7 @@ export class FFINamespaceType extends DataType {
         // nothing to do
     }
 
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         return `@ffi_namespace_type{id:${this.parentFFI.ffiId}}`
     }
 

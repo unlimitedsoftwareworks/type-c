@@ -91,7 +91,7 @@ export module TypeC {
             
             // add built-in symbols
 
-            //BuiltinModules.getStringClass(this);
+            BuiltinModules.getStringClass(this);
 
             for(let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
@@ -108,10 +108,6 @@ export module TypeC {
             }
 
             this.basePackage.infer();
-
-            if(this.options.generateBinaries) {
-                this.generateBytecode();
-            }
         }
 
         resolveImport(imp: ImportNode) {
@@ -195,9 +191,9 @@ export module TypeC {
                     console.log(colors.BgRed, "stderr: ", colors.Reset);
                     console.log(result.stderr.toString());
                 }
-                return result.status || 0;
+                process.exit(result.status || 0);
             }
         }
-        return 0
+        process.exit(0);
     }
 }

@@ -339,7 +339,7 @@ export class BytecodeGenerator {
 
         if (mainHasReturn) {
             this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, 8);
-            this.emit(BytecodeInstructionType.debug_reg, 255);
+            //this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
         //this.emit(BytecodeInstructionType.debug_reg, i);
@@ -404,8 +404,8 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_null, reg)
                 }
                 else {
-                    //let c = this.constantSegment.addConstant({ byteSize: 4, floatValue: intVal });
-                    this.emit(BytecodeInstructionType.mv_reg_i, reg, intVal);
+                    let c = this.constantSegment.addConstant({ byteSize: 4, floatValue: intVal });
+                    this.emit(BytecodeInstructionType.mv_reg_const, reg, c, 4);
                 }
             }
             else if (instruction.type == "const_i64" || instruction.type == "const_u64") {
@@ -426,8 +426,8 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_null, reg)
                 }
                 else {
-                    //let c = this.constantSegment.addConstant({ byteSize: 8, floatValue: intVal });
-                    this.emit(BytecodeInstructionType.mv_reg_i, reg, intVal);
+                    let c = this.constantSegment.addConstant({ byteSize: 8, floatValue: intVal });
+                    this.emit(BytecodeInstructionType.mv_reg_const, reg, c, 8);
                 }
             }
             else if (instruction.type == "const_ptr") {
@@ -630,20 +630,15 @@ export class BytecodeGenerator {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 this.emit(BytecodeInstructionType.s_alloc, reg, instruction.args[1] as number, instruction.args[2] as number);
             }
-            else if (instruction.type == "s_alloc_shadow") {
+            else if (instruction.type == "s_reg_field") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let reg2 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let localFieldID = instruction.args[1] as number;
+                let globalFieldID = instruction.args[2] as number;
+                let offset = instruction.args[3] as number;
 
-                this.emit(BytecodeInstructionType.s_alloc_shadow, reg, reg2, instruction.args[2] as number);
+                this.emit(BytecodeInstructionType.s_reg_field, reg, localFieldID, globalFieldID, offset);
             }
-            else if (instruction.type == "s_set_offset") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.s_set_offset, dest, instruction.args[1] as number, instruction.args[2] as number);
-            }
-            else if (instruction.type == "s_set_offset_shadow") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.s_set_offset_shadow, dest, instruction.args[1] as number, instruction.args[2] as number);
-            }
+            
             else if (instruction.type == "s_get_field_i8" || instruction.type == "s_get_field_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
@@ -705,8 +700,8 @@ export class BytecodeGenerator {
             }
             else if (instruction.type == "c_store_m") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let lbl = this.emit(BytecodeInstructionType.c_storem, dest, instruction.args[1] as number, 0);
-                this.addUnresolvedOffset(instruction.args[2] as string, lbl);
+                let lbl = this.emit(BytecodeInstructionType.c_storem, dest, instruction.args[1] as number, instruction.args[2] as number, 0);
+                this.addUnresolvedOffset(instruction.args[3] as string, lbl);
             }
             else if (instruction.type == "c_load_m") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -774,69 +769,18 @@ export class BytecodeGenerator {
                 this.emit(BytecodeInstructionType.c_storef_reg_ptr, dest, instruction.args[1] as number, reg);
             }
 
-            /**
-             * Interfaces
-             */
-            else if (instruction.type == "i_alloc") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                this.emit(BytecodeInstructionType.i_alloc, dest, instruction.args[1] as number, src);
-            }
-            else if (instruction.type == "i_alloc_i") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                this.emit(BytecodeInstructionType.i_alloc_i, dest, instruction.args[1] as number, src);
-            }
-            else if (instruction.type == "i_set_offset") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.i_set_offset, dest, instruction.args[1] as number, instruction.args[2] as number);
-            }
-            else if (instruction.type == "i_set_offset_i") {
-                /**
-                 * This one has 4 args, we need to adjust it
-                 */
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string); // not used, its in R16
-                let src = this.getRegisterForVariable(fn, instruction.args[3] as string);
-
-                this.emit(BytecodeInstructionType.i_set_offset_i, dest, instruction.args[1] as number, instruction.args[2] as number, src);
-            }
-            else if (instruction.type == "i_set_offset_m") {
-                /**
-                 * This one has 4 args, we need to adjust it
-                 */
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string); // not used, its in R16
-                let methodUID: string = instruction.args[1] as string;
-                let index: number = instruction.args[2] as number;
-                let failLabel: string = instruction.args[3] as string;
-
-                let offset = this.emit(BytecodeInstructionType.i_set_offset_m, dest, 0, index, 0);
-                this.addUnresolvedOffset(failLabel, offset);
-                // write poision points at failLabel, we substract 2 bytes for the index and 8 for the method UID
-                this.addUnresolvedOffset(methodUID, offset - 10);
-            }
-            else if (instruction.type == "i_load_m") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let reg = this.getRegisterForVariable(fn, instruction.args[1] as string);
-                this.emit(BytecodeInstructionType.i_loadm, dest, reg, instruction.args[2] as number);
-            }
             else if (instruction.type == "i_is_c") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let reg = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 this.emit(BytecodeInstructionType.i_is_c, dest, reg, instruction.args[2] as number);
             }
-            else if (instruction.type == "i_is_i") {
+            else if (instruction.type == "i_has_m") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let lblId = instruction.args[2] as string;
 
-                let offset = this.emit(BytecodeInstructionType.i_is_i, instruction.args[0] as number, reg, 0);
+                let offset = this.emit(BytecodeInstructionType.i_has_m, instruction.args[0] as number, reg, 0);
                 this.addUnresolvedOffset(lblId, offset);
             }
-            else if (instruction.type == "i_get_c") {
-                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let reg2 = this.getRegisterForVariable(fn, instruction.args[1] as string);
-                this.emit(BytecodeInstructionType.i_get_c, reg, reg2);
-            }
-
             /**
              * Array Instructions
              */

@@ -1,11 +1,13 @@
-/*
+from std.io import println
+from std.string import String
+
 type Tree = variant {
     BinaryNode(lhs: Tree, rhs: Tree, op: String),
     Unary(uhs: Tree, op: String),
     Number(n: i32)
 }
 
-let tree = Tree.BinaryNode(Tree.Number(4), Tree.Unary(Tree.Number(2), "-"), "*")
+
 
 fn sum(t: Tree)  -> i32 = match t {
     Tree.BinaryNode(lhs, rhs, op) => match op {
@@ -19,10 +21,10 @@ fn sum(t: Tree)  -> i32 = match t {
         "-" => -sum(uhs),
         _ => 0 as i32
     },
-    Tree.Number(n) => n
+    Tree.Number(n) => n,
+    _ => 0 as i32
 }
 
-let z = sum(tree)
 
 type User1 = interface {
     fn name() -> String
@@ -32,18 +34,27 @@ type User2 = interface {
     fn name2() -> String
 }
 
-type User3 = class {
+type User3 = interface {
+    fn name3() -> String
+}
+
+type ClassUser3 = class {
     fn init(){}
     fn name3() -> String = "User3"
 }
 
-let x = new User3()
+fn main(){
+    let tree: Tree= Tree.BinaryNode(Tree.Number(4), Tree.Unary(Tree.Number(2), "-"), "*")
+    let z = sum(tree)
+    println("> "+z)
+    let x = new ClassUser3()
 
-let y = match x {
-    User1=> "User1",
-    User2 => "User2",
-    User3 => "User3",
-    _ => "Unknown"
+    let y = match x {
+        User1=> "User1",
+        User2 => "User2",
+        User3 => "User3",
+        _ => "Unknown"
+    }
+
+    println("> "+y)
 }
-
-*/

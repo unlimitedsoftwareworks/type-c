@@ -70,7 +70,7 @@ export class InstanceCheckExpression extends Expression {
          * - lhs is variant and rhs is interface
          */
 
-        let lhsType = this.expression.infer(ctx, hint);
+        let lhsType = this.expression.infer(ctx, null); // we use null bc lhs doesn't depend on hint
         if(!(
             lhsType.is(ctx, VariantConstructorType) ||
             lhsType.is(ctx, VariantType) ||
