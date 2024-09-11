@@ -122,7 +122,7 @@ export class DataType {
     /**
      * Serializes the type to a string
      */
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         throw new Error("Method not implemented.");
     }
 

@@ -70,7 +70,7 @@ import { ReferenceType } from "../ast/types/ReferenceType";
 import { StructField, StructType } from "../ast/types/StructType";
 import { UnionType } from "../ast/types/UnionType";
 import { UnsetType } from "../ast/types/UnsetType";
-import { VariantConstructorType } from "../ast/types/VariantConstructorType";
+import { VariantConstructorType, VariantParameter } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
 import { Parser } from "./Parser";
@@ -199,6 +199,43 @@ function parseStructFields(parser: Parser, ctx: Context, allowDuplicatedNames=fa
     return fields;
 }
 
+
+/**
+ * Parses Variant Parameters, same as struct fields but for variants
+ * @param parser 
+ * @param ctx 
+ * @param allowDuplicatedNames allows duplicated, set to false for structs, true for variants
+ * @returns 
+ */
+function parseVariantParams(parser: Parser, ctx: Context, allowDuplicatedNames=false): StructField[] {
+    let canLoop = true;
+    let fields: VariantParameter[] = [];
+    while (canLoop) {
+        let loc = parser.loc();
+        let id = parser.expect("identifier");
+        parser.expect(":");
+        let type = parseType(parser, ctx);
+        // make sure no fields are duplicated
+        if(!allowDuplicatedNames) {
+            if (fields.find((f) => f.name == id.value)) {
+                throw parser.error(`Duplicate field '${id.value}' in struct`, id.location);
+            }
+        }
+
+        fields.push(new VariantParameter(loc, id.value, type));
+        let token = parser.peek();
+        canLoop = token.type === ",";
+        if (canLoop) {
+            parser.accept();
+        }
+        else {
+            parser.reject();
+        }
+    }
+
+    return fields;
+}
+
 function parseVariantConstructor(parser: Parser, ctx: Context): VariantConstructorType[] {
     let constructors: VariantConstructorType[] = [];
     let canLoop = true;
@@ -208,14 +245,14 @@ function parseVariantConstructor(parser: Parser, ctx: Context): VariantConstruct
         const constructorTok = parser.expect("identifier");
         const constructorName = constructorTok.value;
         parser.expect("(");
-        let fields: StructField[] = [];
+        let fields: VariantParameter[] = [];
         let lexeme = parser.peek();
         parser.reject();
         if(lexeme.type === ")"){
             parser.reject();
         }
         else {
-            fields = parseStructFields(parser, ctx, true);
+            fields = parseVariantParams(parser, ctx, true);
         }
         
         parser.expect(")");

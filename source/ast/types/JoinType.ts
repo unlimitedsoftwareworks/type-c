@@ -89,8 +89,8 @@ export class JoinType extends DataType {
         return "join"
     }
 
-    serialize(): string {
-        return `@join{lhs:${this.left.serialize()},rhs:${this.right.serialize()}}`
+    serialize(unpack: boolean = false): string {
+        return `@join{lhs:${this.left.serialize(unpack)},rhs:${this.right.serialize(unpack)}}`
     }
 
     is(ctx: Context, targetType: new (...args: any[]) => DataType): boolean {

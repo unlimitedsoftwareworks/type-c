@@ -76,28 +76,12 @@ export enum BytecodeInstructionType{
     s_alloc,
 
     /**
-     * s_alloc_shadow dest: r, copy: r fields-count: i
-     * creates a shadow copy of a struct (who's address is stored in copy),
-     * a shadow copy is a copy that points to the same data but with different
-     * offset table. copy address is stored given register
+     * s_reg_field: dest: R,  local_field_index: I(1byte), globalFieldID: I (4 bytes), field offset: I (2 bytes)
+     * Registers a new field in the struct stored in dest, with the given global field ID
+     * and field offset (local), must not exceed the total fields count of the struct
      */
-    s_alloc_shadow,
+    s_reg_field,
 
-    /**
-     * s_set_offset dest: r, fieldindex: i, offset-value: i (2 bytes)
-     * sets the offset value of field i, of the struct stored in dest
-     * to the given offset value
-     */
-    s_set_offset,
-
-    /**
-     * s_set_offset_shadow src: r, fieldindexsrc: i, fieldindextarget: i
-     * sets the offset value of field index fieldindexsrc, of the struct
-     * stored in src to the offset value of field index fieldindextarget,
-     * of the original struct referenced by the shadow copy
-     * ie. shadow_copy.offsets[fieldindexsrc] = original.offsets[fieldindextarget]
-     */
-    s_set_offset_shadow,
 
     /**
      * s_loadf_[size] dest: r, src: r fieldindex: i, bytesize: s
@@ -122,8 +106,8 @@ export enum BytecodeInstructionType{
     s_storef_reg_ptr,
 
     /**
-     * c_alloc dest:
-     * r num-methods: i, class-fields-size: i (2 bytes), classid-size: z, classid: i
+     * c_alloc 
+     * dest: r num-methods: i, class-fields-size: i (2 bytes), classid-size: z, classid: i
      * allocates new class of given total ﬁelds count (arg1) and total fields
      * size of (arg2 and arg3), stores the address of the new class into dest.
      */
@@ -164,68 +148,24 @@ export enum BytecodeInstructionType{
 
 
     /**
-     * i_alloc dest: r, num_methods: i, class: r
-     * allocates new interface method table of given total methods count (arg1),
-     * interface is based on class stored in dest. interface address is
-     * stored in class
-     */
-    i_alloc,
-
-    /**
-     * i_alloc_i dest: r, num_methods: i, interface: r
-     * allocates new interface from another interface,
-     * inheriting its parent class, and storing the new interface
-     * address in dest
-     */
-    i_alloc_i,
-
-    /**
-     * i_set_offset dest: r, methodindex: i, offset-value: i (2bytes)
-     * sets the offset value of method i, of the interface stored in dest
-     */
-    i_set_offset,
-
-    /**
-     * i_set_offset_i dest: r, methodindexsrc: i, methodindextarget: i, src interface: r
-     * updates the offset value of method index methodindexsrc, of the interface src in
-     * to the offset value of method index methodindextarget, of the interface stored in dest
-     */
-    i_set_offset_i,
-
-    /**
-     * i_set_offset_m dest: r, methodid: i (8bytes), methodindex: i (2 bytes) jumpfailure: i (8 bytes)
-     * find the method methodid from the base class of the interface stored in dest,
-     * sets its offset in the current interface's methodindex to the given offset value. if the methodid
-     * is not found, it jumps to the given address
-     */
-    i_set_offset_m,
-
-    /**
-     * i_loadm dest: r, src: r methodindex: i
-     * loads method address from method table of interface stored in src to register dest
-     */
-    i_loadm,
-
-    /**
-     * c_is_c dest: r, src: r, classid: i (8 bytes)
+     * Note: even though it says i_, it is applied to a class,
+     * named as such purely for semantic purposes.
+     * i_is_c dest: r, src: r, classid: i (8 bytes)
      * checks if the given interface who's stored in src class id is the
      * same as the given id. stores the result in r
      */
     i_is_c,
 
     /**
-     * i_is_i method_id: i (8 bytes), src: r, jump-address: i (8 bytes)
+     * Note: even though it says i_, it is applied to a class,
+     * named as such purely for semantic purposes.
+     * i_is_i method_id: i (4 bytes), src: r, jump-address: i (8 bytes)
      * checks if the base class of the interface which is stored in src has
      * a method with the same given id. if a method with the same id is found,
      * it continues. otherwise, it jumps to the given address.
      */
-    i_is_i,
+    i_has_m,
 
-    /**
-     * i_get_c dest: r, interface: r
-     * gets the class of the given interface, stores the address of the class in r
-     */
-    i_get_c,
 
     /**
      * a_alloc dest: r, num_elements: i (8 bytes), element_size: z

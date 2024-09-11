@@ -19,6 +19,7 @@ import { FunctionArgument } from "../symbol/FunctionArgument";
 import { Symbol } from "../symbol/Symbol";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
+import { BasicType } from "../types/BasicType";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { EnumType } from "../types/EnumType";
@@ -58,7 +59,7 @@ export class ElementExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null = null): DataType {
-        if (this.inferredType) return this.inferredType;
+        //if (this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         let scopedVar = ctx.lookupScope(this.name);
@@ -73,8 +74,15 @@ export class ElementExpression extends Expression {
             this.inferredType = variable.annotation;
 
             // make sure hint and variable type matches
-            this.checkHint(ctx);
-            // inherit variable constantness
+            // Now we check if the inferred type is a basic type so we can promote it
+            if(this.inferredType!.is(ctx, BasicType) && hint && hint.is(ctx, BasicType)){
+                this.checkHint(ctx, false);
+            }
+            else
+            {
+                this.checkHint(ctx);
+            }
+                // inherit variable constantness
             this.isConstant = variable.isConst;
 
             return this.inferredType!;
@@ -109,6 +117,8 @@ export class ElementExpression extends Expression {
                 let newDecl = variable.infer(ctx, this.typeArguments);
                 this.inferredType = newDecl.prototype.header;
 
+                //variable.concreteGenerics[]
+
                 this.checkHint(ctx);
                 this.isConstant = false;
                 return this.inferredType;
@@ -118,9 +128,20 @@ export class ElementExpression extends Expression {
         }
         else if (variable instanceof FunctionArgument) {
             this.inferredType = variable.type;
-            this.checkHint(ctx);
+
             if(this.typeArguments.length > 0) {
                 throw ctx.parser.customError(`Function argument ${variable.name} is not allowed to have generics`, this.location);
+            }
+            // we can promote the type here as well
+
+            // make sure hint and variable type matches
+            // Now we check if the inferred type is a basic type so we can promote it
+            if(this.inferredType!.is(ctx, BasicType) && hint && hint.is(ctx, BasicType)){
+                this.checkHint(ctx, false);
+            }
+            else
+            {
+                this.checkHint(ctx);
             }
 
             this.isConstant = !variable.isMutable;
@@ -132,7 +153,17 @@ export class ElementExpression extends Expression {
                 throw ctx.parser.customError(`Variable pattern ${variable.name} is not allowed to have generics`, this.location);
             }
             this.inferredType = variable.type;
-            this.checkHint(ctx);
+
+
+            // Now we check if the inferred type is a basic type so we can promote it
+            if(this.inferredType!.is(ctx, BasicType) && hint && hint.is(ctx, BasicType)){
+                this.checkHint(ctx, false);
+            }
+            else
+            {
+                this.checkHint(ctx);
+            }
+            
             this.isConstant = false;
             return this.inferredType;
         }

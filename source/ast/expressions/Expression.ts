@@ -105,9 +105,9 @@ export class Expression {
     }
 
     
-    checkHint(ctx: Context){
+    checkHint(ctx: Context, strict: boolean = true){
         if(this.hintType) {
-            let r = matchDataTypes(ctx, this.hintType!, this.inferredType!);
+            let r = matchDataTypes(ctx, this.hintType!, this.inferredType!, strict);
             if(!r.success) {
                 //r = matchDataTypes(ctx, this.hintType!, this.inferredType!);
                 throw ctx.parser.customError(`Type mismatch, expected ${this.hintType!.shortname()} but found ${this.inferredType!.shortname()}: ${r.message}`, this.location);

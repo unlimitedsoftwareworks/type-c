@@ -75,7 +75,7 @@ export class MatchCaseExpression {
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): MatchCaseExpression{
-        let newCtx = new Context(this.context.location, this.context.parser, this.context.getParent(), this.context.env);
+        let newCtx = new Context(this.context.location, this.context.parser, ctx, this.context.env);
 
 
         let expression = this.expression?.clone(typeMap, newCtx) || null;

@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { findCompatibleTypes } from "../../typechecking/TypeInference";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
@@ -55,8 +56,18 @@ export class ArrayConstructionExpression extends Expression {
                 ctx.parser.customError("Could not find a common type for array elements", this.location);
             }
 
-            for(const element of this.elements){
-                element.setHint(commonType);
+            if(hint) {
+                let arrayHint = hint.to(ctx, ArrayType) as ArrayType;
+                let baseHint = arrayHint.arrayOf;
+
+                let res = matchDataTypes(ctx, baseHint, commonType);
+                if(!res.success){
+                    ctx.parser.customError(`Could not match array type ${baseHint!.shortname()} with ${commonType.shortname()}: ${res.message}`, this.location);
+                }
+
+                for(const element of this.elements){
+                    element.setHint(baseHint);
+                }
             }
 
             this.inferredType = new ArrayType(this.location, commonType);

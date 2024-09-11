@@ -42,8 +42,8 @@ export class LockType extends DataType {
         return `lock<${this.returnType.shortname()}>`
     }
 
-    serialize(): string {
-        return `@lock<${this.returnType.serialize()}>`
+    serialize(unpack: boolean = false): string {
+        return `@lock<${this.returnType.serialize(unpack)}>`
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}): LockType{

@@ -16,7 +16,7 @@ export class VoidType extends DataType {
         return "void"
     }
 
-    serialize(): string {
+    serialize(unpack: boolean = false): string {
         return "@void"
     }
 

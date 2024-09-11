@@ -11,15 +11,23 @@
  */
 
 import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { BinaryExpression } from "../expressions/BinaryExpression";
+import { CastExpression } from "../expressions/CastExpression";
+import { ElementExpression } from "../expressions/ElementExpression";
+import { Expression } from "../expressions/Expression";
+import { InstanceCheckExpression } from "../expressions/InstanceCheckExpression";
+import { MemberAccessExpression } from "../expressions/MemberAccessExpression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { EnumType } from "../types/EnumType";
 import { InterfaceType } from "../types/InterfaceType";
+import { ReferenceType } from "../types/ReferenceType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
 import { PatternExpression } from "./PatternExpression";
+import { checkSubPattern, PatternToExpression } from "./PatternUtils";
 
 export class DataTypePatternExpression extends PatternExpression {
     type: DataType;
@@ -48,7 +56,7 @@ export class DataTypePatternExpression extends PatternExpression {
         if(expressionType.is(ctx, VariantType)) {
             // we expect variant constuctors
             if(!this.type.is(ctx, VariantConstructorType)) {
-                throw ctx.parser.customError(`Cannot perform variant matching on non-variant consturctor type ${this.type.shortname()} against a variant ${expressionType.shortname()}`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on non-variant consturctor type ${this.type.shortname()} against a variant ${expressionType.shortname()}`, this.location);
             }
 
             let variantType = expressionType.to(ctx, VariantType) as VariantType;
@@ -60,11 +68,11 @@ export class DataTypePatternExpression extends PatternExpression {
             let res = matchDataTypes(ctx, variantType, variantConstructorType._parent!, true);
             if(!res.success) {
                 this.type.to(ctx, VariantConstructorType) as VariantConstructorType;
-                throw ctx.parser.customError(`Cannot perform variant matching on variant constructor ${variantConstructorType.shortname()} who is not a subtype of a variant ${variantType.shortname()}: ${res.message}`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on variant constructor ${variantConstructorType.shortname()} who is not a subtype of a variant ${variantType.shortname()}: ${res.message}`, this.location);
             }
             // we make sure that the parameters match
             if(variantConstructorType.parameters.length != this.args.length) {
-                throw ctx.parser.customError(`Cannot perform variant matching on variant constructor ${variantConstructorType.shortname()} with ${variantConstructorType.parameters.length} parameters against a variant ${variantType.shortname()} with ${this.args.length} arguments`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on variant constructor ${variantConstructorType.shortname()} with ${variantConstructorType.parameters.length} parameters against a variant ${variantType.shortname()} with ${this.args.length} arguments`, this.location);
             }
 
             // infer arguments
@@ -76,7 +84,7 @@ export class DataTypePatternExpression extends PatternExpression {
             // when we have a variant constructor, we expect the type to be the same as the variant constructor, because
             // matching will be performed on fields of the variant constructor
             if(!this.type.is(ctx, VariantConstructorType)) {
-                throw ctx.parser.customError(`Cannot perform variant matching on non-variant consturctor type ${this.type.shortname()} against a variant constructor ${expressionType.shortname()}`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on non-variant consturctor type ${this.type.shortname()} against a variant constructor ${expressionType.shortname()}`, this.location);
             }
 
             // now we make sure that the variant constructor is the same
@@ -87,7 +95,7 @@ export class DataTypePatternExpression extends PatternExpression {
 
             // we make sure that the parameters match
             if((expressionType as VariantConstructorType).parameters.length != this.args.length) {
-                throw ctx.parser.customError(`Cannot perform variant matching on variant constructor ${expressionType.shortname()} with ${(expressionType as VariantConstructorType).parameters.length} parameters against a variant constructor ${this.type.shortname()} with ${this.args.length} arguments`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on variant constructor ${expressionType.shortname()} with ${(expressionType as VariantConstructorType).parameters.length} parameters against a variant constructor ${this.type.shortname()} with ${this.args.length} arguments`, this.location);
             }
 
             // infer arguments
@@ -99,7 +107,7 @@ export class DataTypePatternExpression extends PatternExpression {
             // when we have an enum, we expect the type to be the same as the enum, because
             // matching will be performed on fields of the enum
             if(!this.type.is(ctx, EnumType)) {
-                throw ctx.parser.customError(`Cannot perform variant matching on non-enum type ${this.type.shortname()} against an enum ${expressionType.shortname()}`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on non-enum type ${this.type.shortname()} against an enum ${expressionType.shortname()}`, this.location);
             }
 
             // now we make sure that the enum is the same
@@ -110,27 +118,105 @@ export class DataTypePatternExpression extends PatternExpression {
             
             // enums take no arguments
             if(this.args.length > 0) {
-                throw ctx.parser.customError(`Cannot perform variant matching on enum type ${this.type.shortname()} with ${this.args.length} arguments`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on enum type ${this.type.shortname()} with ${this.args.length} arguments`, this.location);
             }
         }
         else {
             // since we are not using variants at this stage, we make sure we have no arguments
             if(this.args.length > 0) {
-                throw ctx.parser.customError(`Cannot perform variant matching on non-variant type ${expressionType.shortname()} with ${this.args.length} arguments`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on non-variant type ${expressionType.shortname()} with ${this.args.length} arguments`, this.location);
             }
 
             if(!(expressionType.is(ctx, ClassType) || expressionType.is(ctx, InterfaceType))) {
-                throw ctx.parser.customError(`Cannot perform variant matching on type ${this.type.shortname()} against a non-matching type ${expressionType.shortname()}`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on type ${this.type.shortname()} against a non-matching type ${expressionType.shortname()}`, this.location);
             }
 
+            
             // we make sure that this.type is an interface, since we cannot perform `interface is class` safely
             if(!this.type.is(ctx, InterfaceType)) {
-                throw ctx.parser.customError(`Cannot perform variant matching on class type ${this.type.shortname()} against a non-matching type ${expressionType.shortname()}`, this.location);
+                throw ctx.parser.customError(`Cannot perform pattern matching on class type ${this.type.shortname()} against a non-matching type ${expressionType.shortname()}`, this.location);
             }
         }
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): DataTypePatternExpression{
         return new DataTypePatternExpression(this.location, this.type.clone(typeMap), this.args.map(e => e.clone(typeMap, ctx)));
+    }
+
+    generateExpression(ctx: Context, baseExpression: Expression): PatternToExpression {
+        // two main cases: 1. Enum, 2. Variant/Class/Interface
+
+        let isEnum = this.type.is(ctx, EnumType);
+        
+        if (isEnum) {
+            // we expect X.T such as Color.Red
+            if(!(this.type instanceof ReferenceType)) {
+                throw ctx.parser.customError(`Cannot perform pattern matching on non-reference type ${this.type.shortname()}`, this.location);
+            }
+
+            let referenceType = this.type as ReferenceType;
+
+            // make sure we have two elements, X and T
+            if(referenceType.pkg.length != 2) {
+                throw ctx.parser.customError(`Cannot perform pattern matching on just basic enum type ${this.type.shortname()}`, this.location);
+            }
+
+
+            return {
+                condition: new BinaryExpression(
+                    this.location,
+                    baseExpression,
+                    new MemberAccessExpression(this.location, new ElementExpression(this.location, referenceType.pkg[0]), new ElementExpression(this.location, referenceType.pkg[1])),
+                    '=='
+                ),
+                variableAssignments: []
+            }
+
+        }
+
+
+        let instanceCheck = new InstanceCheckExpression(this.location, baseExpression, this.type);
+        let argsConditions: PatternToExpression[] = [];
+        let thisType = this.type.dereference();
+
+        if(thisType instanceof VariantConstructorType){
+            // we fill in the args
+            // ([base].name == [arg1]) && ([base].name == [arg2]) && ...
+            argsConditions = this.args.map((arg, i) => {
+                let memberAccessExpression = new MemberAccessExpression(
+                    this.location, 
+                    new CastExpression(this.location, baseExpression, thisType, "force"), 
+                    new ElementExpression(this.location, (thisType as VariantConstructorType).parameters[i].name)
+                );
+                    
+                return checkSubPattern(ctx, memberAccessExpression, arg);
+            });
+        }
+
+        let conditions: Expression[] = argsConditions.map((arg, i) => {
+            return arg.condition;
+        }).filter((arg) => arg != null) as Expression[];
+
+        let variables = argsConditions.map((arg, i) => {
+            return arg.variableAssignments
+        }).reduce((prev, curr) => {
+            return curr.concat(prev);
+        }, []);
+        
+        if(conditions.length > 0){
+            // ([base] instanceof [type]) && ([base].name == [arg1]) && ([base].name == [arg2]) && ...
+            let joinCondition = conditions.reduce((prev, curr) => {
+                return new BinaryExpression(this.location, prev, curr, "&&");
+            });
+
+            let finalCondition = new BinaryExpression(this.location, instanceCheck, joinCondition, "&&");
+            return {condition: finalCondition, variableAssignments: variables};
+        }
+        else {
+            // ([base] instanceof [type])
+            return {condition: instanceCheck, variableAssignments: variables}
+        }
+
+
     }
 }

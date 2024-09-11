@@ -47,8 +47,8 @@ export class NullableType extends DataType {
         return this.type;
     }
 
-    serialize(): string {
-        return `@nullable{type:${this.type.serialize()}}`
+    serialize(unpack: boolean = false): string {
+        return `@nullable{type:${this.type.serialize(unpack)}}`
     }
 
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {

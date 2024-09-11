@@ -45,8 +45,8 @@ export class MetaClassType extends MetaType {
         this.typeArguments = genericTypes;
     }
 
-    serialize(): string {
-        return `MetaClass<${this.classType.serialize()}>`;
+    serialize(unpack: boolean = false): string {
+        return `@MetaClass{${this.classType.serialize(unpack)}}`;
     }
 
     resolve(ctx: Context): void {
@@ -62,8 +62,8 @@ export class MetaInterfaceType extends MetaType {
         this.interfaceType = interfaceType;
     }
 
-    serialize(): string {
-        return `MetaInterface<${this.interfaceType.serialize()}>`;
+    serialize(unpack: boolean = false): string {
+        return `@MetaInterface{${this.interfaceType.serialize(unpack)}}`;
     }
 
     resolve(ctx: Context): void {
@@ -81,8 +81,8 @@ export class MetaVariantType extends MetaType {
         this.typeArguments = genericTypes;
     }
 
-    serialize(): string {
-        return `MetaVariant<${this.variantType.serialize()}>`;
+    serialize(unpack: boolean = false): string {
+        return `MetaVariant{${this.variantType.serialize(unpack)}}`;
     }
 
     resolve(ctx: Context): void {
@@ -100,8 +100,8 @@ export class MetaVariantConstructorType extends MetaType {
         this.typeArguments = genericTypes;
     }
 
-    serialize(): string {
-        return `MetaVariantConstructor<${this.variantConstructorType.serialize()}>`;
+    serialize(unpack: boolean = false): string {
+        return `MetaVariantConstructor{${this.variantConstructorType.serialize(unpack)}}`;
     }
 
     resolve(ctx: Context): void {
@@ -117,8 +117,8 @@ export class MetaEnumType extends MetaType {
         this.enumType = enumType;
     }
 
-    serialize(): string {
-        return `MetaEnum<${this.enumType.serialize()}>`;
+    serialize(unpack: boolean = false): string {
+        return `MetaEnum{${this.enumType.serialize(unpack)}}`;
     }
 
     resolve(ctx: Context): void {

@@ -1,12 +1,19 @@
 from std.string import String
+from std.io import println
 
 fn print(mut d: String) -> i32{
     d = new String("hi")
     return -(1 as i32)
 }
 
-let const x: String = new String("hello world!")
-let y = x.clone()
+
+fn main(){ 
+    let const x: String = new String("hello world!")
+    let y = x.clone()
 
 
-let z = print(y)
+    let z = print(y)
+
+    println("> "+y)
+
+}
