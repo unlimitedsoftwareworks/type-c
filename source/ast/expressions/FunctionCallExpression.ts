@@ -396,6 +396,8 @@ export class FunctionCallExpression extends Expression {
                 variantType = variantType.clone(map);
             }
 
+            variantType.resolve(ctx);
+
             let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
 
             if (variantConstructor === undefined) {
