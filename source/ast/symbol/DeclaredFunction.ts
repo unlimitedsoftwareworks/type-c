@@ -162,8 +162,10 @@ export class DeclaredFunction extends Symbol {
                 throw ctx.parser.customError(`Function expects ${this.prototype.generics.length} generics parameters, but got ${typeArguments.length} instead`, this.location);
             }
 
+            let sig = signatureFromGenerics(typeArguments)
+
             // check if we have a cached version of this function with the given type arguments
-            let cached = this.concreteGenerics.get(signatureFromGenerics(typeArguments));
+            let cached = this.concreteGenerics.get(sig);
             if (cached) {
                 return cached;
             }
@@ -173,19 +175,20 @@ export class DeclaredFunction extends Symbol {
 
             // clone the function with the new type map
             let newFn = this.clone(genericTypeMap, this.context.getParent()!);
-            newFn.uid = this.uid+'<'+signatureFromGenerics(typeArguments)+'>';
+            newFn.uid = this.uid+'<'+sig+'>';
 
             // set the generics to empty so we can properly infer its body and header by recalling this function
             newFn.prototype.generics = [];
 
             // update cache
-            this.concreteGenerics.set(signatureFromGenerics(typeArguments), newFn);
-
-            // infer new function
-            newFn.infer(newFn.context);
+            this.concreteGenerics.set(sig, newFn);
 
             // refer to the original concrete generics
             newFn.concreteGenerics = this.concreteGenerics;
+            
+            // infer new function
+            newFn.infer(newFn.context);
+
 
             FunctionInferenceCache.pop(this);
             return newFn;
@@ -201,7 +204,13 @@ export class DeclaredFunction extends Symbol {
         // and symbols are added to the global context when they are declared anyway if they are functions/lambdas
         // or global level variables
         // TODO: keep and eye on this
-        ctx.registerToGlobalContext(this);
+
+        // only register to global context if we are not in a generic implementation
+        if(this.concreteGenerics.size == 0) {
+            ctx.registerToGlobalContext(this);
+        }
+
+        //ctx.registerToGlobalContext(this);
         this.codeGenProps.reportUnusedSymbols(ctx, this.prototype.header);
         FunctionInferenceCache.pop(this);
         this.wasInferred = true;
