@@ -46,11 +46,16 @@ export class NamedStructConstructionExpression extends Expression {
             let structHint = hint.to(ctx, StructType) as StructType;
             this.inferredType = new StructType(this.location, this.fields.map((field) => new StructField(field.location, field.name, field.value.infer(ctx, structHint.getFieldTypeByName(field.name)))));
 
-            let r = matchDataTypes(ctx, hint, this.inferredType);
+            // make sure our inferred type matches the hint, but not strictly,
+            // because we can promote the fields of the struct if needed
+            let r = matchDataTypes(ctx, hint, this.inferredType, false);
             if(!r.success){
                 throw ctx.parser.customError(`Cannot create a named struct from a non-compatible type ${hint.shortname()}: ${r.message}`, this.location);
             }
 
+            this.checkHint(ctx, false);
+            this.isConstant = false;
+            return this.inferredType;
         }
 
         else {
