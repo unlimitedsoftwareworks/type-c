@@ -201,4 +201,3 @@ fn doSomethingElse<T>(x: Data<T>) -> T {
 }
 
 let someResult = doSomethingElse<String>(d)
-//let d27 = d26

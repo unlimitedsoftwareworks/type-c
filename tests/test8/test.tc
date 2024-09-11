@@ -109,8 +109,8 @@ fn test_case_1(rn: TestUnit) {
 }
 
 fn test_case_2(rn: TestUnit) {
-    let user1 = {name: "John", age: 20 as u32, rank: 12 as u8, inventory: [1,2,3,4,5]}
-    let user2 = {name: "Jane", age: 21 as u32, rank: 13 as u8, inventory: [1,2,3,4,5]}
+    let user1 = {name: "John", age: 20 as u32, rank: 12 as u8, inventory: [1 as u32,2,3,4,5]}
+    let user2 = {name: "Jane", age: 21 as u32, rank: 13 as u8, inventory: [1 as u32,2,3,4,5]}
 
     let u1: {name: String, inventory: u32[]} = user1
 

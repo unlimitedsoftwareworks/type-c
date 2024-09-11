@@ -207,7 +207,7 @@ fn test_case_7(rn: TestUnit) {
     }
 
 
-     let x = new DataArray()
+    let x = new DataArray()
     x.set(0, 1)
     x.set(1, 2)
 
@@ -240,7 +240,7 @@ type AnotherServerResponse<T> = variant {
 }
 
 fn test_case_8<U> (rn: TestUnit) {
-    let response: AnotherServerResponse<U> = AnotherServerResponse.Error<T>("Error")
+    let response: AnotherServerResponse<U> = AnotherServerResponse.Error<U>("Error")
 
     match response {
         AnotherServerResponse.Ok<U>(code) { println("Ok: "+ code) }

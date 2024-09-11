@@ -1,6 +1,5 @@
-
-from std.string import String
 from std.io import println
+from std.string import String
 
 /*
 fn main() {
@@ -100,15 +99,29 @@ fn main(){
 */
 
 
+type Vector = class {
+    let x: u32
+    let y: u32
 
-fn g(data: {y: u32, x: u32}[]){
-    return data[1].x
+    fn init(x: u32, y: u32){
+        this.x = x
+        this.y = y
+    }
+
+    fn init(params: {x: {a: u32, b: u32[]}, y: u32}){
+        this.y = params.y
+    }
+    
+    fn print(){
+        println("{x:"+this.x+", y:"+this.y+"}")
+    }
 }
 
 fn main() {
-    let x: {x: u32, y: u32}[] = [{x: 1, y: 2}, {y: 4, x: 3}]
-
-
-    return g(x)
+    let x: u8 = 200, y: u8 = 100
+    let a: u8 = 10, b: u8[] = [20, 30, 40]
+    let z = new Vector({x: {a: a, b: b}, y: y})
+    z.print()
+    return z.x
 
 }
