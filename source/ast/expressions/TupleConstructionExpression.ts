@@ -6,7 +6,8 @@
  * Description:
  *     Models a tuple construction
  *      a tuple construction can only be used to used as a function expression fn (u32) -> (u32, u32) = (1, 2)
- *      or a return statement return (1, 2)
+ *      or a return statement return (1, 2). That is why it's default infer throws an error.
+ *      Any expr/statement that expects a tuple construction will call inferReturn instead of infer.
  * 
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.

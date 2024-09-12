@@ -97,13 +97,10 @@ import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstru
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { CoroutineConstructionExpression } from "../ast/expressions/CoroutineConstructionExpression";
 import { DoExpression } from "../ast/expressions/DoExpression";
+import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
+import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
 
-// represent a deconstructed variable, not all of them are declared variables, 
-// some of them are ignored (e.g _)
-type DeconstructedVariable = {
-    variable: DeclaredVariable | null;
-    isIgnored: boolean;
-};
+
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -172,7 +169,7 @@ function parseTypeList(parser: Parser, ctx: Context): DataType[] {
  * @param allowDuplicatedNames allows duplicated, set to false for structs, true for variants
  * @returns 
  */
-function parseStructFields(parser: Parser, ctx: Context, allowDuplicatedNames=false): StructField[] {
+function parseStructFields(parser: Parser, ctx: Context, allowDuplicatedNames = false): StructField[] {
     let canLoop = true;
     let fields: StructField[] = [];
     while (canLoop) {
@@ -181,7 +178,7 @@ function parseStructFields(parser: Parser, ctx: Context, allowDuplicatedNames=fa
         parser.expect(":");
         let type = parseType(parser, ctx);
         // make sure no fields are duplicated
-        if(!allowDuplicatedNames) {
+        if (!allowDuplicatedNames) {
             if (fields.find((f) => f.name == id.value)) {
                 throw parser.error(`Duplicate field '${id.value}' in struct`, id.location);
             }
@@ -209,7 +206,7 @@ function parseStructFields(parser: Parser, ctx: Context, allowDuplicatedNames=fa
  * @param allowDuplicatedNames allows duplicated, set to false for structs, true for variants
  * @returns 
  */
-function parseVariantParams(parser: Parser, ctx: Context, allowDuplicatedNames=false): StructField[] {
+function parseVariantParams(parser: Parser, ctx: Context, allowDuplicatedNames = false): StructField[] {
     let canLoop = true;
     let fields: VariantParameter[] = [];
     while (canLoop) {
@@ -218,7 +215,7 @@ function parseVariantParams(parser: Parser, ctx: Context, allowDuplicatedNames=f
         parser.expect(":");
         let type = parseType(parser, ctx);
         // make sure no fields are duplicated
-        if(!allowDuplicatedNames) {
+        if (!allowDuplicatedNames) {
             if (fields.find((f) => f.name == id.value)) {
                 throw parser.error(`Duplicate field '${id.value}' in struct`, id.location);
             }
@@ -250,18 +247,18 @@ function parseVariantConstructor(parser: Parser, ctx: Context): VariantConstruct
         let fields: VariantParameter[] = [];
         let lexeme = parser.peek();
         parser.reject();
-        if(lexeme.type === ")"){
+        if (lexeme.type === ")") {
             parser.reject();
         }
         else {
             fields = parseVariantParams(parser, ctx, true);
         }
-        
+
         parser.expect(")");
         // make sure constructor name doesnt exist already
         if (constructors.find((c) => c.name == constructorName)) {
             throw parser.error(
-                `Duplicate constructor '${constructorName}' in variant`, 
+                `Duplicate constructor '${constructorName}' in variant`,
                 constructorTok.location
             );
         }
@@ -296,13 +293,13 @@ function parseFunctionPrototype(parser: Parser, ctx: Context): FunctionPrototype
 }
 
 
-function parseProcessFunctionPrototype(parser: Parser, ctx: Context): {proto: FunctionPrototype, isEvent: boolean} {
+function parseProcessFunctionPrototype(parser: Parser, ctx: Context): { proto: FunctionPrototype, isEvent: boolean } {
     let loc = parser.loc();
     parser.expect("fn");
     let tok = parser.peek();
     let isEvent: boolean = false;
 
-    if(tok.value === "on") {
+    if (tok.value === "on") {
         parser.accept();
         isEvent = true;
         parser.expect(":");
@@ -318,7 +315,7 @@ function parseProcessFunctionPrototype(parser: Parser, ctx: Context): {proto: Fu
     }
 
     let header = parseFnTypeBody(parser, ctx);
-    return {proto: new FunctionPrototype(loc, name, header, generics), isEvent};
+    return { proto: new FunctionPrototype(loc, name, header, generics), isEvent };
 }
 
 function parseMethodInterface(parser: Parser, ctx: Context): InterfaceMethod {
@@ -363,7 +360,7 @@ function parseFnTypeBody(parser: Parser, ctx: Context): FunctionType {
         parser.expect(":");
         let type = parseType(parser, ctx);
         // make sure  parameter doesnt exist already
-        if (parameters.find((p) => p.name == id.value)){
+        if (parameters.find((p) => p.name == id.value)) {
             throw parser.error(`Duplicate parameter '${id.value}' in function`, id.location);
         }
         parameters.push(new FunctionArgument(loc, id.value, type, isMut));
@@ -389,7 +386,7 @@ function parseFnTypeBody(parser: Parser, ctx: Context): FunctionType {
     }
 
     // make sure we have at maximum 255 parameters
-    if(parameters.length > 255){
+    if (parameters.length > 255) {
         throw parser.error(`Function cannot have more than 255 parameters, ${parameters.length} found`, { line: fnLoc.line, col: fnLoc.col, pos: fnLoc.pos });
     }
     return new FunctionType(fnLoc, parameters, returnType);
@@ -524,22 +521,22 @@ function parseFrom(parser: Parser) {
 /**
  * FFI
  */
-function parseFFI(parser: Parser){
+function parseFFI(parser: Parser) {
     parser.expect("extern");
     let nameTok = parser.expect("identifier");
     parser.expect("from");
     let string = parser.expect("string_literal").value;
     // remove quotes
-    string = string.slice(1, string.length-1);
+    string = string.slice(1, string.length - 1);
     parser.expect("=");
     parser.expect("{");
     let tok = parser.peek();
     let canLoop = tok.type != "}";
     let methods: FFIMethodType[] = [];
-    while(canLoop){
+    while (canLoop) {
         let method = parseMethodInterface(parser, parser.basePackage.ctx);
         // make sure no duplicate methods
-        if(methods.find(m => method.name == m.imethod.name)){
+        if (methods.find(m => method.name == m.imethod.name)) {
             throw parser.customError(`Duplicate method '${method.name}' in FFI`, method.location);
         }
         methods.push(new FFIMethodType(method.location, method));
@@ -600,7 +597,7 @@ function parseType(parser: Parser, ctx: Context): DataType {
 
 function parseTypeUnion(parser: Parser, ctx: Context): DataType {
     //throw new Error("Unions are not implemented in this version of type-c");
-    
+
     let loc = parser.loc();
     let left = parseTypeIntersection(parser, ctx);
     let lexeme = parser.peek();
@@ -612,7 +609,7 @@ function parseTypeUnion(parser: Parser, ctx: Context): DataType {
     }
     parser.reject();
     return left;
-    
+
 }
 
 function parseTypeIntersection(parser: Parser, ctx: Context): DataType {
@@ -659,7 +656,7 @@ function parseTypeGroup(parser: Parser, ctx: Context): DataType {
         // type = parseType(parser, ctx);
         let types = parseTypeList(parser, ctx);
 
-        if(types.length > 1){
+        if (types.length > 1) {
             type = new TupleType(loc, types);
         }
         else {
@@ -715,17 +712,17 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         parser.reject();
         return parseTypeFunction(parser, ctx);
     }
-    
-    if(lexeme.type === "class") {
+
+    if (lexeme.type === "class") {
         parser.reject();
         return parseTypeClass(parser, ctx);
     }
 
-    if(lexeme.type === "coroutine") {
+    if (lexeme.type === "coroutine") {
         parser.reject();
         return parseTypeCoroutine(parser, ctx);
     }
-    
+
     /*
     if(lexeme.type === "process") {
         parser.reject();
@@ -742,18 +739,18 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         parser.accept();
         return new VoidType(loc);
     }
-    
+
     if (lexeme.type === "bool") {
         parser.accept();
         return new BooleanType(loc);
     }
 
-    if(lexeme.type === "null") {
+    if (lexeme.type === "null") {
         parser.accept();
         return new NullType(loc);
     }
 
-    if(lexeme.type === "promise") {
+    if (lexeme.type === "promise") {
         parser.accept();
         parser.expect("<");
         let type = parseType(parser, ctx);
@@ -761,11 +758,11 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         return new PromiseType(loc, type);
     }
 
-    if(lexeme.type === "lock") {
+    if (lexeme.type === "lock") {
         parser.accept();
         // sometimes the lock type is not specified, in that case, we use unset
         let lockType = new UnsetType(loc);
-        if(parser.peek().type == "<"){
+        if (parser.peek().type == "<") {
             parser.accept();
             lockType = parseType(parser, ctx);
             parser.expect(">");
@@ -795,7 +792,7 @@ function parseTypeEnum(parser: Parser, ctx: Context): DataType {
     if (lexeme.type === "as") {
         parser.accept();
         let base_str = parseType(parser, ctx).kind;
-        if(["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"].includes(base_str)){
+        if (["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"].includes(base_str)) {
             base = base_str as EnumTargetType;
         }
         else {
@@ -816,7 +813,7 @@ function parseTypeEnum(parser: Parser, ctx: Context): DataType {
         if (lexeme.type === "=") {
             parser.accept();
             let vtok = parser.peek();
-            if(["int_literal", "binary_int_literal", "oct_int_literal", "hex_int_literal"].includes(vtok.type)){
+            if (["int_literal", "binary_int_literal", "oct_int_literal", "hex_int_literal"].includes(vtok.type)) {
                 let value = vtok.value;
                 values.push(new EnumField(id.location, id.value, value, vtok.type as "int_literal" | "binary_int_literal" | "oct_int_literal" | "hex_int_literal"));
             }
@@ -865,7 +862,7 @@ function parseTypeStruct(parser: Parser, ctx: Context): DataType {
     let loc = parser.loc();
     let lexeme = parser.peek();
     parser.reject();
-    if(lexeme.type === "struct") {
+    if (lexeme.type === "struct") {
         parser.expect("struct");
     }
     parser.expect("{");
@@ -905,13 +902,13 @@ function parseTypeInterface(parser: Parser, ctx: Context): DataType {
     while (canLoop) {
         let method = parseMethodInterface(parser, ctx);
         // in interfaces, replace unset with void
-        if(method.header.returnType.kind == "unset") {
+        if (method.header.returnType.kind == "unset") {
             method.header.returnType = new VoidType(method.header.returnType.location);
         }
-        if(method.isStatic){
+        if (method.isStatic) {
             throw parser.customError("Interfaces cannot have static methods", method.location);
         }
-        
+
         methods.push(method);
         lexeme = parser.peek();
         canLoop = lexeme.type != "}";
@@ -921,15 +918,15 @@ function parseTypeInterface(parser: Parser, ctx: Context): DataType {
     parser.expect("}");
 
     // assert all superTypes are reference types
-    for(let t of superTypes){
-        if(!(t instanceof ReferenceType)){
+    for (let t of superTypes) {
+        if (!(t instanceof ReferenceType)) {
             throw ctx.parser.customError("Interfaces can only inherit from other interfaces", loc);
         }
     }
 
     // make sure no method is called init, if found throw error at its location
     methods.forEach(method => {
-        if(method.name == "init"){
+        if (method.name == "init") {
             throw ctx.parser.customError("Interfaces cannot have methods called init", method.location);
         }
     })
@@ -956,49 +953,49 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     let methods: ClassMethod[] = [];
     let staticBlock: BlockStatement | null = null;
 
-    while(canLoop) {
+    while (canLoop) {
         let tok = parser.peek();
-        if(tok.type === "let") {
+        if (tok.type === "let") {
             parser.reject();
             let attribute = parseClassAttribute(parser, ctx);
-            if(methods.find(m => m.imethod.name == attribute.name)){
+            if (methods.find(m => m.imethod.name == attribute.name)) {
                 throw parser.customError(`Duplicate attribute '${attribute.name}' in class`, attribute.location);
             }
             // also comapre it with attributes
-            if(attributes.find(a => a.name == attribute.name)){
+            if (attributes.find(a => a.name == attribute.name)) {
                 throw parser.customError(`Duplicate name attributes '${attribute.name}' is already reserved by a method, in class`, attribute.location);
             }
             attributes.push(attribute);
         }
         else if (tok.type === "static") {
             let tok2 = parser.peek();
-            if(tok2.type === "{") {
+            if (tok2.type === "{") {
                 // Static block
                 // make sure we don't have more than one static block
-                if(staticBlock!=null){
+                if (staticBlock != null) {
                     throw parser.customError("Duplicate static block in class, can only have one", tok.location);
                 }
                 parser.rejectOne();
                 parser.accept();
                 staticBlock = parseStatementBlock(parser, ctx);
             }
-            else if (tok2.type === "fn"){
+            else if (tok2.type === "fn") {
                 parser.reject();
                 let method = parseClassMethod(parser, ctx);
                 method.imethod.isStatic = true;
-                
+
                 // also comapre it with attributes
-                if(attributes.find(a => a.name == method.imethod.name)){
+                if (attributes.find(a => a.name == method.imethod.name)) {
                     throw parser.customError(`Duplicate name method '${method.imethod.name}' is already reserved by an attribute, in class`, method.location);
                 }
                 methods.push(method);
             }
         }
-        else if(tok.type === "fn") {
+        else if (tok.type === "fn") {
             parser.reject();
             let method = parseClassMethod(parser, ctx);
             // also comapre it with attributes
-            if(attributes.find(a => a.name == method.imethod.name)){
+            if (attributes.find(a => a.name == method.imethod.name)) {
                 throw parser.customError(`Duplicate name method '${method.imethod.name}' is already reserved by an attribute, in class`, method.location);
             }
             methods.push(method);
@@ -1018,7 +1015,7 @@ function parseTypeFunction(parser: Parser, ctx: Context): DataType {
     parser.expect("fn");
     let header = parseFnTypeBody(parser, ctx);
     // if the return type is unset, we change it to void (since it's a function type)
-    if(header.returnType.kind == "unset") {
+    if (header.returnType.kind == "unset") {
         header.returnType = new VoidType(header.returnType.location);
     }
     return header;
@@ -1030,7 +1027,7 @@ function parseClassAttribute(parser: Parser, ctx: Context): ClassAttribute {
 
     let tok = parser.peek();
     let isStatic = tok.type === "static";
-    if(isStatic) {
+    if (isStatic) {
         parser.accept();
     }
     else {
@@ -1043,21 +1040,21 @@ function parseClassAttribute(parser: Parser, ctx: Context): ClassAttribute {
     return new ClassAttribute(loc, id.value, type, isStatic);
 }
 
-function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod="class"): ClassMethod {
+function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod = "class"): ClassMethod {
     let loc = parser.loc();
 
     let fnProto = parseMethodInterface(parser, ctx);
     let body: BlockStatement | null = null;
     let expression: Expression | null = null;
-    
+
     // create method ctx and capture return statements
-    let methodScope = new Context(loc, parser, ctx, {withinClass: classOrProcessMethod=="class", withinFunction: true});
+    let methodScope = new Context(loc, parser, ctx, { withinClass: classOrProcessMethod == "class", withinFunction: true });
     methodScope.location = loc;
 
     let fn = new ClassMethod(loc, methodScope, fnProto, null, null)
     methodScope.setOwner(fn);
 
-    if(parser.peek().type === "=") {
+    if (parser.peek().type === "=") {
         parser.accept();
         expression = parseExpression(parser, methodScope);
     }
@@ -1065,7 +1062,7 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod="cl
         parser.reject();
         body = parseStatementBlock(parser, methodScope);
     }
-    
+
     fn.expression = expression;
     fn.body = body;
     return fn;
@@ -1111,13 +1108,13 @@ function parseExpressionMatch(parser: Parser, ctx: Context): Expression {
         let cases: MatchCaseExpression[] = parseMatchCases(parser, ctx, "expr");
 
         // make sure we have at least one case
-        if(cases.length == 0){
+        if (cases.length == 0) {
             throw parser.customError("Match expression must have at least one case", loc);
         }
 
         // make sure we always have a default case, as the last case
-        let lastCase = cases[cases.length-1];
-        if(!(lastCase.pattern instanceof WildCardPatternExpression)){
+        let lastCase = cases[cases.length - 1];
+        if (!(lastCase.pattern instanceof WildCardPatternExpression)) {
             throw parser.customError("Match expression must have a default wild case expression as last case", loc);
         }
 
@@ -1140,8 +1137,8 @@ function parseExpressionOpAssign(parser: Parser, ctx: Context): Expression {
         parser.accept();
         let right = parseExpressionOpAssign(parser, ctx);
 
-        if(lexeme.type === "="){
-            if(left.kind === "index_access"){
+        if (lexeme.type === "=") {
+            if (left.kind === "index_access") {
                 let indexAccess = left as IndexAccessExpression;
                 return new IndexSetExpression(loc, indexAccess.lhs, indexAccess.indexes, right);
             }
@@ -1167,10 +1164,10 @@ function parseExpressionConditional(parser: Parser, ctx: Context): Expression {
         while (canLoop) {
             let loc = parser.loc();
             let condition = parseExpression(parser, ctx);
-            
+
             ifs.push(condition);
             parser.expect("=>");
-            
+
             let body = parseExpression(parser, ctx);
             bodies.push(body);
 
@@ -1384,7 +1381,7 @@ function parseExpressionMultiplicative(parser: Parser, ctx: Context): Expression
 }
 
 
-function parseExpressionInstance(parser: Parser, ctx: Context){
+function parseExpressionInstance(parser: Parser, ctx: Context) {
     let loc = parser.loc();
     let left = parseExpressionUnary(parser, ctx);
     let lexeme = parser.peek();
@@ -1393,17 +1390,17 @@ function parseExpressionInstance(parser: Parser, ctx: Context){
         let right = parseType(parser, ctx);
         return new ((lexeme.type === "is") ? InstanceCheckExpression : CastExpression)(lexeme.location, left, right);
     }
-    if(lexeme.type === "as" || lexeme.type === "as!" || lexeme.type === "as?") {
-        let loop = true 
-        while(loop){
+    if (lexeme.type === "as" || lexeme.type === "as!" || lexeme.type === "as?") {
+        let loop = true
+        while (loop) {
             parser.accept();
             let right = parseType(parser, ctx);
-            let cast = new CastExpression(lexeme.location, left, right, (lexeme.type === "as")?("regular"):((lexeme.type === "as!")?("force"):("safe")));
+            let cast = new CastExpression(lexeme.location, left, right, (lexeme.type === "as") ? ("regular") : ((lexeme.type === "as!") ? ("force") : ("safe")));
             left = cast;
             lexeme = parser.peek();
             // TODO:
             //  if(((lexeme.type !== "as") && (lexeme.type !== "as!")) && (lexeme.type !== "as?")) {
-            if((lexeme.type !== "as") && (lexeme.type !== "as!")) {
+            if ((lexeme.type !== "as") && (lexeme.type !== "as!")) {
                 loop = false;
                 parser.reject();
             }
@@ -1435,7 +1432,7 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
     else if (lexeme.type === "spawn") {
         parser.accept();
         let expr = parseExpression(parser, ctx);
-        if(!expr) {
+        if (!expr) {
             throw parser.customError("spawn requires a valid expression", loc);
         }
         return new SpawnExpression(loc, expr);
@@ -1446,7 +1443,7 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         parser.expect("(");
         lexeme = parser.peek();
         parser.reject();
-        let args = lexeme.type == ")"?[]:parseExpressionList(parser, ctx);
+        let args = lexeme.type == ")" ? [] : parseExpressionList(parser, ctx);
         parser.expect(")");
         return new NewExpression(loc, type, args);
     }
@@ -1455,12 +1452,12 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         parser.expect("(");
         let baseFn = parseExpression(parser, ctx);
         let tok = parser.peek();
-        if(tok.type === ")"){
+        if (tok.type === ")") {
             parser.accept();
             return new CoroutineConstructionExpression(loc, baseFn, []);
         }
         parser.reject();
-        
+
         parser.expect(",");
         let args = parseExpressionList(parser, ctx);
         parser.expect(")");
@@ -1483,7 +1480,7 @@ function parseExpressionPostfix(parser: Parser, ctx: Context): Expression {
         return new UnaryExpression(loc, expression, ("post" + lexeme.type) as unknown as UnaryOperator);
     }
     parser.reject();
-    if(expression == null){
+    if (expression == null) {
         return expression;
     }
 
@@ -1494,7 +1491,7 @@ function parseExpressionPostfix(parser: Parser, ctx: Context): Expression {
 function parseExpressionMemberSelection(parser: Parser, ctx: Context, lhs: Expression): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
-    if(lexeme.type === "!"){
+    if (lexeme.type === "!") {
         parser.accept();
         let newLHS = new UnaryExpression(loc, lhs, "!!");
         return parseExpressionMemberSelection(parser, ctx, newLHS);
@@ -1502,18 +1499,18 @@ function parseExpressionMemberSelection(parser: Parser, ctx: Context, lhs: Expre
     if (lexeme.type === "." || lexeme.type === "?.") {
         parser.accept();
         let rhs = parseExpressionPrimary(parser, ctx);
-        if(!(rhs instanceof ElementExpression)){
+        if (!(rhs instanceof ElementExpression)) {
             throw parser.customError("Expected identifier", rhs.location);
         }
 
-        return parseExpressionMemberSelection(parser, ctx, 
-            lexeme.type === "?."?new NullableMemberAccessExpression(loc, lhs, rhs):new MemberAccessExpression(loc, lhs, rhs));
+        return parseExpressionMemberSelection(parser, ctx,
+            lexeme.type === "?." ? new NullableMemberAccessExpression(loc, lhs, rhs) : new MemberAccessExpression(loc, lhs, rhs));
     }
     if (lexeme.type === "(") {
         parser.accept();
         lexeme = parser.peek();
         parser.reject();
-        let args = lexeme.type==")"?[]:parseExpressionList(parser, ctx);
+        let args = lexeme.type == ")" ? [] : parseExpressionList(parser, ctx);
         parser.expect(")");
         return parseExpressionMemberSelection(parser, ctx, new FunctionCallExpression(loc, lhs, args));
     }
@@ -1521,7 +1518,7 @@ function parseExpressionMemberSelection(parser: Parser, ctx: Context, lhs: Expre
         parser.accept();
         lexeme = parser.peek();
         parser.reject();
-        let index = lexeme.type=="]"?[]:parseExpressionList(parser, ctx);parseExpressionList(parser, ctx);
+        let index = lexeme.type == "]" ? [] : parseExpressionList(parser, ctx); parseExpressionList(parser, ctx);
         parser.expect("]");
         return parseExpressionMemberSelection(parser, ctx, new IndexAccessExpression(loc, lhs, index));
     }
@@ -1541,7 +1538,7 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
         let expressionList = parseExpressionList(parser, ctx);
         parser.expect(')');
 
-        if(expressionList.length == 1){
+        if (expressionList.length == 1) {
             return expressionList[0];
         }
         else {
@@ -1566,7 +1563,7 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
         newScope.location = loc;
         let fn = new LambdaExpression(loc, newScope, header, null, null);
         newScope.setOwner(fn);
-    
+
         lexeme = parser.peek();
         if (lexeme.type === "{") {
             parser.reject();
@@ -1596,7 +1593,7 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
         parser.accept();
         let hasG = parserElementHasGenerics(parser, ctx);
         let genericArgs: DataType[] = [];
-        if(hasG){
+        if (hasG) {
             parser.expect("<");
             genericArgs = parseTypeList(parser, ctx);
             parser.expect(">");
@@ -1621,13 +1618,13 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
 
 function parserElementHasGenerics(parser: Parser, ctx: Context) {
     let areOpposed = (c1: string, c2: string) => {
-        if(c1 == "[")
+        if (c1 == "[")
             return c2 == "]";
-        if(c1 == "{")
+        if (c1 == "{")
             return c2 == "}";
-        if(c1 == "(")
+        if (c1 == "(")
             return c2 == ")";
-        if(c1 == "<")
+        if (c1 == "<")
             return c2 == ">";
     }
 
@@ -1642,13 +1639,13 @@ function parserElementHasGenerics(parser: Parser, ctx: Context) {
                 stack.push(lexeme.type);
             }
             if (["}", ">", "]", ")"].includes(lexeme.type)) {
-                if((stack.length == 0) && (lexeme.type == ">")){
+                if ((stack.length == 0) && (lexeme.type == ">")) {
                     parser.reject();
                     return true;
                 }
 
                 let last = stack.pop();
-                if(!last){
+                if (!last) {
                     parser.reject();
                     return false;
                 }
@@ -1670,7 +1667,7 @@ function parseArrayConstruction(parser: Parser, ctx: Context): Expression {
     parser.expect("[");
     let lexeme = parser.peek();
     parser.reject();
-    let elements = lexeme.type == "]"?[]:parseExpressionList(parser, ctx);
+    let elements = lexeme.type == "]" ? [] : parseExpressionList(parser, ctx);
     parser.expect("]");
     return new ArrayConstructionExpression(loc, elements);
 }
@@ -1705,7 +1702,7 @@ function parseStructKeyValueExpression(parser: Parser, ctx: Context): KeyValueEx
     let name = tok.value;
     parser.expect(":");
     let value = parseExpression(parser, ctx);
-    return { name, value, location: tok.location};
+    return { name, value, location: tok.location };
 }
 
 function parseStructKeyValueExpressionList(parser: Parser, ctx: Context): KeyValueExpressionPair[] {
@@ -1773,15 +1770,33 @@ function parseVariableDeclaration(parser: Parser, ctx: Context): DeclaredVariabl
     */
 
     if (token.type === "[") {
-        return parseArrayDeconstruction(parser, ctx, isConst);
+        let d = parseArrayDeconstruction(parser, ctx, isConst);
+        d.forEach(v => {
+            v.isFromArray = true
+            v.initGroupID = INTIALIZER_GROUP_ID;
+        });
+        INTIALIZER_GROUP_ID++;
+        return d;
     }
 
     if (token.type === "{") {
-        return parseObjectDeconstruction(parser, ctx, isConst);
+        let d = parseObjectDeconstruction(parser, ctx, isConst);
+        d.forEach(v => {
+            v.isFromStruct = true
+            v.initGroupID = INTIALIZER_GROUP_ID;
+        });
+        INTIALIZER_GROUP_ID++;
+        return d;
     }
 
     if (token.type === "(") {
-        return parseTupleDeconstruction(parser, ctx, isConst);
+        let d = parseTupleDeconstruction(parser, ctx, isConst);
+        d.forEach(v => {
+            v.isFromTuple = true
+            v.initGroupID = INTIALIZER_GROUP_ID;
+        });
+        INTIALIZER_GROUP_ID++;
+        return d;
     }
 
     return parseRegularVariableDeclaration(parser, ctx, isConst);
@@ -1792,7 +1807,7 @@ function parseTupleDeconstruction(parser: Parser, ctx: Context, isConst: boolean
     parser.expect("(");
     let elements: (string | null)[] = [];
     let tupleExpression: Expression;
-    
+
     while (1) {
         if (parser.peek().type == "_") {
             parser.accept();
@@ -1812,18 +1827,18 @@ function parseTupleDeconstruction(parser: Parser, ctx: Context, isConst: boolean
         }
     }
     parser.expect(")");
-    
+
     parser.expect("=");
     tupleExpression = parseExpression(parser, ctx);
-    
+
     return elements.filter(e => e !== null).map((name, index) => {
         let tupleDeconstruction = new TupleDeconstructionExpression(
             loc,
             tupleExpression,
             index
         );
-        
-        let d= new DeclaredVariable(
+
+        let d = new DeclaredVariable(
             loc,
             name as string,
             tupleDeconstruction,
@@ -1832,82 +1847,115 @@ function parseTupleDeconstruction(parser: Parser, ctx: Context, isConst: boolean
             false
         );
 
-        d.isFromTuple = true;
-        d.initGroupID = INTIALIZER_GROUP_ID;
         return d
     });
-    INTIALIZER_GROUP_ID++;
 }
 
 function parseObjectDeconstruction(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {
     parser.expect("{");
-    let properties: DeclaredVariable[] = [];
-    let propertyNames: string[] = [];
+
+    let elements: { variable: DeclaredVariable, isRemaining: boolean, field: string | null }[] = [];
+    let readFields: string[] = [];
+
     while (1) {
-        let propertyName = parser.expect("identifier").value;
-        let variableName = propertyName;
-        
-        if (parser.is(":")) {
-            variableName = parser.expect("identifier").value;
-        }
-        else {
-            parser.reject();
-        }
-        
-       
-        properties.push(new DeclaredVariable(parser.loc(), variableName, new TrueLiteralExpression(parser.loc()), null, isConst, false));
-        propertyNames.push(propertyName);
-        
-        if (parser.is(",")) {
+        let isRemaining = false;
+
+        if (parser.is("...")) {
+            isRemaining = true;
             parser.accept();
-        }
-        else {
-            parser.reject();
+            let variableName = parser.expect("identifier").value;
+
+            elements.push({
+                variable: new DeclaredVariable(parser.loc(), variableName, new TrueLiteralExpression(parser.loc()), null, isConst, false),
+                field: null,
+                isRemaining: isRemaining
+            });
+
             break;
         }
+        else {
+            parser.reject();
+            let propertyName = parser.expect("identifier").value;
+            let variableName = propertyName;
+
+            readFields.push(propertyName);
+
+
+            if (parser.is(":")) {
+                variableName = parser.expect("identifier").value;
+            }
+            else {
+                parser.reject();
+            }
+
+            elements.push({
+                variable: new DeclaredVariable(parser.loc(), variableName, new TrueLiteralExpression(parser.loc()), null, isConst, false),
+                field: propertyName,
+                isRemaining: isRemaining
+            });
+
+            if (parser.is(",")) {
+                parser.accept();
+            }
+            else {
+                parser.reject();
+                break;
+            }
+        }
     }
-    
+
     parser.expect("}");
     parser.expect("=");
 
     let initializer = parseExpression(parser, ctx);
-    
-    properties.forEach((prop, i) => {
-        prop.initializer = new MemberAccessExpression(
-            prop.location,
+
+    let vars = elements.map((prop, i) => {
+        prop.variable!.initializer = new StructDeconstructionExpression(
+            prop.variable!.location,
             initializer,
-            new ElementExpression(prop.location, propertyNames[i], [])
+            prop.isRemaining?null:prop.field,
+            prop.isRemaining?readFields:null,
+            prop.isRemaining
         );
+
+        return prop.variable;
     });
-    
-    return properties;
+
+    return vars;
 }
 
 function parseArrayDeconstruction(parser: Parser, ctx: Context, isConst: boolean): DeclaredVariable[] {
     parser.expect("[");
-    let elements: DeconstructedVariable[] = [];
-    
+    let elements: { variable: DeclaredVariable | null, isRemaining: boolean, isIgnored: boolean }[] = [];
+
     while (1) {
+        let isRemaining = false;
+
         if (parser.peek().type == "_") {
             parser.accept();
-            elements.push({ variable: null, isIgnored: true });
+            elements.push({ variable: null, isIgnored: true, isRemaining: false });
         } else {
             parser.reject();
-            let name = parser.expect("identifier").value;
-            let type: DataType | null = null;
-            if (parser.peek().type == ":") {
+            if (parser.peek().type === "...") {
+                isRemaining = true;
                 parser.accept();
-                type = parseType(parser, ctx);
             }
+
+            parser.reject();
+            let name = parser.expect("identifier").value;
             parser.reject();
             elements.push({
                 // the initializer is a dummy value, the actual initializer will be set later
-                variable: new DeclaredVariable(parser.loc(), name, new TrueLiteralExpression(parser.loc()), type, isConst, false),
-                isIgnored: false
+                variable: new DeclaredVariable(parser.loc(), name, new TrueLiteralExpression(parser.loc()), null, isConst, false),
+                isIgnored: false,
+                isRemaining: isRemaining
             });
         }
-        
+
         if (parser.peek().type == ",") {
+            if (isRemaining) {
+                throw parser.customError("Unexpected `,` in array deconstruction, after `...`", parser.loc());
+            }
             parser.accept();
         }
         else {
@@ -1918,13 +1966,14 @@ function parseArrayDeconstruction(parser: Parser, ctx: Context, isConst: boolean
     parser.expect("]");
     parser.expect("=");
     let initializer = parseExpression(parser, ctx);
-    
+
     return elements.filter(e => !e.isIgnored).map((e, index) => {
         if (e.variable) {
-            e.variable.initializer = new IndexAccessExpression(
+            e.variable.initializer = new ArrayDeconstructionExpression(
                 e.variable.location,
                 initializer,
-                [new IntLiteralExpression(parser.loc(), index.toString())]
+                index,
+                e.isRemaining
             );
             return e.variable;
         }
@@ -1963,7 +2012,7 @@ function parseVariableDeclarationList(parser: Parser, ctx: Context): DeclaredVar
     let declarations: DeclaredVariable[] = [];
     while (canLoop) {
         let decls = parseVariableDeclaration(parser, ctx);
-        
+
         declarations.push(...decls);
 
         var token = parser.peek();
@@ -2025,8 +2074,8 @@ function parseMatchCases(parser: Parser, ctx: Context, form: "expr" | "stmt" = "
             let body = parseStatementBlock(parser, newScope);
             cases.push(new MatchCaseExpression(loc, newScope, pattern, "match_block", null, body, ifGuard));
         }
-        
-        if(form == "expr"){
+
+        if (form == "expr") {
             lexeme = parser.peek();
             if (lexeme.type === ",") {
                 parser.accept();
@@ -2048,7 +2097,7 @@ function parseMatchCases(parser: Parser, ctx: Context, form: "expr" | "stmt" = "
 }
 
 // parses a single pattern expression along side its body
-function parseMatchPattern(parser: Parser, ctx: Context, parentType: "array"|"struct"|null = null): PatternExpression {
+function parseMatchPattern(parser: Parser, ctx: Context, parentType: "array" | "struct" | null = null): PatternExpression {
     let loc = parser.loc();
     let lexeme = parser.peek();
     if (lexeme.type === "[") {
@@ -2062,7 +2111,7 @@ function parseMatchPattern(parser: Parser, ctx: Context, parentType: "array"|"st
         let remaining: StructVariablePatternExpression | null = null;
         let fields = parseMatchPatternStructFields(parser, ctx);
         let tok = parser.peek();
-        if(tok.type !== "}"){
+        if (tok.type !== "}") {
             parser.reject();
             parser.expect("...");
             let id = parser.expect("identifier");
@@ -2093,15 +2142,15 @@ function parseMatchPattern(parser: Parser, ctx: Context, parentType: "array"|"st
             return new VariablePatternExpression(loc, lexeme.value);
         }
     }
-    else if(lexeme.type === "...") {
+    else if (lexeme.type === "...") {
         parser.accept();
         let variable = parseMatchPattern(parser, ctx); //, parentType);
-        if(!(variable instanceof VariablePatternExpression)){
+        if (!(variable instanceof VariablePatternExpression)) {
             throw parser.customError("Expected variable after token`...` in array pattern", variable.location);
         }
 
         if (parentType == "array") {
-            let arrayVar = new ArrayVariablePatternExpression(variable.location, variable.name); 
+            let arrayVar = new ArrayVariablePatternExpression(variable.location, variable.name);
             return arrayVar;
         }
 
@@ -2152,7 +2201,7 @@ function parseMatchPatternList(parser: Parser, ctx: Context): PatternExpression[
         let token = parser.peek();
         canLoop = token.type === ",";
         if (canLoop) {
-            if(expr instanceof ArrayVariablePatternExpression){
+            if (expr instanceof ArrayVariablePatternExpression) {
                 throw parser.customError("Expected end of array pattern after array variable pattern `...`", token.location);
             }
             parser.accept();
@@ -2169,7 +2218,7 @@ function parseMatchPatternStructFields(parser: Parser, ctx: Context): StructFiel
     let fields: StructFieldPattern[] = [];
     while (canLoop) {
         let tok = parser.peek();
-        if(tok.type === "identifier") {
+        if (tok.type === "identifier") {
             parser.accept();
             parser.expect(":");
             let pattern = parseMatchPattern(parser, ctx, "struct");
@@ -2187,7 +2236,7 @@ function parseMatchPatternStructFields(parser: Parser, ctx: Context): StructFiel
             parser.reject();
             canLoop = false;
         }
-        
+
     }
     return fields;
 }
@@ -2247,18 +2296,18 @@ function parseStatementReturn(parser: Parser, ctx: Context): Statement {
     parser.assert(ctx.env.withinFunction || ctx.env.withinDoExpression, "Cannot return outside of function");
     let expression = parseExpression(parser, ctx); //parseExpression(parser, ctx);
 
-    if(ctx.env.withinDoExpression){
+    if (ctx.env.withinDoExpression) {
         parser.assert(expression != null, "Cannot return void from a do-expression, must always return an expression");
     }
 
     let ret = new ReturnStatement(loc, expression)
-    if(ctx.env.withinDoExpression){
-        ctx.findParentDoExpression()!.returnStatements.push({stmt: ret, ctx});
+    if (ctx.env.withinDoExpression) {
+        ctx.findParentDoExpression()!.returnStatements.push({ stmt: ret, ctx });
     }
     else {
-        ctx.findParentFunction()?.returnStatements.push({stmt: ret, ctx});
+        ctx.findParentFunction()?.returnStatements.push({ stmt: ret, ctx });
     }
-    
+
     return ret;
 }
 
@@ -2400,7 +2449,7 @@ function parseStatementMatch(parser: Parser, ctx: Context): MatchStatement {
     parser.expect("{");
     let cases: MatchCaseExpression[] = parseMatchCases(parser, ctx, "stmt");
     // make sure we have at least one case
-    if(cases.length == 0){
+    if (cases.length == 0) {
         throw parser.customError("Match expression must have at least one case", loc);
     }
     parser.expect("}");
@@ -2423,7 +2472,7 @@ function parseStatementBlock(parser: Parser, ctx: Context, isLoop: boolean = fal
     let tok = parser.peek();
     parser.reject();
     let canLoop = tok.type !== "}";
-    while(canLoop){
+    while (canLoop) {
         let statement = parseStatement(parser, newScope);
         statements.push(statement);
         let token = parser.peek();
@@ -2440,7 +2489,7 @@ function parseStatementExpression(parser: Parser, ctx: Context): ExpressionState
     let lexeme = parser.peek();
     parser.reject();
     let expression = parseExpression(parser, ctx);
-    if(expression == null){
+    if (expression == null) {
         throw parser.error("Invalid expression", loc, lexeme.value.length);
     }
     return new ExpressionStatement(loc, expression);
@@ -2451,8 +2500,8 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     let proto = parseFunctionPrototype(parser, ctx);
 
     let lexeme = parser.peek();
-    
-    let newScope = new Context(loc, parser, ctx, {withinFunction: true});
+
+    let newScope = new Context(loc, parser, ctx, { withinFunction: true });
     newScope.location = loc;
 
     let fn = new DeclaredFunction(loc, newScope, proto, null, null);
@@ -2473,9 +2522,9 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
 
     fn.body = stmtBody;
     fn.expression = exprBody;
-    
+
     parser.assert((exprBody !== null) || (stmtBody !== null), "Function body is not defined!");
-    
+
     let fnStatement = new FunctionDeclarationStatement(loc, fn);
     fn.declStatement = fnStatement;
     ctx.addSymbol(fn);

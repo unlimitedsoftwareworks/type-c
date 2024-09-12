@@ -63,6 +63,8 @@ export type ExpressionKind =
     "this" | // this
     "unnamed_struct_construction" | // { 1, 2 }
     "tuple_deconstruction"  | // (a) = (1, 2, 3)
+    "array_deconstruction" | // [a, b, ...rest] = [1, 2, 3]
+    "object_deconstruction" | // { a, b, ...rest } = { a: 1, b: 2, c: 3 }
     "coroutine_construction" | // coroutine ( ... )
     "do_expression" // do { ... }
 ;
@@ -133,6 +135,17 @@ export class Expression {
      */
     infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType{
         throw new Error("infer is not implemented on abstract Expression");
+    }
+
+    /**
+     * Special infer, overritten only by TupleConstructionExpression.
+     * Key idea is that, when a return statement or an expression function is being
+     * inferred, we call infer Return, from that base, but all the way down we use
+     * .infer.
+     * 
+     */
+    inferReturn(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType{
+        return this.infer(ctx, hint, meta);
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): Expression{

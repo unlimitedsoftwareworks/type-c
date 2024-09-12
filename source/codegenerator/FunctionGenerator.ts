@@ -12,6 +12,7 @@
  */
 
 import { ArrayConstructionExpression } from "../ast/expressions/ArrayConstructionExpression";
+import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
 import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
 import { CastExpression } from "../ast/expressions/CastExpression";
@@ -32,6 +33,7 @@ import { NamedStructConstructionExpression } from "../ast/expressions/NamedStruc
 import { NewExpression } from "../ast/expressions/NewExpression";
 import { NullableMemberAccessExpression } from "../ast/expressions/NullableMemberAccessExpression";
 import { SpawnExpression } from "../ast/expressions/SpawnExpression";
+import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
 import { ThisExpression } from "../ast/expressions/ThisExpression";
 import { TupleConstructionExpression } from "../ast/expressions/TupleConstructionExpression";
 import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstructionExpression";
@@ -258,16 +260,24 @@ export class FunctionGenerator {
         }
         else {
             this.srcMapPushLoc(this.fn.location);
-            let tmp = this.visitExpression(this.fn.expression!, this.fn.context);
-            // check if the function is not void
-            if ((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")) {
-                let instr = retType(this.fn.context, this.fn.codeGenProps.parentFnType.returnType);
-                // TODO: handle tuple for expression-functions return here
-                this.i(instr, tmp, 0);
+            let tmp = "";
+            if(this.fn.expression instanceof TupleConstructionExpression) {
+                this.ir_generate_tuple_return(this.fn.context, this.fn.expression);
+                this.i("ret_void");
             }
             else {
-                this.destroyTmp(tmp);
-                this.i("ret_void");
+                tmp = this.visitExpression(this.fn.expression!, this.fn.context);
+                // check if the function is not void
+                if ((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")) {
+                    let instr = retType(this.fn.context, this.fn.codeGenProps.parentFnType.returnType);
+                    // TODO: handle tuple for expression-functions return here
+                    this.i(instr, tmp, 0);
+                    this.i("ret_void")
+                }
+                else {
+                    this.destroyTmp(tmp);
+                    this.i("ret_void");
+                }
             }
             this.srcMapPopLoc();
         }
@@ -616,23 +626,14 @@ export class FunctionGenerator {
          */
 
         let structType = expr.inferredType!.to(ctx, StructType) as StructType;
-        let tmp = this.generateTmp();
-        let structSize = structType.getStructSize(ctx);
+        
         this.i("debug", "anonymous struct construction expression ");
-        this.i("s_alloc", tmp, structType.fields.length, structSize);
-
-        let offsetCounter = 0
-        this.i("debug", "anonymous struct field offset");
-        for (const [i, field] of structType.fields.entries()) {
-            let field = structType.fields[i];
-            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter);
-            offsetCounter += getDataTypeByteSize(field.type);
-        }
+        let {reg: tmp, sortedStruct} = this.ir_allocate_struct(ctx, structType);
 
         this.i("debug", "anonymous struct field values");
 
-        for (let i = 0; i < structType.fields.length; i++) {
-            let field = structType.fields[i];
+        for (let i = 0; i < sortedStruct.fields.length; i++) {
+            let field = sortedStruct.fields[i];
 
             let res = this.visitExpression(expr.elements[i], ctx);
 
@@ -1641,22 +1642,9 @@ export class FunctionGenerator {
         // important: we need to use hint type to infer the size of the struct
         // since elements within it could be promoted
         let structType = (expr.hintType ?? expr.inferredType)!.to(ctx, StructType) as StructType
-        let sortedStruct = structType.toSortedStruct();
         
-        let tmp = this.generateTmp();
-        let structSize = structType.getStructSize(ctx);
         this.i("debug", "named struct construction expression ");
-        this.i("s_alloc", tmp, structType.fields.length, structSize);
-
-        let offsetCounter = 0
-        this.i("debug", "named struct field offset");
-        for (let i = 0; i < sortedStruct.fields.length; i++) {
-            let field = sortedStruct.fields[i];
-
-            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter);
-
-            offsetCounter += getDataTypeByteSize(field.type)
-        }
+        let {reg: tmp, sortedStruct} = this.ir_allocate_struct(ctx, structType);
 
         this.i("debug", "named struct field values");
 
@@ -1969,7 +1957,7 @@ export class FunctionGenerator {
                 continue;
             }
 
-            if(decl.isFromTuple) {
+            if(decl.isFromTuple || decl.isFromArray || decl.isFromStruct) {
                 let group: DeclaredVariable[] = [];
                 // find all tuple deconstructions in the initializer
                 for (let decl_ of expr.variables) {
@@ -1979,7 +1967,15 @@ export class FunctionGenerator {
                     }
                 }
 
-                this.visitTupeDeconstructionGroup(ctx, group);
+                if(decl.isFromTuple) {
+                    this.visitTupeDeconstructionGroup(ctx, group);
+                }
+                else if(decl.isFromArray) {
+                    this.visitArrayDeconstructionGroup(ctx, group);
+                }
+                else if(decl.isFromStruct) {
+                    this.visitStructDeconstructionGroup(ctx, group);
+                }
                 continue;
             }
 
@@ -2566,14 +2562,7 @@ export class FunctionGenerator {
         if (stmt.returnExpression) {
 
             if(stmt.returnExpression instanceof TupleConstructionExpression) {
-                // we return elements one by one
-                for(let [i, el] of stmt.returnExpression.elements.entries()) {
-                    this.i("debug", "return tuple element #" + i);
-                    let tmp = this.visitExpression(el, ctx);
-                    let retInst = retType(ctx, el.inferredType!);
-                    this.i(retInst, tmp, i);
-                    this.destroyTmp(tmp);
-                }
+                this.ir_generate_tuple_return(ctx, stmt.returnExpression);
             }
             else {
                 let tmp = this.visitExpression(stmt.returnExpression, ctx);
@@ -2600,7 +2589,8 @@ export class FunctionGenerator {
                 continue;
             }
 
-            if(decl.isFromTuple) {
+            
+            if(decl.isFromTuple || decl.isFromArray || decl.isFromStruct) {
                 let group: DeclaredVariable[] = [];
                 // find all tuple deconstructions in the initializer
                 for (let decl_ of stmt.variables) {
@@ -2610,7 +2600,15 @@ export class FunctionGenerator {
                     }
                 }
 
-                this.visitTupeDeconstructionGroup(ctx, group);  
+                if(decl.isFromTuple) {
+                    this.visitTupeDeconstructionGroup(ctx, group);
+                }
+                else if(decl.isFromArray) {
+                    this.visitArrayDeconstructionGroup(ctx, group);
+                }
+                else if(decl.isFromStruct) {
+                    this.visitStructDeconstructionGroup(ctx, group);
+                }
                 continue;
             }
 
@@ -2680,6 +2678,127 @@ export class FunctionGenerator {
 
             let inst = fnGetRetType(ctx, decl.annotation!);
             this.i(inst, elementReg, 255-returnIndex);
+        }
+    }
+
+    visitArrayDeconstructionGroup(ctx: Context, group: DeclaredVariable[]) {
+        // (a, b) = f()
+
+        // first generate the expression
+        this.i("debug", "array deconstruction group");
+        let arrayExpression = (group[0].initializer as ArrayDeconstructionExpression).arrayExpression;
+        let reg = this.visitExpression(arrayExpression, ctx);
+        let arrayType = arrayExpression.inferredType! as ArrayType;
+
+        for(const [i, decl] of group.entries()) {
+            let init = (decl.initializer as ArrayDeconstructionExpression);
+            let expr: Expression = new ElementExpression(decl.location, decl.name);
+            let elementReg = this.visitExpression(expr, ctx);
+            
+            if(init.rest) {
+                // we have to generate slice so first, get the length
+                let tmpStart = this.generateTmp();
+                this.i("const_u64", tmpStart, init.index);
+                let tmpEnd = this.generateTmp();
+                this.i("a_len", tmpEnd, reg);
+
+                this.i("a_slice", elementReg, reg, tmpStart, tmpEnd);
+                this.destroyTmp(tmpStart);
+                this.destroyTmp(tmpEnd);
+                
+            }
+            else {
+                let instr = arrayGetIndexType(ctx, arrayType.arrayOf.dereference());
+                let idxTmp = this.generateTmp();
+                this.i("const_u64", idxTmp, i); 
+                this.i(instr, elementReg, idxTmp, reg);
+                this.destroyTmp(idxTmp);
+            }
+
+            this.destroyTmp(elementReg);
+        }
+
+        this.destroyTmp(reg);
+    }
+
+    visitStructDeconstructionGroup(ctx: Context, group: DeclaredVariable[]) {
+        // {a, b:c, ...d} = someStruct
+
+        // first generate the expression
+        this.i("debug", "struct deconstruction group");
+        let reg = this.visitExpression((group[0].initializer as StructDeconstructionExpression).structExpression, ctx);
+        let structType = (group[0].initializer as StructDeconstructionExpression).structExpression.inferredType! as StructType;
+
+        for(const [i, decl] of group.entries()) {
+            let init = (decl.initializer as StructDeconstructionExpression);
+            let expr: Expression = new ElementExpression(decl.location, decl.name);
+            let elementReg = this.visitExpression(expr, ctx);
+
+            if(init.rest) {
+                let remainingStruct = decl.initializer.inferredType! as StructType;
+                // we will need to allocate a new struct and copy the values over
+                let {sortedStruct} = this.ir_allocate_struct(ctx, remainingStruct, elementReg);
+
+                for(const [i, field] of sortedStruct.fields.entries()) {
+                    let tmp = this.generateTmp();
+                    // read from the original struct
+                    let i_read = structGetFieldType(ctx, field!.type);
+                    this.i(i_read, tmp, reg, field!.getFieldID());
+
+                    // write to the new struct
+                    let i_write = structSetFieldType(ctx, field!.type);
+                    this.i(i_write, elementReg, field!.getFieldID(), tmp);
+                    this.destroyTmp(tmp);
+                }
+
+                this.destroyTmp(reg);
+            }
+            else {
+                let field = structType.getField(init.field!);
+
+                let elementReg = this.visitExpression(expr, ctx);
+                let instr = structGetFieldType(ctx, field!.type);
+
+                this.i(instr, elementReg, reg, field!.getFieldID());
+                this.destroyTmp(elementReg);
+            }
+        }
+    }
+
+    /**
+     * Allocates a new struct in the given register, or in a new temporary register if reg is not given.
+     * @param ctx 
+     * @param structType 
+     * @param reg 
+     * @returns 
+     */
+    ir_allocate_struct(ctx: Context, structType: StructType, reg?: string) {
+        let st = structType.toSortedStruct()
+        let tmp: string = reg ?? this.generateTmp();
+
+        let structSize = st.getStructSize(ctx);
+        this.i("debug", "anonymous struct construction expression ");
+        this.i("s_alloc", tmp, st.fields.length, structSize);
+
+
+        let offsetCounter = 0
+        this.i("debug", "anonymous struct field offset");
+        for (const [i, field] of st.fields.entries()) {
+            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter);
+            offsetCounter += getDataTypeByteSize(field.type);
+        }
+
+        return {reg: tmp, sortedStruct: st};
+    }
+
+    ir_generate_tuple_return(ctx: Context, returnExpression: TupleConstructionExpression) {
+        // we return elements one by one
+        for(let [i, el] of returnExpression.elements.entries()) {
+            this.i("debug", "return tuple element #" + i);
+            let tmp = this.visitExpression(el, ctx);
+            let retInst = retType(ctx, el.inferredType!);
+            this.i(retInst, tmp, i);
+            this.destroyTmp(tmp);
         }
     }
 }

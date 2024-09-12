@@ -287,7 +287,8 @@ export class ClassType extends DataType {
     }
 
     getAllNonStaticMethods() {
-        return this.methods.filter(e => !e.imethod.isStatic);
+        let methods = this.getAllMethods();
+        return methods.filter(e => !e.imethod.isStatic);
     }
 
     /**

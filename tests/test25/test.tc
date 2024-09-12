@@ -19,18 +19,34 @@ type Z<T> = class {
     static fn callme2<T>(x: T, y: T) -> (T, T) {
         return (x+2, y+3)
     }
+
+    static fn haha() = (1, "oupsy")
 }
 
 fn main() {
-    let zebra = new Z<u32>(1)
-    let x: u32 = 32
-    let (a, b) = Z.callme(x, x)
-    let (c, d) = Z.callme2<u64>(x, x)
 
-    //println("Y = "+y)
-    //println("Z = "+z)
-    println("A = "+a)
-    println("B = "+b)
-    println("C = "+c)
-    println("D = "+d)
+
+    let arr: u32[] = [1, 2, 3]
+    let [x, y,...rest] = arr
+
+    println("X = "+x)
+    println("Y = "+y)
+    println("Rest = "+rest.length+"!")
+
+    for let i: u64 = 0; i < rest.length; i+=1 {
+        println("Rest["+i+"] = "+rest[i])
+    }
+
+    let user = {name: "John", age: 30, is_student: true}
+
+    let {name, ...res} = user
+
+    println("Name: "+name)
+    println("Age: "+res.age)
+    println("Is student: "+res.is_student)
+
+    let (aa, bb) = Z.haha()
+
+    println("aa = "+aa)
+    println("bb = "+bb)
 }

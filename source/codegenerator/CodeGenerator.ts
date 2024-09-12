@@ -155,6 +155,9 @@ export class CodeGenerator {
     generateClassStaticMethods(type: ClassType) {
         let methods = type.getAllStaticMethods();
         for (const method of methods) {
+            if(method.needsInfer()){
+                method.infer(method.context);
+            }
             let generator = new FunctionGenerator(method);
             generator.generate();
             this.functions.set(method.uid, generator);

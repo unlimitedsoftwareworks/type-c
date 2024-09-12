@@ -104,7 +104,7 @@ export function inferFunctionHeader(
          * If it is an expression, we can infer the type from the expression
          */
         else {
-            header.returnType = expr!.infer(ctx);
+            header.returnType = expr!.inferReturn(ctx);
         }
     }
 
@@ -121,7 +121,7 @@ export function inferFunctionHeader(
         }
         else {
             // WARNING: for expression, void is ALLOWED, the output is just discarded
-            let retType = expr!.infer(ctx);
+            let retType = expr!.inferReturn(ctx);
             if (!(retType instanceof VoidType)) {
                 expr?.setHint(new VoidType(expr.location));
             }
@@ -148,7 +148,7 @@ export function inferFunctionHeader(
             }
         }
         else {
-            let retType = expr!.infer(ctx, definedReturnType);
+            let retType = expr!.inferReturn(ctx, definedReturnType);
             if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
                 throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
             }

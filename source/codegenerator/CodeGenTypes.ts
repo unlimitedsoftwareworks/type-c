@@ -1,6 +1,7 @@
 import { BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
 import { Context } from "../ast/symbol/Context";
 import { BasicType } from "../ast/types/BasicType";
+import { BooleanType } from "../ast/types/BooleanType";
 import { DataType } from "../ast/types/DataType";
 import { EnumType } from "../ast/types/EnumType";
 import { IRInstructionType } from "./bytecode/IR";
@@ -25,6 +26,7 @@ export function localType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "local_ptr";
         if(u.kind == "bool") return "local_u8";
     }
+    if(u instanceof BooleanType) return  "local_u8"
     if(u instanceof EnumType){
         return ("local_"+u.as) as IRInstructionType;
     }
@@ -50,6 +52,7 @@ export function globalType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "global_ptr";
         if(u.kind == "bool") return "global_u8";
     }
+    if(u instanceof BooleanType) return  "global_u8"
     if(u instanceof EnumType){
         return ("global_"+u.as) as IRInstructionType;
     }
@@ -77,6 +80,7 @@ export function tmpType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "tmp_ptr";
         if(u.kind == "bool") return "tmp_u8";
     }
+    if(u instanceof BooleanType) return "tmp_u8"
     if(u instanceof EnumType){
         return ("tmp_"+u.as) as IRInstructionType;
     }
@@ -100,6 +104,7 @@ export function retType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "ret_ptr";
         if(u.kind == "bool") return "ret_u8";
     }
+    if(u instanceof BooleanType) return "ret_u8"
     if(u instanceof EnumType){
         return ("ret_"+u.as) as IRInstructionType;
     }
@@ -125,6 +130,7 @@ export function constType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "const_ptr";
         if(u.kind == "bool") return "const_u8";
     }
+    if(u instanceof BooleanType) return  "const_u8"
     if(u instanceof EnumType){
         return ("const_"+u.as) as IRInstructionType;
     }
@@ -147,6 +153,7 @@ export function arraySetIndexType(ctx: Context, v: DataType): IRInstructionType 
         if(u.kind == "array") return "a_set_index_ptr";
         if(u.kind == "bool") return "a_set_index_u8";
     }
+    if(u instanceof BooleanType) return  "a_set_index_u8"
     if(u instanceof EnumType){
         return ("a_set_index_"+u.as) as IRInstructionType;
     }
@@ -169,6 +176,7 @@ export function arrayGetIndexType(ctx: Context, v: DataType): IRInstructionType 
         if(u.kind == "array") return "a_get_index_ptr";
         if(u.kind == "bool") return "a_get_index_u8";
     }
+    if(u instanceof BooleanType) return  "a_get_index_u8"
     if(u instanceof EnumType){
         return ("a_get_index_"+u.as) as IRInstructionType;
     }
@@ -190,8 +198,8 @@ export function structSetFieldType(ctx: Context, v: DataType): IRInstructionType
         if(u.kind == "f32") return "s_set_field_f32";
         if(u.kind == "f64") return "s_set_field_f64";
         if(u.kind == "array") return "s_set_field_ptr";
-        if(u.kind == "bool") return "s_set_field_u8";
     }
+    if(u instanceof BooleanType) return  "s_set_field_u8"
     if(u instanceof EnumType){
         return ("s_set_field_"+u.as) as IRInstructionType;
     }
@@ -214,6 +222,7 @@ export function structGetFieldType(ctx: Context, v: DataType): IRInstructionType
         if(u.kind == "array") return "s_get_field_ptr";
         if(u.kind == "bool") return "s_get_field_u8";
     }
+    if(u instanceof BooleanType) return  "s_get_field_u8"
     if(u instanceof EnumType){
         return ("s_get_field_"+u.as) as IRInstructionType;
     }
@@ -236,6 +245,7 @@ export function fnSetArgType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "fn_set_reg_ptr";
         if(u.kind == "bool") return "fn_set_reg_u8";
     }
+    if(u instanceof BooleanType) return  "fn_set_reg_u8"
     if(u instanceof EnumType){
         return ("fn_set_reg_"+u.as) as IRInstructionType;
     }
@@ -259,6 +269,7 @@ export function fnGetRetType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "fn_get_reg_ptr";
         if(u.kind == "bool") return "fn_get_reg_u8";
     }
+    if(u instanceof BooleanType) return  "fn_get_reg_u8"
     if(u instanceof EnumType){
         return ("fn_get_reg_"+u.as) as IRInstructionType;
     }
@@ -281,6 +292,7 @@ export function pushStackType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "push_ptr";
         if(u.kind == "bool") return "push_u8";
     }
+    if(u instanceof BooleanType) return  "push_u8"
     if(u instanceof EnumType){
         return ("push_"+u.as) as IRInstructionType;
     }
@@ -303,6 +315,7 @@ export function popStackType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "pop_ptr";
         if(u.kind == "bool") return "pop_u8";
     }
+    if(u instanceof BooleanType) return  "pop_u8"
     if(u instanceof EnumType){
         return ("pop_"+u.as) as IRInstructionType;
     }
@@ -325,6 +338,7 @@ export function classSetFieldType(ctx: Context, v: DataType): IRInstructionType 
         if(u.kind == "array") return "c_set_field_ptr";
         if(u.kind == "bool") return "c_set_field_u8";
     }
+    if(u instanceof BooleanType) return  "c_set_field_u8"
     if(u instanceof EnumType){
         return ("c_set_field_"+u.as) as IRInstructionType;
     }
@@ -347,6 +361,7 @@ export function classGetFieldType(ctx: Context, v: DataType): IRInstructionType 
         if(u.kind == "array") return "c_get_field_ptr";
         if(u.kind == "bool") return "c_get_field_u8";
     }
+    if(u instanceof BooleanType) return  "c_get_field_u8"
     if(u instanceof EnumType){
         return ("c_get_field_"+u.as) as IRInstructionType;
     }
@@ -372,6 +387,7 @@ export function argType(ctx: Context, v: DataType): IRInstructionType {
         if(u.kind == "array") return "arg_ptr";
         if(u.kind == "bool") return "arg_u8";
     }
+    if(u instanceof BooleanType) return  "arg_u8"
     if(u instanceof EnumType){
         return ("arg_"+u.as) as IRInstructionType;
     }

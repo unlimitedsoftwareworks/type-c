@@ -1,3 +1,18 @@
+/**
+ * Filename: TupleDeconstructionExpression.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Models a tuple deconstruction
+ *      a tuple deconstruction can only be used to used as a function return type
+ *      let (a, b) = f()
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
+
 import { Expression } from "./Expression";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";

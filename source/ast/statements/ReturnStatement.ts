@@ -30,15 +30,12 @@ export class ReturnStatement extends Statement {
 
     infer(ctx: Context){
         if(this.returnExpression){
-            // we do not compare the return type to the function return type
-            // since it could be unset
-            // TODO: do the same for function whos body is an expression
-            if(this.returnExpression instanceof TupleConstructionExpression) {
-                this.returnExpression.inferReturn(ctx, null);
-            }
-            else {
-                this.returnExpression.infer(ctx, this.getReturnType(ctx));
-            }
+            //if(this.returnExpression instanceof TupleConstructionExpression) {
+                //this.returnExpression.inferReturn(ctx, this.getReturnType(ctx));
+            //}
+            //else {
+            this.returnExpression.inferReturn(ctx, this.getReturnType(ctx));
+            //}
         }
     }
 
