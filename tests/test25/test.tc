@@ -25,7 +25,7 @@ fn main() {
     let zebra = new Z<u32>(1)
     let x: u32 = 32
     let (a, b) = Z.callme(x, x)
-    let (c, d) = Z.callme2(x, x)
+    let (c, d) = Z.callme2<u64>(x, x)
 
     //println("Y = "+y)
     //println("Z = "+z)
