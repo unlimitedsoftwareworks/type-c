@@ -69,6 +69,9 @@ This checklist containts only major changes and updates, for minor changes and u
     - Refactored bytecode for classes and interfaces. VM now only supports classes. Class methods are processed the same way as structs now, each
       method has a global id.
     - class to interface now is direct, interface to interface is now done through new `i_has_m` bytecode instruction, which checks if the class has the method.
+- 12/08/2024:
+    - Isolated static methods, so static methods are stored in the base class type, not classes that are *concrete* implementations of that class. 
+    - Static methods now support generics.
 
 
 ## TODOs:
@@ -185,3 +188,13 @@ for instance for array matching we need the index access override and a custom s
 Maybe even a built-in range class? like python x[0:3] -> x[Range(0, 3)] by overloading the index access operator.
 
 Lots of potential work here, but also low priority.
+
+### Improve performance, by a lot!
+if we can create "templates" for types, we can then use local index instead of global offset for structs, interfaces and classes.
+Hence we can avoid searching for index within the globalIndex table.
+
+For each **defined** type, we add it to the template segment, each object will then be created 
+based on that template (it has predefined index for its fields), and we can then use that index.
+Each struct/class/interface/variant will need to have an ID referencing the template ID used to create it.
+
+When generating bytecode, we will need instruction to fetch data from local index instead of global index.
