@@ -11,10 +11,11 @@ type Data<T> = class {
     let length: u64
     let capacity: u64
 
+
     fn init() {
         this.data = []
         this.length = 0
-        return
+        this.capacity = 0
     }   
 
     fn __index__(index: u64) -> T {
