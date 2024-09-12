@@ -1185,7 +1185,6 @@ export class FunctionGenerator {
                     hasReturn = false;
                 }
 
-
                 if (hasReturn) {
                     let tmp = this.generateTmp();
                     this.i("call", tmp, jumpId);
@@ -1200,7 +1199,7 @@ export class FunctionGenerator {
                 let reg = this.visitExpression(expr.lhs, ctx);
                 // check if the function returns a value
                 let hasReturn = true;
-                if ((expr.inferredType instanceof VoidType)) {
+                if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                     hasReturn = false;
                 }
 
@@ -1259,7 +1258,7 @@ export class FunctionGenerator {
                     }
 
                     let hasReturn = true;
-                    if ((expr.inferredType instanceof VoidType)) {
+                    if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                         hasReturn = false;
                     }
 
@@ -1336,7 +1335,7 @@ export class FunctionGenerator {
                     }
 
                     let hasReturn = true;
-                    if ((expr.inferredType?.dereference() instanceof VoidType)) {
+                    if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                         hasReturn = false;
                     }
 
@@ -1413,7 +1412,7 @@ export class FunctionGenerator {
                 }
 
                 let hasReturn = true;
-                if ((expr.inferredType?.dereference() instanceof VoidType)) {
+                if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                     hasReturn = false;
                 }
 
@@ -1484,7 +1483,7 @@ export class FunctionGenerator {
                     }
 
                     let hasReturn = true;
-                    if ((expr.inferredType instanceof VoidType)) {
+                    if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                         hasReturn = false;
                     }
 
@@ -1601,7 +1600,7 @@ export class FunctionGenerator {
 
 
             let hasReturn = true;
-            if ((expr.inferredType instanceof VoidType)) {
+            if ((expr.inferredType instanceof VoidType) || (expr.inferredType instanceof TupleType)) {
                 hasReturn = false;
             }
 

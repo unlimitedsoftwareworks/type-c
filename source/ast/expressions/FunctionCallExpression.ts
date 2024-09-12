@@ -330,7 +330,6 @@ export class FunctionCallExpression extends Expression {
     }
 
     private inferMetaType(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null) {
-
         /**
          * If we have a metatype, we face the following 2 cases:
          * 1. Static method call from a class

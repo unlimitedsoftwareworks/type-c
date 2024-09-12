@@ -12,6 +12,7 @@
  */
 
 import { Context } from "../symbol/Context";
+import { DeclaredType } from "../symbol/DeclaredType";
 import { SymbolLocation } from "../symbol/SymbolLocation"
 import { ClassType } from "./ClassType"
 import { DataType, DataTypeKind } from "./DataType"
@@ -36,13 +37,24 @@ export class MetaType extends DataType {
 }
 
 export class MetaClassType extends MetaType {
-    classType: DataType;
+    classType: ClassType;
     typeArguments: DataType[];
 
-    constructor(location: SymbolLocation, classType: DataType, genericParameters: GenericType[], genericTypes: DataType[] = []) {
+    // needed to only save/store the static methods that are generic
+    declaration: DeclaredType;
+
+    constructor(location: SymbolLocation, declaration: DeclaredType, classType: ClassType, genericParameters: GenericType[], genericTypes: DataType[] = []) {
         super(location, "meta_class", genericParameters);
         this.classType = classType;
         this.typeArguments = genericTypes;
+        this.declaration = declaration;
+
+        // check if we need to infer static methods
+        for(const method of classType.methods){
+            if(method.needsInfer() && method.imethod.isStatic && !method.imethod.isGeneric()){
+                method.infer(this.declaration.parentContext);
+            }
+        }
     }
 
     serialize(unpack: boolean = false): string {

@@ -1,18 +1,36 @@
 from std.io import println
 from std.string import String
 
-fn f(x: String) -> (String, String) {
-    x = "WHY"
-    return (x, x+"WHY")
+type Z<T> = class {
+    let x: T
+
+    fn init(x: T) {
+        this.x = x
+    }
+
+    fn add(y: T) -> (T, T) {
+        return (this.x, this.x+y)
+    }
+
+    static fn callme(x: u32, y: u32) -> (u32, u32) {
+        return (x+1, y+5)
+    }
+
+    static fn callme2<T>(x: T, y: T) -> (T, T) {
+        return (x+2, y+3)
+    }
 }
 
 fn main() {
-    let const x = "world"
-    let (y, z) = f(x)
+    let zebra = new Z<u32>(1)
+    let x: u32 = 32
+    let (a, b) = Z.callme(x, x)
+    let (c, d) = Z.callme2(x, x)
 
-    let const a = y
-    a = y
-
-    println(y)
-    println(z)
+    //println("Y = "+y)
+    //println("Z = "+z)
+    println("A = "+a)
+    println("B = "+b)
+    println("C = "+c)
+    println("D = "+d)
 }

@@ -102,7 +102,7 @@ export class ClassMethod extends Symbol {
     }
 
     infer(ctx: Context) {
-        if(this._wasInferred) return;
+        //if(this._wasInferred) return;
         
         /** removed in favor of location base type checking for classes
         if(this.imethod.header.returnType instanceof UnsetType) {
@@ -118,6 +118,7 @@ export class ClassMethod extends Symbol {
 
         inferFunctionHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
         this.codeGenProps.reportUnusedSymbols(ctx, this.imethod.header);
+        this._wasInferred = true
     }
 
     getConcreteGenerics(): Map<string, ClassMethod> {
@@ -185,5 +186,9 @@ export class ClassMethod extends Symbol {
         newMethod.infer(newMethod.context);
 
         return newMethod;
+    }
+
+    needsInfer() {
+        return !this._wasInferred;
     }
 }

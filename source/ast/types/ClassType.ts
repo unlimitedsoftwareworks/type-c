@@ -22,10 +22,8 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType"
 import { GenericType } from "./GenericType";
 import { InterfaceType, checkOverloadedMethods } from "./InterfaceType";
-import { ReferenceType } from "./ReferenceType";
 import { UnsetType } from "./UnsetType";
 import { VoidType } from "./VoidType";
-
 
 export class ClassType extends DataType {
     attributes: ClassAttribute[];
@@ -119,7 +117,9 @@ export class ClassType extends DataType {
          * 4. Infer each method to compute the method's signature (in case return type is not specified)
          */
         for (const method of this.methods) {
-            method.infer(ctx);
+            if(!method.imethod.isStatic){
+                method.infer(ctx);
+            }
         }
 
 
@@ -284,6 +284,10 @@ export class ClassType extends DataType {
         }
 
         return this._allMethods;
+    }
+
+    getAllNonStaticMethods() {
+        return this.methods.filter(e => !e.imethod.isStatic);
     }
 
     /**
@@ -558,7 +562,7 @@ export class ClassType extends DataType {
             this.location,
             this.superTypes.map(e => e.clone(genericsTypeMap)),
             this.attributes.map(e => e.clone(genericsTypeMap)),
-            this.methods.map(e => e.clone(genericsTypeMap))
+            this.methods.filter(e => !e.imethod.isStatic).map(e => e.clone(genericsTypeMap))
         );
 
         // make sure each method has current class as active class
@@ -726,6 +730,24 @@ export class ClassType extends DataType {
         }
 
         return null;
+    }
+
+    getAllStaticMethods(){
+        let methods: ClassMethod[] = [];
+        for(const [key, method] of this.methods.entries()) {
+            if(method.imethod.isStatic){
+                if(method.imethod.generics.length > 0){
+                    let genericImpl = method.getConcreteGenerics()
+                    for (const [i, m] of genericImpl) {
+                        methods.push(m);
+                    }
+                }
+                else{
+                    methods.push(method);
+                }
+            }
+        }
+        return methods;
     }
 
     getIndexesForInterfaceMethods(ctx: Context, interfaceType: InterfaceType): number[] {

@@ -134,9 +134,10 @@ export class CodeGenerator {
                 }
                 
                 if (baseType instanceof ClassType) {
+                    this.generateClassStaticMethods(baseType);
                     // call getAllMethods to generate all methods
-
                     if (sym.isGeneric()) {
+                        
                         for (const [key, concreteSym] of sym.concreteTypes) {
                             if (concreteSym instanceof ClassType) {
                                 this.generateClassMethods(concreteSym);
@@ -151,8 +152,17 @@ export class CodeGenerator {
         }
     }
 
+    generateClassStaticMethods(type: ClassType) {
+        let methods = type.getAllStaticMethods();
+        for (const method of methods) {
+            let generator = new FunctionGenerator(method);
+            generator.generate();
+            this.functions.set(method.uid, generator);
+            this.bytecodeGenerator.generateBytecode(generator);
+        }
+    }
     generateClassMethods(type: ClassType) {
-        let methods = type.getAllMethods();
+        let methods = type.getAllNonStaticMethods();
         for (const method of methods) {
             let generator = new FunctionGenerator(method);
             generator.generate();

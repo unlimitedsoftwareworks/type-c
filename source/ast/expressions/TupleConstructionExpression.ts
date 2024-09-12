@@ -66,4 +66,9 @@ export class TupleConstructionExpression extends Expression {
         }
         return this.inferredType;
     }
+
+    clone(typeMap: {[key: string]: DataType}, ctx: Context): TupleConstructionExpression {
+        let newElements = this.elements.map(e => e.clone(typeMap, ctx));
+        return new TupleConstructionExpression(this.location, newElements);
+    }
 }
