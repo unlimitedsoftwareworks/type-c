@@ -2,6 +2,7 @@ import { ImportNode } from "./ast/ImportNode";
 import { DeclaredType } from "./ast/symbol/DeclaredType";
 import { SymbolLocation } from "./ast/symbol/SymbolLocation";
 import { DataType } from "./ast/types/DataType";
+import { ReferenceType } from "./ast/types/ReferenceType";
 import { TypeC } from "./compiler";
 
 export class BuiltinModules {
@@ -26,7 +27,7 @@ export class BuiltinModules {
         if(!(sym instanceof DeclaredType)){
             throw new Error("Could not find built-in interface 'String'");
         }
-        BuiltinModules.String = sym.type;
-        return sym.type;
+        BuiltinModules.String = new ReferenceType(sym.location, ["String"], [], base.ctx);
+        return BuiltinModules.String;
     }
 }
