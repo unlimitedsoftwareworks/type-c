@@ -177,8 +177,9 @@ export class Context {
             this.registerToGlobalContext(symbol);
         }
 
-        // check if we need to register to global context
-        if (this.globalContext !== null) {
+        // check if we are at root and need to register to global context
+        // but not repeat previous instructions as well
+        if ((this.globalContext !== null) && !(symbol instanceof DeclaredFunction || symbol instanceof LambdaExpression)) {
             this.registerToGlobalContext(symbol);
         }
     }
