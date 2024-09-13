@@ -80,6 +80,7 @@ export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict:
         return Ok();
     }
     globalMatchingStack.push(generateTypeKey(et, dt, strict));
+    
     let res = matchDataTypesRecursive(ctx, et, dt, et.isStrict() || strict, []);
     globalMatchingStack.pop();
     return res;
