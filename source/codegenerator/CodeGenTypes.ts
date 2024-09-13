@@ -493,9 +493,9 @@ const cmpInstructions: {[key:string]: IRInstructionType} = {
     "i16": "j_cmp_i16",
     "i32": "j_cmp_i32",
     "i64": "j_cmp_i64",
-    "bool": "j_cmp_u8",
     "f32": "j_cmp_f32",
-    "f64": "j_cmp_f64"
+    "f64": "j_cmp_f64",
+    "bool": "j_cmp_bool",
 }
 
 const bAndInstructions: {[key:string]: IRInstructionType} = {

@@ -370,6 +370,7 @@ export type IRInstructionType =
     "j_cmp_f32" |
     "j_cmp_f64" |
     "j_cmp_ptr" |
+    "j_cmp_bool" |
 
     "band_i8" |
     "band_u8" |

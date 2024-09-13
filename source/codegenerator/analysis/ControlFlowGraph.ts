@@ -125,7 +125,7 @@ export class ControlFlowGraph {
             const subgraph = new Subgraph(`cluster_${funcName}`, { label: `
             <<FONT FACE="Courier"><TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
                 <TR><TD COLSPAN="3">${frameName}</TD></TR>
-                <TR><TD>JumpID: ${funcName}</TD><TD>num args: ${Object.keys(header?.codeGenProps.argSymbols!).length}</TD><TD>num locals:${Object.keys(header?.codeGenProps.localSymbols!).length}</TD></TR>
+                <TR><TD>JumpID: ${funcName}</TD><TD>num args: ${(header?.codeGenProps.argSymbols!.size)}</TD><TD>num locals:${(header?.codeGenProps.localSymbols!.size)}</TD></TR>
                 ${Object.keys(header?.codeGenProps.stackSymbols!).map(key =>{
                     let stackElement = header?.codeGenProps.stackSymbols.get(key)!;
                     return `<TR><TD>ID: ${stackElement?.sym.uid}</TD><TD>Size: ${stackElement?.byteSize}[b]</TD><TD>Offset: ${stackElement?.offset}</TD></TR>`

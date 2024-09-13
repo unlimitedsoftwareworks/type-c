@@ -459,6 +459,7 @@ export class CodeSegment {
             case BytecodeInstructionType.j_cmp_f32:
             case BytecodeInstructionType.j_cmp_f64:
             case BytecodeInstructionType.j_cmp_ptr:
+            case BytecodeInstructionType.j_cmp_bool:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);

@@ -458,6 +458,7 @@ export enum BytecodeInstructionType{
     j_cmp_f32,
     j_cmp_f64,
     j_cmp_ptr,
+    j_cmp_bool,
 
     /**
      * loop arg1, dest_address: i (8 bytes)

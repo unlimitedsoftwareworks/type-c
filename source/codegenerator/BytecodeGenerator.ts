@@ -1566,6 +1566,12 @@ export class BytecodeGenerator {
                 let label = this.emit(BytecodeInstructionType.j_cmp_ptr, src1, src2, instruction.args[2] as number, 0);
                 this.addUnresolvedOffset(instruction.args[3] as string, label);
             }
+            else if (instruction.type == "j_cmp_bool") {
+                let src1 = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let label = this.emit(BytecodeInstructionType.j_cmp_bool, src1, src2, instruction.args[2] as number, 0);
+                this.addUnresolvedOffset(instruction.args[3] as string, label);
+            }
 
 
             /**

@@ -142,16 +142,23 @@ export function isUpvalueVariable(expr: Expression, ctx: Context) {
 function fetchElementSymbol(ctx: Context, element: ElementExpression): Symbol | DeclaredFunction | null {
     let name: string = element.name;
     let typeArgs: DataType[] = element.typeArguments;
+    if (typeArgs.length == 0) {
+        typeArgs = element.inferredArgumentsTypes || [];
+    }
+
     let sym = ctx.lookup(name);
     if (sym instanceof DeclaredFunction) {
-        if (Object.keys(sym.concreteGenerics).length > 0) {
+        if (sym.isGeneric()) {
             let concrete = sym.concreteGenerics.get(signatureFromGenerics(typeArgs));
             if (concrete == null) {
                 throw ctx.parser.customError(`Could not find concrete type for generic function ${name} with type arguments ${typeArgs.map((t) => t.toString()).join(", ")}`, sym.location);
             }
             return concrete as DeclaredFunction;
         }
-        return sym as DeclaredFunction;
+        else {
+            return sym as DeclaredFunction;
+        }
+        
     }
     else if (sym instanceof DeclaredType) {
         /*
@@ -1054,7 +1061,7 @@ export class FunctionGenerator {
             // first we cmp
             let inferredType = expr.left.inferredType?.dereference();
             let cmp: IRInstructionType = "j_cmp_u8";
-            if ((inferredType instanceof BasicType) || (inferredType instanceof EnumType)) {
+            if ((inferredType instanceof BasicType) || (inferredType instanceof EnumType) || (inferredType instanceof BooleanType)) {
                 let basic_type = inferredType as BasicType;
                 if (inferredType instanceof EnumType) {
                     basic_type = inferredType.toBasicType(ctx);
