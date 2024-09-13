@@ -186,7 +186,8 @@ export class BinaryStringLiteralExpression extends LiteralExpression {
 
     constructor(location: SymbolLocation, value: string){
         super(location, "binary_string_literal");
-        this.value = value;
+        // remove the surrounding quotes
+        this.value = unescapeCString(value)
     }
 
     infer(ctx: Context, hint: DataType | null = null): DataType {
