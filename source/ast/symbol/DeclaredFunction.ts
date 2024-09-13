@@ -54,6 +54,13 @@ export class DeclaredFunction extends Symbol {
      */
     codeGenProps: FunctionCodegenProps
 
+    /**
+     * Flag to avoid registering to global context
+     * This is applied when a function is cloned and has no generics,
+     * as it is already registered as concrete version
+     */
+    noRegister: boolean = false;
+
 
     constructor(location: SymbolLocation, context: Context, prototype: FunctionPrototype, expression: Expression | null, body: BlockStatement | null) {
         super(location, "function", prototype.name);
@@ -111,7 +118,6 @@ export class DeclaredFunction extends Symbol {
                     methodGenerics[this.prototype.generics[i].name] = this.prototype.generics[i];
                 }
 
-
                 /**
                  * If we have a generic method, we need to extract the type map from the parameters and/or the return type
                  */
@@ -144,6 +150,7 @@ export class DeclaredFunction extends Symbol {
 
                 // set the uid of the function
                 newFn.uid = this.uid+'<'+typeArgSignature+'>';
+                newFn.noRegister = true;
 
                 // update cache
                 this.concreteGenerics.set(typeArgSignature, newFn);
@@ -176,7 +183,7 @@ export class DeclaredFunction extends Symbol {
             // clone the function with the new type map
             let newFn = this.clone(genericTypeMap, this.context.getParent()!);
             newFn.uid = this.uid+'<'+sig+'>';
-
+            newFn.noRegister = true;
             // set the generics to empty so we can properly infer its body and header by recalling this function
             newFn.prototype.generics = [];
 
@@ -206,7 +213,7 @@ export class DeclaredFunction extends Symbol {
         // TODO: keep and eye on this
 
         // only register to global context if we are not in a generic implementation
-        if(this.concreteGenerics.size == 0) {
+        if((this.concreteGenerics.size == 0) && !(this.noRegister)) {
             ctx.registerToGlobalContext(this);
         }
 
