@@ -38,6 +38,10 @@ export class ElementExpression extends Expression {
     // inferred types of arguments, this is filled by FunctionCallExpression
     inferredArgumentsTypes: DataType[] | undefined = undefined
 
+    // number of parameters, this is filled by FunctionCallExpression
+    // -1 means not yet inferred or not even called
+    numParams: number = -1;
+
     /**
      * Used to check if this element is a variable, which means if it can be assigned 
      * a value
@@ -97,6 +101,10 @@ export class ElementExpression extends Expression {
              * 4. Function is generic and we have type arguments: Make sure all generics are provided! partial generics are not allowed
              */
 
+            let numParams = variable.prototype.header.parameters.length;
+            if((this.numParams != -1) && (this.numParams!= numParams)) {
+                throw ctx.parser.customError(`Function ${variable.name} expects ${numParams} parameters, but got ${this.numParams} instead`, this.location);
+            }
             // case 1
             if((variable.prototype.generics.length == 0) && (this.typeArguments.length > 0)) {
                 throw ctx.parser.customError(`Function ${variable.name} is not generic and does not expect type arguments`, this.location);

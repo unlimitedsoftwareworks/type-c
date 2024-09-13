@@ -29,13 +29,10 @@ import { buildGenericsMaps } from "../../typechecking/TypeInference";
 import { MetaClassType, MetaType, MetaVariantConstructorType, MetaVariantType } from "../types/MetaTypes";
 import { VariantType } from "../types/VariantType";
 import { ClassMethod } from "../other/ClassMethod";
-import { LockType } from "../types/LockType";
-import { PromiseType } from "../types/PromiseType";
-import { FunctionArgument } from "../symbol/FunctionArgument";
 import { ElementExpression } from "./ElementExpression";
-import { VoidType } from "../types/VoidType";
 import { CoroutineType } from "../types/CoroutineType";
 import { InterfaceMethod } from "../other/InterfaceMethod";
+import { DeclaredFunction } from "../symbol/DeclaredFunction";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -50,6 +47,8 @@ export class FunctionCallExpression extends Expression {
     _calledClassMethod: ClassMethod | null = null;
 
     _calledInterfaceMethod: InterfaceMethod | null = null;
+
+    _calledFunction: DeclaredFunction | null = null;
 
     constructor(location: SymbolLocation, lhs: Expression, args: Expression[]) {
         super(location, "function_call");
@@ -106,6 +105,10 @@ export class FunctionCallExpression extends Expression {
 
         if((this.lhs instanceof ElementExpression) && (this.lhs.typeArguments.length === 0) && (this.lhs.isGenericFunction(ctx))) {
             this.lhs.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null));
+        }
+
+        if(this.lhs instanceof ElementExpression) {
+            this.lhs.numParams = this.args.length;
         }
 
         let lhsType = this.lhs.infer(ctx, null);
