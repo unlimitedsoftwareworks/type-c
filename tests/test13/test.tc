@@ -1,5 +1,110 @@
-from std.string import String 
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
 
-let x : i32 = 1
-let z = x as! String
-let y = z as! String
+type HttpResponse = variant {
+    Success(code: u32, time: f32),
+    Error(buffer: u8[], code: u32)
+}
+
+type Data<T> = class {
+    let data: T[]
+    let length: u64
+    let capacity: u64
+
+
+    fn init() {
+        this.data = []
+        this.length = 0
+        this.capacity = 0
+    }   
+
+    fn __index__(index: u64) -> T {
+        return this.data[index]
+    }
+
+    fn push(value: T) {
+        if(this.length == this.capacity) {
+            this.capacity += this.capacity + 1
+        }
+
+        this.data.extend(this.capacity)
+        this.data[this.length] = value
+        this.length += 1
+
+        return
+    }
+
+    fn pop() -> T {
+        this.length -= 1
+        return this.data[this.length]
+    }
+}
+
+
+fn test_case_1(rn: TestUnit) {
+    let arr: Data<u32> = new Data<u32>()
+    arr.push(1)
+    arr.push(10)
+    arr.push(100)
+    arr.push(1000)
+    
+    let sum: u32 = 0
+    for let i: u64 = 0; i < arr.length ; i += 1 {
+        sum += arr[i]
+    }
+
+    rn.assert_eq<u32>(sum, 1111)
+}
+
+fn test_case_2(rn: TestUnit) {
+    let arr2: Data<f64> = new Data<f64>()
+    arr2.push(1.0)
+    arr2.push(1.0)
+    arr2.push(3.14)
+    arr2.push(2.0)
+    arr2.push(0.25)
+    arr2.push(0.5)
+
+    let sum2: f64 = 0
+
+    for let i: u64 = 0; i < arr2.length ; i += 1 {
+        sum2 += arr2[i]
+    }
+
+    rn.assert_f64_eq_pre(sum2, 7.89, 0.000001)
+}
+
+fn test_case_3(rn: TestUnit) {
+
+    let arr3 = new Data<HttpResponse>()
+
+    arr3.push(HttpResponse.Success(200, 0.1f))
+    arr3.push(HttpResponse.Success(300, 0.1f))
+    arr3.push(HttpResponse.Error([1], 100))
+    arr3.push(HttpResponse.Error([1], 500))
+
+    let sum3: u32 = 0
+
+    for let i: u64 = 0; i < arr3.length ; i += 1 {
+        if arr3[i] is HttpResponse.Success {
+            let success = arr3[i] as! HttpResponse.Success
+            sum3 += success.code
+        }
+        else {
+            let error = arr3[i] as! HttpResponse.Error
+            sum3 += error.code
+        }
+    }
+
+    rn.assert_eq<u32>(sum3, 1100)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests sun int", test_case_1)
+    let test_2 = new TestUnit("test 2", "Sum float", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tests sum variant", test_case_3)
+
+    let set = new UnitSet("Matching tests", "Tests some SUM functions", [test_1, test_2, test_3])
+    return set.run()
+}

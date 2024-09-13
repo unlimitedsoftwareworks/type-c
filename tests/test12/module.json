@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "Tests variant types",
+    "description": "Tests pattern matching and nullabes",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"

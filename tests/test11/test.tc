@@ -1,207 +1,100 @@
 from std.string import String
+from std.unit.test import TestUnit, UnitSet
+from std.io import println
+fn doStuff(x: u32) -> (u32, u32) = (x+1, x+2)
+fn doStuff2<T>(x: T) = (x+1, x+2)
 
-type Data<T> = class {
-    let data: T[]
+type Z<T> = class {
+    let x: T
 
-    fn init(){
-        this.data = [] 
+    fn init(x: T) {
+        this.x = x
     }
 
-    fn __index__(index: u64) -> T {
-        return this.data[index]
+    fn add(y: T) -> (T, T) {
+        return (this.x, this.x+y)
     }
 
-    fn __index_set__(value: T, index: u64, index2: T){
-        this.data[index] = value
-        return value
+    static fn callme(x: u32, y: u32) -> (u32, u32) {
+        return (x+1, y+5)
     }
 
-    fn __call__(x: u32) -> T {
-        return this.data[0]
+    static fn callme2<T>(x: T, y: T) -> (T, T) {
+        return (x+2, y+3)
     }
 
-    fn __add__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
+    static fn haha() = (1, "oupsy")
+}
 
 
-    fn __sub__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
+fn test_case_1(rn: TestUnit) {
+    let arr: u32[] = [1, 2, 3, 4]
+    let [x, y,...rest] = arr
 
-
-    fn __mul__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-
-    fn __div__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __mod__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __gt__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __lt__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __ge__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __le__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __lshift__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __rshift__(y: Data<T>) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __band__(y: String) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __bor__(y: u32) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __xor__(y: u32) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __and__(y: String) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
-    fn __or__(y: u32) -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
-
+    rn.assert_eq<u32>(x, 1)
+    rn.assert_eq<u32>(y, 2)
     
-    fn __bnot__() -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
+    match rest {
+        [3, 4] { rn.assert_reachable() }
+        _ { rn.assert_unreachable() }
     }
+}
 
-    fn __neg__() -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
+fn test_case_2(rn: TestUnit) {
 
-    fn __not__() -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
+    let user = {name: "John", age: 30, is_student: true}
 
-    fn __inc__() -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
+    let {name, ...res} = user
 
-    fn __dec__() -> Data<T> {
-        let z = new Data<T>()
-        z.data = this.data
-        return z
-    }
+    rn.assert_obj_eq<String>(name, "John")
+    rn.assert_eq<bool>(res.is_student, true)
+    rn.assert_eq<u8>(res.age, 30)
+}
 
+
+fn test_case_3(rn: TestUnit) {
+
+    let (aa, bb) = Z.haha()
+
+    rn.assert_eq<u32>(aa, 1)
+    rn.assert_obj_eq<String>(bb, "oupsy")
+
+    let (cc, dd) = Z.callme(3, 4)
+
+    rn.assert_eq<u32>(cc, 4)
+    rn.assert_eq<u32>(dd, 9)
+
+    let (ee, ff) = Z.callme2(cc, dd)
+
+    rn.assert_eq<u32>(ee, 6)
+    rn.assert_eq<u32>(ff, 12)
+
+    let (gg, hh) = doStuff(10)
+
+    rn.assert_eq<u32>(gg, 11)
+    rn.assert_eq<u32>(hh, 12)
+
+    let (ii, jj) = doStuff2<u32>(10)
+
+    rn.assert_eq<u32>(ii, 11)
+    rn.assert_eq<u32>(jj, 12)
+
+    let (kk, ll) = doStuff2<String>("hello")
+
+    // addition changes the string, so +1 then +2 -> "hello12"
+    rn.assert_obj_eq<String>(kk, "hello12")
+    rn.assert_obj_eq<String>(ll, "hello12")
+
+    let (mm, nn) = doStuff2(10)
+
+    rn.assert_eq<u8>(mm, 11)
+    rn.assert_eq<u8>(nn, 12)
 }
 
 fn main() {
-    
-    let d = new Data<String>()
-    let zzzz = d[1]
-    let zzz = d[1, "hehe"] = "hi"
-
-    let const d2 = new Data<f32>()
-    let z2 = d2[1, 3.14f] = 1.1f
-
-    let arg: u32 = 1
-
-    let x1: String = d(1)
-    let x2: f32 = d2(arg+1) 
-
-    let d3 = new Data<String>()
-
-    let d4 = d + d3
-    let d5 = d4 - d3
-    let d6 = d5*d4
-    let d7 = d5/d6
-    let d8 = d7%d6
-    let d9 = d8>d7
-    let d10 = d9<d8
-    let d11 = d10>=d9
-    let d12 = d11<=d10
-    let d13 = d12<<d11
-    let d14 = d13>>d12
-    let d15 = d14&"hi"
-    let d16 = d15|1
-    let d17 = d16^1
-    let d18 = d17&&"hi"
-    let d19 = d18||1
-    let d20 = -d19
-    let d21 = !d20
-    let d22 = d21++
-    let d23 = d22--
-    let d24 = ++d23
-    let d25 = --d24
-    let const d26 = ~d25
-
-    fn doSomething(mut x: Data<String>) -> i32 {
-        return 1
-    }
-
-    doSomething(d25)
-
-    fn doSomethingElse(x: Data<String>) -> String {
-        return x.data[0]
-    }
-
-    let someResult = doSomethingElse(d)
-
+    let test_1 = new TestUnit("test 1", "Array destructuring", test_case_1)
+    let test_2 = new TestUnit("test 2", "Struct destructuring", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tuple destructuring", test_case_3)
+    let set = new UnitSet("Matching tests", "Tests destructuring", [test_1, test_2, test_3])
+    return set.run()
 }

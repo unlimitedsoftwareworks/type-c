@@ -339,7 +339,7 @@ export class BytecodeGenerator {
 
         if (mainHasReturn) {
             this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, 8);
-            this.emit(BytecodeInstructionType.debug_reg, 255);
+            //this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
         //this.emit(BytecodeInstructionType.debug_reg, i);

@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "Tests forced type casting",
+    "description": "Tests classes and stuff",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"

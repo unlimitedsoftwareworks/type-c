@@ -1,55 +1,335 @@
 from std.string import String
-from std.io import println
+from std.unit.test import TestUnit, UnitSet
 
+type Data<T> = class {
+    let data: T[]
 
-fn abs(x: i32) -> i32 {
-    if(x < 0) {
-        return -x
-    }
-    return x
-}
-
-type Vector<T> = interface {
-    fn length() -> T
-}
-
-type Vector2D<T> = class Vector<T> {
-    let x: T
-    let y: T
-
-    fn init(x: T, y: T) {
-        this.x = x
-        this.y = y
+    fn init(){
+        this.data = []
+        this.data.extend(10)
     }
 
-
-    fn length() -> T {
-        return this.x + this.y
+    fn __index__(index: u64) -> T {
+        return this.data[index]
     }
-}
 
-fn a(x: u32) {
-    if x == 0 {
-        return x
-    } else {
-        return b(x)
+    fn __index_set__(value: T, index: u64, index2: T){
+        this.data[index] = value
+        return value
     }
-}
 
-fn b(x: u32) {
-    if x == 0 {
-        return x
-    } else {
-        return x
+    fn __call__(x: u32) -> T {
+        return this.data[x]
     }
-}
+
+    fn __add__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
 
 
-fn main() -> i32 {
-    let v: Vector2D<i32> = new Vector2D<i32>(3, 4)
-    let a = v.length()
-    println("Hello\nworld!>>"+a)
+    fn __sub__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
 
-    return a
-}
+
+    fn __mul__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+
+    fn __div__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __mod__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __gt__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __lt__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __ge__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __le__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __lshift__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __rshift__(y: Data<T>) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __band__(y: String) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __bor__(y: u32) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __xor__(y: u32) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __and__(y: String) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __or__(y: u32) -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
     
+    fn __bnot__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __neg__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __not__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __inc__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+
+    fn __dec__() -> Data<T> {
+        let z = new Data<T>()
+        z.data = this.data
+        return z
+    }
+}
+
+fn test_case_1(rn: TestUnit) {
+    let d = new Data<String>()
+    let zzz = d[1, "hehe"] = "hi"
+    let value1 = d[1]
+
+    rn.assert_obj_eq<String>(value1, "hi")
+
+    let value2 = d(1)
+    rn.assert_obj_eq<String>(value2, "hi")
+    let D = !d
+    let value3 = D[1]
+    rn.assert_obj_eq<String>(value3, "hi")
+
+    let value4 = D(1)
+    rn.assert_obj_eq<String>(value4, "hi")
+}
+
+
+type Tree = variant {
+    BinaryNode(lhs: Tree, rhs: Tree, op: String),
+    Unary(uhs: Tree, op: String),
+    Number(n: i32)
+}
+
+fn sum(t: Tree)  -> i32 = match t {
+    Tree.BinaryNode(lhs, rhs, op) => match op {
+        "+" => sum(lhs) + sum(rhs),
+        "-" => sum(lhs) - sum(rhs),
+        "*" => sum(lhs) * sum(rhs),
+        "/" => sum(lhs) / sum(rhs),
+        _ => 0 as i32
+    },
+    Tree.Unary(uhs, op) => match op {
+        "-" => -sum(uhs),
+        _ => 0 as i32
+    },
+    Tree.Number(n) => n,
+    _ => 0 as i32
+}
+
+fn test_case_2(rn: TestUnit) {
+
+    let tree: Tree= Tree.BinaryNode(Tree.Number(4), Tree.Unary(Tree.Number(2), "-"), "*")
+    let z = sum(tree)
+    rn.assert_eq<i32>(z, -8)
+
+    // more complex tree, with 8 nodes
+    let tree2: Tree= Tree.BinaryNode(Tree.BinaryNode(Tree.Number(1), Tree.Number(2), "+"), Tree.BinaryNode(Tree.Number(3), Tree.Number(4), "-"), "*")
+    let z2 = sum(tree2)
+    rn.assert_eq<i32>(z2, -3)
+
+
+    /*
+                                +
+                               / \
+                              -   /
+                             /   / \
+                            *   *   -
+                           / \ / \  / \
+                         100  /  5 +  -
+                             / \   / \ / \
+                            50  2  3 2 8  4
+    */
+    let deepTree: Tree = 
+    Tree.BinaryNode(
+        Tree.BinaryNode(
+            Tree.BinaryNode(
+                Tree.Number(100), 
+                Tree.BinaryNode(
+                    Tree.Number(50), 
+                    Tree.Number(2), 
+                    "/"
+                ), 
+                "*"
+            ), 
+            Tree.Number(10), 
+            "-"
+        ), 
+        Tree.BinaryNode(
+            Tree.BinaryNode(
+                Tree.Number(5), 
+                Tree.BinaryNode(
+                    Tree.Number(3), 
+                    Tree.Number(2), 
+                    "+"
+                ), 
+                "*"
+            ), 
+            Tree.BinaryNode(
+                Tree.Number(8), 
+                Tree.Number(4), 
+                "-"
+            ), 
+            "/"
+        ), 
+        "+"
+    )
+
+    let z3 = sum(deepTree)
+    rn.assert_eq<i32>(z3, 2496)
+}
+
+
+type User1 = interface {
+    fn name() -> String
+}
+
+type User2 = interface {
+    fn name2() -> String
+}
+
+type User3 = interface {
+    fn name3() -> String
+}
+
+type User4 = interface {
+    fn name4() -> String
+}
+
+type ClassUser3 = class {
+    fn init(){}
+    fn name3() -> String = "User3"
+    fn name4() -> String = "User4"
+    fn age() -> u32 = 30
+}
+
+type Ageable<T> = interface {
+    fn age() -> T
+}
+
+fn test_case_3(rn: TestUnit) {
+    let x = new ClassUser3()
+
+    let y = match x {
+        User1=> "User1",
+        User2 => "User2",
+        User3 => "User3",
+        _ => "Unknown"
+    }
+
+    rn.assert_obj_eq<String>(y, "User3")
+
+    match x {
+        User1 {
+            rn.assert_unreachable()
+        }
+        User2 {
+            rn.assert_unreachable()
+        }
+        User3 & User4 {
+            rn.assert_reachable()
+        }
+        user3 {
+            // correct but needs to match User3 & User4
+            rn.assert_unreachable()
+        }
+        _ {
+            rn.assert_unreachable()
+        }
+    }
+
+
+    match x {
+        Ageable<u32> & User3 & User4 {
+            rn.assert_reachable()
+        }
+        _ {
+            rn.assert_unreachable()
+        }
+    }
+
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Test Set/Get", test_case_1)
+    let test_2 = new TestUnit("test 2", "Test Variant", test_case_2)
+    let test_3 = new TestUnit("test 3", "Test Interface/class/join", test_case_3)
+    let set = new UnitSet("Matching tests", "Tests pattern matching expression and statements", [test_1, test_2, test_3])
+    return set.run()
+}

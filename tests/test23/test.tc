@@ -119,7 +119,7 @@ type Vector = class {
 
 fn main() {
     let x: u8 = 200, y: u8 = 100
-    let a: u8 = 10, b: u8[] = [20, 30, 40]
+    let a: u8 = 10, b: u32[] = [20, 30, 40]
     let z = new Vector({x: {a: a, b: b}, y: y})
     z.print()
     return z.x
