@@ -73,6 +73,9 @@ This checklist containts only major changes and updates, for minor changes and u
     - Isolated static methods, so static methods are stored in the base class type, not classes that are *concrete* implementations of that class. 
     - Static methods now support generics.
 
+- 13/08/2024:
+    - This is a reminder for me to differentiate between anonymous types and named types! this needs to be modeled properly, to generate proper errors and 
+    start working on types layouts in the bytecode.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
