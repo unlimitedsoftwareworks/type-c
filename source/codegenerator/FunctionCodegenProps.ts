@@ -123,7 +123,7 @@ export class FunctionCodegenProps {
 
     assignThis(cl: ClassType, location: SymbolLocation, parentContext: Context) {
         this._this = new FunctionArgument(location, "$this", cl, true);
-        this._this.uid = "$this-"+parentContext.uuid;
+        this._this.uid = "$this"
     }
 
     /**
@@ -139,7 +139,6 @@ export class FunctionCodegenProps {
 
         // check if _this is needed
         if(this._this) {
-            this.argsByteSize += getDataTypeByteSize(this._this.type);
             //this.stackSymbols.set(this._this.uid, new FunctionStackSymbol(this._this, getDataTypeByteSize(this._this.type), this.argsByteSize));
             // tranform this into an argument and insert it at the beginning of the argSymbols map
             let arg = new FunctionArgument(this._this.location, "$this", this._this.type, true);
