@@ -119,6 +119,7 @@ export class ClassType extends DataType {
         for (const method of this.methods) {
             if(!method.imethod.isStatic){
                 method.infer(ctx);
+                method.codeGenProps.assignThis(this, this.location, ctx);
             }
         }
 
@@ -264,6 +265,9 @@ export class ClassType extends DataType {
                 for (const [i, m] of genericImpl) {
                     m.indexInClass = allMethods.length;
                     allMethods.push(m);
+                    if(!m.imethod.isStatic) {
+                        m.codeGenProps.assignThis(this, this.location, method.context);
+                    }
                 }
             }
             else {
