@@ -11,7 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { ArrayConstructionExpression } from "../ast/expressions/ArrayConstructionExpression";
+import { ArrayConstructionExpression, ArrayDestructuringExpression } from "../ast/expressions/ArrayConstructionExpression";
 import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
 import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
@@ -2252,37 +2252,81 @@ export class FunctionGenerator {
 
     visitArrayConstructionExpression(expr: ArrayConstructionExpression, ctx: Context): string {
         this.i("debug", "visitArrayConstructionExpression");
-
+    
         if (!(expr.inferredType! instanceof ArrayType)) {
             throw new Error("Invalid array construction expression, expected array got " + expr.inferredType?.toString());
         }
-
-        let arraySize = expr.elements.length;
+    
+        // Filter out the regular (non-destructuring) elements
+        let regularElts = expr.elements.filter(e => !(e instanceof ArrayDestructuringExpression));
         let arrayType: ArrayType = expr.inferredType.to(ctx, ArrayType) as ArrayType;
         let elementType = arrayType.arrayOf;
         let elementSize = getDataTypeByteSize(elementType);
-
+    
         let arrayReg = this.generateTmp();
-
-        // allocate the array
+        
+        // Initially, we don't know the final array size due to destructured elements, so start with a basic allocation
+        let arraySize = regularElts.length;
         this.i("a_alloc", arrayReg, arraySize, elementSize);
-
-        // copy the elements into the array
+    
+        // Copy regular elements into the array
         for (let i = 0; i < arraySize; i++) {
             this.i("debug", "copying array element " + i);
-            let resReg = this.visitExpression(expr.elements[i], ctx);
-
+            let resReg = this.visitExpression(regularElts[i], ctx);
+    
             let aSet = arraySetIndexType(ctx, elementType);
             let indexReg = this.generateTmp();
-            this.i("const_u64", indexReg, i);
-            this.i(aSet, arrayReg, indexReg, resReg);
-
+            this.i("const_u64", indexReg, i);  // Set index for current element
+            this.i(aSet, arrayReg, indexReg, resReg);  // Insert the element into the array
+    
             this.destroyTmp(resReg);
             this.destroyTmp(indexReg);
         }
+    
+        // Now handle the destructured elements
+        let destructredElts: ArrayDestructuringExpression[] = [];
+        let destructedIndexes: number[] = [];
+    
+        // Gather destructured elements and their corresponding indexes
+        // each destructured element counts how many non destructured elements are before it
+        let counter = 0;
+        for (let i = 0; i < expr.elements.length; i++) {
+            let e = expr.elements[i];
+            if (e instanceof ArrayDestructuringExpression) {
+                destructredElts.push(e);
+                destructedIndexes.push(counter);
+                counter = 0;
+            }
+            else {
+                counter ++;
+            }
+        }
+    
+        // If there are destructured elements, process them
+        if (destructredElts.length > 0) {
+            let offsetReg = this.generateTmp();
+            this.i("const_u64", offsetReg, 0);  // Set the index where destructured array starts
+    
+            for (let i = 0; i < destructredElts.length; i++) {
+                let posReg = this.generateTmp();
+                this.i("const_u64", posReg, destructedIndexes[i]);
+                this.i("add_u64", offsetReg, offsetReg, posReg);
+                this.destroyTmp(posReg);
 
-        return arrayReg;
+                let exprReg = this.visitExpression(destructredElts[i].expression, ctx);  // Visit destructured array expression
+    
+                // Insert the destructured array at the current index
+                this.i("a_insert_a", offsetReg, arrayReg, exprReg, offsetReg);
+    
+    
+                // Clean up temporary registers
+                this.destroyTmp(exprReg);
+            }
+        }
+    
+        return arrayReg;  // Return the final array register
     }
+    
 
 
     /**

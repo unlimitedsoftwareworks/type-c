@@ -832,6 +832,13 @@ export class BytecodeGenerator {
                 let end = this.getRegisterForVariable(fn, instruction.args[3] as string)
                 this.emit(BytecodeInstructionType.a_slice, dest, src, start, end);   
             }
+            else if (instruction.type == "a_insert_a") {
+                let dest_offset = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let dest_array = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src_array = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[3] as string)
+                this.emit(BytecodeInstructionType.a_insert_a, dest_offset, dest_array, src_array, idx);
+            }
             else if (instruction.type == "a_set_index_i8" || instruction.type == "a_set_index_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
                 let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)

@@ -153,6 +153,7 @@ export type IRInstructionType =
     "a_extend" |
     "a_len" | // array length
     "a_slice" | // array slice
+    "a_insert_a" | // insert array into another
     "a_set_index_i8" |
     "a_set_index_u8" |
     "a_set_index_i16" |

@@ -231,6 +231,7 @@ export class CodeSegment {
                 return this.writer.push_8(args[1]); 
 
             case BytecodeInstructionType.a_slice:
+            case BytecodeInstructionType.a_insert_a:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);

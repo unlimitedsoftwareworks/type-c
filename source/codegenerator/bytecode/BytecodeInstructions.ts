@@ -193,6 +193,13 @@ export enum BytecodeInstructionType{
     a_slice,
 
     /**
+     * a_insert_a inserted_count: R, dest_arr: R, source_arr: R, index: R
+     * inserts source_arr into dest_arr at the given index,
+     * Returns the new position pointing at the end of the inserted elements!!
+     */
+    a_insert_a,
+
+    /**
      * a_storef_reg_[size] dest: r, index: r, source: r, bytesize: s
      * stores [size] bytes from register src to field
      * index of array dest

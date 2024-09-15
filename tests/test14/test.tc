@@ -99,14 +99,64 @@ fn test_case_7(rn: TestUnit) {
 fn test_case_8(rn: TestUnit) {
     let u1 = {name: "Me!", age: 20}
     let u2 = {age: 25, name: "New Me!", ...u1}
+    let u3 = {...u1, age: 25, name: "New Me!"}
 
     rn.assert_obj_eq<String>(u2.name, "Me!")
     rn.assert_eq(u2.age, 20)
 
-    let u3 = {...u1, age: 25, name: "New Me!"}
 
     rn.assert_obj_eq<String>(u3.name, "New Me!")
     rn.assert_eq(u3.age, 25)
+}
+
+type Vector = {x: u32, y: u32}
+
+fn test_case_9(rn: TestUnit) {
+    let u1 = [1, 2, 3]
+    let u2 = [1, 2,...u1, 4, 5, 6]
+
+    match u2 {
+        [1, 2, 1, 2, 3, 4, 5, 6]  {
+            rn.assert_reachable()
+        }
+        _ {
+            rn.assert_unreachable()
+        }
+    }
+
+    let u3: {x: u32, y: u32}[] = [{x: 1, y: 2}, {x: 4, y: 5}, {x: 6, y: 7}]
+    let u4 = [...u3, {x: 8, y: 9}, {x: 10, y: 11}, ...u3]
+
+    rn.assert_eq(u4.length, 8)
+    let gt: Vector[] = [{x: 1, y: 2}, {x: 4, y: 5}, {x: 6, y: 7}, {x: 8, y: 9}, {x: 10, y: 11}, {x: 1, y: 2}, {x: 4, y: 5}, {x: 6, y: 7}]
+    
+    for let i: u64 = 0; i < u4.length; i+= 1 {
+        rn.assert_eq(u4[i].x, gt[i].x)
+        rn.assert_eq(u4[i].y, gt[i].y)
+    }
+
+    let u5: Vector[] = [...u4]
+    for let i: u64 = 0; i < u5.length; i+= 1 {
+        rn.assert_eq(u5[i].x, gt[i].x)
+        rn.assert_eq(u5[i].y, gt[i].y)
+    }
+}
+
+
+fn test_case_10(rn: TestUnit) {
+    let u1: u32[] = []
+    let u2 = [...u1]
+
+    rn.assert_eq(u2.length, 0)
+
+    let u3: u32[] = [1, 2, 3, ...u1, 4, 5, 6]
+    rn.assert_eq(u3.length, 6)
+    rn.assert_eq(u3[0], 1)
+    rn.assert_eq(u3[1], 2)
+    rn.assert_eq(u3[2], 3)
+    rn.assert_eq(u3[3], 4)
+    rn.assert_eq(u3[4], 5)
+    rn.assert_eq(u3[5], 6)
 }
 
 fn main() -> u32 {
@@ -118,7 +168,9 @@ fn main() -> u32 {
     let test_6 = new TestUnit("test 8", "Test with Overriding Multiple Fields", test_case_8)
     let test_7 = new TestUnit("test 7", "Test with Different Types", test_case_7)
     let test_8 = new TestUnit("test 8", "Test with Overriding Multiple Fields", test_case_8)
+    let test_9 = new TestUnit("test 9", "Test array destructuring", test_case_9)
+    let test_10 = new TestUnit("test 10", "Test empty array destructuring", test_case_10)
 
-    let set = new UnitSet("Matching tests", "Tests some SUM functions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
+    let set = new UnitSet("Matching tests", "Tests some SUM functions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9, test_10])
     return set.run()
 }

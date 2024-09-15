@@ -11,7 +11,7 @@
  */
 
 import { ImportNode } from "../ast/ImportNode";
-import { ArrayConstructionExpression } from "../ast/expressions/ArrayConstructionExpression";
+import { ArrayConstructionExpression, ArrayDestructuringExpression } from "../ast/expressions/ArrayConstructionExpression";
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
 import { ElementExpression } from "../ast/expressions/ElementExpression";
 import { Expression } from "../ast/expressions/Expression";
@@ -1667,7 +1667,7 @@ function parseArrayConstruction(parser: Parser, ctx: Context): Expression {
     parser.expect("[");
     let lexeme = parser.peek();
     parser.reject();
-    let elements = lexeme.type == "]" ? [] : parseExpressionList(parser, ctx);
+    let elements = lexeme.type == "]" ? [] : parseExpressionList(parser, ctx, true);
     parser.expect("]");
     return new ArrayConstructionExpression(loc, elements);
 }
@@ -1681,9 +1681,9 @@ function parseStructElements(parser: Parser, ctx: Context): (StructKeyValueExpre
      */
     let elements: (StructKeyValueExpressionPair | StructDeconstructedElement)[] = [];
     let loop = true;
-    while(loop) {
+    while (loop) {
         let lexeme = parser.peek();
-        if(lexeme.type === "...") {
+        if (lexeme.type === "...") {
             parser.accept();
             let expression = parseExpression(parser, ctx);
             elements.push(new StructDeconstructedElement(parser.loc(), expression));
@@ -1691,7 +1691,7 @@ function parseStructElements(parser: Parser, ctx: Context): (StructKeyValueExpre
         else if (lexeme.type === "identifier") {
             parser.reject();
             let name = parser.expect("identifier").value;
-            
+
             let lexeme2 = parser.peek();
             if (lexeme2.type === ":") {
                 parser.accept();
@@ -1703,7 +1703,7 @@ function parseStructElements(parser: Parser, ctx: Context): (StructKeyValueExpre
             }
         }
 
-        if(parser.is(",")) {
+        if (parser.is(",")) {
             parser.accept();
         }
         else {
@@ -1718,7 +1718,7 @@ function parseStructConstruction(parser: Parser, ctx: Context): Expression {
     let loc = parser.loc();
     parser.expect("{");
     let lexeme = parser.peek();
-    if(lexeme.type === "...") {
+    if (lexeme.type === "...") {
         parser.reject();
         let elements = parseStructElements(parser, ctx);
         parser.expect("}");
@@ -1935,8 +1935,8 @@ function parseObjectDeconstruction(parser: Parser, ctx: Context, isConst: boolea
         prop.variable!.initializer = new StructDeconstructionExpression(
             prop.variable!.location,
             initializer,
-            prop.isRemaining?null:prop.field,
-            prop.isRemaining?readFields:null,
+            prop.isRemaining ? null : prop.field,
+            prop.isRemaining ? readFields : null,
             prop.isRemaining
         );
 
@@ -2050,10 +2050,31 @@ function parseVariableDeclarationList(parser: Parser, ctx: Context): DeclaredVar
 }
 
 
-function parseExpressionList(parser: Parser, ctx: Context): Expression[] {
+function parseExpressionList(parser: Parser, ctx: Context, allowDestructuring: boolean = false): Expression[] {
     let canLoop = true;
     let expressions: Expression[] = [];
     while (canLoop) {
+        if (allowDestructuring) {
+            if (parser.is("...")) {
+                parser.accept();
+                let expr = parseExpression(parser, ctx);
+                expressions.push(new ArrayDestructuringExpression(parser.loc(), expr));
+
+                let token = parser.peek();
+                canLoop = token.type === ",";
+                if (canLoop) {
+                    parser.accept();
+                    continue;
+                }
+                else {
+                    parser.reject();
+                    break;
+                }
+            }
+            else {
+                parser.reject();
+            }
+        }
         let expr = parseExpression(parser, ctx);
         expressions.push(expr);
         let token = parser.peek();
