@@ -17,6 +17,7 @@ import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
 import { CastExpression } from "../ast/expressions/CastExpression";
 import { CoroutineConstructionExpression } from "../ast/expressions/CoroutineConstructionExpression";
+import { DoExpression } from "../ast/expressions/DoExpression";
 import { ElementExpression } from "../ast/expressions/ElementExpression";
 import { Expression } from "../ast/expressions/Expression";
 import { FunctionCallExpression } from "../ast/expressions/FunctionCallExpression";
@@ -80,7 +81,7 @@ import { TupleType } from "../ast/types/TupleType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
-import { areDataTypesIdentical, canCastTypes, getLargestStruct, matchDataTypes } from "../typechecking/TypeChecking";
+import { canCastTypes, getLargestStruct } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
@@ -200,6 +201,9 @@ export class FunctionGenerator {
     // spilled variables maps
     spills: Map<string, number> = new Map();
 
+    doExpressionLabelStack: string[] = [];
+    doExpressionTmpStack: string[] = [];
+
     constructor(fn: FunctionGenType, isGlobal: boolean = false) {
         this.fn = fn;
         this.isGlobal = isGlobal;
@@ -305,6 +309,7 @@ export class FunctionGenerator {
         this.applyColoring(coloring);
         this.applySpills(spills);
     }
+
     applyColoring(coloring: Map<string, number>) {
         this.coloring = coloring
     }
@@ -353,6 +358,7 @@ export class FunctionGenerator {
         else if (expr instanceof LiteralExpression) tmp = this.visitLiteralExpression(expr, ctx);
         else if (expr instanceof NullableMemberAccessExpression) tmp = this.visitNullableMemberAccessExpression(expr, ctx);
         else if (expr instanceof UnaryExpression) tmp = this.visitUnaryExpression(expr, ctx);
+        else if (expr instanceof DoExpression) tmp = this.visitDoExpression(expr, ctx);
         else throw new Error("Invalid expression " + expr.toString());
 
 
@@ -2371,6 +2377,23 @@ export class FunctionGenerator {
         return assignExpr;
     }
 
+    visitDoExpression(expr: DoExpression, ctx: Context): string {
+
+        let lbl = this.generateLabel();
+        let tmp = this.generateTmp();
+        
+        this.doExpressionLabelStack.push(lbl);
+        this.doExpressionTmpStack.push(tmp);
+
+        this.visitStatement(expr.block!, ctx);
+
+        this.i("label", lbl);
+        this.doExpressionLabelStack.pop();
+        this.doExpressionTmpStack.pop();
+
+        return tmp;
+    }
+
     /**
      * Statements
      */
@@ -2652,24 +2675,60 @@ export class FunctionGenerator {
 
         this.i("label", endLabel);
     }
+
+    /**
+     * Return can be used to return from a function or a do-expression
+     * When we return a function, we have no jump label (in the doExpressionLabelStack), so we emit ret_XYZ
+     * When we return from a do-expression, we have a jump label, so we emit ret_void
+     * @param stmt 
+     * @param ctx 
+     * @param jmpLabel 
+     */
     visitReturnStatement(stmt: ReturnStatement, ctx: Context) {
+        let jmpLabel = null;
+        let resTmp = null;
+        if (this.doExpressionLabelStack.length > 0) {
+            jmpLabel = this.doExpressionLabelStack[this.doExpressionLabelStack.length - 1];
+            resTmp = this.doExpressionTmpStack[this.doExpressionTmpStack.length - 1];
+        }
+
         if (stmt.returnExpression) {
 
             if (stmt.returnExpression instanceof TupleConstructionExpression) {
                 this.ir_generate_tuple_return(ctx, stmt.returnExpression);
             }
             else {
+                // submit result
                 let tmp = this.visitExpression(stmt.returnExpression, ctx);
                 this.i("debug", "return statement " + tmp);
-                let retInst = retType(ctx, stmt.returnExpression.inferredType!);
-                this.i(retInst, tmp, 0);
+                if(resTmp) {
+                    let iType = tmpType(ctx, stmt.returnExpression.inferredType!);
+                    this.i(iType, resTmp, "reg", tmp);
+                }
+                else {
+                    let retInst = retType(ctx, stmt.returnExpression.inferredType!);
+                    this.i(retInst, tmp, 0);
+                }
             }
-            // add a ret void to mark the end of the function
-            this.i("ret_void");
+            // return
+
+            if(jmpLabel) {
+                this.i("j", jmpLabel);
+            }
+            else {
+                // add a ret void to mark the end of the function
+                this.i("ret_void");
+            }
         }
         else {
             this.i("debug", "return statement void");
-            this.i("ret_void");
+            if(jmpLabel) {
+                throw "Unreachable code";
+            }
+            else {
+                // add a ret void to mark the end of the function
+                this.i("ret_void");
+            }
         }
     }
     visitVariableDeclarationStatement(stmt: VariableDeclarationStatement, ctx: Context) {

@@ -12,7 +12,6 @@
 
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
-import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { Expression } from "./Expression";
 import { DataType } from "../types/DataType";
 import { BlockStatement } from "../statements/BlockStatement";
@@ -20,6 +19,7 @@ import { ReturnStatement } from "../statements/ReturnStatement";
 import { LetInExpression } from "./LetInExpression";
 import { findCompatibleTypes } from "../../typechecking/TypeInference";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { TupleConstructionExpression } from "./TupleConstructionExpression";
 
 export class DoExpression extends Expression {
     // multiple variables can be declared in a let binding
@@ -41,35 +41,73 @@ export class DoExpression extends Expression {
 
     infer(ctx: Context, hint: DataType | null): DataType {
         this.setHint(hint);
-        this.block?.infer(ctx);
+        // do not allow re-inferring
+        this.block?.infer(ctx, true);
 
         // make sure we have at least one statement
-        if(this.block?.statements.length === 0){
+        if (this.block?.statements.length === 0) {
             throw ctx.parser.error("Do-expression must have at least one statement", this.location);
         }
 
         // make sure the last statement is a return statement
         let lastStatement = this.block?.statements[this.block.statements.length - 1];
-        if(lastStatement && !(lastStatement instanceof ReturnStatement)){
+        if (lastStatement && !(lastStatement instanceof ReturnStatement)) {
             throw ctx.parser.error("Do-expression must end with a return statement", lastStatement.location);
         }
 
-        // now make sure the return type is compatible with the hint
-        let returnTypes = this.returnStatements.map(ret => ret.stmt.getReturnType(ret.ctx));
-        let unifiedType = findCompatibleTypes(ctx, returnTypes);
-
-        if (!unifiedType) {
-            throw ctx.parser.error("Do-expression must return a common type, instead, returned " + returnTypes.map(t => t.shortname()).join(", "), this.location);
+        // make sure every return statement has a return expression and it is not a tuple construction
+        for (let i = 0; i < this.returnStatements.length; i++) {
+            let ret = this.returnStatements[i].stmt;
+            if (ret.returnExpression == null) {
+                throw ctx.parser.error("Return statement must have a return expression", ret.location);
+            }
+            if (ret.returnExpression instanceof TupleConstructionExpression) {
+                throw ctx.parser.error("Tuple construction is not allowed in return statements", ret.location);
+            }
         }
 
-        this.inferredType = unifiedType;
-        this.checkHint(ctx);
+        if (hint == null) {
+            this.block!.infer(ctx, true);
+            // list of return types from the return statements
+            let returnTypes: DataType[] = [];
 
-        return unifiedType;
+            // if a single void is found (meaning a return without value), the return type is void
+
+            for (const ret of this.returnStatements) {
+                let retType = ret.stmt.getReturnType(ret.ctx);
+                returnTypes.push(retType);
+            }
+
+            let allMatch = findCompatibleTypes(ctx, returnTypes);
+            if (allMatch === null) {
+                throw ctx.parser.customError(`Mixed return data types in do-expression body`, this.block!.location);
+            }
+
+            this.inferredType = allMatch;
+
+        }
+    
+        else {
+            this.block!.infer(ctx, true);
+
+            // all return types must match the defined return type
+            for (let i = 0; i < this.returnStatements.length; i++) {
+                let retType = this.returnStatements[i].stmt.getReturnType(this.returnStatements[i].ctx);
+                if (!matchDataTypes(ctx, hint, retType, false).success) {
+                    throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${hint.shortname()}`, this.returnStatements[i].stmt.location);
+                }
+                
+                this.returnStatements[i].stmt.returnExpression?.setHint(hint);
+            }
+            this.inferredType = hint;
+        }
+        
+        this.checkHint(ctx);
+        return this.inferredType;
     }
 
 
-    clone(typeMap: { [key: string]: DataType; }, ctx: Context): DoExpression{
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): DoExpression {
         let newContext = this.context.clone(typeMap, ctx);
         let newDO = new DoExpression(this.location, newContext, this.block!.clone(typeMap, newContext));
 

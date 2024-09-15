@@ -20,16 +20,31 @@ export class BlockStatement extends Statement {
     context: Context;
     statements: Statement[];
 
+    was_inferred: boolean = false;
+
     constructor(location: SymbolLocation, context: Context, statements: Statement[]){
         super(location, "block");
         this.context = context;
         this.statements = statements;
     }
 
-    infer(ctx: Context){
+    /**
+     * Infers the block statement, since this can be a child of a do-expression, we need to block re-inferring,
+     * if the expression is already inferred , we just return
+     * @param ctx The context to infer the block statement in
+     * @param allow_reinfer Whether to allow re-inferring the block statement
+     * @returns The inferred type of the block statement
+     */
+    infer(ctx: Context, no_reinference: boolean = false){
+        if(this.was_inferred && no_reinference){
+            return;
+        }
+
         for(const statement of this.statements){
             statement.infer(this.context);
         }
+
+        this.was_inferred = true;
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): BlockStatement {

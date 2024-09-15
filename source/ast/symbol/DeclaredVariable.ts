@@ -14,6 +14,7 @@
 import { Expression } from "../expressions/Expression";
 import { DataType } from "../types/DataType";
 import { LiteralIntType } from "../types/LiteralNumberType";
+import { TupleType } from "../types/TupleType";
 import { VoidType } from "../types/VoidType";
 import { Context } from "./Context";
 import { Symbol } from "./Symbol";
@@ -64,11 +65,15 @@ export class DeclaredVariable extends Symbol {
 
         // last sanity checks
         if(this.annotation instanceof VoidType){
-            ctx.parser.customError("Cannot declare a variable of type void", this.location);
+            throw ctx.parser.customError("Cannot declare a variable of type void", this.location);
         }
 
         if(this.annotation instanceof LiteralIntType){
-            ctx.parser.customError("Variables needs type hint, cannot infer type from number literal", this.location);
+            throw ctx.parser.customError("Variables needs type hint, cannot infer type from number literal", this.location);
+        }
+
+        if (this.annotation instanceof TupleType) {
+            throw ctx.parser.customError("A variable cannot be annotated or assigned a tuple type", this.location);
         }
     }
 
