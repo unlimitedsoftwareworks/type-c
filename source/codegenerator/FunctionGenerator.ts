@@ -29,7 +29,7 @@ import { LetInExpression } from "../ast/expressions/LetInExpression";
 import { BinaryStringLiteralExpression, CharLiteralExpression, DoubleLiteralExpression, FalseLiteralExpression, FloatLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, LiteralExpression, NullLiteralExpression, StringLiteralExpression, TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
 import { MatchExpression } from "../ast/expressions/MatchExpression";
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
-import { NamedStructConstructionExpression } from "../ast/expressions/NamedStructConstructionExpression";
+import { NamedStructConstructionExpression, StructDeconstructedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
 import { NullableMemberAccessExpression } from "../ast/expressions/NullableMemberAccessExpression";
 import { SpawnExpression } from "../ast/expressions/SpawnExpression";
@@ -80,7 +80,7 @@ import { TupleType } from "../ast/types/TupleType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
-import { areDataTypesIdentical, canCastTypes, matchDataTypes } from "../typechecking/TypeChecking";
+import { areDataTypesIdentical, canCastTypes, getLargestStruct, matchDataTypes } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
@@ -158,7 +158,7 @@ function fetchElementSymbol(ctx: Context, element: ElementExpression): Symbol | 
         else {
             return sym as DeclaredFunction;
         }
-        
+
     }
     else if (sym instanceof DeclaredType) {
         /*
@@ -268,7 +268,7 @@ export class FunctionGenerator {
         else {
             this.srcMapPushLoc(this.fn.location);
             let tmp = "";
-            if(this.fn.expression instanceof TupleConstructionExpression) {
+            if (this.fn.expression instanceof TupleConstructionExpression) {
                 this.ir_generate_tuple_return(this.fn.context, this.fn.expression);
                 this.i("ret_void");
             }
@@ -365,11 +365,11 @@ export class FunctionGenerator {
 
                 //let r = matchDataTypes(ctx, hintType, inferredType!, true);
                 //if (r.success) {
-                    // types are exact, no need to cast
+                // types are exact, no need to cast
                 //}
                 //else {
-                    this.i("debug", "casting from " + inferredType?.kind + " to " + hintType?.kind);
-                    tmp = this.visitCastExpression(new CastExpression(expr.location, expr, hintType, requireSafe ? "safe" : "regular"), ctx, tmp);
+                this.i("debug", "casting from " + inferredType?.kind + " to " + hintType?.kind);
+                tmp = this.visitCastExpression(new CastExpression(expr.location, expr, hintType, requireSafe ? "safe" : "regular"), ctx, tmp);
                 //}
             }
         }
@@ -633,9 +633,9 @@ export class FunctionGenerator {
          */
 
         let structType = expr.inferredType!.to(ctx, StructType) as StructType;
-        
+
         this.i("debug", "anonymous struct construction expression ");
-        let {reg: tmp, sortedStruct} = this.ir_allocate_struct(ctx, structType);
+        let { reg: tmp, sortedStruct } = this.ir_allocate_struct(ctx, structType);
 
         this.i("debug", "anonymous struct field values");
 
@@ -715,13 +715,13 @@ export class FunctionGenerator {
 
                     let tmp = this.generateTmp();
                     this.i("debug", "Interface -> Interface Check")
-                    
-                        
+
+
                     let allMethods = [...castTypeInterface.getMethods()];
                     // sort by UID
                     allMethods.sort((a, b) => a.getUID() - b.getUID());
 
-                    for(let i = 0; i < allMethods.length; i++){
+                    for (let i = 0; i < allMethods.length; i++) {
                         let method = allMethods[i];
                         let methodUID = method.getUID();
                         this.i("i_has_m", methodUID, reg, failLabel);
@@ -929,7 +929,7 @@ export class FunctionGenerator {
         this.i("debug", "binary expression " + expr.operator);
 
         if (expr.operator == "=") {
-            
+
             // generate the right expression
             let right = this.visitExpression(expr.right, ctx);
 
@@ -1552,13 +1552,13 @@ export class FunctionGenerator {
 
             this.i("s_alloc", variantReg, argsOffset.length, variantSize.reduce((a, b) => a + b, 0));
             this.i("s_reg_field", variantReg, 0, 0); // TAG
-            
+
             //console.log(parameters.map((x) => x.name + ': '+x.getFieldID()))
             for (let i = 0; i < parameters.length; i++) {
                 let param = parameters[i];
                 this.i("debug", `setting variant field offset ${param.name}`);
                 //console.log(">    s_reg_field", variantReg, i+1, param.getFieldID(), argsOffset[i+1])
-                this.i("s_reg_field", variantReg, i+1, param.getFieldID(), argsOffset[i+1]);
+                this.i("s_reg_field", variantReg, i + 1, param.getFieldID(), argsOffset[i + 1]);
             }
 
             this.i("debug", `setting variant field tag`);
@@ -1648,30 +1648,73 @@ export class FunctionGenerator {
          */
         // important: we need to use hint type to infer the size of the struct
         // since elements within it could be promoted
-        let structType = (expr.hintType ?? expr.inferredType)!.to(ctx, StructType) as StructType
-        
+        let structType = (expr.hintType != null) ? getLargestStruct(ctx, expr.hintType!.to(ctx, StructType) as StructType, expr.inferredType!.to(ctx, StructType) as StructType) : expr.inferredType!.to(ctx, StructType) as StructType
+
         this.i("debug", "named struct construction expression ");
-        let {reg: tmp, sortedStruct} = this.ir_allocate_struct(ctx, structType);
+        let { reg: tmp, sortedStruct } = this.ir_allocate_struct(ctx, structType);
 
         this.i("debug", "named struct field values");
 
 
-        for (let i = 0; i < expr.fields.length; i++) {
-            
-            let exprField = expr.fields[i];
+        for (let i = 0; i < expr._plainKeyValues.length; i++) {
+
+            let exprField = expr._plainKeyValues[i];
             let fieldInSortedStruct = sortedStruct.getField(exprField.name)!;
 
 
-            let res = this.visitExpression(exprField.value, ctx);
-            let inst = structSetFieldType(ctx, fieldInSortedStruct.type);
-            this.i(inst, tmp, fieldInSortedStruct.getFieldID(), res);
-            this.destroyTmp(res);
+            if (exprField.isPartial) {
+                /*
+                    partial update, such as
+                    x = {a: 1, b: {c: 2, d: 3}}
+                    y = {...x, b: {c: 4}} <- here the field b is partial, so we need to set the field c to 4
+                    
+                    so we generate as follows: 
+                        1. create a new struct for {c: 4}
+                        2. required b from original struct (element_reg)
+                        3. for every field in the new struct, we read from original struct and set to the new struct (element_reg)
+                */
+                let get_element_in_struct = structGetFieldType(ctx, fieldInSortedStruct.type);
+                let element_reg = this.generateTmp();
+                this.i(get_element_in_struct, element_reg, tmp, fieldInSortedStruct.getFieldID());
+
+                let new_struct = this.visitExpression(exprField.value, ctx);
+
+                // for every field in the new struct, we get the value and set it to the original struct
+                let sorted_struct_fields = (exprField.value.inferredType!.to(ctx, StructType) as StructType).fields;
+                let tmp_reg = this.generateTmp();
+
+                for (const field of sorted_struct_fields) {
+                    let get_inst = structGetFieldType(ctx, field.type);
+                    let set_inst = structSetFieldType(ctx, field.type);
+
+                    this.i(get_inst, tmp_reg, new_struct, field.getFieldID());
+
+                    //this.i(i_write, elementReg, field!.getFieldID(), tmp);
+                    this.i(set_inst, element_reg, field.getFieldID(), tmp_reg);
+                }
+
+                this.destroyTmp(new_struct);
+                this.destroyTmp(tmp_reg);
+                this.destroyTmp(element_reg);
+
+
+
+
+
+            }
+            else {
+                let res = this.visitExpression((exprField as StructKeyValueExpressionPair).value, ctx);
+                let inst = structSetFieldType(ctx, fieldInSortedStruct.type);
+                this.i(inst, tmp, fieldInSortedStruct.getFieldID(), res);
+                this.destroyTmp(res);
+            }
+
         }
 
 
 
         // do it at the end so it doesn't interfere with origin
-        if(expr.hintType) {
+        if (expr.hintType) {
             expr.inferredType = expr.hintType;
         }
 
@@ -1809,7 +1852,7 @@ export class FunctionGenerator {
                 // sort by UID
                 allMethods.sort((a, b) => a.getUID() - b.getUID());
 
-                for(let i = 0; i < allMethods.length; i++){
+                for (let i = 0; i < allMethods.length; i++) {
                     let method = allMethods[i];
                     let methodUID = method.getUID();
                     this.i("i_has_m", methodUID, castReg, failLabel);
@@ -1960,27 +2003,27 @@ export class FunctionGenerator {
             // we might group some variables decl that share the same base expression
             // such as tuple deconstructions, array deconstructions, etc.
             // so if they are already processed (means pushed into processed), we skip them
-            if(processed.includes(decl)) {
+            if (processed.includes(decl)) {
                 continue;
             }
 
-            if(decl.isFromTuple || decl.isFromArray || decl.isFromStruct) {
+            if (decl.isFromTuple || decl.isFromArray || decl.isFromStruct) {
                 let group: DeclaredVariable[] = [];
                 // find all tuple deconstructions in the initializer
                 for (let decl_ of expr.variables) {
-                    if(decl_.initGroupID == decl.initGroupID) {
+                    if (decl_.initGroupID == decl.initGroupID) {
                         processed.push(decl_);
                         group.push(decl_);
                     }
                 }
 
-                if(decl.isFromTuple) {
+                if (decl.isFromTuple) {
                     this.visitTupeDeconstructionGroup(ctx, group);
                 }
-                else if(decl.isFromArray) {
+                else if (decl.isFromArray) {
                     this.visitArrayDeconstructionGroup(ctx, group);
                 }
-                else if(decl.isFromStruct) {
+                else if (decl.isFromStruct) {
                     this.visitStructDeconstructionGroup(ctx, group);
                 }
                 continue;
@@ -2017,7 +2060,7 @@ export class FunctionGenerator {
             let num_attrs = classType.attributes.length;
             let size_attrs = classType.getAttributesBlockSize();
             // !!! IMPORTANT: we have to create new array as some other methods awaiting to be generated
-            let classMethods = [...classType.getAllMethods()] 
+            let classMethods = [...classType.getAllMethods()]
             let num_methods = classMethods.length;
 
             this.i("debug", `class allocation\nnum methods: ${num_methods} \ndata size: ${size_attrs}`);
@@ -2026,7 +2069,7 @@ export class FunctionGenerator {
             // initialize the methods
             // sort class methods by UID
             classMethods.sort((a, b) => a.imethod.getUID() - b.imethod.getUID());
-            
+
             for (let i = 0; i < classMethods.length; i++) {
                 let method = classMethods[i];
                 this.i("debug", `setting class method ${i}:${method.imethod.name}`);
@@ -2568,7 +2611,7 @@ export class FunctionGenerator {
     visitReturnStatement(stmt: ReturnStatement, ctx: Context) {
         if (stmt.returnExpression) {
 
-            if(stmt.returnExpression instanceof TupleConstructionExpression) {
+            if (stmt.returnExpression instanceof TupleConstructionExpression) {
                 this.ir_generate_tuple_return(ctx, stmt.returnExpression);
             }
             else {
@@ -2592,28 +2635,28 @@ export class FunctionGenerator {
             // we might group some variables decl that share the same base expression
             // such as tuple deconstructions, array deconstructions, etc.
             // so if they are already processed (means pushed into processed), we skip them
-            if(processed.includes(decl)) {
+            if (processed.includes(decl)) {
                 continue;
             }
 
-            
-            if(decl.isFromTuple || decl.isFromArray || decl.isFromStruct) {
+
+            if (decl.isFromTuple || decl.isFromArray || decl.isFromStruct) {
                 let group: DeclaredVariable[] = [];
                 // find all tuple deconstructions in the initializer
                 for (let decl_ of stmt.variables) {
-                    if(decl_.initGroupID == decl.initGroupID) {
+                    if (decl_.initGroupID == decl.initGroupID) {
                         processed.push(decl_);
                         group.push(decl_);
                     }
                 }
 
-                if(decl.isFromTuple) {
+                if (decl.isFromTuple) {
                     this.visitTupeDeconstructionGroup(ctx, group);
                 }
-                else if(decl.isFromArray) {
+                else if (decl.isFromArray) {
                     this.visitArrayDeconstructionGroup(ctx, group);
                 }
-                else if(decl.isFromStruct) {
+                else if (decl.isFromStruct) {
                     this.visitStructDeconstructionGroup(ctx, group);
                 }
                 continue;
@@ -2684,7 +2727,7 @@ export class FunctionGenerator {
             let returnIndex = (decl.initializer as TupleDeconstructionExpression).index;
 
             let inst = fnGetRetType(ctx, decl.annotation!);
-            this.i(inst, elementReg, 255-returnIndex);
+            this.i(inst, elementReg, 255 - returnIndex);
         }
     }
 
@@ -2697,12 +2740,12 @@ export class FunctionGenerator {
         let reg = this.visitExpression(arrayExpression, ctx);
         let arrayType = arrayExpression.inferredType! as ArrayType;
 
-        for(const [i, decl] of group.entries()) {
+        for (const [i, decl] of group.entries()) {
             let init = (decl.initializer as ArrayDeconstructionExpression);
             let expr: Expression = new ElementExpression(decl.location, decl.name);
             let elementReg = this.visitExpression(expr, ctx);
-            
-            if(init.rest) {
+
+            if (init.rest) {
                 // we have to generate slice so first, get the length
                 let tmpStart = this.generateTmp();
                 this.i("const_u64", tmpStart, init.index);
@@ -2712,12 +2755,12 @@ export class FunctionGenerator {
                 this.i("a_slice", elementReg, reg, tmpStart, tmpEnd);
                 this.destroyTmp(tmpStart);
                 this.destroyTmp(tmpEnd);
-                
+
             }
             else {
                 let instr = arrayGetIndexType(ctx, arrayType.arrayOf.dereference());
                 let idxTmp = this.generateTmp();
-                this.i("const_u64", idxTmp, i); 
+                this.i("const_u64", idxTmp, i);
                 this.i(instr, elementReg, idxTmp, reg);
                 this.destroyTmp(idxTmp);
             }
@@ -2736,17 +2779,17 @@ export class FunctionGenerator {
         let reg = this.visitExpression((group[0].initializer as StructDeconstructionExpression).structExpression, ctx);
         let structType = (group[0].initializer as StructDeconstructionExpression).structExpression.inferredType! as StructType;
 
-        for(const [i, decl] of group.entries()) {
+        for (const [i, decl] of group.entries()) {
             let init = (decl.initializer as StructDeconstructionExpression);
             let expr: Expression = new ElementExpression(decl.location, decl.name);
             let elementReg = this.visitExpression(expr, ctx);
 
-            if(init.rest) {
+            if (init.rest) {
                 let remainingStruct = decl.initializer.inferredType! as StructType;
                 // we will need to allocate a new struct and copy the values over
-                let {sortedStruct} = this.ir_allocate_struct(ctx, remainingStruct, elementReg);
+                let { sortedStruct } = this.ir_allocate_struct(ctx, remainingStruct, elementReg);
 
-                for(const [i, field] of sortedStruct.fields.entries()) {
+                for (const [i, field] of sortedStruct.fields.entries()) {
                     let tmp = this.generateTmp();
                     // read from the original struct
                     let i_read = structGetFieldType(ctx, field!.type);
@@ -2795,12 +2838,12 @@ export class FunctionGenerator {
             offsetCounter += getDataTypeByteSize(field.type);
         }
 
-        return {reg: tmp, sortedStruct: st};
+        return { reg: tmp, sortedStruct: st };
     }
 
     ir_generate_tuple_return(ctx: Context, returnExpression: TupleConstructionExpression) {
         // we return elements one by one
-        for(let [i, el] of returnExpression.elements.entries()) {
+        for (let [i, el] of returnExpression.elements.entries()) {
             this.i("debug", "return tuple element #" + i);
             let tmp = this.visitExpression(el, ctx);
             let retInst = retType(ctx, el.inferredType!);

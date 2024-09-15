@@ -85,7 +85,7 @@ This checklist containts only major changes and updates, for minor changes and u
     dt.callMe({"user", 20})
     ```
     In such case, the compiler will not infer the unnamed struct construction `{"user", 20}` with the method argument, due to method overload resolution.
-
+- Pad structs in the VM, for faster CPU access
 
 ## Roadmap:
 

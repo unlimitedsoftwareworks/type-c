@@ -24,7 +24,7 @@ import { LambdaExpression } from "../ast/expressions/LambdaExpression";
 import { LetInExpression } from "../ast/expressions/LetInExpression";
 import { MatchCaseExpression, MatchExpression } from "../ast/expressions/MatchExpression";
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
-import { KeyValueExpressionPair, NamedStructConstructionExpression } from "../ast/expressions/NamedStructConstructionExpression";
+import { NamedStructConstructionExpression, StructDeconstructedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
 import { SpawnExpression } from "../ast/expressions/SpawnExpression";
 import { ThisExpression } from "../ast/expressions/ThisExpression";
@@ -1672,17 +1672,65 @@ function parseArrayConstruction(parser: Parser, ctx: Context): Expression {
     return new ArrayConstructionExpression(loc, elements);
 }
 
+function parseStructElements(parser: Parser, ctx: Context): (StructKeyValueExpressionPair | StructDeconstructedElement)[] {
+    /**
+     * We expect the following:
+     * ...x,
+     * x,
+     * x: <expr>,
+     */
+    let elements: (StructKeyValueExpressionPair | StructDeconstructedElement)[] = [];
+    let loop = true;
+    while(loop) {
+        let lexeme = parser.peek();
+        if(lexeme.type === "...") {
+            parser.accept();
+            let expression = parseExpression(parser, ctx);
+            elements.push(new StructDeconstructedElement(parser.loc(), expression));
+        }
+        else if (lexeme.type === "identifier") {
+            parser.reject();
+            let name = parser.expect("identifier").value;
+            
+            let lexeme2 = parser.peek();
+            if (lexeme2.type === ":") {
+                parser.accept();
+                elements.push(new StructKeyValueExpressionPair(parser.loc(), name, parseExpression(parser, ctx)));
+            }
+            // no value is present, so it is equivalent to x: x
+            else {
+                elements.push(new StructKeyValueExpressionPair(parser.loc(), name, new ElementExpression(parser.loc(), name, [])));
+            }
+        }
+
+        if(parser.is(",")) {
+            parser.accept();
+        }
+        else {
+            parser.reject();
+            break;
+        }
+    }
+    return elements;
+}
+
 function parseStructConstruction(parser: Parser, ctx: Context): Expression {
     let loc = parser.loc();
     parser.expect("{");
     let lexeme = parser.peek();
-    if (lexeme.type === "identifier") {
+    if(lexeme.type === "...") {
+        parser.reject();
+        let elements = parseStructElements(parser, ctx);
+        parser.expect("}");
+        return new NamedStructConstructionExpression(loc, elements);
+    }
+    else if (lexeme.type === "identifier") {
         let lexeme2 = parser.peek();
         if (lexeme2.type === ":") {
             parser.reject();
-            let pairs: KeyValueExpressionPair[] = parseStructKeyValueExpressionList(parser, ctx);
+            let elements = parseStructElements(parser, ctx);
             parser.expect("}");
-            return new NamedStructConstructionExpression(loc, pairs);
+            return new NamedStructConstructionExpression(loc, elements);
         }
         else {
             parser.reject();
@@ -1695,32 +1743,6 @@ function parseStructConstruction(parser: Parser, ctx: Context): Expression {
     let expressions = parseExpressionList(parser, ctx);
     parser.expect("}");
     return new UnnamedStructConstructionExpression(loc, expressions);
-}
-
-function parseStructKeyValueExpression(parser: Parser, ctx: Context): KeyValueExpressionPair {
-    let tok = parser.expect("identifier");
-    let name = tok.value;
-    parser.expect(":");
-    let value = parseExpression(parser, ctx);
-    return { name, value, location: tok.location };
-}
-
-function parseStructKeyValueExpressionList(parser: Parser, ctx: Context): KeyValueExpressionPair[] {
-    let canLoop = true;
-    let pairs: KeyValueExpressionPair[] = [];
-    while (canLoop) {
-        let pair = parseStructKeyValueExpression(parser, ctx);
-        pairs.push(pair);
-        let token = parser.peek();
-        canLoop = token.type === ",";
-        if (canLoop) {
-            parser.accept();
-        }
-        else {
-            parser.reject();
-        }
-    }
-    return pairs;
 }
 
 

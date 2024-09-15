@@ -1,0 +1,124 @@
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+
+
+fn test_case_1(rn: TestUnit) {
+    let u1 = {name: "Me!", age: 20, salary: 1000, active: true}
+    let u2 = {...u1, name: "You!", salary: 1100}
+
+
+    rn.assert_obj_eq<String>(u1.name, "Me!")
+    rn.assert_obj_eq<String>(u2.name, "You!")
+    rn.assert_eq(u2.age, 20)
+    rn.assert_eq(u2.salary, 1100)
+    rn.assert_eq(u2.active, true)
+}
+
+fn test_case_2(rn: TestUnit) {
+
+    let u1 = {name: "Me!", age: 20, salary: 1000, active: true}
+    let u2 = {name: "Haha", ...u1, active: false}
+
+    rn.assert_obj_eq<String>(u2.name, "Me!")
+    rn.assert_eq(u2.age, 20)
+    rn.assert_eq(u2.salary, 1000)
+    rn.assert_eq(u2.active, false)
+
+    let u3 = {...u1, ...u2, active: false}
+
+    rn.assert_obj_eq<String>(u3.name, "Me!")
+    rn.assert_eq(u3.age, 20)
+    rn.assert_eq(u3.salary, 1000)
+    rn.assert_eq(u3.active, false)
+}
+
+fn test_case_3(rn: TestUnit) {
+    let u1 = {name: "Me!", age: 20, address: {city: "NYC", zip: 10001}}
+    let u2 = {...u1, name: "You!", address: {...u1.address, city: "LA"}}
+
+    rn.assert_obj_eq<String>(u1.name, "Me!")
+    rn.assert_obj_eq<String>(u2.name, "You!")
+    rn.assert_obj_eq<String>(u2.address.city, "LA")
+    rn.assert_eq(u2.address.zip, 10001)
+
+    // this used to test partial update, but now it's not allowed
+    let u3 = {...u1, address: {city: "LA", zip: u1.address.zip}}
+    rn.assert_obj_eq<String>(u3.name, "Me!")
+    rn.assert_obj_eq<String>(u3.address.city, "LA")
+    rn.assert_eq(u3.address.zip, 10001)
+
+    let unrelated = {x: 1} 
+    let u4 = {...unrelated, name: "Me!", age: 20, address: {city: "Berlin", zip: 404}, location: "DE"}
+
+    rn.assert_eq(u4.x, 1)
+    rn.assert_obj_eq<String>(u4.address.city, "Berlin")
+    rn.assert_eq(u4.address.zip, 404)
+    rn.assert_obj_eq<String>(u4.location, "DE")
+}
+
+fn test_case_4(rn: TestUnit) {
+    let u1 = {name: "Me!", age: 20, salary: 1000, active: true}
+    let u2 = {...u1}
+
+    rn.assert_obj_eq<String>(u2.name, u1.name)
+    rn.assert_eq(u2.age, u1.age)
+    rn.assert_eq(u2.salary, u1.salary)
+    rn.assert_eq(u2.active, u1.active)
+}
+
+fn test_case_5(rn: TestUnit) {
+    let u1 = {name: "Me!", age: 20, salary: 1000, active: true}
+    /** will not compile
+    let u2 = {...{}, ...u1}
+    
+    rn.assert_obj_eq<String>(u2.name, u1.name)
+    rn.assert_eq(u2.age, u1.age)
+    rn.assert_eq(u2.salary, u1.salary)
+    rn.assert_eq(u2.active, u1.active)
+    **/
+}
+
+fn test_case_7(rn: TestUnit) {
+    /**
+    should also not compile
+    tests/test14/test.tc:70:14:Cannot create a named struct from a non-struct type struct{name:String,age:u8,salary:u16,salary:String}: 
+    Duplicate field salary in struct types do not match pre-existing field type: Type mismatch, expected class, got u16
+    let u2 = {...u1, salary: "Not a number!"}
+
+    let u1 = {name: "Me!", age: 20, salary: 1000}
+    // Hypothetically, if salary is of a different type in u2
+    let u2 = {...u1, salary: "Not a number!"}
+
+    rn.assert_obj_eq<String>(u2.name, "Me!")
+    rn.assert_eq(u2.age, 20)
+    rn.assert_obj_eq<String>(u2.salary, "Not a number!")
+    **/
+}
+
+fn test_case_8(rn: TestUnit) {
+    let u1 = {name: "Me!", age: 20}
+    let u2 = {age: 25, name: "New Me!", ...u1}
+
+    rn.assert_obj_eq<String>(u2.name, "Me!")
+    rn.assert_eq(u2.age, 20)
+
+    let u3 = {...u1, age: 25, name: "New Me!"}
+
+    rn.assert_obj_eq<String>(u3.name, "New Me!")
+    rn.assert_eq(u3.age, 25)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests generic destructuring", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests generic destructuring", test_case_2)
+    let test_3 = new TestUnit("test 3", "Test with Nested Structs", test_case_3)
+    let test_4 = new TestUnit("test 4", "Test with No Overrides", test_case_4)
+    let test_5 = new TestUnit("test 5", "Test with Empty Spread", test_case_5)
+    let test_6 = new TestUnit("test 8", "Test with Overriding Multiple Fields", test_case_8)
+    let test_7 = new TestUnit("test 7", "Test with Different Types", test_case_7)
+    let test_8 = new TestUnit("test 8", "Test with Overriding Multiple Fields", test_case_8)
+
+    let set = new UnitSet("Matching tests", "Tests some SUM functions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
+    return set.run()
+}

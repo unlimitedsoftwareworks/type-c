@@ -11,12 +11,14 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { getSubStruct, matchDataTypes, mergeStructs, reduceStructFields } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { StructField, StructType } from "../types/StructType";
+import { ElementExpression } from "./ElementExpression";
 import { Expression } from "./Expression";
+import { MemberAccessExpression } from "./MemberAccessExpression";
 
 export type KeyValueExpressionPair = {
     name: string,
@@ -24,10 +26,46 @@ export type KeyValueExpressionPair = {
     location: SymbolLocation
 }
 
+export class StructKeyValueExpressionPair {
+    name: string
+    value: Expression
+    isPartial: boolean = false
+    location: SymbolLocation
+
+    constructor(location: SymbolLocation, name: string, value: Expression) {
+        this.name = name;
+        this.value = value;
+        this.location = location;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): StructKeyValueExpressionPair {
+        return new StructKeyValueExpressionPair(this.location, this.name, this.value.clone(typeMap, ctx));
+    }
+}
+
+export class StructDeconstructedElement {
+    expression: Expression
+    location: SymbolLocation
+
+    constructor(location: SymbolLocation, expression: Expression) {
+        this.expression = expression;
+        this.location = location;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): StructDeconstructedElement {
+        return new StructDeconstructedElement(this.location, this.expression.clone(typeMap, ctx));
+    }
+}
+
 export class NamedStructConstructionExpression extends Expression {
-    fields: KeyValueExpressionPair[];
-    
-    constructor(location: SymbolLocation, fields: KeyValueExpressionPair[]) {
+    fields: (StructKeyValueExpressionPair | StructDeconstructedElement)[];
+
+    // extracted key-value pairs from deconstructed structs
+    // duplicates are removed, for example x = {y: 10, z:2}, a = {y:1, ...x}
+    // plainKeyValues for a  = {y: 10, z:2}
+    _plainKeyValues: StructKeyValueExpressionPair[] = [];
+
+    constructor(location: SymbolLocation, fields: (StructKeyValueExpressionPair | StructDeconstructedElement)[]) {
         super(location, "named_struct_construction");
         this.fields = fields;
     }
@@ -35,47 +73,130 @@ export class NamedStructConstructionExpression extends Expression {
     infer(ctx: Context, hint: DataType | null): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
-
+        let structHint: StructType | null = null;
         if (hint) {
             // make sure the hint is a struct
-            if(!hint.is(ctx, StructType)){ 
+            if (!hint.is(ctx, StructType)) {
                 throw ctx.parser.customError(`Cannot create a named struct from a non-struct type ${hint.shortname()}`, this.location);
             }
 
             // the hint may not contain all the fields present in the name struct construction
-            let structHint = hint.to(ctx, StructType) as StructType;
-            this.inferredType = new StructType(this.location, this.fields.map((field) => new StructField(field.location, field.name, field.value.infer(ctx, structHint.getFieldTypeByName(field.name)))));
+            structHint = hint.to(ctx, StructType) as StructType;
+        }
+
+        let has_deconstructed = false;
+
+        let fields: StructField[] = [];
+        let pairs: StructKeyValueExpressionPair[] = [];
+
+        let mergedStruct: StructType = new StructType(this.location, []);
+
+        for (const field of this.fields) {
+            if (field instanceof StructKeyValueExpressionPair) {
+                
+                // we infer as null, when we have a deconstruction, to allow for partial type checking
+                // and then we compare the hint against the inferred type,
+                // because we want to allow partial comparaison
+                let fieldHint = structHint?.getFieldTypeByName(field.name)
+
+                let existingField = mergedStruct.getField(field.name)
+                
+                // we allow partial if the field already exists and is a struct
+                let allowPartial = existingField && (existingField!.type.is(ctx, StructType));
+
+                // must pre-infer with null to allow for partial type checking
+                // we don;t know the nested fields of this field yet
+                let newField = new StructField(field.location, field.name, field.value.infer(ctx, allowPartial ? null : fieldHint));
+                
+
+                if(allowPartial) {
+                    let infrAs = getSubStruct(
+                        existingField!.type.to(ctx, StructType) as StructType, 
+                        (field.value.inferredType!.to(ctx, StructType) as StructType).fields.map(f => f.name)
+                    );
+
+                    field.value.infer(ctx, infrAs);
+
+                    field.isPartial = true;
+                    mergedStruct.fields.push(new StructField(field.location, field.name, field.value.inferredType!));
+                    fields.push(new StructField(field.location, field.name, field.value.inferredType!));
+                }
+                else {
+                    mergedStruct.fields.push(new StructField(field.location, field.name, field.value.inferredType!));
+                    fields.push(newField);
+                }
+
+                pairs.push(field);
+            }
+            else {
+                has_deconstructed = true;
+                let dec = field as StructDeconstructedElement;
+                let inferredType = dec.expression.infer(ctx, null);
+
+                // now we get the inferred type of e
+                if (!inferredType.is(ctx, StructType)) {
+                    throw ctx.parser.customError(`Cannot deconstruct a non-struct type ${inferredType.shortname()}`, dec.location);
+                }
+
+                let structType = inferredType.to(ctx, StructType) as StructType;
+                for (const field of structType.fields) {
+                    fields.push(new StructField(dec.location, field.name, field.type));
+                    pairs.push(new StructKeyValueExpressionPair(dec.location, field.name, new MemberAccessExpression(dec.location,
+                        dec.expression, new ElementExpression(dec.location, field.name)
+                    )));
+                    mergedStruct.fields.push(new StructField(dec.location, field.name, field.type));
+                }
+            }
+
+            if (has_deconstructed) {
+                // create a new NamedStructConstructionExpression with the new fields, to flatten it
+                let expr = new NamedStructConstructionExpression(this.location, pairs);
+                // we infer with null because we are not done with the inference yet
+                this.inferredType = expr.infer(ctx, null);
+                this._plainKeyValues = expr._plainKeyValues;
+                // now make the pair unique
+            }
+            else {
+                this._plainKeyValues = pairs;
+                this.inferredType = new StructType(this.location, fields);
+            }
 
             // make sure our inferred type matches the hint, but not strictly,
             // because we can promote the fields of the struct if needed
-            let r = matchDataTypes(ctx, hint, this.inferredType, false);
-            if(!r.success){
-                throw ctx.parser.customError(`Cannot create a named struct from a non-compatible type ${hint.shortname()}: ${r.message}`, this.location);
+            mergedStruct.resolve(ctx);
+            this.inferredType = mergedStruct;
+        }
+
+        if (has_deconstructed) {
+            // create a new NamedStructConstructionExpression with the new fields, to flatten it
+            let expr = new NamedStructConstructionExpression(this.location, pairs);
+            let fullStruct = expr.infer(ctx, hint);
+            if(!fullStruct.is(ctx, StructType)) {
+                throw ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.shortname()}`, this.location);
+            }
+            let fullStructType = fullStruct.to(ctx, StructType) as StructType;
+            let res = reduceStructFields(ctx, fullStructType.fields, false, []);
+            if(!res.err.success) {
+                throw ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.shortname()}: ${res.err.message}`, this.location);
             }
 
-            this.checkHint(ctx, false);
-            this.isConstant = false;
-            return this.inferredType;
+            this.inferredType = new StructType(this.location, res.fields);
         }
-
         else {
-
-            // we will have to infer the type of the struct
-            let structType = new StructType(this.location, this.fields.map((field) => new StructField(field.location, field.name, field.value.infer(ctx, null))));
-            this.inferredType = structType;
+            this.inferredType = new StructType(this.location, fields);
         }
 
-        this.checkHint(ctx);
+        this.checkHint(ctx, false);
         this.isConstant = false;
         return this.inferredType;
     }
 
-    setHint(hint: DataType | null){
+    setHint(hint: DataType | null) {
         this.hintType = hint;
     }
 
 
-    clone(typeMap: { [key: string]: DataType; }, ctx: Context): NamedStructConstructionExpression{
-        return new NamedStructConstructionExpression(this.location, this.fields.map(f => ({name: f.name, value: f.value.clone(typeMap, ctx), location: f.location})));
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): NamedStructConstructionExpression {
+        return new NamedStructConstructionExpression(this.location, this.fields.map(f => f.clone(typeMap, ctx)));
     }
 }

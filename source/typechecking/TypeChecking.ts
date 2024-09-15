@@ -30,7 +30,7 @@ import { LockType } from "../ast/types/LockType";
 import { NullType } from "../ast/types/NullType";
 import { NullableType } from "../ast/types/NullableType";
 import { PromiseType } from "../ast/types/PromiseType";
-import { StructType } from "../ast/types/StructType";
+import { StructField, StructType } from "../ast/types/StructType";
 import { TupleType } from "../ast/types/TupleType";
 import { UnionType } from "../ast/types/UnionType";
 import { UnsetType } from "../ast/types/UnsetType";
@@ -38,6 +38,7 @@ import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
 import { CoroutineType } from "../ast/types/CoroutineType";
+import { getDataTypeByteSize } from "../codegenerator/utils";
 
 
 export type TypeMatchResult = {
@@ -80,7 +81,7 @@ export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict:
         return Ok();
     }
     globalMatchingStack.push(generateTypeKey(et, dt, strict));
-    
+
     let res = matchDataTypesRecursive(ctx, et, dt, et.isStrict() || strict, []);
     globalMatchingStack.pop();
     return res;
@@ -800,32 +801,13 @@ function matchVariantConstructors(ctx: Context, t1: VariantConstructorType, t2: 
 function matchStructs(ctx: Context, t1: StructType, t2: StructType, strict: boolean, stack: string[]): TypeMatchResult {
     let t1Fields = t1.fields;
     let t2Fields = t2.fields;
-    /**
-     * Strict matching for structs is no longer relevant, since each field 
-     * now has a global ID
-     */
-    /*
-    if(strict) {
-        if(t1Fields.length !== t2Fields.length) {
-            return Err(`Type mismatch, expected struct with ${t1Fields.length} fields, got ${t2Fields.length}`);
-        }
-        // fields must be exactly the same
-        for(let i = 0; i < t1Fields.length; i++) {
-            let field1 = t1Fields[i];
-            let field2 = t2Fields[i];
-            
 
-            if(field1.name !== field2.name) {
-                return Err(`Field ${field1.name} names do not match: ${field1.name} and ${field2.name}`);
-            }
-
-            let res = matchDataTypesRecursive(ctx, field1.type, field2.type, strict, stack);
-            if(!res.success) {
-                return Err(`Field ${field1.name}:${field1.type.shortname()} does not match ${field2.name}:${field2.type.shortname()}: ${res.message}`);
-            }
-        }
+    let res = reduceStructFields(ctx, t2Fields, strict, stack);
+    if (!res.err.success) {
+        return res.err;
     }
-    else {*/
+    t2Fields = res.fields;
+
 
     if (t1Fields.length > t2Fields.length) {
         return Err(`Type mismatch, expected struct with at most ${t1Fields.length} fields, got ${t2Fields.length}`);
@@ -947,8 +929,140 @@ export function canCastTypes(ctx: Context, sourceType: DataType, targetType: Dat
         return Ok();
     }
 
-    // Additional rules here...
-
     // Fallback to stricter matching if no casting rules apply
     return matchDataTypes(ctx, sourceType, targetType, true);
+}
+
+
+/**
+ * Reduces a list of struct fields by removing duplicate fields and keeping the first occurence of each field,
+ * this is used to remove fields that are shadowed by later fields with the same name
+ * @param fields 
+ */
+export function reduceStructFields(ctx: Context, t2Fields: StructField[], strict: boolean, stack: string[]): { fields: StructField[], err: TypeMatchResult } {
+    // we will have to reduce the elements of struct t2, to remove duplicates
+    let elementTypes: Map<string, DataType[]> = new Map();
+    let names: string[] = [];
+    for (let field of t2Fields) {
+        let key = field.name;
+        if (elementTypes.has(key)) {
+            elementTypes.get(key)!.push(field.type);
+        }
+        else {
+            elementTypes.set(key, [field.type]);
+        }
+        if (!names.includes(key)) {
+            names.push(key);
+        }
+    }
+
+    for (let [key, value] of elementTypes) {
+        if (value.length > 1) {
+            // make sure all types are compatible
+            for (let type of value) {
+                let res = matchDataTypesRecursive(ctx, type, value[0], true, stack);
+                if (!res.success) {
+                    return { fields: [], err: Err(`Duplicate field ${key} in struct types do not match pre-existing field type: ${res.message}`) };
+                }
+            }
+        }
+    }
+
+    // create a new struct with the reduced fields
+    let newFields: StructField[] = [];
+    for (let [i, value] of elementTypes.entries()) {
+        newFields.push(new StructField(t2Fields[0].location, i, value[0]));
+    }
+
+    return { fields: newFields, err: Ok() };
+}
+
+
+/**
+ * Iterated over all inferred struct fields, and returns new fields
+ * with largest type between the hint and inferred struct fields
+ * for example hint: {a: int64} inferred: {a: int32, b: int32}
+ *                -> {a: int64, b: int32} // adjust a to hint
+ * @param ctx 
+ * @param hintStruct 
+ * @param inferredStruct 
+ * @returns 
+ */
+export function getLargestStruct(ctx: Context, hintStruct: StructType, inferredStruct: StructType): StructType {
+    //let hFields = hintStruct.fields;
+    let iFields = inferredStruct.fields;
+
+    let newFields: StructField[] = [];
+
+    for (const f of iFields) {
+        let hintType = hintStruct.getFieldTypeByName(f.name)
+
+        if (hintType) {
+            let iSize = getDataTypeByteSize(f.type);
+            let hSize = getDataTypeByteSize(hintType);
+            if (iSize > hSize) {
+                newFields.push(new StructField(f.location, f.name, f.type));
+            }
+            else {
+                newFields.push(new StructField(f.location, f.name, hintType));
+            }
+        }
+        else {
+            newFields.push(new StructField(f.location, f.name, f.type));
+        }
+    }
+
+    return new StructType(hintStruct.location, newFields);
+}
+
+/**
+ * Merge Struct, recursively merges two structs,
+ * if both struct have nested structs, these nested structs are recursively merged.
+ * Reocurring fields must match and must be identical
+ * 
+ */
+export function mergeStructs(ctx: Context, s1: StructType, s2: StructType): {struct: StructType | null, err: TypeMatchResult} {
+    let s1Fields = s1.fields;
+    let s2Fields = s2.fields;
+
+    let newFieldsMap = new Map<string, StructField>();
+    for (let field of s1Fields) {
+        newFieldsMap.set(field.name, new StructField(field.location, field.name, field.type));
+    }
+
+    for (let field of s2Fields) {
+        let existingField = newFieldsMap.get(field.name);
+        // Handle merge logic and update map
+        if (existingField && field.type.is(ctx, StructType) && existingField.type.is(ctx, StructType)) {
+            let mergedStruct = mergeStructs(ctx, field.type.to(ctx, StructType) as StructType, existingField.type.to(ctx, StructType) as StructType);
+            if(!mergedStruct.err.success){
+                return {struct: null, err: mergedStruct.err};
+            }
+            newFieldsMap.set(field.name, new StructField(field.location, field.name, mergedStruct.struct!));
+        } else if (existingField) {
+            // match types logic
+            let res = matchDataTypes(ctx, field.type, existingField.type, true);
+            if (!res.success) {
+                return {struct: null, err: Err(`Struct field ${field.name} types do not match: ${res.message}`)};
+            }
+        } else {
+            newFieldsMap.set(field.name, new StructField(field.location, field.name, field.type));
+        }
+    }
+
+    return {struct: new StructType(s1.location, Array.from(newFieldsMap.values())), err: Ok()};
+}
+
+
+/**
+ * Returns a substruct containing all fields listed in the arguments
+ */
+export function getSubStruct(struct: StructType, fields: string[]): StructType {
+    let newFields: StructField[] = [];
+    for (let field of struct.fields) {
+        if (fields.includes(field.name)) {
+            newFields.push(new StructField(field.location, field.name, field.type));
+        }
+    }
+    return new StructType(struct.location, newFields);
 }

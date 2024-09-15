@@ -3,7 +3,6 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { GenericType } from "./GenericType";
 import { getDataTypeByteSize } from "../../codegenerator/utils";
-import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 export class StructField {
     name: string;

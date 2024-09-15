@@ -4,7 +4,7 @@ import { Expression } from "../expressions/Expression";
 import { FunctionCallExpression } from "../expressions/FunctionCallExpression";
 import { IntLiteralExpression, StringLiteralExpression } from "../expressions/LiteralExpression";
 import { MemberAccessExpression } from "../expressions/MemberAccessExpression";
-import { KeyValueExpressionPair, NamedStructConstructionExpression } from "../expressions/NamedStructConstructionExpression";
+import { KeyValueExpressionPair, NamedStructConstructionExpression, StructKeyValueExpressionPair } from "../expressions/NamedStructConstructionExpression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { StructType } from "../types/StructType";
@@ -79,11 +79,9 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
 
         let remainingFields = allfields.filter(e => !extractedFields.includes(e));
 
-        let fieldAssignments: KeyValueExpressionPair[] = remainingFields.map(e => ({
-            name: e,
-            value: new MemberAccessExpression(pattern.location, base, new ElementExpression(pattern.location, e)),
-            location: pattern.location
-        }));
+        let fieldAssignments: StructKeyValueExpressionPair[] = remainingFields.map(e => 
+            new StructKeyValueExpressionPair(pattern.location, e, new MemberAccessExpression(pattern.location, base, new ElementExpression(pattern.location, e)))
+        );
 
         // now we constract the remaining fields
         let remainingStruct = new NamedStructConstructionExpression(pattern.location, fieldAssignments);
