@@ -11,7 +11,7 @@
  */
 
 import { ImportNode } from "../ast/ImportNode";
-import { ArrayConstructionExpression, ArrayDestructuringExpression } from "../ast/expressions/ArrayConstructionExpression";
+import { ArrayConstructionExpression, ArrayUnpackingExpression } from "../ast/expressions/ArrayConstructionExpression";
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
 import { ElementExpression } from "../ast/expressions/ElementExpression";
 import { Expression } from "../ast/expressions/Expression";
@@ -24,7 +24,7 @@ import { LambdaExpression } from "../ast/expressions/LambdaExpression";
 import { LetInExpression } from "../ast/expressions/LetInExpression";
 import { MatchCaseExpression, MatchExpression } from "../ast/expressions/MatchExpression";
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
-import { NamedStructConstructionExpression, StructDeconstructedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
+import { NamedStructConstructionExpression, StructUnpackedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
 import { SpawnExpression } from "../ast/expressions/SpawnExpression";
 import { ThisExpression } from "../ast/expressions/ThisExpression";
@@ -1672,21 +1672,21 @@ function parseArrayConstruction(parser: Parser, ctx: Context): Expression {
     return new ArrayConstructionExpression(loc, elements);
 }
 
-function parseStructElements(parser: Parser, ctx: Context): (StructKeyValueExpressionPair | StructDeconstructedElement)[] {
+function parseStructElements(parser: Parser, ctx: Context): (StructKeyValueExpressionPair | StructUnpackedElement)[] {
     /**
      * We expect the following:
      * ...x,
      * x,
      * x: <expr>,
      */
-    let elements: (StructKeyValueExpressionPair | StructDeconstructedElement)[] = [];
+    let elements: (StructKeyValueExpressionPair | StructUnpackedElement)[] = [];
     let loop = true;
     while (loop) {
         let lexeme = parser.peek();
         if (lexeme.type === "...") {
             parser.accept();
             let expression = parseExpression(parser, ctx);
-            elements.push(new StructDeconstructedElement(parser.loc(), expression));
+            elements.push(new StructUnpackedElement(parser.loc(), expression));
         }
         else if (lexeme.type === "identifier") {
             parser.reject();
@@ -2058,7 +2058,7 @@ function parseExpressionList(parser: Parser, ctx: Context, allowDestructuring: b
             if (parser.is("...")) {
                 parser.accept();
                 let expr = parseExpression(parser, ctx);
-                expressions.push(new ArrayDestructuringExpression(parser.loc(), expr));
+                expressions.push(new ArrayUnpackingExpression(parser.loc(), expr));
 
                 let token = parser.peek();
                 canLoop = token.type === ",";

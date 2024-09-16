@@ -11,7 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { ArrayConstructionExpression, ArrayDestructuringExpression } from "../ast/expressions/ArrayConstructionExpression";
+import { ArrayConstructionExpression, ArrayUnpackingExpression } from "../ast/expressions/ArrayConstructionExpression";
 import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
 import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 import { BinaryExpression, BinaryExpressionOperator } from "../ast/expressions/BinaryExpression";
@@ -30,7 +30,7 @@ import { LetInExpression } from "../ast/expressions/LetInExpression";
 import { BinaryStringLiteralExpression, CharLiteralExpression, DoubleLiteralExpression, FalseLiteralExpression, FloatLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, LiteralExpression, NullLiteralExpression, StringLiteralExpression, TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
 import { MatchExpression } from "../ast/expressions/MatchExpression";
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
-import { NamedStructConstructionExpression, StructDeconstructedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
+import { NamedStructConstructionExpression, StructUnpackedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
 import { NullableMemberAccessExpression } from "../ast/expressions/NullableMemberAccessExpression";
 import { SpawnExpression } from "../ast/expressions/SpawnExpression";
@@ -2281,7 +2281,7 @@ export class FunctionGenerator {
         }
     
         // Filter out the regular (non-destructuring) elements
-        let regularElts = expr.elements.filter(e => !(e instanceof ArrayDestructuringExpression));
+        let regularElts = expr.elements.filter(e => !(e instanceof ArrayUnpackingExpression));
         let arrayType: ArrayType = expr.inferredType.to(ctx, ArrayType) as ArrayType;
         let elementType = arrayType.arrayOf;
         let elementSize = getDataTypeByteSize(elementType);
@@ -2307,17 +2307,17 @@ export class FunctionGenerator {
         }
     
         // Now handle the destructured elements
-        let destructredElts: ArrayDestructuringExpression[] = [];
-        let destructedIndexes: number[] = [];
+        let unpackedElts: ArrayUnpackingExpression[] = [];
+        let unpackedIndexes: number[] = [];
     
         // Gather destructured elements and their corresponding indexes
         // each destructured element counts how many non destructured elements are before it
         let counter = 0;
         for (let i = 0; i < expr.elements.length; i++) {
             let e = expr.elements[i];
-            if (e instanceof ArrayDestructuringExpression) {
-                destructredElts.push(e);
-                destructedIndexes.push(counter);
+            if (e instanceof ArrayUnpackingExpression) {
+                unpackedElts.push(e);
+                unpackedIndexes.push(counter);
                 counter = 0;
             }
             else {
@@ -2326,17 +2326,17 @@ export class FunctionGenerator {
         }
     
         // If there are destructured elements, process them
-        if (destructredElts.length > 0) {
+        if (unpackedElts.length > 0) {
             let offsetReg = this.generateTmp();
             this.i("const_u64", offsetReg, 0);  // Set the index where destructured array starts
     
-            for (let i = 0; i < destructredElts.length; i++) {
+            for (let i = 0; i < unpackedElts.length; i++) {
                 let posReg = this.generateTmp();
-                this.i("const_u64", posReg, destructedIndexes[i]);
+                this.i("const_u64", posReg, unpackedIndexes[i]);
                 this.i("add_u64", offsetReg, offsetReg, posReg);
                 this.destroyTmp(posReg);
 
-                let exprReg = this.visitExpression(destructredElts[i].expression, ctx);  // Visit destructured array expression
+                let exprReg = this.visitExpression(unpackedElts[i].expression, ctx);  // Visit destructured array expression
     
                 // Insert the destructured array at the current index
                 this.i("a_insert_a", offsetReg, arrayReg, exprReg, offsetReg);

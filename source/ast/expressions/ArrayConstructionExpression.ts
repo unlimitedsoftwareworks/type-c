@@ -18,11 +18,11 @@ import { ArrayType } from "../types/ArrayType";
 import { DataType } from "../types/DataType";
 import { Expression } from "./Expression";
 
-export class ArrayDestructuringExpression extends Expression {
+export class ArrayUnpackingExpression extends Expression {
     expression: Expression;
 
     constructor(location: SymbolLocation, expression: Expression) {
-        super(location, "array_construction");
+        super(location, "array_unpacking");
         this.expression = expression;
     }
 
@@ -39,14 +39,14 @@ export class ArrayDestructuringExpression extends Expression {
         return this.inferredType;
     }
 
-    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ArrayDestructuringExpression {
-        return new ArrayDestructuringExpression(this.location, this.expression.clone(typeMap, ctx));
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): ArrayUnpackingExpression {
+        return new ArrayUnpackingExpression(this.location, this.expression.clone(typeMap, ctx));
     }
 }
 
 export class ArrayConstructionExpression extends Expression {
     elements: Expression[] = [];
-    isDestructuring: boolean = false;
+    containsUnpackedArray: boolean = false;
 
     constructor(location: SymbolLocation, elements: Expression[]) {
         super(location, "array_construction");
@@ -70,7 +70,7 @@ export class ArrayConstructionExpression extends Expression {
         // infer all elements
         let elementTypes: DataType[] = [];
         for(const element of this.elements){
-            this.isDestructuring = this.isDestructuring || element instanceof ArrayDestructuringExpression;
+            this.containsUnpackedArray = this.containsUnpackedArray || element instanceof ArrayUnpackingExpression;
             elementTypes.push(element.infer(ctx, baseHint?.arrayOf || null));
         }
         

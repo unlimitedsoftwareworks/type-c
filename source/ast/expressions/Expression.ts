@@ -28,6 +28,7 @@ export type InferenceMeta = {
 
 export type ExpressionKind = 
     "array_construction" | // [1, 2, 3]
+    "array_unpacking" | // [1, 2, ...rest]
     "binary_op" | // 1 + 2
     "unary_op" | // -1
     "cast_op" | // x as Y

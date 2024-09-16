@@ -43,7 +43,7 @@ export class StructKeyValueExpressionPair {
     }
 }
 
-export class StructDeconstructedElement {
+export class StructUnpackedElement {
     expression: Expression
     location: SymbolLocation
 
@@ -52,20 +52,20 @@ export class StructDeconstructedElement {
         this.location = location;
     }
 
-    clone(typeMap: { [key: string]: DataType; }, ctx: Context): StructDeconstructedElement {
-        return new StructDeconstructedElement(this.location, this.expression.clone(typeMap, ctx));
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): StructUnpackedElement {
+        return new StructUnpackedElement(this.location, this.expression.clone(typeMap, ctx));
     }
 }
 
 export class NamedStructConstructionExpression extends Expression {
-    fields: (StructKeyValueExpressionPair | StructDeconstructedElement)[];
+    fields: (StructKeyValueExpressionPair | StructUnpackedElement)[];
 
-    // extracted key-value pairs from deconstructed structs
+    // extracted key-value pairs from unpacked structs
     // duplicates are removed, for example x = {y: 10, z:2}, a = {y:1, ...x}
     // plainKeyValues for a  = {y: 10, z:2}
     _plainKeyValues: StructKeyValueExpressionPair[] = [];
 
-    constructor(location: SymbolLocation, fields: (StructKeyValueExpressionPair | StructDeconstructedElement)[]) {
+    constructor(location: SymbolLocation, fields: (StructKeyValueExpressionPair | StructUnpackedElement)[]) {
         super(location, "named_struct_construction");
         this.fields = fields;
     }
@@ -84,7 +84,7 @@ export class NamedStructConstructionExpression extends Expression {
             structHint = hint.to(ctx, StructType) as StructType;
         }
 
-        let has_deconstructed = false;
+        let hasUnpacked = false;
 
         let fields: StructField[] = [];
         let pairs: StructKeyValueExpressionPair[] = [];
@@ -94,7 +94,7 @@ export class NamedStructConstructionExpression extends Expression {
         for (const field of this.fields) {
             if (field instanceof StructKeyValueExpressionPair) {
                 
-                // we infer as null, when we have a deconstruction, to allow for partial type checking
+                // we infer as null, when we have an unpacked, to allow for partial type checking
                 // and then we compare the hint against the inferred type,
                 // because we want to allow partial comparaison
                 let fieldHint = structHint?.getFieldTypeByName(field.name)
@@ -129,13 +129,13 @@ export class NamedStructConstructionExpression extends Expression {
                 pairs.push(field);
             }
             else {
-                has_deconstructed = true;
-                let dec = field as StructDeconstructedElement;
+                hasUnpacked = true;
+                let dec = field as StructUnpackedElement;
                 let inferredType = dec.expression.infer(ctx, null);
 
                 // now we get the inferred type of e
                 if (!inferredType.is(ctx, StructType)) {
-                    throw ctx.parser.customError(`Cannot deconstruct a non-struct type ${inferredType.shortname()}`, dec.location);
+                    throw ctx.parser.customError(`Cannot unpack a non-struct type ${inferredType.shortname()}`, dec.location);
                 }
 
                 let structType = inferredType.to(ctx, StructType) as StructType;
@@ -148,7 +148,7 @@ export class NamedStructConstructionExpression extends Expression {
                 }
             }
 
-            if (has_deconstructed) {
+            if (hasUnpacked) {
                 // create a new NamedStructConstructionExpression with the new fields, to flatten it
                 let expr = new NamedStructConstructionExpression(this.location, pairs);
                 // we infer with null because we are not done with the inference yet
@@ -167,7 +167,7 @@ export class NamedStructConstructionExpression extends Expression {
             this.inferredType = mergedStruct;
         }
 
-        if (has_deconstructed) {
+        if (hasUnpacked) {
             // create a new NamedStructConstructionExpression with the new fields, to flatten it
             let expr = new NamedStructConstructionExpression(this.location, pairs);
             let fullStruct = expr.infer(ctx, hint);
