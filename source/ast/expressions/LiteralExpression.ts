@@ -155,7 +155,7 @@ export class LiteralExpression extends Expression {
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): LiteralExpression {
-        return this;   
+        throw new Error("clone is not implemented on abstract LiteralExpression");
     }
 }
 
@@ -178,6 +178,11 @@ export class StringLiteralExpression extends LiteralExpression {
         this.checkHint(ctx);
 
         return this.inferredType;
+    }
+
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new StringLiteralExpression(this.location, this.value);
     }
 }
 
@@ -205,6 +210,10 @@ export class BinaryStringLiteralExpression extends LiteralExpression {
 
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new BinaryStringLiteralExpression(this.location, this.value);
+    }
 }
 
 export class CharLiteralExpression extends LiteralExpression {
@@ -218,6 +227,10 @@ export class CharLiteralExpression extends LiteralExpression {
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
         throw ctx.parser.customError("Not implemented", this.location);
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new CharLiteralExpression(this.location, this.value);
     }
 }
 
@@ -258,7 +271,10 @@ export class IntLiteralExpression extends LiteralExpression {
         literal.inferredType = new BasicType(location, kind);
         return literal;
     }
-    
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new IntLiteralExpression(this.location, this.value);
+    }
 }
 
 export class BinaryIntLiteralExpression extends LiteralExpression {
@@ -286,6 +302,10 @@ export class BinaryIntLiteralExpression extends LiteralExpression {
 
         this.setInferredToHint();
         return this.inferredType;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new BinaryIntLiteralExpression(this.location, this.value);
     }
 }
 
@@ -316,6 +336,10 @@ export class OctIntLiteralExpression extends LiteralExpression {
         this.setInferredToHint();
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new OctIntLiteralExpression(this.location, this.value);
+    }
 }
 
 export class HexIntLiteralExpression extends LiteralExpression {
@@ -345,6 +369,10 @@ export class HexIntLiteralExpression extends LiteralExpression {
         this.setInferredToHint();
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new HexIntLiteralExpression(this.location, this.value);
+    }
 }
 
 export class FloatLiteralExpression extends LiteralExpression {
@@ -369,6 +397,10 @@ export class FloatLiteralExpression extends LiteralExpression {
         this.setInferredToHint();
         return this.inferredType;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new FloatLiteralExpression(this.location, this.value);
+    }
 }
 
 export class DoubleLiteralExpression extends LiteralExpression {
@@ -387,6 +419,10 @@ export class DoubleLiteralExpression extends LiteralExpression {
 
         this.checkHint(ctx);
         return this.inferredType;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new DoubleLiteralExpression(this.location, this.value);
     }
 }
 
@@ -409,6 +445,10 @@ export class TrueLiteralExpression extends LiteralExpression {
         literal.inferredType = new BooleanType(location);
         return literal;
     }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new TrueLiteralExpression(this.location);
+    }
 }
 
 export class FalseLiteralExpression extends LiteralExpression {
@@ -425,6 +465,10 @@ export class FalseLiteralExpression extends LiteralExpression {
         
         this.checkHint(ctx);
         return this.inferredType;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new FalseLiteralExpression(this.location);
     }
 }
 
@@ -446,5 +490,9 @@ export class NullLiteralExpression extends LiteralExpression {
         this.inferredType = new NullType(this.location);
 
         return this.inferredType;
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
+        return new NullLiteralExpression(this.location);
     }
 }
