@@ -227,10 +227,10 @@ export class FunctionCallExpression extends Expression {
             let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
-                throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${baseClass.shortname()}`, this.location);
+                throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${baseExprType.shortname()}`, this.location);
             }
             if (candidateMethods.length > 1) {
-                throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseClass.shortname()}`, this.location);
+                throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseExprType.shortname()}`, this.location);
             }
 
             let method = candidateMethods[0];
