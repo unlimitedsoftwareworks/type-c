@@ -137,7 +137,6 @@ class ConstantSegment {
                         break;
                     case 4:
                         if (constant.floatValue !== undefined) {
-                            console.log("float: " + constant.floatValue);
                             view.setFloat32(offset, constant.floatValue!, true); // true for little-endian
                         } else {
                             view.setUint32(offset, constant.intValue as number, true);
