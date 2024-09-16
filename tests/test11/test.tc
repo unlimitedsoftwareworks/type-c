@@ -3,6 +3,7 @@ from std.unit.test import TestUnit, UnitSet
 from std.io import println
 fn doStuff(x: u32) -> (u32, u32) = (x+1, x+2)
 fn doStuff2<T>(x: T) = (x+1, x+2)
+fn doStuff3<T>(x: T) -> (T, T) { return doStuff2<T>(x) }
 
 type Z<T> = class {
     let x: T
@@ -89,6 +90,35 @@ fn test_case_3(rn: TestUnit) {
 
     rn.assert_eq<u8>(mm, 11)
     rn.assert_eq<u8>(nn, 12)
+
+    let (oo, pp) = doStuff3<u8>(10)
+    
+    rn.assert_eq(oo, 11)
+    rn.assert_eq(pp, 12)
+
+
+    // Test with different types
+    let (qq, rr) = doStuff3<u16>(1000)
+    rn.assert_eq(qq, 1001)
+    rn.assert_eq(rr, 1002)
+
+    let (ss, tt) = doStuff3<i32>(-5)
+    rn.assert_eq(ss, -4)
+    rn.assert_eq(tt, -3)
+
+    // Test with edge cases
+    let (uu, vv) = doStuff3<u8>(255)  // Test overflow
+    rn.assert_eq(uu, 0)  // 255 + 1 = 0 (overflow)
+    rn.assert_eq(vv, 1)  // 255 + 2 = 1 (overflow)
+
+    let (ww, xx) = doStuff3(-100)  // Test underflow
+    rn.assert_eq(ww, -99)
+    rn.assert_eq(xx, -98)
+
+    // Test with floating point numbers
+    let (yy, zz) = doStuff3<f32>(3.14f)
+    rn.assert_f32_eq_pre(yy, 4.14f, 0.0001f)
+    rn.assert_f32_eq_pre(zz, 5.14f, 0.0001f)
 }
 
 fn main() {

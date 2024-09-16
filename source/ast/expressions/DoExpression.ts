@@ -101,6 +101,10 @@ export class DoExpression extends Expression {
             }
             this.inferredType = hint;
         }
+
+        this.returnStatements.forEach(ret => {
+            ret.stmt.returnExpression?.inferReturn(ret.ctx, this.inferredType);
+        });
         
         this.checkHint(ctx);
         return this.inferredType;

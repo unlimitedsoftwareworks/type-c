@@ -159,7 +159,8 @@ export function inferFunctionHeader(
     // We must update the hints of all return values, with the common type,
     // so the code generator can generate the correct code to cast to the final adequate type
     for (const ret of returnStatements) {
-        ret.stmt.returnExpression?.setHint(header.returnType);
+        // maybe set hint is just enough?
+        ret.stmt.returnExpression?.inferReturn(ret.ctx, header.returnType);
     }
 }
 

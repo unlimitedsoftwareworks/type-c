@@ -137,7 +137,8 @@ class ConstantSegment {
                         break;
                     case 4:
                         if (constant.floatValue !== undefined) {
-                            view.setFloat32(offset, constant.floatValue as number, true); // true for little-endian
+                            console.log("float: " + constant.floatValue);
+                            view.setFloat32(offset, constant.floatValue!, true); // true for little-endian
                         } else {
                             view.setUint32(offset, constant.intValue as number, true);
                         }
@@ -339,7 +340,7 @@ export class BytecodeGenerator {
 
         if (mainHasReturn) {
             this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, 8);
-            //this.emit(BytecodeInstructionType.debug_reg, 255);
+            this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
         //this.emit(BytecodeInstructionType.debug_reg, i);
