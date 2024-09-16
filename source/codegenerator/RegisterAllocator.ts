@@ -16,7 +16,6 @@ export class RegisterAllocator {
     private reservedRegistersCount: number = 0;
     private arguments: string[] = [];
     private locals: string[] = [];
-    private upvalues: string[] = [];
     private instructions: IRInstruction[] = [];
 
     /**
@@ -75,17 +74,19 @@ export class RegisterAllocator {
             this.reservedRegistersCount++;
         }
 
+        // Initialize upvalues, as args, since they are set by the env as registers when the function is called
+        for (const [key, upvalue] of fn.upvalues) {
+            this.arguments.push(key);
+            this.predefinedVRegs.set(key, this.vregCount++);
+            this.reservedRegistersCount++;
+        }
+
         // for now, local variables registers will be forever occupied
         for (const [key, local] of fn.localSymbols) {
             this.locals.push(key);
             this.predefinedVRegs.set(key, this.vregCount++);
         }
 
-        // Initialize upvalues
-        for (const [key, upvalue] of fn.upvalues) {
-            this.upvalues.push(key);
-            this.predefinedVRegs.set(key, this.vregCount++);
-        }
     }
 
     // checks if a tmp is linked to a predefined vreg

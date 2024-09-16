@@ -536,29 +536,19 @@ export enum BytecodeInstructionType{
 
 
     /**
-     * closure_alloc, dest:R, fn_address: R, env-size: I
+     * closure_alloc, dest:R, num_args: I, fn_address: R
      * Allocates a closure, setting its function pointer to the address in
      * function-address and preparing an environment of environment-size slots.
      */
     closure_alloc,
-
-    closure_capture,
-
+    /**
+     * closure_push_env: dest: R, source: I 1byte, size: I 1byte
+     * pushes the register I to the closure environment
+     * to be used by the closure when it's called
+     */
+    closure_push_env,
+    closure_push_env_ptr,
     closure_call,
-
-    closure_ret,
-
-    set_closure_env,
-
-    mv_reg_upvalue,
-    mv_reg_upvalue_ptr,
-
-    mv_upvalue_reg,
-    mv_upvalue_reg_ptr,
-
-    coroutine_alloc,
-    coroutine_set_arg,
-    coroutine_call,
-    coroutine_yield
+    closure_backup,
 }
 

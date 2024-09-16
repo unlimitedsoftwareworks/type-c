@@ -266,6 +266,9 @@ export class BytecodeGenerator {
     }
 
     addUnresolvedOffset(uid: string, offset: number) {
+        if(uid == undefined) {
+            throw "Undefined uid";
+        }
         let offsets = this.unresolvedOffsets.get(uid);
         if (!offsets) {
             offsets = [];
@@ -948,6 +951,22 @@ export class BytecodeGenerator {
                     let returnReg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                     let reg = this.getRegisterForVariable(fn, instruction.args[1] as string);
                     this.emit(BytecodeInstructionType.fn_call, reg)
+                    // TODO: check if poiner here...
+                    this.emit(BytecodeInstructionType.fn_get_ret_reg, returnReg, 255, 8);
+                }
+            }
+            else if (instruction.type == "closure_call") {
+                //this.emit(BytecodeInstructionType.frame_precall);
+                if (instruction.args.length == 1) {
+                    let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                    this.emit(BytecodeInstructionType.closure_call, reg)
+                    this.emit(BytecodeInstructionType.closure_backup, reg);
+                }
+                else {
+                    let returnReg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                    let reg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                    this.emit(BytecodeInstructionType.closure_call, reg)
+                    this.emit(BytecodeInstructionType.closure_backup, reg);
                     // TODO: check if poiner here...
                     this.emit(BytecodeInstructionType.fn_get_ret_reg, returnReg, 255, 8);
                 }
@@ -1662,6 +1681,43 @@ export class BytecodeGenerator {
                 this.updateSpillSlot(fn, spillSlot, reg);
                 this.emit(BytecodeInstructionType.unspill_reg, reg, spillSlot);
             }
+
+            else if (instruction.type == "closure_alloc") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let argSize = instruction.args[1] as number;
+                let upvaluesSize = instruction.args[2] as number;
+                let targetFn = instruction.args[3] as string;
+
+                // we need to find targetFn in the future
+                let label = this.emit(BytecodeInstructionType.closure_alloc, dest, argSize,upvaluesSize, 0);
+                this.addUnresolvedOffset(targetFn as string, label);
+            }
+            else if (instruction.type == "closure_push_env_i8" || instruction.type == "closure_push_env_u8") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let arg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.closure_push_env, dest, arg, 1);
+            }
+            else if (instruction.type == "closure_push_env_i16" || instruction.type == "closure_push_env_u16") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let arg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.closure_push_env, dest, arg, 2);
+            }
+            else if (instruction.type == "closure_push_env_i32" || instruction.type == "closure_push_env_u32" || instruction.type == "closure_push_env_f32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let arg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.closure_push_env, dest, arg, 4);
+            }
+            else if (instruction.type == "closure_push_env_i64" || instruction.type == "closure_push_env_u64" || instruction.type == "closure_push_env_f64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let arg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.closure_push_env, dest, arg, 8);
+            }
+            else if (instruction.type == "closure_push_env_ptr") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let arg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.closure_push_env_ptr, dest, arg);
+            }
+
 
             else {
                 throw new Error("Unknown instruction: " + instruction.type);

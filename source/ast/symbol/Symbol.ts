@@ -10,8 +10,16 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { LambdaExpression } from "../expressions/LambdaExpression";
+import { ClassAttribute } from "../other/ClassAttribute";
+import { ClassMethod } from "../other/ClassMethod";
+import { DataType } from "../types/DataType";
 import { Context } from "./Context";
+import { DeclaredFunction } from "./DeclaredFunction";
+import { DeclaredVariable } from "./DeclaredVariable";
+import { FunctionArgument } from "./FunctionArgument";
 import {SymbolLocation} from "./SymbolLocation";
+import { VariablePattern } from "./VariablePattern";
 
 export type SymbolKind =
     "variable_declaration" |

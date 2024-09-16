@@ -1,14 +1,234 @@
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
 
-fn f(x: u32) {
-    fn g(y: u32) {
-        return x + y
+
+fn test_case_1(rn: TestUnit) {
+    let z = fn (x: u32) -> u32 {
+        return x + 1
     }
 
-    return g
+    let a = z(1)
+    rn.assert_eq<u32>(a, 2)
+
+    let b = fn (x: u32) -> u32 =
+        do {
+            return x + 1
+        }
+    
+
+    let c = b(1)
+    rn.assert_eq<u32>(c, 2)
+}
+
+fn test_case_2(rn: TestUnit) {
+    fn max(x: u32, y: u32) -> u32 {
+        if (x > y) {
+            return x
+        }
+        else {
+            return y
+        }
+    }
+
+    let a = max(1, 2)
+    rn.assert_eq<u32>(a, 2)
+
+    let b = fn (x: u32, y: u32) -> u32 =
+        do {
+            if (x > y) {
+                return x
+            }
+            else {
+                return y
+            }
+
+            return 0
+        }
+
+    let c = b(1, 2)
+    rn.assert_eq<u32>(c, 2)
+}
+
+fn test_case_3(rn: TestUnit) {
+    // test  lambda that returns a tuple
+    let swap = fn (x: u32, y: u32) -> (u32, u32) =
+        (y, x)
+    
+    let (x, y) = swap(1, 2)
+    rn.assert_eq<u32>(x, 2)
+    rn.assert_eq<u32>(y, 1)
+
+    fn genericSwap<T>(x: T, y: T) -> (T, T) =
+        (y, x)
+    
+    let (x2, y2) = genericSwap(1, 2)
+    rn.assert_eq<u32>(x2, 2)
+    rn.assert_eq<u32>(y2, 1)
+
+    let (x3, y3) = genericSwap("a", "b")
+    rn.assert_obj_eq<String>(x3, "b")
+    rn.assert_obj_eq<String>(y3, "a")
+
+    let (x4, y4) = genericSwap([1, 2, 3], [4, 5, 6])
+    
+    match x4 {
+        [4, 5, 6]  { rn.assert_reachable() }
+        _  { rn.assert_unreachable() }
+    }
+
+    match y4 {
+        [1, 2, 3]  { rn.assert_reachable() }
+        _  { rn.assert_unreachable() }
+    }
+}
+
+fn test_case_4(rn: TestUnit) {
+    fn f(x: u32) {
+        let offset: u32 = 0
+        fn g(y: u32) {
+            offset += 1 as u32
+            return x + y + offset
+        }
+
+        return g
+    }
+
+
+    let z = f(100)
+    rn.assert_eq<u32>(z(1 as u32), 102)
+    rn.assert_eq<u32>(z(1 as u32), 103)
+
+    let z2 = f(200)
+    rn.assert_eq<u32>(z2(1), 202)
+    rn.assert_eq<u32>(z2(1), 203)
+}
+
+fn test_case_5(rn: TestUnit) {
+    // pseudo object design
+    fn f(x: u32, y: u32) {
+
+        let s = {x: x, y: y, print: fn (){}, getX: fn () -> u32 { return 0 }, getY: fn () -> u32 { return 0 }}
+        s.print = fn () {
+            println("vec<"+s.x+", "+s.y+">")
+        }
+
+        s.getX = fn () -> u32 {
+            return s.x
+        }
+
+        s.getY = fn () -> u32 {
+            return s.y
+        }
+
+        return s
+    }
+
+    let s = f(10, 20)
+    
+    rn.assert_eq<u32>(s.getX(), 10)
+    rn.assert_eq<u32>(s.getY(), 20)
+
+    s.y = 100
+    s.x = 200
+
+    rn.assert_eq<u32>(s.getX(), 200)
+    rn.assert_eq<u32>(s.getY(), 100)
+}
+
+fn test_case_6(rn: TestUnit) {
+    // Nested closures with multiple layers of captured variables
+    fn outer(x: u32) -> fn(y: u32) -> fn(z: u32) -> u32 {
+        fn middle(y: u32) -> fn(z: u32) -> u32 {
+            fn inner(z: u32) -> u32 {
+                return x + y + z  // All three layers of variables are captured
+            }
+            return inner
+        }
+        return middle
+    }
+
+    let f = outer(1)    // Captures x = 1
+    let g = f(2)        // Captures y = 2
+    let h = g(3)        // Captures z = 3
+    rn.assert_eq<u32>(h, 6)  // 1 + 2 + 3 = 6
+
+    let i = g(4)        // Same x and y, new z = 4
+    rn.assert_eq<u32>(i, 7)  // 1 + 2 + 4 = 7
+}
+
+
+fn test_case_7(rn: TestUnit) {
+    fn counter() -> fn() -> u32 {
+        let count = 0
+        fn increment() -> u32 {
+            count += 1
+            return count
+        }
+        return increment
+    }
+
+    let inc = counter()
+    rn.assert_eq<u32>(inc(), 1)  // First call: 0 + 1 = 1
+    rn.assert_eq<u32>(inc(), 2)  // Second call: 1 + 1 = 2
+    rn.assert_eq<u32>(inc(), 3)  // Third call: 2 + 1 = 3
+
+    let new_inc = counter()      // New closure, new count variable
+    rn.assert_eq<u32>(new_inc(), 1)  // New count, reset to 0 + 1 = 1
+}
+
+
+
+fn test_case_8(rn: TestUnit) {
+    fn make_adder(base: u32) -> fn(y: u32) -> u32 {
+        fn add(y: u32) -> u32 {
+            return base + y
+        }
+        return add
+    }
+
+    let add_5 = make_adder(5)
+    let add_10 = make_adder(10)
+
+    rn.assert_eq<u32>(add_5(3), 8)  // 5 + 3 = 8
+    rn.assert_eq<u32>(add_10(3), 13) // 10 + 3 = 13
+
+    rn.assert_eq<u32>(add_5(7), 12)  // 5 + 7 = 12
+    rn.assert_eq<u32>(add_10(7), 17) // 10 + 7 = 17
+}
+
+fn test_case_9(rn: TestUnit) {
+    let x = 10
+    
+    fn closure () -> u32 {
+        return x
+    }
+
+    rn.assert_eq<u32>(closure(), 10)  // x is 10
+
+    x = 20
+    
+    fn closure2() -> u32 {
+        return x
+    }
+
+    rn.assert_eq<u32>(closure2(), 20)  // Closure reflects new x = 20
 }
 
 fn main() -> u32 {
-    let z = f(0)(100)
+    let test_1 = new TestUnit("test 1", "Tests lambda expressions", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests both lambda and regular functions", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tests generic functions", test_case_3)
+    let test_4 = new TestUnit("test 4", "do Expression Without Early Return", test_case_4)
+    let test_5 = new TestUnit("test 5", "do Expression with Complex Conditions", test_case_5)
+    let test_6 = new TestUnit("test 6", "Deeply Nested Closures", test_case_6)
+    let test_7 = new TestUnit("test 7", "Test Mutable Closures", test_case_7)
+    let test_8 = new TestUnit("test 8", "Test Closure Scope Isolation", test_case_8)
+    let test_9 = new TestUnit("test 9", "Test Closure Reflecting Changing Environment", test_case_9)
 
-    return z
+    let set = new UnitSet("Closure Tests", "Tests closures and nested closures", 
+        [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9]
+    )
+
+    return set.run()
 }

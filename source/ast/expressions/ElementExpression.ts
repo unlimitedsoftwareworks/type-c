@@ -10,7 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { Context } from "../symbol/Context";
+import { Context, SymbolScope } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { DeclaredType } from "../symbol/DeclaredType";
@@ -51,7 +51,10 @@ export class ElementExpression extends Expression {
      * Used to check if this element is a variable, which means if it can be assigned 
      * a value
      */
-    private _isVariable: boolean = false;
+    _isVariable: boolean = false;
+    _isFunction: boolean = false;
+
+    _scopedVar: {sym: Symbol, scope: SymbolScope} | null    = null;
 
     constructor(location: SymbolLocation, name: string, typeArguments: DataType[] = []) {
         super(location, "element");
@@ -72,6 +75,8 @@ export class ElementExpression extends Expression {
         this.setHint(hint);
 
         let scopedVar = ctx.lookupScope(this.name);
+        this._scopedVar = scopedVar;
+        
         let variable: Symbol | null = scopedVar?.sym || null;
 
         if(variable === null){
@@ -97,6 +102,7 @@ export class ElementExpression extends Expression {
             return this.inferredType!;
         }
         else if (variable instanceof DeclaredFunction) {
+            this._isFunction = true;
             /**
              * check if the function is generic and if we need type arguments
              * There are few cases:

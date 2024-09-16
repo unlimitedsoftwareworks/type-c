@@ -10,7 +10,7 @@ import { IRInstructionType } from "./bytecode/IR";
 /**
  * A local is a local variable access
  */
-export function localType(ctx: Context, v: DataType): IRInstructionType {
+export function localType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "local_i8";
@@ -36,7 +36,7 @@ export function localType(ctx: Context, v: DataType): IRInstructionType {
 /**
  * Global type
  */
-export function globalType(ctx: Context, v: DataType): IRInstructionType {
+export function globalType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "global_i8";
@@ -64,7 +64,7 @@ export function globalType(ctx: Context, v: DataType): IRInstructionType {
  * @param u 
  * @returns 
  */
-export function tmpType(ctx: Context, v: DataType): IRInstructionType {
+export function tmpType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "tmp_i8";
@@ -88,7 +88,7 @@ export function tmpType(ctx: Context, v: DataType): IRInstructionType {
 }
 
 
-export function retType(ctx: Context, v: DataType): IRInstructionType {
+export function retType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "ret_i8";
@@ -114,7 +114,7 @@ export function retType(ctx: Context, v: DataType): IRInstructionType {
 /**
  * Const: assigns a constant value to a tmp register
  */
-export function constType(ctx: Context, v: DataType): IRInstructionType {
+export function constType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "const_i8";
@@ -137,7 +137,7 @@ export function constType(ctx: Context, v: DataType): IRInstructionType {
     return "const_ptr";
 }
 
-export function arraySetIndexType(ctx: Context, v: DataType): IRInstructionType {
+export function arraySetIndexType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "a_set_index_i8";
@@ -160,7 +160,7 @@ export function arraySetIndexType(ctx: Context, v: DataType): IRInstructionType 
     return "a_set_index_ptr";
 }
 
-export function arrayGetIndexType(ctx: Context, v: DataType): IRInstructionType {
+export function arrayGetIndexType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "a_get_index_i8";
@@ -184,7 +184,7 @@ export function arrayGetIndexType(ctx: Context, v: DataType): IRInstructionType 
 }
 
 
-export function structSetFieldType(ctx: Context, v: DataType): IRInstructionType {
+export function structSetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "s_set_field_i8";
@@ -206,7 +206,7 @@ export function structSetFieldType(ctx: Context, v: DataType): IRInstructionType
     return "s_set_field_ptr";
 }
 
-export function structGetFieldType(ctx: Context, v: DataType): IRInstructionType {
+export function structGetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "s_get_field_i8";
@@ -229,7 +229,7 @@ export function structGetFieldType(ctx: Context, v: DataType): IRInstructionType
     return "s_get_field_ptr";
 }
 
-export function fnSetArgType(ctx: Context, v: DataType): IRInstructionType {
+export function fnSetArgType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "fn_set_reg_i8";
@@ -253,7 +253,7 @@ export function fnSetArgType(ctx: Context, v: DataType): IRInstructionType {
 }
 
 
-export function fnGetRetType(ctx: Context, v: DataType): IRInstructionType {
+export function fnGetRetType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "fn_get_reg_i8";
@@ -276,7 +276,7 @@ export function fnGetRetType(ctx: Context, v: DataType): IRInstructionType {
     return "fn_get_reg_ptr";
 }
 
-export function pushStackType(ctx: Context, v: DataType): IRInstructionType {
+export function pushStackType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "push_i8";
@@ -299,7 +299,7 @@ export function pushStackType(ctx: Context, v: DataType): IRInstructionType {
     return "push_ptr";
 }
 
-export function popStackType(ctx: Context, v: DataType): IRInstructionType {
+export function popStackType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "pop_i8";
@@ -322,7 +322,7 @@ export function popStackType(ctx: Context, v: DataType): IRInstructionType {
     return "pop_ptr";
 }
 
-export function classSetFieldType(ctx: Context, v: DataType): IRInstructionType {
+export function classSetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "c_set_field_i8";
@@ -345,7 +345,7 @@ export function classSetFieldType(ctx: Context, v: DataType): IRInstructionType 
     return "c_set_field_ptr";
 }
 
-export function classGetFieldType(ctx: Context, v: DataType): IRInstructionType {
+export function classGetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "c_get_field_i8";
@@ -368,10 +368,27 @@ export function classGetFieldType(ctx: Context, v: DataType): IRInstructionType 
     return "c_get_field_ptr";
 }
 
+export function closurePushEnvType(v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if(u instanceof BasicType) {
+        if(u.kind == "i8") return "closure_push_env_i8";
+        if(u.kind == "u8") return "closure_push_env_u8";
+        if(u.kind == "i16") return "closure_push_env_i16";
+        if(u.kind == "u16") return "closure_push_env_u16";
+        if(u.kind == "i32") return "closure_push_env_i32";
+        if(u.kind == "u32") return "closure_push_env_u32";
+        if(u.kind == "i64") return "closure_push_env_i64";
+        if(u.kind == "u64") return "closure_push_env_u64";
+        if(u.kind == "f32") return "closure_push_env_f32";
+        if(u.kind == "f64") return "closure_push_env_f64";
+    }
+    return "closure_push_env_ptr";
+}
+
 /**
  * Arg is a function argument access
  */
-export function argType(ctx: Context, v: DataType): IRInstructionType {
+export function argType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if(u instanceof BasicType) {
         if(u.kind == "i8") return "arg_i8";

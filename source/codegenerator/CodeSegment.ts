@@ -512,6 +512,26 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 return this.writer.push_16(args[1]);
 
+            case BytecodeInstructionType.closure_alloc:
+                this.writer.push_8(args[0]);
+                this.writer.push_8(args[1]);
+                this.writer.push_8(args[2]);
+                return this.writer.push_64(args[3]);
+
+            case BytecodeInstructionType.closure_push_env:
+                this.writer.push_8(args[0]); // dest
+                this.writer.push_8(args[1]); // source
+                return this.writer.push_8(args[2]); // size
+
+            case BytecodeInstructionType.closure_push_env_ptr:
+                this.writer.push_8(args[0]); // dest
+                return this.writer.push_8(args[1]); // source
+
+            case BytecodeInstructionType.closure_call:
+                return this.writer.push_8(args[0]);
+            case BytecodeInstructionType.closure_backup:
+                return this.writer.push_8(args[0]);
+                
             default:
                 throw new Error(`Unsupported instruction: ${BytecodeInstructionType[instruction]}`);
         }

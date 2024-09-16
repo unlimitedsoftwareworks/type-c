@@ -435,12 +435,20 @@ export type IRInstructionType =
     "unspill" | // unspill spill
 
     "closure_alloc" |
-    "closure_var" | 
+    "closure_push_env_i8" |
+    "closure_push_env_u8" |
+    "closure_push_env_i16" |
+    "closure_push_env_u16" |
+    "closure_push_env_i32" |
+    "closure_push_env_u32" |
+    "closure_push_env_i64" |
+    "closure_push_env_u64" |
+    "closure_push_env_f32" |
+    "closure_push_env_f64" |
+    "closure_push_env_ptr" |
     "closure_call" |
-    "closure_ret" |
-    "set_closure_env" |
-    "get_closure_var" |
-
+    "closure_backup" |
+    
     // source map instructions
     "srcmap_push_loc" |
     "srcmap_pop_loc"
