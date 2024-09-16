@@ -45,12 +45,16 @@ export class FunctionCodegenProps {
 
     // arguments
     argSymbols: Map<string, Symbol> = new Map();
+    
+    // upvalues (for closures)
+    upvalues: Map<string, Symbol> = new Map();
 
     // registered arg symbols
     usedArgSymbols: Map<string, Symbol> = new Map();
 
-    // upvalues (for closures)
-    upvalues: Map<string, Symbol> = new Map();
+    // registered upvalues
+    usedUpvalues: Map<string, Symbol> = new Map();
+
 
     /**
      * if the function is a class method, "this" will need to be passed as an argument
@@ -105,6 +109,15 @@ export class FunctionCodegenProps {
     markArgSymbolAsUsed(sym: Symbol) {
         this.assertSymbolUID(sym);
         this.usedArgSymbols.set(sym.uid, sym);
+    }
+
+    markUpvalueAsUsed(sym: Symbol) {
+        this.assertSymbolUID(sym);
+        this.usedUpvalues.set(sym.uid, sym);
+    }
+
+    isClosure(): boolean {
+        return this.upvalues.size > 0;
     }
 
     /**

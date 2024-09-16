@@ -42,6 +42,11 @@ export class ElementExpression extends Expression {
     // -1 means not yet inferred or not even called
     numParams: number = -1;
 
+
+    // reference to the function declaration, 
+    // in case of calling a regular function x()
+    _functionReference: DeclaredFunction | null = null;
+
     /**
      * Used to check if this element is a variable, which means if it can be assigned 
      * a value
@@ -114,6 +119,7 @@ export class ElementExpression extends Expression {
             if(((variable.prototype.generics.length == 0) && (this.typeArguments.length == 0)) || ((variable.prototype.generics.length > 0) && (this.typeArguments.length == 0))) {
                 let newDecl = variable.infer(ctx, this.typeArguments, this.inferredArgumentsTypes);
                 this.inferredType = newDecl.prototype.header;
+                this._functionReference = newDecl;
 
                 this.checkHint(ctx);
                 this.isConstant = false;
@@ -124,6 +130,7 @@ export class ElementExpression extends Expression {
             if((variable.prototype.generics.length > 0) && (this.typeArguments.length > 0) && (this.typeArguments.length === variable.prototype.generics.length)) {
                 let newDecl = variable.infer(ctx, this.typeArguments);
                 this.inferredType = newDecl.prototype.header;
+                this._functionReference = newDecl;
 
                 //variable.concreteGenerics[]
 

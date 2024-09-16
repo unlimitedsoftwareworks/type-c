@@ -130,6 +130,9 @@ fn test_case_7(rn: TestUnit) {
     rn.assert_eq(result, 11)  // Outer `do` returns inner `do`, which calculates 8 + 3 = 11
 }
 
+
+fn fff() -> (u32, u32) = (100, 200)
+
 fn test_case_8(rn: TestUnit) {
     let z = 5
     let result = do {
@@ -145,9 +148,14 @@ fn test_case_8(rn: TestUnit) {
     }
 
     rn.assert_eq(result, 15)  // Inner `do` returns 10 + 5 = 15
+    let aaa = 1
+    let (a, b) = do {
+        return fff()
+    }
+
+    rn.assert_eq(a, 100)
+    rn.assert_eq(b, 200)
 }
-
-
 
 fn main() -> u32 {
     let test_1 = new TestUnit("test 1", "Tests do-expressions", test_case_1)

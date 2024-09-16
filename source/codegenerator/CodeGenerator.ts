@@ -17,6 +17,7 @@ import { FunctionPrototype } from "../ast/other/FunctionPrototype";
 import { VoidType } from "../ast/types/VoidType";
 import * as path from "path"
 import * as fs from "fs"
+import { LambdaDefinition } from "../ast/expressions/LambdaExpression";
 
 export class CodeGenerator {
     functions: Map<string, FunctionGenerator> = new Map();
@@ -125,6 +126,12 @@ export class CodeGenerator {
                         this.bytecodeGenerator.generateBytecode(generator);
                     }
                 }
+            }
+            else if (sym instanceof LambdaDefinition) {
+                let generator = new FunctionGenerator(sym);
+                generator.generate();
+                this.functions.set(sym.uid, generator);
+                this.bytecodeGenerator.generateBytecode(generator);
             }
             else if (sym instanceof DeclaredType) {
                 let baseType = sym.type;

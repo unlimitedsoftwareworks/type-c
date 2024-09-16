@@ -1,0 +1,14 @@
+
+fn f(x: u32) {
+    fn g(y: u32) {
+        return x + y
+    }
+
+    return g
+}
+
+fn main() -> u32 {
+    let z = f(0)(100)
+
+    return z
+}

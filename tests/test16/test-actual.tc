@@ -1,0 +1,113 @@
+from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+
+
+fn test_case_1(rn: TestUnit) {
+    let z = fn (x: u32) -> u32 {
+        return x + 1
+    }
+
+    let a = z(1)
+    rn.assert_eq<u32>(a, 2)
+
+    let b = fn (x: u32) -> u32 =
+        do {
+            return x + 1
+        }
+    
+
+    let c = b(1)
+    rn.assert_eq<u32>(c, 2)
+}
+
+fn test_case_2(rn: TestUnit) {
+    fn max(x: u32, y: u32) -> u32 {
+        if (x > y) {
+            return x
+        }
+        else {
+            return y
+        }
+    }
+
+    let a = max(1, 2)
+    rn.assert_eq<u32>(a, 2)
+
+    let b = fn (x: u32, y: u32) -> u32 =
+        do {
+            if (x > y) {
+                return x
+            }
+            else {
+                return y
+            }
+
+            return 0
+        }
+
+    let c = b(1, 2)
+    rn.assert_eq<u32>(c, 2)
+}
+
+fn test_case_3(rn: TestUnit) {
+    // test  lambda that returns a tuple
+    let swap = fn (x: u32, y: u32) -> (u32, u32) =
+        (y, x)
+    
+    let (x, y) = swap(1, 2)
+    rn.assert_eq<u32>(x, 2)
+    rn.assert_eq<u32>(y, 1)
+
+    fn genericSwap<T>(x: T, y: T) -> (T, T) =
+        (y, x)
+    
+    let (x2, y2) = genericSwap(1, 2)
+    rn.assert_eq<u32>(x2, 2)
+    rn.assert_eq<u32>(y2, 1)
+
+    let (x3, y3) = genericSwap("a", "b")
+    rn.assert_obj_eq<String>(x3, "b")
+    rn.assert_obj_eq<String>(y3, "a")
+
+    let (x4, y4) = genericSwap([1, 2, 3], [4, 5, 6])
+    
+    match x4 {
+        [4, 5, 6]  { rn.assert_reachable() }
+        _  { rn.assert_unreachable() }
+    }
+
+    match y4 {
+        [1, 2, 3]  { rn.assert_reachable() }
+        _  { rn.assert_unreachable() }
+    }
+}
+
+fn test_case_4(rn: TestUnit) {
+}
+
+fn test_case_5(rn: TestUnit) {
+}
+
+fn test_case_6(rn: TestUnit) {
+}
+
+fn test_case_7(rn: TestUnit) {
+}
+
+
+fn test_case_8(rn: TestUnit) {
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests lambda expressions", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests both lambda and regular functions ", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tests generic functions", test_case_3)
+    let test_4 = new TestUnit("test 4", "do Expression Without Early Return", test_case_4)
+    let test_5 = new TestUnit("test 5", "do Expression with Complex Conditions", test_case_5)
+    let test_6 = new TestUnit("test 6", "Nested do Expressions with Return", test_case_6)
+    let test_7 = new TestUnit("test 7", "Nested do Expressions with Early Return", test_case_7)
+    let test_8 = new TestUnit("test 8", "Test Case 8: Triple Nested do Expression", test_case_8)
+    let set = new UnitSet("Do-expressions tests", "Tests do-expressions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
+    return set.run()
+}

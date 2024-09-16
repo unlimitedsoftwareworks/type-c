@@ -39,6 +39,7 @@ export type IRInstructionType =
     "const_f32" |
     "const_f64" |
     "const_ptr" |
+    "const_ptr_fn" | // to load a function from a given context
     "const_str" | // literal, array of characters (string)
 
     "global_i8" |

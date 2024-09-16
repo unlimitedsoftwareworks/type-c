@@ -441,6 +441,12 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_i, reg, intVal);
                 }
             }
+            else if (instruction.type == "const_ptr_fn") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                
+                let lbl = this.emit(BytecodeInstructionType.mv_reg_i_ptr, reg, 0);
+                this.addUnresolvedOffset(instruction.args[1] as string, lbl);
+            }
             else if (instruction.type == "const_str") {
                 const encoder = new TextEncoder();
                 const str_bytes = Array.from(encoder.encode(instruction.args[2] as string))
@@ -542,7 +548,6 @@ export class BytecodeGenerator {
                 }
                 else if (type == "func") {
                     // mv_reg_i will push bytes needed, which 1 one for 0, we add 7 more
-
                     this.emitCustom(BytecodeInstructionType.mv_reg_i, 1);
                     this.emitCustom(reg, 1);
                     this.emitCustom(8, 1);

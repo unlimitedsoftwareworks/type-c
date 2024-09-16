@@ -78,6 +78,10 @@ export class CodeSegment {
             case BytecodeInstructionType.mv_reg_i:
                 this.writer.push_8(args[0]);
                 return this.writer.push_bytesNeeded(args[1]);
+            
+            case BytecodeInstructionType.mv_reg_i_ptr:
+                this.writer.push_8(args[0]);
+                return this.writer.push_64(args[1]);
 
             case BytecodeInstructionType.mv_reg_const:
                 this.writer.push_8(args[0]);

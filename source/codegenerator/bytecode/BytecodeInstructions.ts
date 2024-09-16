@@ -48,6 +48,12 @@ export enum BytecodeInstructionType{
     mv_reg_i,
 
     /**
+     * mv_reg_i_ptr dest: r, v: I (8bytes)
+     * moves 8 bytes from the given constant to register r
+     */
+    mv_reg_i_ptr,
+
+    /**
      * mv_reg_const dest: r, offset-size: z, offset: i, bytesize: s
      */
     mv_reg_const,

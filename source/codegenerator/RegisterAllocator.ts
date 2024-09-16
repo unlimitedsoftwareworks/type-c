@@ -16,6 +16,7 @@ export class RegisterAllocator {
     private reservedRegistersCount: number = 0;
     private arguments: string[] = [];
     private locals: string[] = [];
+    private upvalues: string[] = [];
     private instructions: IRInstruction[] = [];
 
     /**
@@ -77,6 +78,12 @@ export class RegisterAllocator {
         // for now, local variables registers will be forever occupied
         for (const [key, local] of fn.localSymbols) {
             this.locals.push(key);
+            this.predefinedVRegs.set(key, this.vregCount++);
+        }
+
+        // Initialize upvalues
+        for (const [key, upvalue] of fn.upvalues) {
+            this.upvalues.push(key);
             this.predefinedVRegs.set(key, this.vregCount++);
         }
     }
@@ -220,6 +227,40 @@ export class RegisterAllocator {
     }
 
     /**
+     * A temporary that is created from an upvalue, inherits the upvalue's virtual register
+     * @param tmp 
+     * @param uid 
+     */
+    linkTmpToUpvalue(tmp: string, uid: string) {
+        let vreg = this.predefinedVRegs.get(uid);
+        if (vreg === undefined) {
+            throw new Error("Upvalue register not found");
+        }
+
+        let prevReg = this.tmpVRegs.get(tmp);
+        if (prevReg !== undefined) {
+            // Prioritize the upvalue if already linked
+            if (this.argVRegs.includes(prevReg) || this.localVRegs.includes(prevReg)) {
+                this.tmpVRegs.set(tmp, prevReg);
+                return;
+            }
+
+            // Inherit the usage of the previous register
+            let instructions = this.registerInstructionsMap.get(prevReg) || [];
+            let otherInstructions = this.registerInstructionsMap.get(vreg) || [];
+            instructions = instructions.concat(otherInstructions);
+            this.registerInstructionsMap.set(vreg, instructions);
+        }
+
+        this.tmpVRegs.set(tmp, vreg);
+        this.argVRegs.push(vreg);
+
+        if (this.isRegUnused(prevReg)) {
+            this.blankVRegs.push(prevReg!);
+        }
+    }
+
+    /**
      * A temporary that does not inherit any virtual register, must have a new virtual register
      * @param tmp
      */
@@ -284,8 +325,6 @@ export class RegisterAllocator {
 
         // First pass: Establish live ranges
         for (const instruction of instructions) {
-
-            // other cases
             if (instruction.type.startsWith("tmp_")) {
                 let name = instruction.args[0] as string;
                 let type = instruction.args[1] as string;
@@ -305,6 +344,13 @@ export class RegisterAllocator {
                     continue;
                 }
 
+                if (type == "upvalue") {
+                    this.linkTmpToUpvalue(name, uid);
+                    this.markVRegAtInstruction(this.tmpVRegs.get(name)!, position);
+                    position++;
+                    continue;
+                }
+
                 if (type == "reg") {
                     this.linkTmpToTmp(name, uid);
                     this.markVRegAtInstruction(this.tmpVRegs.get(name)!, position);
@@ -313,40 +359,6 @@ export class RegisterAllocator {
                 }
             }
 
-            /**
-             * Should no longer be used, 
-             * because local_u32 x, tmp_0
-             * has been replace with [tmp_u32 tmp_1, x, tmp_32, tmp_1, "reg", tmp_0]
-             * The issue at hand was the ownership of the tmp_0, especially if tmp_0 was created from 
-             * a register.
-             * 
-             * same with arg_
-             */
-            else if (instruction.type.startsWith("local_")) {
-                /**
-                 * This operation is assignment, since locals share all tmps, we need to
-                 * assign the same vreg to the tmp as the local, and not mark
-                 * this instruction since its ignore by the generator
-                 */
-                let uid = instruction.args[0] as string;
-                let name = instruction.args[1] as string;
-
-                this.linkTmpToLocal(name, uid);
-                //this.markVRegAtInstruction(this.tmpVRegs.get(name)!, position);
-
-                position++;
-                continue;
-            }
-            else if (instruction.type.startsWith("arg_")) {
-                let uid = instruction.args[0] as string;
-                let name = instruction.args[1] as string;
-
-                this.linkTmpToArgument(name, uid);
-                //this.markVRegAtInstruction(this.tmpVRegs.get(name)!, position);
-
-                position++;
-                continue;
-            }
 
 
             if(instruction.type === "j") {
@@ -366,7 +378,6 @@ export class RegisterAllocator {
                 //this.endLiveRange(instruction.args[0] as string, position);
                 this.markVRegAtInstruction(this.tmpVRegs.get(instruction.args[0] as string)!, position);
             }
-            
             
             if (instruction.args.length > 0) {
                 for (const arg of instruction.args) {
@@ -671,8 +682,6 @@ export class RegisterAllocator {
 
         // Update the instructions array
         this.instructions = updatedInstructions;
-
-        
         return this.instructions;
     }
     

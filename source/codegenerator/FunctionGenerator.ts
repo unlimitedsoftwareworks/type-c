@@ -105,6 +105,17 @@ export function isLocalVariable(expr: Expression, ctx: Context) {
     return false;
 }
 
+export function isUpvalue(expr: Expression, ctx: Context) {
+    if (expr instanceof ElementExpression) {
+        let symScope = ctx.lookupScope(expr.name);
+
+        if (symScope?.sym instanceof DeclaredVariable || symScope?.sym instanceof VariablePattern) {
+            return symScope.scope == "local"
+        }
+    }
+    return false;
+}
+
 export function isFunctionArgument(expr: Expression, ctx: Context) {
     if (expr instanceof ElementExpression) {
         let symScope = ctx.lookupScope(expr.name);
@@ -190,7 +201,7 @@ export class FunctionGenerator {
     isGlobal: boolean;
 
     // tmp variables counter
-    tmpCounter = 0;
+    static tmpCounter = 0;
 
     // labels counter
     lblCounter = 0;
@@ -210,7 +221,8 @@ export class FunctionGenerator {
     }
 
     generateTmp(): string {
-        return "tmp_" + (this.tmpCounter++);
+        let name = "tmp_" + (FunctionGenerator.tmpCounter++);
+        return name;
     }
 
     generateLabel(): string {
@@ -263,8 +275,17 @@ export class FunctionGenerator {
             this.i("fn", this.fn.context.uuid);
         }
 
-        if (this.fn.body) {
-            this.visitStatement(this.fn.body, this.fn.context);
+        let body: BlockStatement | null = this.fn.body;
+        let expression: Expression | null = this.fn.expression;
+
+        if(this.fn instanceof LambdaDefinition) {
+            body = this.fn.lambdaExpression.body;
+            expression = this.fn.lambdaExpression.expression;
+        }
+
+        
+        if (body) {
+            this.visitStatement(body, this.fn.context);
             if (!this.getLastInstruction().type.startsWith("ret_") && !this.isGlobal) {
                 this.i("ret_void")
             }
@@ -272,17 +293,17 @@ export class FunctionGenerator {
         else {
             this.srcMapPushLoc(this.fn.location);
             let tmp = "";
-            if (this.fn.expression instanceof TupleConstructionExpression) {
-                this.ir_generate_tuple_return(this.fn.context, this.fn.expression);
+            if (expression instanceof TupleConstructionExpression) {
+                this.ir_generate_tuple_return(this.fn.context, expression);
                 this.i("ret_void");
             }
-            else if (this.fn.expression?.inferredType?.is(this.fn.context, TupleType)) {
+            else if (expression?.inferredType?.is(this.fn.context, TupleType)) {
                 // we have a function call that returns a tuple
-                let tmp = this.visitExpression(this.fn.expression, this.fn.context);
+                let tmp = this.visitExpression(expression, this.fn.context);
                 this.destroyTmp(tmp);
 
                 // get all the return values
-                let tupleType = this.fn.expression!.inferredType!.to(this.fn.context, TupleType) as TupleType;
+                let tupleType = expression!.inferredType!.to(this.fn.context, TupleType) as TupleType;
                 for(let i = 0; i < tupleType.types.length; i++) {
                     let tmp = this.generateTmp();
                     let read  = fnGetRetType(this.fn.context, tupleType.types[i]);
@@ -294,7 +315,7 @@ export class FunctionGenerator {
                 this.i("ret_void");
             }
             else {
-                tmp = this.visitExpression(this.fn.expression!, this.fn.context);
+                tmp = this.visitExpression(expression!, this.fn.context);
                 // check if the function is not void
                 if ((this.fn.codeGenProps.parentFnType) && (this.fn.codeGenProps.parentFnType.returnType) && (this.fn.codeGenProps.parentFnType.returnType.kind != "void") && (this.fn.codeGenProps.parentFnType.returnType.kind != "unset")) {
                     let instr = retType(this.fn.context, this.fn.codeGenProps.parentFnType.returnType);
@@ -410,6 +431,7 @@ export class FunctionGenerator {
 
 
         const sym = symScope.sym;
+        ctx.lookupScope(expr.name);
         if (sym instanceof DeclaredVariable) {
             let tmp = this.generateTmp();
             let instruction = tmpType(ctx, sym.annotation!);
@@ -421,8 +443,7 @@ export class FunctionGenerator {
                 this.i(instruction, tmp, "local", sym.uid);
             }
             else {
-                ctx.lookupScope(expr.name)
-                throw ctx.parser.customError("Upvalues are not supported in bytecode generation", expr.location);
+                this.i(instruction, tmp, "upvalue", sym.uid);
             }
 
             return tmp;
@@ -431,13 +452,15 @@ export class FunctionGenerator {
             // like regular local variable
             let tmp = this.generateTmp();
             let instruction = tmpType(ctx, sym.type);
-            this.i(instruction, tmp, "local", sym.uid);
+            // either local or upvalue or global
+            this.i(instruction, tmp, symScope.scope, sym.uid);
             return tmp;
         }
         else if (sym instanceof FunctionArgument) {
             let tmp = this.generateTmp();
             let instruction = tmpType(ctx, sym.type);
-            this.i(instruction, tmp, "arg", sym.uid);
+            // either arg or upvalue
+            this.i(instruction, tmp, symScope.scope, sym.uid);
             return tmp;
         }
         else if (sym instanceof DeclaredFunction) {
@@ -956,18 +979,26 @@ export class FunctionGenerator {
             // generate the right expression
             let right = this.visitExpression(expr.right, ctx);
 
+            if (isUpvalueVariable(expr.left, ctx)) {
+                let sym = ctx.lookupScope((expr.left as ElementExpression).name);
+                this.i("debug", "upvalue variable assignment");
+                let inst = tmpType(ctx, expr.left.inferredType!);
+                let tmp = this.generateTmp();
+                this.i(inst, tmp, "upvalue", sym!.sym.uid);
+                this.i(inst, tmp, "reg", right);
+            }
             if (isLocalVariable(expr.left, ctx)) {
                 this.i("debug", "local variable assignment");
-                let sym = ctx.lookup((expr.left as ElementExpression).name);
+                let sym = ctx.lookupScope((expr.left as ElementExpression).name);
                 // local variable
                 if (this.isGlobal) {
                     let inst = globalType(ctx, expr.left.inferredType!);
-                    this.i(inst, sym!.uid, right);
+                    this.i(inst, sym!.sym.uid, right);
                 }
                 else {
                     let inst = tmpType(ctx, expr.left.inferredType!);
                     let tmp = this.generateTmp();
-                    this.i(inst, tmp, "local", sym!.uid);
+                    this.i(inst, tmp, sym!.scope, sym!.sym.uid);
                     this.i(inst, tmp, "reg", right);
                 }
                 return right;
@@ -1206,7 +1237,11 @@ export class FunctionGenerator {
             }
 
             if (sym instanceof DeclaredFunction) {
-                let decl = fetchElementSymbol(ctx, expr.lhs) as DeclaredFunction;
+                //let decl = fetchElementSymbol(ctx, expr.lhs) as DeclaredFunction;
+                let decl = expr.lhs._functionReference;
+                if(decl == null) {
+                    throw new Error("UNREACHABLE:Unknown function " + expr.lhs.name);
+                }
 
                 let jumpId = decl.context.uuid;
 
@@ -1651,6 +1686,51 @@ export class FunctionGenerator {
             }
             //this.i("allow_spill")
         }
+        else {
+            let fnReg = this.visitExpression(expr.lhs, ctx);
+            // an indirect call such as f()() or x[0](1)
+            let instructions: IRInstructionType[] = [];
+            let regs: string[] = [];
+
+            // generate the arguments, backwards
+            for (let i = 0; i < expr.args.length; i++) {
+                let arg = expr.args[i];
+                let tmp = this.visitExpression(arg, ctx);
+                let pushArgInst = fnSetArgType(ctx, arg.inferredType!);
+
+                instructions.push(pushArgInst);
+                regs.push(tmp);
+            }
+
+            this.i("fn_alloc")
+            for (let i = 0; i < instructions.length; i++) {
+                this.i(instructions[i], i, regs[i]);
+                // mut regs not used for now..
+                //if(!mutRegs.includes(regs[i])){
+                this.destroyTmp(regs[i]);
+                //}
+            }
+
+            // check if the function returns a value
+            let hasReturn = true;
+            if ((expr.lhs.inferredType instanceof VoidType) || (expr.lhs.inferredType instanceof TupleType)) {
+                hasReturn = false;
+            }
+
+            if (hasReturn) {
+                let tmp = this.generateTmp();
+                this.i("call_ptr", tmp, fnReg);
+                this.destroyTmp(fnReg);
+                return tmp;
+            }
+            else {
+                this.i("call_ptr", fnReg);
+                this.destroyTmp(fnReg);
+                return "";
+            }
+
+
+        }
 
         throw ctx.parser.customError("Invalid expression", expr.location);
     }
@@ -1659,7 +1739,7 @@ export class FunctionGenerator {
         // lambda expression simply means storing the function in a variable
         let lambdaReg = this.generateTmp();
         this.i("debug", "storing lambda in variable");
-        this.i("const_ptr", lambdaReg, expr.context.uuid);
+        this.i("const_ptr_fn", lambdaReg, expr.definition.context.uuid);
         return lambdaReg;
     }
 
@@ -2849,18 +2929,13 @@ export class FunctionGenerator {
     visitTupeDeconstructionGroup(ctx: Context, group: DeclaredVariable[]) {
         // (a, b) = f()
         // or 
-        // (a, b) = do { return (1, 2) }
+        // (a, b) = do { return (1, 2) } // not yet implemented
         // first generate the expression
         
         this.i("debug", "tuple deconstruction group");
-
-        let isTuple = false;
-
         let fnReg = this.visitExpression((group[0].initializer as TupleDeconstructionExpression).tupleExpression, ctx);
         
         this.destroyTmp(fnReg);
-
-        let fnType = group[0].initializer.inferredType! as TupleType;
 
         // we do not perform a direct assignment, rather we a fn_get_reg_u32 and such
         for (const decl of group) {
