@@ -276,6 +276,23 @@ export class FunctionGenerator {
                 this.ir_generate_tuple_return(this.fn.context, this.fn.expression);
                 this.i("ret_void");
             }
+            else if (this.fn.expression?.inferredType?.is(this.fn.context, TupleType)) {
+                // we have a function call that returns a tuple
+                let tmp = this.visitExpression(this.fn.expression, this.fn.context);
+                this.destroyTmp(tmp);
+
+                // get all the return values
+                let tupleType = this.fn.expression!.inferredType!.to(this.fn.context, TupleType) as TupleType;
+                for(let i = 0; i < tupleType.types.length; i++) {
+                    let tmp = this.generateTmp();
+                    let read  = fnGetRetType(this.fn.context, tupleType.types[i]);
+                    let ret = retType(this.fn.context, tupleType.types[i]);
+                    this.i(read, tmp, 255 - i);
+                    this.i(ret, tmp, i);
+                    this.destroyTmp(tmp);
+                }
+                this.i("ret_void");
+            }
             else {
                 tmp = this.visitExpression(this.fn.expression!, this.fn.context);
                 // check if the function is not void
@@ -2697,6 +2714,23 @@ export class FunctionGenerator {
             if (stmt.returnExpression instanceof TupleConstructionExpression) {
                 this.ir_generate_tuple_return(ctx, stmt.returnExpression);
             }
+            else if (stmt.returnExpression.inferredType instanceof TupleType) {
+                // we have a function call that returns a tuple
+                let tmp = this.visitExpression(stmt.returnExpression, ctx);
+                this.destroyTmp(tmp);
+
+                // get all the return values
+                let tupleType = stmt.returnExpression.inferredType.to(ctx, TupleType) as TupleType;
+                for(let i = 0; i < tupleType.types.length; i++) {
+                    let tmp = this.generateTmp();
+                    let read  = fnGetRetType(ctx, tupleType.types[i]);
+                    let ret = retType(ctx, tupleType.types[i]);
+                    this.i(read, tmp, 255 - i);
+                    this.i(ret, tmp, i);
+                    this.destroyTmp(tmp);
+                }
+
+            }
             else {
                 // submit result
                 let tmp = this.visitExpression(stmt.returnExpression, ctx);
@@ -2814,10 +2848,16 @@ export class FunctionGenerator {
 
     visitTupeDeconstructionGroup(ctx: Context, group: DeclaredVariable[]) {
         // (a, b) = f()
-
+        // or 
+        // (a, b) = do { return (1, 2) }
         // first generate the expression
+        
         this.i("debug", "tuple deconstruction group");
+
+        let isTuple = false;
+
         let fnReg = this.visitExpression((group[0].initializer as TupleDeconstructionExpression).tupleExpression, ctx);
+        
         this.destroyTmp(fnReg);
 
         let fnType = group[0].initializer.inferredType! as TupleType;
