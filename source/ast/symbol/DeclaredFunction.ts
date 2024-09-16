@@ -127,12 +127,6 @@ export class DeclaredFunction extends Symbol {
                     p.type.getGenericParametersRecursive(this.context, parametersTypes[i], methodGenerics, map);
                 }
 
-                let newFn = this.clone(map, this.context.getParent()!);
-
-                // set the generics to empty so we can properly infer its body and header by recalling this function
-                newFn.prototype.generics = [];
-
-
                 /**
                  * First we need to create an ordered, type arguments list, as declared in the method
                  */
@@ -147,6 +141,18 @@ export class DeclaredFunction extends Symbol {
                 }
 
                 let typeArgSignature = signatureFromGenerics(typeArgs);
+
+                if(this.concreteGenerics.has(typeArgSignature)) {
+                    return this.concreteGenerics.get(typeArgSignature)!;
+                }
+
+                let newFn = this.clone(map, this.context.getParent()!);
+
+                // set the generics to empty so we can properly infer its body and header by recalling this function
+                newFn.prototype.generics = [];
+
+
+                
 
                 // set the uid of the function
                 newFn.uid = this.uid+'<'+typeArgSignature+'>';
