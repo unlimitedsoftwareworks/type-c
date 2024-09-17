@@ -398,8 +398,7 @@ export class FunctionGenerator {
                 if (
                     this.fn.codeGenProps.parentFnType &&
                     this.fn.codeGenProps.parentFnType.returnType &&
-                    this.fn.codeGenProps.parentFnType.returnType.kind !=
-                        "void" &&
+                    this.fn.codeGenProps.parentFnType.returnType.kind != "void" &&
                     this.fn.codeGenProps.parentFnType.returnType.kind != "unset"
                 ) {
                     let instr = retType(
@@ -531,9 +530,9 @@ export class FunctionGenerator {
                 this.i(
                     "debug",
                     "casting from " +
-                        inferredType?.kind +
-                        " to " +
-                        hintType?.kind,
+                    inferredType?.kind +
+                    " to " +
+                    hintType?.kind,
                 );
                 tmp = this.visitCastExpression(
                     new CastExpression(
@@ -621,7 +620,7 @@ export class FunctionGenerator {
             if (expr.indexes.length != 1) {
                 throw new Error(
                     "Invalid index access expression, expected 1 index got " +
-                        expr.indexes.length,
+                    expr.indexes.length,
                 );
             }
 
@@ -629,7 +628,7 @@ export class FunctionGenerator {
             if (!expr.indexes[0].inferredType!.is(ctx, BasicType)) {
                 throw new Error(
                     "Invalid index access expression, expected integer index got " +
-                        expr.indexes[0].inferredType?.toString(),
+                    expr.indexes[0].inferredType?.toString(),
                 );
             } else {
                 let indexType = expr.indexes[0].inferredType!.to(
@@ -644,7 +643,7 @@ export class FunctionGenerator {
                 ) {
                     throw new Error(
                         "Invalid index access expression, expected unsigned integer index got " +
-                            expr.indexes[0].inferredType?.toString(),
+                        expr.indexes[0].inferredType?.toString(),
                     );
                 }
             }
@@ -667,7 +666,7 @@ export class FunctionGenerator {
         if (!expr.operatorOverloadState.isMethodCall) {
             throw new Error(
                 "Invalid index access expression, expected array or callable got " +
-                    expr.inferredType?.toString(),
+                expr.inferredType?.toString(),
             );
         }
 
@@ -1133,9 +1132,10 @@ export class FunctionGenerator {
     }
 
     visitThisExpression(expr: ThisExpression, ctx: Context): string {
+        // this could be an argument, or possibly an upvalue!
         let tmp = this.generateTmp();
         this.i("debug", "this expression");
-        this.i("tmp_ptr", tmp, "arg", this.fn.codeGenProps._this!.uid);
+        this.i("tmp_ptr", tmp, "arg", "$this");
         return tmp;
     }
 
@@ -1238,7 +1238,7 @@ export class FunctionGenerator {
                     this.i(
                         "debug",
                         "struct field assignment, struct member " +
-                            element.name,
+                        element.name,
                     );
 
                     let fieldType = structType.getFieldTypeByName(
@@ -1286,8 +1286,8 @@ export class FunctionGenerator {
                 this.i("debug", "assignment of " + expr.left.kind);
                 throw new Error(
                     "Assignment to " +
-                        expr.left.kind +
-                        " is not yet implemented",
+                    expr.left.kind +
+                    " is not yet implemented",
                 );
             }
         } else if (["+=", "-=", "*=", "/=", "%="].includes(expr.operator)) {
@@ -1317,9 +1317,9 @@ export class FunctionGenerator {
         ) {
             throw ctx.parser.customError(
                 "Binary operation " +
-                    expr.operator +
-                    " is not yet implemented for " +
-                    expr.inferredType?.shortname(),
+                expr.operator +
+                " is not yet implemented for " +
+                expr.inferredType?.shortname(),
                 expr.location,
             );
         }
@@ -1364,9 +1364,9 @@ export class FunctionGenerator {
                 if (expr.operator != "==" && expr.operator != "!=") {
                     throw ctx.parser.customError(
                         "Cannot compare " +
-                            expr.left.inferredType?.kind +
-                            " with " +
-                            expr.right.inferredType?.kind,
+                        expr.left.inferredType?.kind +
+                        " with " +
+                        expr.right.inferredType?.kind,
                         expr.location,
                     );
                 }
@@ -1825,7 +1825,7 @@ export class FunctionGenerator {
                     if (method == null) {
                         throw ctx.parser.customError(
                             "Unknown method " +
-                                (expr.lhs.right as ElementExpression).name,
+                            (expr.lhs.right as ElementExpression).name,
                             lhsType.location,
                         );
                     }
@@ -2085,10 +2085,10 @@ export class FunctionGenerator {
         let structType =
             expr.hintType != null
                 ? getLargestStruct(
-                      ctx,
-                      expr.hintType!.to(ctx, StructType) as StructType,
-                      expr.inferredType!.to(ctx, StructType) as StructType,
-                  )
+                    ctx,
+                    expr.hintType!.to(ctx, StructType) as StructType,
+                    expr.inferredType!.to(ctx, StructType) as StructType,
+                )
                 : (expr.inferredType!.to(ctx, StructType) as StructType);
 
         this.i("debug", "named struct construction expression ");
@@ -2500,7 +2500,7 @@ export class FunctionGenerator {
         this.i(
             "debug",
             "let-in expression: " +
-                expr.variables.map((v) => v.name).join(", "),
+            expr.variables.map((v) => v.name).join(", "),
         );
         // generate the variables
         var processed: DeclaredVariable[] = [];
@@ -2650,7 +2650,7 @@ export class FunctionGenerator {
         } else {
             throw new Error(
                 "Invalid new expression, expected class got " +
-                    baseType?.toString(),
+                baseType?.toString(),
             );
         }
     }
@@ -2817,7 +2817,7 @@ export class FunctionGenerator {
         if (!(expr.inferredType! instanceof ArrayType)) {
             throw new Error(
                 "Invalid array construction expression, expected array got " +
-                    expr.inferredType?.toString(),
+                expr.inferredType?.toString(),
             );
         }
 
@@ -3287,7 +3287,7 @@ export class FunctionGenerator {
         if (this.doExpressionLabelStack.length > 0) {
             jmpLabel =
                 this.doExpressionLabelStack[
-                    this.doExpressionLabelStack.length - 1
+                this.doExpressionLabelStack.length - 1
                 ];
             resTmp =
                 this.doExpressionTmpStack[this.doExpressionTmpStack.length - 1];
@@ -3634,17 +3634,21 @@ export class FunctionGenerator {
             let tmpReg = this.generateTmp();
             let instruction = tmpType(type);
 
-            let symScope = ctx.lookupScope(sym.name)!;
-            if (symScope.scope == "global") {
-                throw "Unreachable";
-            } else if (symScope.scope == "local") {
-                this.i(instruction, tmpReg, "local", sym.uid);
-            } else {
-                // for upvalue, we use arg
+            if (sym.uid == "$this") {
                 this.i(instruction, tmpReg, "arg", sym.uid);
             }
+            else {
+                let symScope = ctx.lookupScope(sym.name)!;
+                if (symScope.scope == "global") {
+                    throw "Unreachable";
+                } else if (symScope.scope == "local") {
+                    this.i(instruction, tmpReg, "local", sym.uid);
+                } else {
+                    // for upvalue, we use arg
+                    this.i(instruction, tmpReg, "arg", sym.uid);
+                }
+            }
             let inst = closurePushEnvType(type);
-
             this.i(inst, tmp, tmpReg);
         }
 

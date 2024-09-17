@@ -77,6 +77,11 @@ This checklist containts only major changes and updates, for minor changes and u
     - This is a reminder for me to differentiate between anonymous types and named types! this needs to be modeled properly, to generate proper errors and 
     start working on types layouts in the bytecode.
 
+- 17/08/2024:
+    - This expression now added recusively upwards, as an upvalue (obviously not added to the method itself, but any function/lambda within the class method)
+    - Closures are finally here!
+
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.

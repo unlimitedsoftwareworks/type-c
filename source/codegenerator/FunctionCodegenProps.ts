@@ -137,6 +137,7 @@ export class FunctionCodegenProps {
     assignThis(cl: ClassType, location: SymbolLocation, parentContext: Context) {
         this._this = new FunctionArgument(location, "$this", cl, true);
         this._this.uid = "$this"
+        return this._this;
     }
 
     /**
