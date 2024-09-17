@@ -236,6 +236,10 @@ fn test_case_10(rn: TestUnit) {
 
     c.x = 20
     rn.assert_eq<u32>(closure(), 20)
+
+
+    let f: (fn() -> u32)? = null
+    
 }
 
 fn main() -> u32 {

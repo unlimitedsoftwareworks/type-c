@@ -23,6 +23,7 @@ import { IndexAccessExpression } from "./IndexAccessExpression";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 import { binaryTypeCheckers } from "../../typechecking/BinaryExpressionInference";
 import { BasicType } from "../types/BasicType";
+import { NullableType } from "../types/NullableType";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -100,6 +101,10 @@ export class BinaryExpression extends Expression {
 
                 // infer the left hand side
                 let leftType = this.left.infer(ctx, null, meta);
+
+                if(!(leftType.is(ctx, NullableType))){
+                    ctx.parser.customError(`Cannot apply operator ?? to non-nullable LHS type ${leftType.shortname()}: LHS Must be nullable, if not, remove the ?? operator`, this.location);
+                }
 
 
                 let rhsType = this.right.infer(ctx, leftType);

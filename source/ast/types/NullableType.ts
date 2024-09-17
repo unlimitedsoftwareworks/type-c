@@ -14,6 +14,7 @@ import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
 import { GenericType } from "./GenericType";
+import { NullType } from "./NullType";
 
 /**
  * Represents a nullable type.
@@ -28,8 +29,11 @@ export class NullableType extends DataType {
     }
 
     resolve(ctx: Context) {
-        if(this.type instanceof NullableType) {
+        if(this.type.is(ctx,NullableType)) {
             throw ctx.parser.customError("Cannot have nested nullable types", this.type.location);
+        }
+        if(this.type.is(ctx, NullType)) {
+            throw ctx.parser.customError("Cannot have a nullable type that is null", this.type.location);
         }
 
         this.type.resolve(ctx);

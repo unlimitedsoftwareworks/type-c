@@ -57,7 +57,6 @@ import {
     StructKeyValueExpressionPair,
 } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
-import { NullableMemberAccessExpression } from "../ast/expressions/NullableMemberAccessExpression";
 import { SpawnExpression } from "../ast/expressions/SpawnExpression";
 import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
 import { ThisExpression } from "../ast/expressions/ThisExpression";
@@ -505,8 +504,6 @@ export class FunctionGenerator {
             tmp = this.visitCoroutineConstructionExpression(expr, ctx);
         else if (expr instanceof LiteralExpression)
             tmp = this.visitLiteralExpression(expr, ctx);
-        else if (expr instanceof NullableMemberAccessExpression)
-            tmp = this.visitNullableMemberAccessExpression(expr, ctx);
         else if (expr instanceof UnaryExpression)
             tmp = this.visitUnaryExpression(expr, ctx);
         else if (expr instanceof DoExpression)
@@ -1309,6 +1306,9 @@ export class FunctionGenerator {
                 expr.inferredType!,
             );
             return this.visitExpression(newInstruction, ctx);
+        }
+        if(expr.operator === "??"){
+            return this.ir_generate_null_coalescing(ctx, expr);
         }
 
         if (
@@ -2716,13 +2716,6 @@ export class FunctionGenerator {
         return tmp;
     }
 
-    visitNullableMemberAccessExpression(
-        expr: NullableMemberAccessExpression,
-        ctx: Context,
-    ): string {
-        throw new Error("Method not implemented.");
-    }
-
     visitUnaryExpression(expr: UnaryExpression, ctx: Context): string {
         // case 1: operator overload
         if (expr.operatorOverloadState.isMethodCall) {
@@ -3653,5 +3646,35 @@ export class FunctionGenerator {
         }
 
         return tmp;
+    }
+
+    ir_generate_null_coalescing(ctx: Context, expr: BinaryExpression) {
+        let tmpRes = this.generateTmp();
+        // a ?? b -> if a is null, return b, otherwise return a, so we need a label for the null case
+        let aTmp = this.visitExpression(expr.left, ctx);
+        // compare a with null
+        let nullTmp = this.generateTmp();
+        
+        // null is 0
+        this.i("const_ptr", nullTmp, 0);
+        
+        let lblEnd = this.generateLabel();
+        
+        // if a is NOT NULL, we jump to end label
+        // save result in tmpRes in case a is not null
+        this.i("tmp_ptr", tmpRes, "reg", aTmp);
+        this.i("j_cmp_ptr", aTmp, nullTmp, 1, lblEnd);
+        this.destroyTmp(nullTmp);
+        // save the result in tmpRes
+        
+        // if a is null, we return b
+        let bTmp = this.visitExpression(expr.right, ctx);
+        this.i("tmp_ptr", tmpRes, "reg", bTmp);
+
+        this.i("label", lblEnd);
+
+        this.destroyTmp(aTmp);
+        this.destroyTmp(bTmp);
+        return tmpRes;
     }
 }

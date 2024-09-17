@@ -76,7 +76,6 @@ import { VoidType } from "../ast/types/VoidType";
 import { Parser } from "./Parser";
 import { WildCardPatternExpression } from "../ast/matching/WildCardPatternExpression";
 import { CastExpression } from "../ast/expressions/CastExpression";
-import { NullableMemberAccessExpression } from "../ast/expressions/NullableMemberAccessExpression";
 import { UnnamedStructConstructionExpression } from "../ast/expressions/UnnamedStructConstructionExpression";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { PatternExpression } from "../ast/matching/PatternExpression";
@@ -591,7 +590,17 @@ function parseTypeDecl(parser: Parser) {
 }
 
 function parseType(parser: Parser, ctx: Context): DataType {
+    let loc = parser.loc();
     let typeDefinition = parseTypeIntersection(parser, ctx)
+
+    let lexeme = parser.peek();
+    if (lexeme.type === "?") {
+        parser.accept();
+        typeDefinition = new NullableType(loc, typeDefinition);
+    }
+    else {
+        parser.reject();
+    }
     return typeDefinition;
 }
 
@@ -777,9 +786,9 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
 function parseTypeCoroutine(parser: Parser, ctx: Context): DataType {
     let loc = parser.loc();
     parser.expect("coroutine");
-    parser.expect("(");
+    parser.expect("<");
     let fnType = parseTypeFunction(parser, ctx);
-    parser.expect(")");
+    parser.expect(">");
     return new CoroutineType(loc, fnType as FunctionType);
 }
 
@@ -1504,7 +1513,8 @@ function parseExpressionMemberSelection(parser: Parser, ctx: Context, lhs: Expre
         }
 
         return parseExpressionMemberSelection(parser, ctx,
-            lexeme.type === "?." ? new NullableMemberAccessExpression(loc, lhs, rhs) : new MemberAccessExpression(loc, lhs, rhs));
+            new MemberAccessExpression(loc, lhs, rhs, lexeme.type === "?.")
+        );
     }
     if (lexeme.type === "(") {
         parser.accept();

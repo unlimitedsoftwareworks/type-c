@@ -129,6 +129,43 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     let res = Ok();
 
+    // Nullable pushed on the top because Nullable<Class>.is(ClassType) == true
+    // so we first check if t1 is nullable
+    // case 4: null types, a null can be only assigned a null
+    if (t1.is(ctx, NullType)) {
+        if (!(t2.is(ctx, NullType))) {
+            res = Err(`Type mismatch, expected null, got ${t2.shortname()}`);
+        }
+        scopeCache.set(typeKey, res);
+        return res;
+    }
+
+    // case 5: nullable, nullable<T> can be assigned a value of type T or null
+    if (t1.is(ctx, NullableType)) {
+        if (t2.is(ctx, NullableType)) {
+            res = matchDataTypesRecursive(ctx, (t1.to(ctx, NullableType) as NullableType).type, (t2.to(ctx, NullableType) as NullableType).type, strict, stack);
+            scopeCache.set(typeKey, res);
+            return res;
+        }
+        else if (t2.is(ctx, NullType)) {
+            scopeCache.set(typeKey, res);
+            return res;
+        }
+        else {
+            // if t1 is nullable and t2 is not, we match t1.type with t2
+            let t1Type = (t1.to(ctx, NullableType) as NullableType).type;
+            res = matchDataTypesRecursive(ctx, t1Type, t2, strict, stack);
+            scopeCache.set(typeKey, res);
+            return res;
+        }
+    }
+
+    if(t2.is(ctx, NullableType)){
+        res = Err(`Cannot match non-nullable type ${t1.shortname()} with nullable type ${t2.shortname()}`);
+        scopeCache.set(typeKey, res);
+        return res;
+    }
+
     // case 1: void types
     if (t1.is(ctx, VoidType)) {
         // make sure t2 is also a void type
@@ -188,34 +225,6 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         return res;
     }
 
-    // case 4: null types, a null can be only assigned a null
-    if (t1.is(ctx, NullType)) {
-        if (!(t2.is(ctx, NullType))) {
-            res = Err(`Type mismatch, expected null, got ${t2.shortname()}`);
-        }
-        scopeCache.set(typeKey, res);
-        return res;
-    }
-
-    // case 5: nullable, nullable<T> can be assigned a value of type T or null
-    if (t1.is(ctx, NullableType)) {
-        if (t2.is(ctx, NullableType)) {
-            res = matchDataTypesRecursive(ctx, (t1.to(ctx, NullableType) as NullableType).type, (t2.to(ctx, NullableType) as NullableType).type, strict, stack);
-            scopeCache.set(typeKey, res);
-            return res;
-        }
-        else if (t2.is(ctx, NullType)) {
-            scopeCache.set(typeKey, res);
-            return res;
-        }
-        else {
-            // if t1 is nullable and t2 is not, we match t1.type with t2
-            let t1Type = (t1.to(ctx, NullableType) as NullableType).type;
-            res = matchDataTypesRecursive(ctx, t1Type, t2, strict, stack);
-            scopeCache.set(typeKey, res);
-            return res;
-        }
-    }
 
     /**
      * case 6: Enum types
@@ -450,6 +459,8 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         else {
             res = matchDataTypesRecursive(ctx, (t1.to(ctx, CoroutineType) as CoroutineType).fnType, (t2.to(ctx, CoroutineType) as CoroutineType).fnType, strict, stack);
         }
+        scopeCache.set(typeKey, res);
+        return res;
     }
 
     res = Err(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);

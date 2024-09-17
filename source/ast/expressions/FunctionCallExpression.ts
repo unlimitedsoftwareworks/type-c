@@ -33,6 +33,8 @@ import { ElementExpression } from "./ElementExpression";
 import { CoroutineType } from "../types/CoroutineType";
 import { InterfaceMethod } from "../other/InterfaceMethod";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
+import { UnaryExpression } from "./UnaryExpression";
+import { NullableType } from "../types/NullableType";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -72,11 +74,19 @@ export class FunctionCallExpression extends Expression {
          */
         // first, infer the LHS
 
-        if (this.lhs instanceof MemberAccessExpression) {
-            let baseExpr = this.lhs.left;
+        let left = this.lhs;
+
+        if(left instanceof UnaryExpression) {
+            if(left.operator === "!!") {
+                left = left.expression;
+            }
+        }
+
+        if (left instanceof MemberAccessExpression) {
+            let baseExpr = left.left;
             let baseExprType = baseExpr.infer(ctx, null);
 
-            let memberExpr = this.lhs.right;
+            let memberExpr = left.right;
 
             if (baseExprType.is(ctx, ClassType)) {
                 let returnType = this.inferClassMethod(ctx, baseExprType, memberExpr, hint);
@@ -93,25 +103,20 @@ export class FunctionCallExpression extends Expression {
                     return returnType;
                 }
             }
-            /*
-            else if (baseExprType.is(ctx, PromiseType)) {
-                return this.inferPromise(ctx, baseExprType, memberExpr);
-            }
-            else if (baseExprType.is(ctx, LockType)) {
-                return this.inferLockMethod(ctx, baseExprType, memberExpr);
-            }
-            */
         }
 
-        if((this.lhs instanceof ElementExpression) && (this.lhs.typeArguments.length === 0) && (this.lhs.isGenericFunction(ctx))) {
-            this.lhs.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null));
+        if((left instanceof ElementExpression) && (left.typeArguments.length === 0) && (left.isGenericFunction(ctx))) {
+            left.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null));
         }
 
-        if(this.lhs instanceof ElementExpression) {
-            this.lhs.numParams = this.args.length;
+        if(left instanceof ElementExpression) {
+            left.numParams = this.args.length;
         }
 
         let lhsType = this.lhs.infer(ctx, null);
+        if(lhsType.is(ctx, NullableType)) {
+            throw ctx.parser.customError("Cannot call a possibly null value", this.location);
+        }
 
         /**
          * Check if LHS is:

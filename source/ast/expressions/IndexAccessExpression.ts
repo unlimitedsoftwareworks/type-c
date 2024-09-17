@@ -22,6 +22,7 @@ import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ArrayType } from "../types/ArrayType";
 import { BasicType } from "../types/BasicType";
 import { DataType } from "../types/DataType";
+import { NullableType } from "../types/NullableType";
 
 export class IndexAccessExpression extends Expression {
     lhs: Expression;
@@ -42,6 +43,11 @@ export class IndexAccessExpression extends Expression {
         this.setHint(hint);
 
         let lhsType = this.lhs.infer(ctx, null);
+
+        if(lhsType.is(ctx, NullableType)) {
+            throw ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.shortname()}, please denull the expression first`, this.location);
+        }
+            
 
         // we can apply index access to arrays and classes/interfaces
         if(lhsType.is(ctx, InterfaceType) || lhsType.is(ctx, ClassType)) {
