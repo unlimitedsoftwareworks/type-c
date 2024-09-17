@@ -1,13 +1,20 @@
 
-type Random = class {
-    let x: u32[]?
 
-    fn init() {
-        this.x = [4,5,6,7,8,9,10]
+fn loop(x: u32[]) -> (u32, bool) {
+    let i: u64 = 0
+
+    while i < x.length {
+        let j = i+1
+        x = yield (x[i], j == x.length)
+        
+
+        if j == x.length {
+            x = yield (x[i], true)
+        }
     }
 }
 
 fn main() -> u32 {
-    let r = new Random()
-    return (r.x ?? [1])[0]
+
+    return 0
 }

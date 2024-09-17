@@ -25,7 +25,9 @@ function parseCompileOptions(args: string[]): TypeC.CompileOptions {
 
     const generateIR = args.includes('--generate-ir') || args.includes('-g');
 
-    return { dir, generateBinaries, outputFolder, runOutput, generateIR };
+    const noWarnings = args.includes('--no-warnings') || args.includes('-nw');
+
+    return { dir, generateBinaries, outputFolder, runOutput, generateIR, noWarnings };
 }
 
 
@@ -74,6 +76,7 @@ Usage: type-c <command> [options]
         --output <dir>          Output folder
         --run                   Run the generated output
         --generate-ir           Generate IR and DOT files
+        --no-warnings           Do not show warnings
     `)
 }
 

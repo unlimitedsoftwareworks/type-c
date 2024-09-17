@@ -48,32 +48,50 @@ export class Parser {
     mode: ParserMode = "compiler";
     logs: CompilerLogs[] = [];
 
-    constructor(lexer: Lexer, pkg: string, mode: ParserMode = "compiler") {
+    lastReadToken: Token | null = null;
+    lastSeenToken: Token | null = null;
+    warn: boolean = true;
+
+    constructor(lexer: Lexer, pkg: string, mode: ParserMode = "compiler", warn: boolean = true) {
         this.package = pkg;
         this.lexer = lexer;
         this.mode = mode;
         this.basePackage = new BasePackage(this);
+        this.warn = warn;
+    }
+
+
+    /**
+     * Compares the last token with the current one to see if they are on the same line
+     */
+    isOnANewLine(){
+        return (this.lastReadToken)&&  this.lastSeenToken && (this.lastReadToken.location.line != this.lastSeenToken.location.line);
     }
 
     peek(): Token {
         if (this.stackIndex == this.tokenStack.length) {
             let token = this.lexer.nextToken();
+            this.lastSeenToken = token;
             this.tokenStack.push(token);
             this.stackIndex++;
             return token;
         } else {
             this.stackIndex++;
+            this.lastSeenToken = this.tokenStack[this.stackIndex - 1];
             return this.tokenStack[this.stackIndex - 1];
         }
     }
 
     accept() {
+        this.lastReadToken = this.tokenStack[this.stackIndex - 1];
+        this.lastSeenToken = null;
         this.tokenStack.splice(0, this.stackIndex);
         this.stackIndex = 0;
     }
 
     reject() {
         this.stackIndex = 0;
+        this.lastSeenToken = null;
     }
     /**
      * Rejects only one element, used internally within the parser itself
@@ -81,6 +99,7 @@ export class Parser {
     rejectOne() {
         this.stackIndex--;
         if (this.stackIndex < 0) this.stackIndex = 0;
+        this.lastSeenToken = this.tokenStack[this.stackIndex - 1] ?? null;
     }
 
     /**
@@ -250,6 +269,7 @@ export class Parser {
 
 
     warning(message: string, coords?: { line: number, col: number, pos: number }, tokenLength: number=1) {
+        if(!this.warn) return;
         // get current active lexeme without changing the stack
         // get current active lexeme without changing the stack
         
@@ -309,6 +329,7 @@ export class Parser {
     }
 
     customWarning(message: string, location: SymbolLocation, extraLogs: {msg: string, loc: SymbolLocation}[] = []) {
+        if(!this.warn) return;
         console.log(colors.FgYellow + colors.Underscore + colors.Bright, `Compiler Warning: ${message}`)
         console.log(colors.Reset)
         this.warning(message, {line: location.line, col: location.col, pos: location.pos}, 1);

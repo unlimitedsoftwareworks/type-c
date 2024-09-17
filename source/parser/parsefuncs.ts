@@ -103,7 +103,7 @@ import { StructDeconstructionExpression } from "../ast/expressions/StructDeconst
 
 let INTIALIZER_GROUP_ID = 1;
 
-// <genericArgDecl> ::= '<' id (':' <type>)? (',' id (':' <type>)?)+ '>' 
+// <genericArgDecl> ::= "<" id (":" <type>)? ("," id (":" <type>)?)+ ">" 
 function parseGenericArgDecl(parser: Parser, ctx: Context): GenericType[] {
     let generics: GenericType[] = [];
 
@@ -114,23 +114,23 @@ function parseGenericArgDecl(parser: Parser, ctx: Context): GenericType[] {
         let loc = parser.loc();
         let token = parser.expect("identifier");
         let next = parser.peek();
-        if (next.type === ':') {
+        if (next.type === ":") {
             parser.accept();
             let type = parseTypeUnion(parser, ctx);
             generics.push(new GenericType(loc, token.value, new GenericTypeConstraint(type)));
         }
         else {
             parser.reject();
-            // make sure generic doesn't already exist
+            // make sure generic doesn"t already exist
             if (generics.find((g) => g.name == token.value)) {
-                //throw new Error(`Generic '${token.value}' already exists`);
-                throw parser.error(`Generic '${token.value}' already exists in list`);
+                //throw new Error(`Generic "${token.value}" already exists`);
+                throw parser.error(`Generic "${token.value}" already exists in list`);
             }
             generics.push(new GenericType(loc, token.value, new GenericTypeConstraint(null)));
         }
 
         let current = parser.peek();
-        if (current.type === ',') {
+        if (current.type === ",") {
             parser.accept();
         }
         else {
@@ -150,7 +150,7 @@ function parseTypeList(parser: Parser, ctx: Context): DataType[] {
         const type = parseType(parser, ctx);
         types.push(type);
         const token = parser.peek();
-        if (token.type === ',') {
+        if (token.type === ",") {
             parser.accept();
         }
         else {
@@ -179,7 +179,7 @@ function parseStructFields(parser: Parser, ctx: Context, allowDuplicatedNames = 
         // make sure no fields are duplicated
         if (!allowDuplicatedNames) {
             if (fields.find((f) => f.name == id.value)) {
-                throw parser.error(`Duplicate field '${id.value}' in struct`, id.location);
+                throw parser.error(`Duplicate field "${id.value}" in struct`, id.location);
             }
         }
 
@@ -216,7 +216,7 @@ function parseVariantParams(parser: Parser, ctx: Context, allowDuplicatedNames =
         // make sure no fields are duplicated
         if (!allowDuplicatedNames) {
             if (fields.find((f) => f.name == id.value)) {
-                throw parser.error(`Duplicate field '${id.value}' in struct`, id.location);
+                throw parser.error(`Duplicate field "${id.value}" in struct`, id.location);
             }
         }
 
@@ -257,7 +257,7 @@ function parseVariantConstructor(parser: Parser, ctx: Context): VariantConstruct
         // make sure constructor name doesnt exist already
         if (constructors.find((c) => c.name == constructorName)) {
             throw parser.error(
-                `Duplicate constructor '${constructorName}' in variant`,
+                `Duplicate constructor "${constructorName}" in variant`,
                 constructorTok.location
             );
         }
@@ -283,7 +283,7 @@ function parseFunctionPrototype(parser: Parser, ctx: Context): FunctionPrototype
 
     let lexeme = parser.peek();
     parser.reject();
-    if (lexeme.type === '<') {
+    if (lexeme.type === "<") {
         generics = parseGenericArgDecl(parser, ctx);
     }
 
@@ -309,7 +309,7 @@ function parseProcessFunctionPrototype(parser: Parser, ctx: Context): { proto: F
 
     let lexeme = parser.peek();
     parser.reject();
-    if (lexeme.type === '<') {
+    if (lexeme.type === "<") {
         generics = parseGenericArgDecl(parser, ctx);
     }
 
@@ -334,7 +334,7 @@ function parseMethodInterface(parser: Parser, ctx: Context): InterfaceMethod {
     return new InterfaceMethod(loc, fnProto.name, fnProto.header, isStatic, fnProto.generics);
 }
 
-// parses fn body starting from parenthesis '(' <args> ')' ('->' <type>)?
+// parses fn body starting from parenthesis "(" <args> ")" ("->" <type>)?
 function parseFnTypeBody(parser: Parser, ctx: Context): FunctionType {
     let fnLoc = parser.loc();
     parser.expect("(");
@@ -360,7 +360,7 @@ function parseFnTypeBody(parser: Parser, ctx: Context): FunctionType {
         let type = parseType(parser, ctx);
         // make sure  parameter doesnt exist already
         if (parameters.find((p) => p.name == id.value)) {
-            throw parser.error(`Duplicate parameter '${id.value}' in function`, id.location);
+            throw parser.error(`Duplicate parameter "${id.value}" in function`, id.location);
         }
         parameters.push(new FunctionArgument(loc, id.value, type, isMut));
 
@@ -409,7 +409,7 @@ function parsePackageReference(parser: Parser, ctx: Context): string[] {
 }
 
 /**
- * <import> ::= 'import' <id> ('.' <id>)* ('as' <id>)?
+ * <import> ::= "import" <id> ("." <id>)* ("as" <id>)?
  */
 function parseImport(parser: Parser) {
     let loc = parser.loc();
@@ -446,7 +446,7 @@ function parseImport(parser: Parser) {
 
 
 /**
- * '<from_import> ::= 'from' <id> ('.' <id>)* import <id> ('as' <id>)?
+ * "<from_import> ::= "from" <id> ("." <id>)* import <id> ("as" <id>)?
  */
 function parseFrom(parser: Parser) {
     let loc = parser.loc();
@@ -488,7 +488,7 @@ function parseFrom(parser: Parser) {
         let alias = actualName;
 
         const tok = parser.peek();
-        if (tok.type === 'as') {
+        if (tok.type === "as") {
             parser.accept();
             alias = parser.expectPackageName().value;
         }
@@ -509,7 +509,7 @@ function parseFrom(parser: Parser) {
     }
 
     token = parser.peek();
-    if (token.type === ';') {
+    if (token.type === ";") {
         parser.accept();
     }
     else {
@@ -536,7 +536,7 @@ function parseFFI(parser: Parser) {
         let method = parseMethodInterface(parser, parser.basePackage.ctx);
         // make sure no duplicate methods
         if (methods.find(m => method.name == m.imethod.name)) {
-            throw parser.customError(`Duplicate method '${method.name}' in FFI`, method.location);
+            throw parser.customError(`Duplicate method "${method.name}" in FFI`, method.location);
         }
         methods.push(new FFIMethodType(method.location, method));
         tok = parser.peek();
@@ -552,7 +552,7 @@ function parseFFI(parser: Parser) {
 /**
  * Data Types
  */
-// <type_decl> ::= 'type' <identifier> <generic_arg_decl> '=' <type>
+// <type_decl> ::= "type" <identifier> <generic_arg_decl> "=" <type>
 function parseTypeDecl(parser: Parser) {
     let loc = parser.loc();
     let typeToken = parser.expect("type");
@@ -561,7 +561,7 @@ function parseTypeDecl(parser: Parser) {
     let generics: GenericType[] = []
 
     let token = parser.peek();
-    if (token.type === '<') {
+    if (token.type === "<") {
         parser.reject();
         generics = parseGenericArgDecl(parser, parser.basePackage.ctx);
     }
@@ -569,7 +569,7 @@ function parseTypeDecl(parser: Parser) {
         parser.reject();
     }
 
-    token = parser.expect('=');
+    token = parser.expect("=");
     const type = parseType(parser, parser.basePackage.ctx);
 
     /**
@@ -610,7 +610,7 @@ function parseTypeUnion(parser: Parser, ctx: Context): DataType {
     let loc = parser.loc();
     let left = parseTypeIntersection(parser, ctx);
     let lexeme = parser.peek();
-    if (lexeme.type === '|') {
+    if (lexeme.type === "|") {
         parser.accept();
         let right = parseTypeUnion(parser, ctx);
         let type = new UnionType(loc, left, right);
@@ -639,14 +639,14 @@ function parseTypeArray(parser: Parser, ctx: Context): DataType {
     let loc = parser.loc();
     let type = parseTypeGroup(parser, ctx);
     let lexeme = parser.peek();
-    if (lexeme.type === '[') {
+    if (lexeme.type === "[") {
         let canLoop = true;
         while (canLoop) {
             parser.accept();
-            parser.expect(']');
+            parser.expect("]");
             type = new ArrayType(loc, type);
             lexeme = parser.peek();
-            canLoop = lexeme.type === '[';
+            canLoop = lexeme.type === "[";
         }
         parser.reject();
         return type;
@@ -660,7 +660,7 @@ function parseTypeGroup(parser: Parser, ctx: Context): DataType {
     let lexeme = parser.peek();
     let type: DataType | null = null;
 
-    if (lexeme.type === '(') {
+    if (lexeme.type === "(") {
         parser.accept();
         // type = parseType(parser, ctx);
         let types = parseTypeList(parser, ctx);
@@ -671,7 +671,7 @@ function parseTypeGroup(parser: Parser, ctx: Context): DataType {
         else {
             type = types[0];
         }
-        parser.expect(')');
+        parser.expect(")");
     }
     else {
         parser.reject();
@@ -780,7 +780,7 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         return new LockType(loc, lockType);
     }
 
-    throw parser.customError(`Unexpected token '${lexeme.type}'`, loc);
+    throw parser.customError(`Unexpected token "${lexeme.type}"`, loc);
 }
 
 function parseTypeCoroutine(parser: Parser, ctx: Context): DataType {
@@ -805,7 +805,7 @@ function parseTypeEnum(parser: Parser, ctx: Context): DataType {
             base = base_str as EnumTargetType;
         }
         else {
-            throw parser.customError(`Unexpected enum base type '${base_str}', must be a valid datatype`, loc);
+            throw parser.customError(`Unexpected enum base type "${base_str}", must be a valid datatype`, loc);
         }
     }
     else {
@@ -827,7 +827,7 @@ function parseTypeEnum(parser: Parser, ctx: Context): DataType {
                 values.push(new EnumField(id.location, id.value, value, vtok.type as "int_literal" | "binary_int_literal" | "oct_int_literal" | "hex_int_literal"));
             }
             else {
-                throw parser.customError(`Unexpected enum value '${vtok.type}', must be an integer (dec, bin, oct, hex) literal`, vtok.location);
+                throw parser.customError(`Unexpected enum value "${vtok.type}", must be an integer (dec, bin, oct, hex) literal`, vtok.location);
             }
         }
         else {
@@ -854,10 +854,10 @@ function parseTypeReference(parser: Parser, ctx: Context): DataType {
     let loc = parser.loc();
     let ref = parsePackageReference(parser, ctx);
     let lexeme = parser.peek();
-    if (lexeme.type === '<') {
+    if (lexeme.type === "<") {
         parser.accept();
         const types = parseTypeList(parser, ctx);
-        parser.expect('>');
+        parser.expect(">");
         return new ReferenceType(loc, ref, types, ctx);
     }
     else {
@@ -968,11 +968,11 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
             parser.reject();
             let attribute = parseClassAttribute(parser, ctx);
             if (methods.find(m => m.imethod.name == attribute.name)) {
-                throw parser.customError(`Duplicate attribute '${attribute.name}' in class`, attribute.location);
+                throw parser.customError(`Duplicate attribute "${attribute.name}" in class`, attribute.location);
             }
             // also comapre it with attributes
             if (attributes.find(a => a.name == attribute.name)) {
-                throw parser.customError(`Duplicate name attributes '${attribute.name}' is already reserved by a method, in class`, attribute.location);
+                throw parser.customError(`Duplicate name attributes "${attribute.name}" is already reserved by a method, in class`, attribute.location);
             }
             attributes.push(attribute);
         }
@@ -980,7 +980,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
             let tok2 = parser.peek();
             if (tok2.type === "{") {
                 // Static block
-                // make sure we don't have more than one static block
+                // make sure we don"t have more than one static block
                 if (staticBlock != null) {
                     throw parser.customError("Duplicate static block in class, can only have one", tok.location);
                 }
@@ -995,7 +995,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
 
                 // also comapre it with attributes
                 if (attributes.find(a => a.name == method.imethod.name)) {
-                    throw parser.customError(`Duplicate name method '${method.imethod.name}' is already reserved by an attribute, in class`, method.location);
+                    throw parser.customError(`Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`, method.location);
                 }
                 methods.push(method);
             }
@@ -1005,7 +1005,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
             let method = parseClassMethod(parser, ctx);
             // also comapre it with attributes
             if (attributes.find(a => a.name == method.imethod.name)) {
-                throw parser.customError(`Duplicate name method '${method.imethod.name}' is already reserved by an attribute, in class`, method.location);
+                throw parser.customError(`Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`, method.location);
             }
             methods.push(method);
         }
@@ -1023,7 +1023,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
 function parseTypeFunction(parser: Parser, ctx: Context): DataType {
     parser.expect("fn");
     let header = parseFnTypeBody(parser, ctx);
-    // if the return type is unset, we change it to void (since it's a function type)
+    // if the return type is unset, we change it to void (since it"s a function type)
     if (header.returnType.kind == "unset") {
         header.returnType = new VoidType(header.returnType.location);
     }
@@ -1500,6 +1500,11 @@ function parseExpressionPostfix(parser: Parser, ctx: Context): Expression {
 function parseExpressionMemberSelection(parser: Parser, ctx: Context, lhs: Expression): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
+    if(parser.isOnANewLine()){
+        parser.reject();
+        return lhs;
+    }
+    
     if (lexeme.type === "!") {
         parser.accept();
         let newLHS = new UnaryExpression(loc, lhs, "!!");
@@ -1543,10 +1548,10 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
     let lexeme = parser.peek();
 
     // parenthesis
-    if (lexeme.type === '(') {
+    if (lexeme.type === "(") {
         parser.accept();
         let expressionList = parseExpressionList(parser, ctx);
-        parser.expect(')');
+        parser.expect(")");
 
         if (expressionList.length == 1) {
             return expressionList[0];
@@ -2033,7 +2038,7 @@ function parseRegularVariableDeclaration(parser: Parser, ctx: Context, isConst: 
     }
 
     parser.expect("=");
-    // TODO: make sure code gen doesn't generate this expression multipe times for deconstructed variables
+    // TODO: make sure code gen doesn"t generate this expression multipe times for deconstructed variables
     let initializer = parseExpression(parser, ctx);
     let v = new DeclaredVariable(loc, name, initializer, type, isConst, false);
     return [v];

@@ -155,6 +155,16 @@ fn test_case_8(rn: TestUnit) {
 
     rn.assert_eq(a, 100)
     rn.assert_eq(b, 200)
+
+    fn loop(x: u32[]) -> (u32, bool) {
+        let i: u64 = 0
+
+        return (x[i], false)
+    }
+
+    let (aa, bb) = loop([2, 3, 4, 5])
+    rn.assert_eq(aa, 2)
+    rn.assert_eq(bb, false)
 }
 
 fn main() -> u32 {

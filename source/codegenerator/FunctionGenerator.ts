@@ -297,6 +297,9 @@ export class FunctionGenerator {
 
     // generates an IR instruction
     i(type: IRInstructionType, ...args: (string | number)[]) {
+        if((type == "ret_ptr") && (args[0] == "")) {
+            console.log(this.fn.name)
+        }
         if (type == null) {
             throw new Error("IR instruction type is null");
         }
@@ -1161,6 +1164,12 @@ export class FunctionGenerator {
         this.i("debug", "binary expression " + expr.operator);
 
         if (expr.operator == "=") {
+
+            if(expr.left instanceof TupleConstructionExpression){
+                this.ir_generate_tuple_assignment(ctx, expr);
+                return "";
+            }
+
             // generate the right expression
             let right = this.visitExpression(expr.right, ctx);
 
@@ -3676,5 +3685,33 @@ export class FunctionGenerator {
         this.destroyTmp(aTmp);
         this.destroyTmp(bTmp);
         return tmpRes;
+    }
+
+    ir_generate_tuple_assignment(ctx: Context, expr: BinaryExpression) {
+
+        let tuples = expr.left as TupleConstructionExpression;
+        let assignment = expr.right;
+
+                // (a, b) = f()
+        // or
+        // (a, b) = do { return (1, 2) } // not yet implemented
+        // first generate the expression
+
+        this.i("debug", "tuple assignment deconstruction group");
+        let fnReg = this.visitExpression(
+            assignment,
+            ctx,
+        );
+
+        this.destroyTmp(fnReg);
+
+        // we do not perform a direct assignment, rather we a fn_get_reg_u32 and such
+        for (const [i, decl] of tuples.elements.entries()) {
+            let expr = decl;
+            let elementReg = this.visitExpression(expr, ctx);
+
+            let inst = fnGetRetType(expr.inferredType!);
+            this.i(inst, elementReg, 255 - i);
+        }
     }
 }

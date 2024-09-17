@@ -64,6 +64,7 @@ export type ExpressionKind =
     "this" | // this
     "unnamed_struct_construction" | // { 1, 2 }
     "tuple_deconstruction"  | // (a) = (1, 2, 3)
+    "tuple_construction" | // (1, 2, 3) = f()
     "array_deconstruction" | // [a, b, ...rest] = [1, 2, 3]
     "object_deconstruction" | // { a, b, ...rest } = { a: 1, b: 2, c: 3 }
     "coroutine_construction" | // coroutine ( ... )

@@ -24,6 +24,8 @@ import { MemberAccessExpression } from "./MemberAccessExpression";
 import { binaryTypeCheckers } from "../../typechecking/BinaryExpressionInference";
 import { BasicType } from "../types/BasicType";
 import { NullableType } from "../types/NullableType";
+import { TupleDeconstructionExpression } from "./TupleDeconstructionExpression";
+import { TupleConstructionExpression } from "./TupleConstructionExpression";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -139,7 +141,15 @@ export class BinaryExpression extends Expression {
         }
 
 
-        let lhsType = this.left.infer(ctx, lhsHint);
+        let lhsType: DataType
+
+        if((this.operator == "=") && (this.left instanceof TupleConstructionExpression)){
+            lhsType =(this.left as TupleConstructionExpression).inferLHSAssginment(ctx, lhsHint);
+        }
+        else {
+            lhsType = this.left.infer(ctx, lhsHint);
+        }
+
         let rhsType: DataType | null = null;
 
         if(this.operator == "="){
@@ -198,6 +208,9 @@ export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
         if(lhs.isVariable()){
             return Ok();
         }
+    }
+    else if (lhs instanceof TupleConstructionExpression){
+        return Ok();
     }
     
     switch(lhs.kind){

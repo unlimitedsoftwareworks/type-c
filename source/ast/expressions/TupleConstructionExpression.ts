@@ -16,20 +16,41 @@
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
-import { StructType } from "../types/StructType";
 import { TupleType } from "../types/TupleType";
+import { ElementExpression } from "./ElementExpression";
 import { Expression } from "./Expression";
 
 export class TupleConstructionExpression extends Expression {
     elements: Expression[];
 
     constructor(location: SymbolLocation, elements: Expression[]) {
-        super(location, "unnamed_struct_construction");
+        super(location, "tuple_construction");
         this.elements = elements;
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
         throw ctx.parser.customError("Tuple construction is only allowed in function return types", this.location);
+    }
+
+    /**
+     * Called specially when we have an assignment (a, b) = (1, 2)
+     */
+    inferLHSAssginment(ctx: Context, hint: DataType | null): DataType {
+        this.inferReturn(ctx, hint);
+
+        /// with addition to all elements must be variables!
+        for(let i = 0; i < this.elements.length; i++) {
+            if(!(this.elements[i] instanceof ElementExpression)) {
+                throw ctx.parser.customError("Tuple construction elements must be variables", this.location);
+            }
+            else {
+                if (!(this.elements[i] as ElementExpression).isVariable()) {
+                    throw ctx.parser.customError("Tuple construction elements must be variables", this.location);
+                }
+            }
+        }
+
+        return this.inferredType!;
     }
 
     inferReturn(ctx: Context, hint: DataType | null): DataType {
@@ -59,6 +80,12 @@ export class TupleConstructionExpression extends Expression {
             }
 
             this.inferredType = baseHint;
+        }
+
+        for(let i = 0; i < this.elements.length; i++) {
+            if(this.elements[i].inferredType!.is(ctx, TupleType)) {
+                throw ctx.parser.customError("Tuple construction cannot contain other tuples", this.location);
+            }
         }
 
         this.isConstant = false;

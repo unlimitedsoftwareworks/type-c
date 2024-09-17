@@ -28,6 +28,7 @@ export module TypeC {
         outputFolder?: string;
         runOutput: boolean;
         generateIR: boolean;
+        noWarnings: boolean;
     }
 
     export class TCCompiler {
@@ -36,7 +37,7 @@ export module TypeC {
         dir: string = "";
         static stdlibDir: string = "../stdlib/";
         rawConfig: any = {};
-        options: CompileOptions = { dir: "", generateBinaries: true, outputFolder: "bin", runOutput: true, generateIR: false }
+        options: CompileOptions = { dir: "", generateBinaries: true, outputFolder: "bin", runOutput: true, generateIR: false, noWarnings: false }
         basePackage: BasePackage | null = null;
 
         // map from url to package source
@@ -77,7 +78,7 @@ export module TypeC {
             let entrySource = this.readPackage(entry);
             let lexer = new Lexer(entry, entrySource);
             lexer.filepath = entry;
-            let parser = new Parser(lexer, entry);
+            let parser = new Parser(lexer, entry, "compiler", !this.options.noWarnings);
             this.basePackage = parser.basePackage
             parser.parse();
 
