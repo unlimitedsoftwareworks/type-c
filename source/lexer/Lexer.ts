@@ -25,12 +25,12 @@ export class Lexer {
 
     static tokenRegexArray: [TokenType, RegExp][] = [
         // Keywords
-        [TokenType.TOK_AWAIT, /^await\b/],
         [TokenType.TOK_TYPE_CONVERSION_SAFE, /^as\?/],
         [TokenType.TOK_TYPE_CONVERSION_FORCE, /^as!/],
         [TokenType.TOK_TYPE_CONVERSION, /^as\b/],
         [TokenType.TOK_BREAK, /^break\b/],
         [TokenType.TOK_CLASS, /^class\b/],
+        [TokenType.TOK_CFN, /^cfn\b/],
         [TokenType.TOK_COROUTINE, /^coroutine\b/],
         [TokenType.TOK_CONTINUE, /^continue\b/],
         [TokenType.TOK_VARIANT, /^variant\b/],
@@ -50,9 +50,6 @@ export class Lexer {
         [TokenType.TOK_IS, /^is\b/],
         [TokenType.TOK_INTERFACE, /^interface\b/],
         [TokenType.TOK_MUT, /^mut\b/],
-        [TokenType.TOK_LOCK, /^lock\b/],
-        [TokenType.TOK_PROMISE, /^promise\b/],
-        [TokenType.TOK_SPAWN, /^spawn\b/],
         [TokenType.TOK_LET, /^let\b/],
         [TokenType.TOK_NEW, /^new\b/],
         [TokenType.TOK_NULL, /^null\b/],
@@ -65,6 +62,7 @@ export class Lexer {
         [TokenType.TOK_TRUE, /^true\b/],
         [TokenType.TOK_TYPE, /^type\b/],
         [TokenType.TOK_WHILE, /^while\b/],
+        [TokenType.TOK_YIELD, /^yield\b/],
 
         // Special types
         [TokenType.TOK_I8, /^i8\b/],

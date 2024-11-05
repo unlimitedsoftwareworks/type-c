@@ -12,7 +12,6 @@
 
 export enum TokenType {
     // Keywords.
-    TOK_AWAIT = "await",
     TOK_TYPE_CONVERSION = "as",
     TOK_TYPE_CONVERSION_FORCE = "as!",
     TOK_TYPE_CONVERSION_SAFE = "as?",
@@ -31,16 +30,14 @@ export enum TokenType {
     TOK_FOR = "for",
     TOK_FOREACH = "foreach",
     TOK_FN = "fn",
+    TOK_CFN = "cfn",
     TOK_IF = "if",
     TOK_IMPORT = "import",
     TOK_IN = "in",
     TOK_IS = "is",
     TOK_INTERFACE = "interface",
     TOK_MUT = "mut",
-    TOK_LOCK = "lock",
-    TOK_PROMISE = "promise",
-    TOK_SPAWN = "spawn",
-
+    TOK_YIELD = "yield",
     TOK_I8 = "i8",
     TOK_I16 = "i16",
     TOK_I32 = "i32",

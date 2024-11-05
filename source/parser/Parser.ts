@@ -118,15 +118,16 @@ export class Parser {
      * @param type
      * @returns
      */
-    expect(type: string): Token {
+    expect(type: string | string[]): Token {
+        let t = typeof type === "string" ? [type] : type;
         let token = this.peek();
         if (this.mode == "compiler") {
             this.assert(
-                token.type === type,
+                t.includes(token.type),
                 `Expected '${type}' but got '${token.type}'`,
             );
         } else {
-            if (token.type !== type) {
+            if (!t.includes(token.type)) {
                 this.logs.push({
                     type: "error",
                     message: `Expected '${type}' but got '${token.type}'`,

@@ -59,16 +59,15 @@ export type ExpressionKind =
     "nullable_member_access" | // x?.y
     "named_struct_construction" | // { x: 1, y: 2 }
     "new" | // new X()
-    "spawn" | // spawn x
-    "await" | // await x
     "this" | // this
     "unnamed_struct_construction" | // { 1, 2 }
     "tuple_deconstruction"  | // (a) = (1, 2, 3)
     "tuple_construction" | // (1, 2, 3) = f()
     "array_deconstruction" | // [a, b, ...rest] = [1, 2, 3]
     "object_deconstruction" | // { a, b, ...rest } = { a: 1, b: 2, c: 3 }
-    "coroutine_construction" | // coroutine ( ... )
-    "do_expression" // do { ... }
+    "coroutine_construction" | // coroutine  ...
+    "do_expression" | // do { ... }
+    "yield"  // yield x
 ;
 
 export class Expression {

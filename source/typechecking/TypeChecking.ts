@@ -26,10 +26,8 @@ import { GenericType } from "../ast/types/GenericType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { JoinType } from "../ast/types/JoinType";
 import { LiteralIntType } from "../ast/types/LiteralNumberType";
-import { LockType } from "../ast/types/LockType";
 import { NullType } from "../ast/types/NullType";
 import { NullableType } from "../ast/types/NullableType";
-import { PromiseType } from "../ast/types/PromiseType";
 import { StructField, StructType } from "../ast/types/StructType";
 import { TupleType } from "../ast/types/TupleType";
 import { UnionType } from "../ast/types/UnionType";
@@ -344,35 +342,6 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     }
     */
 
-    /**
-     * case 14: PromiseType
-     */
-    if (t1.is(ctx, PromiseType)) {
-        if (!t2.is(ctx, PromiseType)) {
-            res = Err(`Type mismatch, expected promise, got ${t2.shortname()}`);
-            scopeCache.set(typeKey, res);
-            return res;
-        }
-        res = matchDataTypesRecursive(ctx, (t1.to(ctx, PromiseType) as PromiseType).returnType, (t2.to(ctx, PromiseType) as PromiseType).returnType, strict, stack);
-        scopeCache.set(typeKey, res);
-        return res;
-    }
-
-    /**
-     * case 15: LockType
-     * Similar to classes, a lock is only compatible with another lock with the exact same structure
-     */
-    if (t1.is(ctx, LockType)) {
-        if (!t2.is(ctx, LockType)) {
-            res = Err(`Type mismatch, expected lock, got ${t2.shortname()}`);
-            scopeCache.set(typeKey, res);
-            return res;
-        }
-
-        res = matchDataTypesRecursive(ctx, (t1.to(ctx, LockType) as LockType).returnType, (t2.to(ctx, LockType) as LockType).returnType, strict, stack);
-        scopeCache.set(typeKey, res);
-        return res;
-    }
 
     /**
      * case 16: UnionType, unions are only used to model generic type constraints, hence we should not be here

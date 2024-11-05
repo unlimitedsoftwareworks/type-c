@@ -18,7 +18,6 @@ import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { NullableType } from "../types/NullableType";
 import { unaryTypeCheckers } from "../../typechecking/UnaryExpressionInference";
-import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 export type UnaryOperator = "-" | "!" | "!!" | "~" | "pre++" | "post++" | "pre--" | "post--"
 

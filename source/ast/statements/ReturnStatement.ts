@@ -21,7 +21,6 @@ import { Statement } from "./Statement";
 
 export class ReturnStatement extends Statement {
     returnExpression: Expression | null;
-    returnType: DataType | null = null;
 
     constructor(location: SymbolLocation, expression: Expression | null = null){
         super(location, "return");

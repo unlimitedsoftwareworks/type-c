@@ -26,7 +26,6 @@ import { MatchCaseExpression, MatchExpression } from "../ast/expressions/MatchEx
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
 import { NamedStructConstructionExpression, StructUnpackedElement, StructKeyValueExpressionPair } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
-import { SpawnExpression } from "../ast/expressions/SpawnExpression";
 import { ThisExpression } from "../ast/expressions/ThisExpression";
 import { UnaryExpression, UnaryOperator } from "../ast/expressions/UnaryExpression";
 import { ArrayPatternExpression } from "../ast/matching/ArrayPatternExpression";
@@ -85,19 +84,16 @@ import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarat
 import { ForStatement } from "../ast/statements/ForStatement";
 import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarationStatement";
 import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
-import { PromiseType } from "../ast/types/PromiseType";
-import { LockType } from "../ast/types/LockType";
-import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 import { TupleType } from "../ast/types/TupleType";
 import { TupleConstructionExpression } from "../ast/expressions/TupleConstructionExpression";
-import { TokenType } from "../lexer/TokenType";
-import { IntLiteralExpression, LiteralExpression, TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
+import { TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
 import { TupleDeconstructionExpression } from "../ast/expressions/TupleDeconstructionExpression";
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { CoroutineConstructionExpression } from "../ast/expressions/CoroutineConstructionExpression";
 import { DoExpression } from "../ast/expressions/DoExpression";
 import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
 import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
+import { YieldExpression } from "../ast/expressions/YieldExpression";
 
 
 
@@ -277,7 +273,7 @@ function parseVariantConstructor(parser: Parser, ctx: Context): VariantConstruct
 
 function parseFunctionPrototype(parser: Parser, ctx: Context): FunctionPrototype {
     let loc = parser.loc();
-    parser.expect("fn");
+    let tok = parser.expect(["fn", "cfn"]);
     let name = parser.expect("identifier").value;
     let generics: GenericType[] = []
 
@@ -288,33 +284,8 @@ function parseFunctionPrototype(parser: Parser, ctx: Context): FunctionPrototype
     }
 
     let header = parseFnTypeBody(parser, ctx);
+    header.isCoroutine = tok.type === "cfn";
     return new FunctionPrototype(loc, name, header, generics);
-}
-
-
-function parseProcessFunctionPrototype(parser: Parser, ctx: Context): { proto: FunctionPrototype, isEvent: boolean } {
-    let loc = parser.loc();
-    parser.expect("fn");
-    let tok = parser.peek();
-    let isEvent: boolean = false;
-
-    if (tok.value === "on") {
-        parser.accept();
-        isEvent = true;
-        parser.expect(":");
-    }
-    let name = parser.expect("identifier").value;
-
-    let generics: GenericType[] = []
-
-    let lexeme = parser.peek();
-    parser.reject();
-    if (lexeme.type === "<") {
-        generics = parseGenericArgDecl(parser, ctx);
-    }
-
-    let header = parseFnTypeBody(parser, ctx);
-    return { proto: new FunctionPrototype(loc, name, header, generics), isEvent };
 }
 
 function parseMethodInterface(parser: Parser, ctx: Context): InterfaceMethod {
@@ -759,27 +730,6 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         return new NullType(loc);
     }
 
-    if (lexeme.type === "promise") {
-        parser.accept();
-        parser.expect("<");
-        let type = parseType(parser, ctx);
-        parser.expect(">");
-        return new PromiseType(loc, type);
-    }
-
-    if (lexeme.type === "lock") {
-        parser.accept();
-        // sometimes the lock type is not specified, in that case, we use unset
-        let lockType = new UnsetType(loc);
-        if (parser.peek().type == "<") {
-            parser.accept();
-            lockType = parseType(parser, ctx);
-            parser.expect(">");
-        }
-
-        return new LockType(loc, lockType);
-    }
-
     throw parser.customError(`Unexpected token "${lexeme.type}"`, loc);
 }
 
@@ -1021,8 +971,9 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
 }
 
 function parseTypeFunction(parser: Parser, ctx: Context): DataType {
-    parser.expect("fn");
+    let tok = parser.expect(["fn", "cfn"]);
     let header = parseFnTypeBody(parser, ctx);
+    header.isCoroutine = tok.type === "cfn";
     // if the return type is unset, we change it to void (since it"s a function type)
     if (header.returnType.kind == "unset") {
         header.returnType = new VoidType(header.returnType.location);
@@ -1080,8 +1031,6 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod = "
 /**
  * Expressions
  */
-
-
 
 function parseExpression(parser: Parser, ctx: Context): Expression {
     return parseExpressionLet(parser, ctx);
@@ -1433,19 +1382,6 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         }
         return new UnaryExpression(loc, expression, lexeme.type as unknown as UnaryOperator);
     }
-    else if (lexeme.type === "await") {
-        parser.accept();
-        let expression = parseExpressionUnary(parser, ctx);
-        return new AwaitExpression(loc, expression);
-    }
-    else if (lexeme.type === "spawn") {
-        parser.accept();
-        let expr = parseExpression(parser, ctx);
-        if (!expr) {
-            throw parser.customError("spawn requires a valid expression", loc);
-        }
-        return new SpawnExpression(loc, expr);
-    }
     else if (lexeme.type === "new") {
         parser.accept();
         let type = parseType(parser, ctx);
@@ -1456,21 +1392,36 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         parser.expect(")");
         return new NewExpression(loc, type, args);
     }
+    else if (lexeme.type === "yield") {
+        parser.accept();
+        let returnExpr = parseExpression(parser, ctx);
+
+        let yieldExpr = new YieldExpression(loc, returnExpr);
+        
+        let parentFunction = ctx.findParentFunction();
+
+        // make sure the parent function can be a coroutine, i.e function or lambda
+        if((parentFunction instanceof DeclaredFunction )|| (parentFunction instanceof LambdaExpression)){
+            parentFunction.isCoroutineCallable = true
+            // cannot mix yield and return statements
+            if(parentFunction.returnStatements.length != 0){
+                throw parser.customError("Cannot use yield expression inside a function that has a return statement", loc);
+            }
+            parentFunction.yieldExpressions.push({ yield: yieldExpr, ctx });
+        }
+
+        else {
+            throw parser.customError("yield expression must be inside a regular function or lambda", loc);
+        }
+
+        return yieldExpr;
+    }
     else if (lexeme.type === "coroutine") {
         parser.accept();
-        parser.expect("(");
+        //parser.expect("(");
         let baseFn = parseExpression(parser, ctx);
-        let tok = parser.peek();
-        if (tok.type === ")") {
-            parser.accept();
-            return new CoroutineConstructionExpression(loc, baseFn, []);
-        }
-        parser.reject();
-
-        parser.expect(",");
-        let args = parseExpressionList(parser, ctx);
-        parser.expect(")");
-        return new CoroutineConstructionExpression(loc, baseFn, args);
+        //parser.expect(")");
+        return new CoroutineConstructionExpression(loc, baseFn);
     }
     else {
         parser.reject();
@@ -1571,9 +1522,10 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
         return parseStructConstruction(parser, ctx);
     }
 
-    if (lexeme.type === "fn") {
+    if (lexeme.type === "fn" || lexeme.type === "cfn") {
         parser.accept();
         let header = parseFnTypeBody(parser, ctx);
+        header.isCoroutine = lexeme.type === "cfn";
         let newScope = new Context(loc, parser, ctx, { withinFunction: true });
         newScope.location = loc;
         let fn = new LambdaExpression(loc, newScope, header, null, null);
@@ -2331,6 +2283,7 @@ function parseStatement(parser: Parser, ctx: Context): Statement {
         case "match":
             return parseStatementMatch(parser, ctx);
         case "fn":
+        case "cfn":
             return parseStatementFn(parser, ctx);
         case "{":
             return parseStatementBlock(parser, ctx);
@@ -2580,6 +2533,10 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
 
     fn.body = stmtBody;
     fn.expression = exprBody;
+
+    if (fn.isCoroutineCallable) {
+        proto.header.isCoroutine = true;
+    }
 
     parser.assert((exprBody !== null) || (stmtBody !== null), "Function body is not defined!");
 

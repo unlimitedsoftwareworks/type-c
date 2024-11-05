@@ -18,7 +18,6 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
-import { LockType } from "../types/LockType";
 import { UnsetType } from "../types/UnsetType";
 import { Expression } from "./Expression";
 
@@ -46,19 +45,6 @@ export class NewExpression extends Expression {
         this.setHint(hint);
 
         /**
-         * When we have a lock, its type is not necessarily known, so we have to infer it
-         * Hence we only infer this.type if it is not a lock
-         */
-
-        // types are resolved within matchDataTypes
-        if(hint && !this.type.is(ctx, LockType)) {
-            let r = matchDataTypes(ctx, hint, this.type);
-            if(!r.success) {
-                throw ctx.parser.customError(`Type mismatch in new expression, expected ${hint.shortname()} but found ${this.type.shortname()}: ${r.message}`, this.location);
-            }
-        }
-
-        /**
          * New expression is used to spawn a new class or lock
          */
         if(this.type.is(ctx, ClassType)) {
@@ -84,28 +70,6 @@ export class NewExpression extends Expression {
                 }
             }
 
-
-            this.inferredType = this.type;
-            this.isConstant = false;
-            return this.inferredType;
-        }
-        else if (this.type.is(ctx, LockType)) {
-            // syntax: new lock<T>(something of type T) or lock(something of type T), we will infer the type of the lock
-            let lockType = this.type.to(ctx, LockType) as LockType;
-            // make sure we have only one argument
-            if(this.arguments.length !== 1) {
-                throw ctx.parser.customError(`Expected one argument for lock creation, got ${this.arguments.length}`, this.location);
-            }
-
-            if(lockType.returnType.is(ctx, UnsetType)) {
-                lockType.returnType = this.arguments[0].infer(ctx, null);
-            }
-            else {
-                let r = matchDataTypes(ctx, lockType.returnType, this.arguments[0].infer(ctx, null));
-                if(!r.success) {
-                    throw ctx.parser.customError(`Type mismatch in lock creation, expected ${lockType.returnType.shortname()} but found ${this.arguments[0].inferredType!.shortname()}: ${r.message}`, this.location);
-                }
-            }
 
             this.inferredType = this.type;
             this.isConstant = false;
