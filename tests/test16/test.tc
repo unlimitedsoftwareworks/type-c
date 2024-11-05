@@ -177,8 +177,6 @@ fn test_case_7(rn: TestUnit) {
     rn.assert_eq<u32>(new_inc(), 1)  // New count, reset to 0 + 1 = 1
 }
 
-
-
 fn test_case_8(rn: TestUnit) {
     fn make_adder(base: u32) -> fn(y: u32) -> u32 {
         fn add(y: u32) -> u32 {
