@@ -443,11 +443,9 @@ export class CodeSegment {
             case BytecodeInstructionType.bnot_32:
             case BytecodeInstructionType.bnot_64:
             case BytecodeInstructionType.not:
-
+                this.writer.push_8(args[0]);
+                return this.writer.push_8(args[1]);
                 
-
-                
-
             case BytecodeInstructionType.j:
                 this.writer.push_8(8); // presume 8 bytes
                 return this.writer.push_64(args[0]);
@@ -529,8 +527,30 @@ export class CodeSegment {
 
             case BytecodeInstructionType.closure_call:
                 return this.writer.push_8(args[0]);
+            
             case BytecodeInstructionType.closure_backup:
                 return this.writer.push_8(args[0]);
+            
+            case BytecodeInstructionType.coroutine_alloc:
+                this.writer.push_8(args[0]);
+                return this.writer.push_8(args[1]);
+            
+            case BytecodeInstructionType.coroutine_fn_alloc:
+                return this.writer.push_8(args[0]);
+            
+            case BytecodeInstructionType.coroutine_get_state:
+                return this.writer.push_8(args[0]);
+            
+            case BytecodeInstructionType.coroutine_call:
+                return this.writer.push_8(args[0]);
+            
+            case BytecodeInstructionType.coroutine_yield:
+                return -1;
+            
+            case BytecodeInstructionType.coroutine_ret:
+                return -1;
+            
+
                 
             default:
                 throw new Error(`Unsupported instruction: ${BytecodeInstructionType[instruction]}`);
