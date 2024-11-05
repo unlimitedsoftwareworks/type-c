@@ -16,7 +16,6 @@ import {
     ArrayUnpackingExpression,
 } from "../ast/expressions/ArrayConstructionExpression";
 import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
-import { AwaitExpression } from "../ast/expressions/AwaitExpression";
 import {
     BinaryExpression,
     BinaryExpressionOperator,
@@ -57,7 +56,6 @@ import {
     StructKeyValueExpressionPair,
 } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
-import { SpawnExpression } from "../ast/expressions/SpawnExpression";
 import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
 import { ThisExpression } from "../ast/expressions/ThisExpression";
 import { TupleConstructionExpression } from "../ast/expressions/TupleConstructionExpression";
@@ -136,6 +134,7 @@ import {
 import { allocateRegisters } from "./RegisterAllocator";
 import { getDataTypeByteSize } from "./utils";
 import { FunctionCodegenProps } from "./FunctionCodegenProps";
+import { YieldExpression } from "../ast/expressions/YieldExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -143,20 +142,6 @@ export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
  * Utility functions
  */
 export function isLocalVariable(expr: Expression, ctx: Context) {
-    if (expr instanceof ElementExpression) {
-        let symScope = ctx.lookupScope(expr.name);
-
-        if (
-            symScope?.sym instanceof DeclaredVariable ||
-            symScope?.sym instanceof VariablePattern
-        ) {
-            return symScope.scope == "local";
-        }
-    }
-    return false;
-}
-
-export function isUpvalue(expr: Expression, ctx: Context) {
     if (expr instanceof ElementExpression) {
         let symScope = ctx.lookupScope(expr.name);
 
@@ -214,48 +199,6 @@ export function isUpvalueVariable(expr: Expression, ctx: Context) {
     return false;
 }
 
-function fetchElementSymbol(
-    ctx: Context,
-    element: ElementExpression,
-): Symbol | DeclaredFunction | null {
-    let name: string = element.name;
-    let typeArgs: DataType[] = element.typeArguments;
-    if (typeArgs.length == 0) {
-        typeArgs = element.inferredArgumentsTypes || [];
-    }
-
-    let sym = ctx.lookup(name);
-    if (sym instanceof DeclaredFunction) {
-        if (sym.isGeneric()) {
-            let concrete = sym.concreteGenerics.get(
-                signatureFromGenerics(typeArgs),
-            );
-            if (concrete == null) {
-                throw ctx.parser.customError(
-                    `Could not find concrete type for generic function ${name} with type arguments ${typeArgs.map((t) => t.toString()).join(", ")}`,
-                    sym.location,
-                );
-            }
-            return concrete as DeclaredFunction;
-        } else {
-            return sym as DeclaredFunction;
-        }
-    } else if (sym instanceof DeclaredType) {
-        /*
-         TODO: remove, seems unnecessary
-         if(sym instanceof ClassMethod) {
-            let concrete = sym.getConcreteGenerics();
-            if (concrete == null) {
-                throw ctx.parser.customError(`Could not find concrete type for generic function ${name} with type arguments ${typeArgs.map((t) => t.toString()).join(", ")}`, sym.location);
-            }
-            return concrete
-        }*/
-        return sym;
-    }
-
-    return sym;
-}
-
 export class FunctionGenerator {
     // IR instructions
     instructions: IRInstruction[] = [];
@@ -297,7 +240,7 @@ export class FunctionGenerator {
 
     // generates an IR instruction
     i(type: IRInstructionType, ...args: (string | number)[]) {
-        if((type == "ret_ptr") && (args[0] == "")) {
+        if ((type == "ret_ptr") && (args[0] == "")) {
             console.log(this.fn.name)
         }
         if (type == null) {
@@ -503,52 +446,53 @@ export class FunctionGenerator {
             tmp = this.visitLetInExpression(expr, ctx);
         else if (expr instanceof NewExpression)
             tmp = this.visitNewExpression(expr, ctx);
-        else if (expr instanceof CoroutineConstructionExpression)
-            tmp = this.visitCoroutineConstructionExpression(expr, ctx);
         else if (expr instanceof LiteralExpression)
             tmp = this.visitLiteralExpression(expr, ctx);
         else if (expr instanceof UnaryExpression)
             tmp = this.visitUnaryExpression(expr, ctx);
         else if (expr instanceof DoExpression)
             tmp = this.visitDoExpression(expr, ctx);
+        else if (expr instanceof CoroutineConstructionExpression)
+            tmp = this.visitCoroutineConstructionExpression(expr, ctx);
+        else if (expr instanceof YieldExpression)
+            tmp = this.visitYieldExpression(expr, ctx);
         else throw new Error("Invalid expression " + expr.toString());
 
         if (tmp != "") {
-            let inferredType = expr.inferredType?.dereference();
-            let hintType = expr.hintType?.dereference();
-
-            if (hintType != undefined && hintType.kind != "void") {
-                let requireSafe =
-                    inferredType instanceof NullableType ||
-                    hintType instanceof NullableType;
-
-                //let r = matchDataTypes(ctx, hintType, inferredType!, true);
-                //if (r.success) {
-                // types are exact, no need to cast
-                //}
-                //else {
-                this.i(
-                    "debug",
-                    "casting from " +
-                    inferredType?.kind +
-                    " to " +
-                    hintType?.kind,
-                );
-                tmp = this.visitCastExpression(
-                    new CastExpression(
-                        expr.location,
-                        expr,
-                        hintType,
-                        requireSafe ? "safe" : "regular",
-                    ),
-                    ctx,
-                    tmp,
-                );
-                //}
-            }
+            this.handleTypeCasting(expr, ctx, tmp);
         }
         this.srcMapPopLoc();
         return tmp;
+    }
+
+    handleTypeCasting(expr: Expression, ctx: Context, tmp: string) {
+        let inferredType = expr.inferredType?.dereference();
+        let hintType = expr.hintType?.dereference();
+
+        if (hintType != undefined && hintType.kind != "void") {
+            let requireSafe =
+                inferredType instanceof NullableType ||
+                hintType instanceof NullableType;
+
+
+            this.i(
+                "debug",
+                "casting from " +
+                inferredType?.kind +
+                " to " +
+                hintType?.kind,
+            );
+            tmp = this.visitCastExpression(
+                new CastExpression(
+                    expr.location,
+                    expr,
+                    hintType,
+                    requireSafe ? "safe" : "regular",
+                ),
+                ctx,
+                tmp,
+            );
+        }
     }
 
     visitElementExpression(expr: ElementExpression, ctx: Context): string {
@@ -615,54 +559,10 @@ export class FunctionGenerator {
     ): string {
         let inferredType = expr.lhs.inferredType!.dereference();
         if (inferredType.is(ctx, ArrayType)) {
-            let arrayType = inferredType.to(ctx, ArrayType) as ArrayType;
-
-            if (expr.indexes.length != 1) {
-                throw new Error(
-                    "Invalid index access expression, expected 1 index got " +
-                    expr.indexes.length,
-                );
-            }
-
-            // make sure the index is an integer
-            if (!expr.indexes[0].inferredType!.is(ctx, BasicType)) {
-                throw new Error(
-                    "Invalid index access expression, expected integer index got " +
-                    expr.indexes[0].inferredType?.toString(),
-                );
-            } else {
-                let indexType = expr.indexes[0].inferredType!.to(
-                    ctx,
-                    BasicType,
-                ) as BasicType;
-                if (
-                    indexType.kind != "u8" &&
-                    indexType.kind != "u16" &&
-                    indexType.kind != "u32" &&
-                    indexType.kind != "u64"
-                ) {
-                    throw new Error(
-                        "Invalid index access expression, expected unsigned integer index got " +
-                        expr.indexes[0].inferredType?.toString(),
-                    );
-                }
-            }
-
-            let indexReg = this.visitExpression(expr.indexes[0], ctx);
-
-            // generate the array
-            let reg = this.visitExpression(expr.lhs, ctx);
-
-            this.i("debug", "array index access");
-            let instr = arrayGetIndexType(arrayType.arrayOf.dereference());
-            let tmp = this.generateTmp();
-            this.i(instr, tmp, indexReg, reg);
-            this.destroyTmp(reg);
-            this.destroyTmp(indexReg);
-
-            return tmp;
+            return this.ir_generate_array_access(expr, ctx);
         }
 
+        // else check if it is a method call
         if (!expr.operatorOverloadState.isMethodCall) {
             throw new Error(
                 "Invalid index access expression, expected array or callable got " +
@@ -694,20 +594,7 @@ export class FunctionGenerator {
     visitIndexSetExpression(expr: IndexSetExpression, ctx: Context): string {
         let mainExprType = expr.lhs.inferredType!.dereference();
         if (mainExprType instanceof ArrayType) {
-            this.i("debug", "array index set");
-            this.i("debug", "array expression");
-            let array_reg = this.visitExpression(expr.lhs, ctx);
-            this.i("debug", "array index expression");
-            let index_reg = this.visitExpression(expr.indexes[0], ctx);
-            this.i("debug", "array value expression");
-            let value_reg = this.visitExpression(expr.value, ctx);
-
-            let instr = arraySetIndexType(mainExprType.arrayOf);
-            this.i(instr, array_reg, index_reg, value_reg);
-            this.destroyTmp(array_reg);
-            this.destroyTmp(index_reg);
-            this.destroyTmp(value_reg);
-            return value_reg;
+            return this.ir_generate_array_set(expr, ctx, mainExprType);
         }
 
         /**
@@ -825,10 +712,6 @@ export class FunctionGenerator {
         return tmpRes;
     }
 
-    visitSpawnExpression(expr: SpawnExpression, ctx: Context): string {
-        throw new Error("Method not implemented.");
-    }
-
     visitUnnamedStructConstructionExpression(
         expr: UnnamedStructConstructionExpression,
         ctx: Context,
@@ -862,10 +745,6 @@ export class FunctionGenerator {
         return tmp;
     }
 
-    visitAwaitExpression(expr: AwaitExpression, ctx: Context): string {
-        throw new Error("Method not implemented.");
-    }
-
     visitInstanceCheckExpression(
         expr: InstanceCheckExpression,
         ctx: Context,
@@ -875,137 +754,14 @@ export class FunctionGenerator {
         let castType = expr.type.dereference();
 
         if (actualType instanceof ClassType) {
-            // castType has to be an interface
-            // WRONG: ~if this test has passed, it means that the class implements the interface~
-            // or is compatible with the interface
-
-            //// this can be generated by pattern matching too, making the last point in valid
-            // hence we need to check
-            if (!castType.is(ctx, InterfaceType)) {
-                throw new Error(
-                    "Expected interface type, got " + castType.kind,
-                );
-            }
-
-            // simply return the result
-            this.destroyTmp(reg);
-            let tmp = this.generateTmp();
-            //let castable = actualType.canCast(castType, ctx).success;
-            let castable = canCastTypes(ctx, castType, actualType).success;
-            this.i("debug", "Class -> Interface Check");
-            this.i("const_u8", tmp, castable ? 1 : 0);
-
-            return tmp;
+            return this.ir_generate_class_instance_check(expr, ctx, reg, actualType, castType);
         }
 
         if (actualType.is(ctx, InterfaceType)) {
-            var actualTypeInterface = actualType.to(
-                ctx,
-                InterfaceType,
-            ) as InterfaceType;
-
-            if (castType instanceof ClassType) {
-                let tmp = this.generateTmp();
-                this.i("debug", "Instance -> Class Check");
-                this.i("i_is_c", tmp, reg, castType.classId);
-                this.destroyTmp(reg);
-                return tmp;
-            } else {
-                // castType has to be an interface
-                if (!castType.is(ctx, InterfaceType)) {
-                    throw new Error(
-                        "Expected interface type, got " + castType.shortname(),
-                    );
-                }
-
-                let castTypeInterface = castType.to(
-                    ctx,
-                    InterfaceType,
-                ) as InterfaceType;
-
-                // check if they align
-                if (actualTypeInterface.interfacesAlign(castTypeInterface)) {
-                    this.destroyTmp(reg);
-                    // simply return true
-                    let tmp = this.generateTmp();
-                    this.i("const_u8", tmp, 1);
-                    return tmp;
-                } else {
-                    let failLabel = this.generateLabel();
-                    let endLabel = this.generateLabel();
-
-                    let tmp = this.generateTmp();
-                    this.i("debug", "Interface -> Interface Check");
-
-                    let allMethods = [...castTypeInterface.getMethods()];
-                    // sort by UID
-                    allMethods.sort((a, b) => a.getUID() - b.getUID());
-
-                    for (let i = 0; i < allMethods.length; i++) {
-                        let method = allMethods[i];
-                        let methodUID = method.getUID();
-                        this.i("i_has_m", methodUID, reg, failLabel);
-                    }
-
-                    this.destroyTmp(reg);
-                    this.i("const_u8", tmp, 1);
-                    this.i("j", endLabel);
-                    this.i("label", failLabel);
-                    this.i("const_u8", tmp, 0);
-                    this.i("label", endLabel);
-
-                    this.destroyTmp(reg);
-                    return tmp;
-                }
-            }
+            return this.ir_generate_interface_instance_check(expr, ctx, reg, actualType, castType);
         }
         if (actualType instanceof VariantType) {
-            // variants are structs with a tag under the hood.
-            if (castType instanceof VariantType) {
-                throw new Error(
-                    "Variant -> Variant checks are not yet implemented",
-                );
-            }
-
-            if (castType instanceof VariantConstructorType) {
-                let name = castType.name;
-                let constructor = actualType.getConstructor(name);
-                if (constructor == null) {
-                    throw new Error("Unknown constructor " + name);
-                }
-
-                let id_reg = this.generateTmp();
-                this.i(
-                    "debug",
-                    `Variant -> VariantConstructor "${name}" Check`,
-                );
-                // offset 0 is the tag
-                this.i("s_get_field_u16", id_reg, reg, 0);
-                //this.i("debug_reg", id_reg)
-                this.destroyTmp(reg);
-
-                let tmp2 = this.generateTmp();
-
-                let lblFalse = this.generateLabel();
-                let lblEnd = this.generateLabel();
-
-                this.i("const_u16", tmp2, constructor.getId());
-                this.i("j_cmp_u16", id_reg, tmp2, 1, lblFalse);
-                this.destroyTmp(id_reg);
-                this.destroyTmp(tmp2);
-
-                let res_reg = this.generateTmp();
-
-                // here is true
-                this.i("const_u8", res_reg, 1);
-                this.i("j", lblEnd);
-                // here is false
-                this.i("label", lblFalse);
-                this.i("const_u8", res_reg, 0);
-                this.i("label", lblEnd);
-
-                return res_reg;
-            }
+            return this.ir_generate_variant_instance_check(expr, ctx, reg, actualType, castType);
         }
 
         throw new Error(
@@ -1027,32 +783,7 @@ export class FunctionGenerator {
             if (sym instanceof DeclaredType) {
                 // case 1: Enum
                 if (sym.type instanceof EnumType) {
-                    // make sure expr.rhs is an element expression
-                    if (!(expr.right instanceof ElementExpression)) {
-                        throw ctx.parser.customError(
-                            "Expected enum member name after `.`",
-                            expr.location,
-                        );
-                    }
-                    let field = expr.right.name;
-                    this.i(
-                        "debug",
-                        `enum member access expression: ${elementName}.${field}`,
-                    );
-
-                    let tmp = this.generateTmp();
-                    let value = sym.type.getFieldValue(ctx, field);
-
-                    if (sym.type.as == "unset") {
-                        throw new Error("Enum type is unresolved");
-                    }
-
-                    let inst = constType(
-                        new BasicType(sym.location, sym.type.as),
-                    );
-                    this.i(inst, tmp, value);
-
-                    return tmp;
+                    return this.ir_generate_enum_access(expr, ctx, elementName, sym, sym.type);
                 }
 
                 // case 2: Variant
@@ -1141,171 +872,16 @@ export class FunctionGenerator {
 
     visitBinaryExpression(expr: BinaryExpression, ctx: Context): string {
         if (expr.operatorOverloadState.isMethodCall) {
-            // method call is as follows:
-            // a + b -> a.add(b)
-            this.i("debug", "replacing binary expression with method call");
-            let methodCall = new FunctionCallExpression(
-                expr.location,
-                new MemberAccessExpression(
-                    expr.location,
-                    expr.left,
-                    new ElementExpression(
-                        expr.location,
-                        expr.operatorOverloadState.methodRef!.name,
-                    ),
-                ),
-                [expr.right],
-            );
-            methodCall.infer(ctx, expr.inferredType);
-            return this.visitFunctionCallExpression(methodCall, ctx);
+            return this.ir_generate_binary_expr_method_call(expr, ctx);
         }
 
         // add debug info
         this.i("debug", "binary expression " + expr.operator);
 
         if (expr.operator == "=") {
-
-            if(expr.left instanceof TupleConstructionExpression){
-                this.ir_generate_tuple_assignment(ctx, expr);
-                return "";
-            }
-
-            // generate the right expression
-            let right = this.visitExpression(expr.right, ctx);
-
-            if (isUpvalueVariable(expr.left, ctx)) {
-                let sym = ctx.lookupScope(
-                    (expr.left as ElementExpression).name,
-                );
-                this.i("debug", "upvalue variable assignment, treated as arg");
-                let inst = tmpType(expr.left.inferredType!);
-                let tmp = this.generateTmp();
-                this.i(inst, tmp, "arg", sym!.sym.uid);
-                this.i(inst, tmp, "reg", right);
-                return right;
-            }
-            if (isLocalVariable(expr.left, ctx)) {
-                this.i("debug", "local variable assignment");
-                let sym = ctx.lookupScope(
-                    (expr.left as ElementExpression).name,
-                );
-                // local variable
-                if (this.isGlobal) {
-                    let inst = globalType(expr.left.inferredType!);
-                    this.i(inst, sym!.sym.uid, right);
-                } else {
-                    let inst = tmpType(expr.left.inferredType!);
-                    let tmp = this.generateTmp();
-                    this.i(inst, tmp, sym!.scope, sym!.sym.uid);
-                    this.i(inst, tmp, "reg", right);
-                }
-                return right;
-            }
-            if (isGlobalVariable(expr.left, ctx)) {
-                this.i("debug", "global variable assignment");
-                let sym = ctx.lookup((expr.left as ElementExpression).name);
-                // global variable
-                let inst = globalType(expr.left.inferredType!);
-                this.i(inst, sym!.uid, right);
-                return right;
-            }
-            if (isFunctionArgument(expr.left, ctx)) {
-                // arguments needs to be handled differently
-                // arg_u32 x tmp_0 needs to be become:
-                // 1. tmp_u32 tmp_1, x
-                // 2. tmp_u32 tmp_2, "tmp", tmp_0
-
-                this.i("debug", "function argument assignment");
-                let sym = ctx.lookup((expr.left as ElementExpression).name);
-                // function argument
-                let inst = tmpType(expr.left.inferredType!);
-                let tmp = this.generateTmp();
-                this.i(inst, tmp, "arg", sym!.uid);
-                this.i(inst, tmp, "reg", right);
-
-                //this.i(inst, sym!.uid, right);
-                return right;
-            }
-            if (expr.left instanceof MemberAccessExpression) {
-                // check if it is struct
-                let left = expr.left as MemberAccessExpression;
-                let element = left.right as ElementExpression;
-
-                let baseType = left.left.inferredType?.dereference();
-
-                if (baseType instanceof StructType) {
-                    let structType = baseType as StructType;
-                    // we will assign the value to the struct's field
-                    this.i(
-                        "debug",
-                        "struct field assignment, struct expression",
-                    );
-                    let structExpr = this.visitExpression(left.left, ctx);
-                    this.i(
-                        "debug",
-                        "struct field assignment, struct member " +
-                        element.name,
-                    );
-
-                    let fieldType = structType.getFieldTypeByName(
-                        element.name,
-                    )!;
-                    let field = structType.getField(element.name);
-
-                    let instr = structSetFieldType(fieldType);
-                    this.i(instr, structExpr, field!.getFieldID(), right);
-                    this.destroyTmp(structExpr);
-                    //this.i("s_set_field_f32", "struct field assignment, struct member");
-                    return right;
-                } else if (baseType instanceof ClassType) {
-                    let classType = baseType as ClassType;
-                    // we will assign the value to the class's field
-                    this.i("debug", "class field assignment, class expression");
-                    let classExpr = this.visitExpression(left.left, ctx);
-                    this.i(
-                        "debug",
-                        "class field assignment, class member " + element.name,
-                    );
-                    let attr = classType.getAttribute(element.name);
-
-                    if (attr == null) {
-                        throw ctx.parser.customError(
-                            "Can only assign to class attributes",
-                            element.location,
-                        );
-                    }
-
-                    let fieldType = attr.type;
-                    let fieldOffset = classType.getAttributeOffset(
-                        ctx,
-                        element.name,
-                    )!;
-
-                    let instr = classSetFieldType(fieldType);
-                    this.i(instr, classExpr, fieldOffset, right);
-                    this.destroyTmp(classExpr);
-
-                    return right;
-                }
-            }
-            {
-                this.i("debug", "assignment of " + expr.left.kind);
-                throw new Error(
-                    "Assignment to " +
-                    expr.left.kind +
-                    " is not yet implemented",
-                );
-            }
+            return this.ir_generate_assignment(expr, ctx);
+            
         } else if (["+=", "-=", "*=", "/=", "%="].includes(expr.operator)) {
-            // before transforing the expression, into separate binary expression and assignment, we check if it is += applied to a struct
-            //
-            //if((expr.operator === "+=") && (expr.metadata.isStructFieldUpdate === true)){
-            //    throw ctx.parser.customError("Struct assignment is not yet implemented", expr.location);
-            /**
-        //     * TODO: go through the fields of rhs, and add them to the lhs
-        //     */
-            //}
-
             // generate the instruction
             let newInstruction = this.buildOpAssignBinaryExpr(
                 ctx,
@@ -1316,7 +892,7 @@ export class FunctionGenerator {
             );
             return this.visitExpression(newInstruction, ctx);
         }
-        if(expr.operator === "??"){
+        if (expr.operator === "??") {
             return this.ir_generate_null_coalescing(ctx, expr);
         }
 
@@ -1349,95 +925,7 @@ export class FunctionGenerator {
             expr.operator == "<=" ||
             expr.operator == ">="
         ) {
-            this.i(
-                "debug",
-                "generating comparaison expression " + expr.operator,
-            );
-            // result will be either 0 or 1
-            let tmp = this.generateTmp();
-            // first we cmp
-            let inferredType = expr.left.inferredType?.dereference();
-            let cmp: IRInstructionType = "j_cmp_u8";
-            if (
-                inferredType instanceof BasicType ||
-                inferredType instanceof EnumType ||
-                inferredType instanceof BooleanType
-            ) {
-                let basic_type = inferredType as BasicType;
-                if (inferredType instanceof EnumType) {
-                    basic_type = inferredType.toBasicType(ctx);
-                }
-                cmp = getBinaryInstruction(basic_type, expr.operator);
-            } else {
-                // make sure that the operator is == or !=
-                if (expr.operator != "==" && expr.operator != "!=") {
-                    throw ctx.parser.customError(
-                        "Cannot compare " +
-                        expr.left.inferredType?.kind +
-                        " with " +
-                        expr.right.inferredType?.kind,
-                        expr.location,
-                    );
-                }
-
-                cmp = "j_cmp_ptr";
-            }
-
-            // now we need three labels for the jumps
-            // true label
-            let lblTrue = this.generateLabel();
-            // false label
-            let lblFalse = this.generateLabel();
-            // end label, if true, it needs to skip the false label
-            let lblEnd = this.generateLabel();
-
-            // if the condition is true, jump to the true label
-            this.i("debug", "conditional jump");
-
-            if (expr.operator == "==") {
-                this.i(cmp, left, right, 0, lblTrue);
-                this.i("j", lblFalse);
-            } else if (expr.operator == "!=") {
-                this.i(cmp, left, right, 1, lblTrue);
-                this.i("j", lblFalse);
-            } else if (expr.operator == "<") {
-                this.i(cmp, left, right, 4, lblTrue);
-                this.i("j", lblFalse);
-            } else if (expr.operator == ">") {
-                this.i(cmp, left, right, 2, lblTrue);
-                this.i("j", lblFalse);
-            } else if (expr.operator == "<=") {
-                this.i(cmp, left, right, 5, lblTrue);
-                this.i("j", lblFalse);
-            } else if (expr.operator == ">=") {
-                this.i(cmp, left, right, 3, lblTrue);
-                this.i("j", lblFalse);
-            } else {
-                throw new Error("Unknown operator " + expr.operator);
-            }
-
-            this.destroyTmp(left);
-            this.destroyTmp(right);
-
-            // true label
-            this.i("debug", "true label");
-            this.i("label", lblTrue);
-            this.i("const_u8", tmp, 1);
-            // jump to the end
-            this.i("debug", "true label jump");
-            this.i("j", lblEnd);
-
-            // false label
-            this.i("debug", "false label");
-            this.i("label", lblFalse);
-            this.i("const_u8", tmp, 0);
-
-            // no need to jump to the end, it will continue
-
-            // end label
-            this.i("debug", "end label");
-            this.i("label", lblEnd);
-            return tmp;
+            return this.ir_generate_comparison(expr, ctx, left, right);
         } else {
             let inst = getBinaryInstruction(
                 expr.left.inferredType as BasicType,
@@ -1449,6 +937,272 @@ export class FunctionGenerator {
             this.destroyTmp(right);
             return tmp;
         }
+    }
+
+    ir_generate_comparison(expr: BinaryExpression, ctx: Context, left: string, right: string) {
+        this.i(
+            "debug",
+            "generating comparaison expression " + expr.operator,
+        );
+        // result will be either 0 or 1
+        let tmp = this.generateTmp();
+        // first we cmp
+        let inferredType = expr.left.inferredType?.dereference();
+        let cmp: IRInstructionType = "j_cmp_u8";
+        if (
+            inferredType instanceof BasicType ||
+            inferredType instanceof EnumType ||
+            inferredType instanceof BooleanType
+        ) {
+            let basic_type = inferredType as BasicType;
+            if (inferredType instanceof EnumType) {
+                basic_type = inferredType.toBasicType(ctx);
+            }
+            cmp = getBinaryInstruction(basic_type, expr.operator);
+        } else {
+            // make sure that the operator is == or !=
+            if (expr.operator != "==" && expr.operator != "!=") {
+                throw ctx.parser.customError(
+                    "Cannot compare " +
+                    expr.left.inferredType?.kind +
+                    " with " +
+                    expr.right.inferredType?.kind,
+                    expr.location,
+                );
+            }
+
+            cmp = "j_cmp_ptr";
+        }
+
+        // now we need three labels for the jumps
+        // true label
+        let lblTrue = this.generateLabel();
+        // false label
+        let lblFalse = this.generateLabel();
+        // end label, if true, it needs to skip the false label
+        let lblEnd = this.generateLabel();
+
+        // if the condition is true, jump to the true label
+        this.i("debug", "conditional jump");
+
+        if (expr.operator == "==") {
+            this.i(cmp, left, right, 0, lblTrue);
+            this.i("j", lblFalse);
+        } else if (expr.operator == "!=") {
+            this.i(cmp, left, right, 1, lblTrue);
+            this.i("j", lblFalse);
+        } else if (expr.operator == "<") {
+            this.i(cmp, left, right, 4, lblTrue);
+            this.i("j", lblFalse);
+        } else if (expr.operator == ">") {
+            this.i(cmp, left, right, 2, lblTrue);
+            this.i("j", lblFalse);
+        } else if (expr.operator == "<=") {
+            this.i(cmp, left, right, 5, lblTrue);
+            this.i("j", lblFalse);
+        } else if (expr.operator == ">=") {
+            this.i(cmp, left, right, 3, lblTrue);
+            this.i("j", lblFalse);
+        } else {
+            throw new Error("Unknown operator " + expr.operator);
+        }
+
+        this.destroyTmp(left);
+        this.destroyTmp(right);
+
+        // true label
+        this.i("debug", "true label");
+        this.i("label", lblTrue);
+        this.i("const_u8", tmp, 1);
+        // jump to the end
+        this.i("debug", "true label jump");
+        this.i("j", lblEnd);
+
+        // false label
+        this.i("debug", "false label");
+        this.i("label", lblFalse);
+        this.i("const_u8", tmp, 0);
+
+        // no need to jump to the end, it will continue
+
+        // end label
+        this.i("debug", "end label");
+        this.i("label", lblEnd);
+        return tmp;
+    }
+    
+    ir_generate_assignment(expr: BinaryExpression, ctx: Context) {
+        if (expr.left instanceof TupleConstructionExpression) {
+            this.ir_generate_tuple_assignment(ctx, expr);
+            return "";
+        }
+
+        // generate the right expression
+        let right = this.visitExpression(expr.right, ctx);
+
+        if (isUpvalueVariable(expr.left, ctx)) {
+            return this.ir_generate_upvalue_assignment(expr, ctx, right);
+        }
+        if (isLocalVariable(expr.left, ctx)) {
+            return this.ir_generate_local_variable_assignment(expr, ctx, right);
+        }
+        if (isGlobalVariable(expr.left, ctx)) {
+            this.i("debug", "global variable assignment");
+            let sym = ctx.lookup((expr.left as ElementExpression).name);
+            // global variable
+            let inst = globalType(expr.left.inferredType!);
+            this.i(inst, sym!.uid, right);
+            return right;
+        }
+        if (isFunctionArgument(expr.left, ctx)) {
+            return this.ir_generate_function_argument_assignment(expr, ctx, right);
+        }
+        if (expr.left instanceof MemberAccessExpression) {
+            // check if it is struct
+            let left = expr.left as MemberAccessExpression;
+            let element = left.right as ElementExpression;
+
+            let baseType = left.left.inferredType?.dereference();
+
+            if (baseType instanceof StructType) {
+                return this.ir_generate_struct_field_assignment(expr, ctx, left, right, baseType, element);
+            } else if (baseType instanceof ClassType) {
+                return this.ir_generate_class_field_assignment(expr, ctx, left, right, baseType, element);
+            }
+        }
+        {
+            this.i("debug", "assignment of " + expr.left.kind);
+            throw new Error(
+                "Assignment to " +
+                expr.left.kind +
+                " is not yet implemented",
+            );
+        }
+    }
+    
+    ir_generate_class_field_assignment(expr: BinaryExpression, ctx: Context, left: MemberAccessExpression, right: string, baseType: ClassType, element: ElementExpression) {
+        let classType = baseType as ClassType;
+        // we will assign the value to the class's field
+        this.i("debug", "class field assignment, class expression");
+        let classExpr = this.visitExpression(left.left, ctx);
+        this.i(
+            "debug",
+            "class field assignment, class member " + element.name,
+        );
+        let attr = classType.getAttribute(element.name);
+
+        if (attr == null) {
+            throw ctx.parser.customError(
+                "Can only assign to class attributes",
+                element.location,
+            );
+        }
+
+        let fieldType = attr.type;
+        let fieldOffset = classType.getAttributeOffset(
+            ctx,
+            element.name,
+        )!;
+
+        let instr = classSetFieldType(fieldType);
+        this.i(instr, classExpr, fieldOffset, right);
+        this.destroyTmp(classExpr);
+
+        return right;
+    }
+
+    ir_generate_struct_field_assignment(expr: BinaryExpression, ctx: Context, left: MemberAccessExpression, right: string, baseType: StructType, element: ElementExpression) {
+        let structType = baseType as StructType;
+                    // we will assign the value to the struct's field
+        this.i(
+            "debug",
+            "struct field assignment, struct expression",
+        );
+        let structExpr = this.visitExpression(left.left, ctx);
+        this.i(
+            "debug",
+            "struct field assignment, struct member " +
+            element.name,
+        );
+
+        let fieldType = structType.getFieldTypeByName(
+            element.name,
+        )!;
+        let field = structType.getField(element.name);
+
+        let instr = structSetFieldType(fieldType);
+        this.i(instr, structExpr, field!.getFieldID(), right);
+        this.destroyTmp(structExpr);
+        //this.i("s_set_field_f32", "struct field assignment, struct member");
+        return right;
+    }
+
+    ir_generate_function_argument_assignment(expr: BinaryExpression, ctx: Context, right: string) {
+        // arguments needs to be handled differently
+        // arg_u32 x tmp_0 needs to be become:
+        // 1. tmp_u32 tmp_1, x
+        // 2. tmp_u32 tmp_2, "tmp", tmp_0
+
+        this.i("debug", "function argument assignment");
+        let sym = ctx.lookup((expr.left as ElementExpression).name);
+        // function argument
+        let inst = tmpType(expr.left.inferredType!);
+        let tmp = this.generateTmp();
+        this.i(inst, tmp, "arg", sym!.uid);
+        this.i(inst, tmp, "reg", right);
+
+        //this.i(inst, sym!.uid, right);
+        return right;
+    }
+
+    ir_generate_upvalue_assignment(expr: BinaryExpression, ctx: Context, right: string) {
+        let sym = ctx.lookupScope(
+            (expr.left as ElementExpression).name,
+        );
+        this.i("debug", "upvalue variable assignment, treated as arg");
+        let inst = tmpType(expr.left.inferredType!);
+        let tmp = this.generateTmp();
+        this.i(inst, tmp, "arg", sym!.sym.uid);
+        this.i(inst, tmp, "reg", right);
+        return right;
+    }
+
+    ir_generate_local_variable_assignment(expr: BinaryExpression, ctx: Context, right: string) {
+        this.i("debug", "local variable assignment");
+        let sym = ctx.lookupScope(
+            (expr.left as ElementExpression).name,
+        );
+        // local variable
+        if (this.isGlobal) {
+            let inst = globalType(expr.left.inferredType!);
+            this.i(inst, sym!.sym.uid, right);
+        } else {
+            let inst = tmpType(expr.left.inferredType!);
+            let tmp = this.generateTmp();
+            this.i(inst, tmp, sym!.scope, sym!.sym.uid);
+            this.i(inst, tmp, "reg", right);
+        }
+        return right;
+    }
+
+    ir_generate_binary_expr_method_call(expr: BinaryExpression, ctx: Context) {
+        // method call is as follows:
+        // a + b -> a.add(b)
+        this.i("debug", "replacing binary expression with method call");
+        let methodCall = new FunctionCallExpression(
+            expr.location,
+            new MemberAccessExpression(
+                expr.location,
+                expr.left,
+                new ElementExpression(
+                    expr.location,
+                    expr.operatorOverloadState.methodRef!.name,
+                ),
+            ),
+            [expr.right],
+        );
+        methodCall.infer(ctx, expr.inferredType);
+        return this.visitFunctionCallExpression(methodCall, ctx);
     }
 
     visitFunctionCallExpression(
@@ -1463,100 +1217,7 @@ export class FunctionGenerator {
             lhsType instanceof FunctionType &&
             expr.lhs instanceof ElementExpression
         ) {
-            let sym = expr.lhs._scopedVar!.sym;
-
-            let instructions: IRInstructionType[] = [];
-            let regs: string[] = [];
-
-            // generate the arguments, backwards
-            for (let i = 0; i < expr.args.length; i++) {
-                let arg = expr.args[i];
-                let tmp = this.visitExpression(arg, ctx);
-                let pushArgInst = fnSetArgType(arg.inferredType!);
-
-                instructions.push(pushArgInst);
-                regs.push(tmp);
-            }
-
-            this.i("fn_alloc");
-            for (let i = 0; i < instructions.length; i++) {
-                this.i(instructions[i], i, regs[i]);
-                // mut regs not used for now..
-                //if(!mutRegs.includes(regs[i])){
-                this.destroyTmp(regs[i]);
-                //}
-            }
-
-            if (sym instanceof DeclaredFunction) {
-                //let decl = fetchElementSymbol(ctx, expr.lhs) as DeclaredFunction;
-                let decl = expr.lhs._functionReference;
-                if (decl == null) {
-                    throw new Error(
-                        "UNREACHABLE:Unknown function " + expr.lhs.name,
-                    );
-                }
-
-                // check if the function returns a value
-                let hasReturn = true;
-                if (
-                    expr.inferredType instanceof VoidType ||
-                    expr.inferredType instanceof TupleType
-                ) {
-                    hasReturn = false;
-                }
-
-                // !important!
-                // a declared function, could still be a closure!
-                if (decl.codeGenProps.isClosure()) {
-                    let cl_reg = this.ir_generate_closure(
-                        ctx,
-                        decl.codeGenProps,
-                        decl.context.uuid,
-                    );
-
-                    if (hasReturn) {
-                        let tmp = this.generateTmp();
-                        this.i("closure_call", tmp, cl_reg);
-                        this.destroyTmp(cl_reg);
-                        return tmp;
-                    } else {
-                        this.i("call", cl_reg);
-                        this.destroyTmp(cl_reg);
-                        return "";
-                    }
-                } else {
-                    let jumpId = decl.context.uuid;
-                    if (hasReturn) {
-                        let tmp = this.generateTmp();
-                        this.i("call", tmp, jumpId);
-                        return tmp;
-                    } else {
-                        this.i("call", jumpId);
-                        return "";
-                    }
-                }
-            } else {
-                let reg = this.visitExpression(expr.lhs, ctx);
-                // check if the function returns a value
-                let hasReturn = true;
-                if (
-                    expr.inferredType instanceof VoidType ||
-                    expr.inferredType instanceof TupleType
-                ) {
-                    hasReturn = false;
-                }
-
-                if (hasReturn) {
-                    let tmp = this.generateTmp();
-                    this.i("closure_call", tmp, reg);
-                    this.destroyTmp(reg);
-                    return tmp;
-                } else {
-                    this.i("closure_call", reg);
-                    this.destroyTmp(reg);
-                    return "";
-                }
-            }
+            return this.ir_generate_direct_function_call(expr, ctx, lhsType);
         }
 
         // case 2: method/class method class x.f()
@@ -1580,302 +1241,19 @@ export class FunctionGenerator {
 
                 if (attr != null) {
                     this.i("debug", `class attribute call ${accessElement}`);
-                    // it is an attribute, we get the proceed normally
-                    let reg = this.visitExpression(expr.lhs, ctx);
-
-                    let instructions: IRInstructionType[] = [];
-                    let regs: string[] = [];
-
-                    // generate the arguments, backwards
-                    for (let i = 0; i < expr.args.length; i++) {
-                        let arg = expr.args[i];
-                        let tmp = this.visitExpression(arg, ctx);
-                        let pushArgInst = fnSetArgType(arg.inferredType!);
-                        instructions.push(pushArgInst);
-                        regs.push(tmp);
-                    }
-
-                    this.i("fn_alloc");
-
-                    for (let i = 0; i < instructions.length; i++) {
-                        this.i(instructions[i], i, regs[i]);
-                        this.destroyTmp(regs[i]);
-                    }
-
-                    let hasReturn = true;
-                    if (
-                        expr.inferredType instanceof VoidType ||
-                        expr.inferredType instanceof TupleType
-                    ) {
-                        hasReturn = false;
-                    }
-
-                    if (hasReturn) {
-                        let tmp = this.generateTmp();
-                        this.i("closure_call", tmp, reg);
-                        this.destroyTmp(reg);
-                        return tmp;
-                    } else {
-                        this.i("closure_call", reg);
-                        this.destroyTmp(reg);
-                        return "";
-                    }
+                    return this.ir_generate_class_attribute_call(expr, ctx, baseExpression, baseType, accessElement);
                 } else {
-                    // gotta be a method
-                    // check if it is static or not
-
-                    let typeArgs = (expr.lhs.right as ElementExpression)
-                        .typeArguments;
-                    let methodIndex = 0;
-
-                    let class_pointer_reg = this.visitExpression(
-                        baseClass,
-                        ctx,
-                    );
-
-                    // now generate the instruction to get the method
-                    let methodReg = this.generateTmp();
-
-                    let method: InterfaceMethod | null = null;
-
-                    // make sure the cached method is not null
-                    if (expr._calledClassMethod == null) {
-                        throw new Error("Method not found in cache");
-                    }
-                    // if the method is generic, we need to use the concrete method
-                    method = expr._calledClassMethod!.imethod;
-                    methodIndex = expr._calledClassMethod!.indexInClass!;
-
-                    let isStatic = method?.isStatic;
-                    if (method == null) {
-                        throw ctx.parser.customError(
-                            "Unknown method " + accessElement,
-                            lhsType.location,
-                        );
-                    }
-
-                    this.i("debug", `class method call ${method.name}`);
-                    this.i(
-                        "c_load_m",
-                        methodReg,
-                        class_pointer_reg,
-                        method.getUID(),
-                    );
-
-                    let instructions: IRInstructionType[] = [];
-                    let regs: string[] = [];
-
-                    // generate the arguments, backwards
-                    for (let i = 0; i < expr.args.length; i++) {
-                        let arg = expr.args[i];
-                        let tmp = this.visitExpression(arg, ctx);
-                        let pushArgInst = fnSetArgType(arg.inferredType!);
-                        instructions.push(pushArgInst);
-                        regs.push(tmp);
-                    }
-
-                    this.i("fn_alloc");
-
-                    if (!isStatic) {
-                        // push the base object into the stack as parameter
-                        this.i("fn_set_reg_ptr", 0, class_pointer_reg);
-                    }
-
-                    this.destroyTmp(class_pointer_reg);
-
-                    for (let i = 0; i < instructions.length; i++) {
-                        this.i(
-                            instructions[i],
-                            i + (isStatic ? 0 : 1),
-                            regs[i],
-                        );
-                        this.destroyTmp(regs[i]);
-                    }
-
-                    let hasReturn = true;
-                    if (
-                        expr.inferredType instanceof VoidType ||
-                        expr.inferredType instanceof TupleType
-                    ) {
-                        hasReturn = false;
-                    }
-
-                    if (hasReturn) {
-                        let tmp = this.generateTmp();
-                        this.i("call_ptr", tmp, methodReg);
-                        this.destroyTmp(methodReg);
-                        return tmp;
-                    } else {
-                        this.i("call_ptr", methodReg);
-                        this.destroyTmp(methodReg);
-                        return "";
-                    }
+                    return this.ir_generate_class_method_call(expr, ctx, baseExpression, accessElement, lhsType);
                 }
             } else if (baseType?.is(ctx, InterfaceType)) {
-                baseType = baseType.to(ctx, InterfaceType) as InterfaceType;
                 let accessElement = (expr.lhs.right as ElementExpression).name;
-                // interface, must be a method
-                this.i("debug", "interface method call");
-                let interfaceType = baseType.to(
-                    ctx,
-                    InterfaceType,
-                ) as InterfaceType;
-
-                if (expr._calledInterfaceMethod == null) {
-                    throw new Error("Method not found in cache");
-                }
-
-                let method = expr._calledInterfaceMethod;
-                let methodIndex =
-                    expr._calledInterfaceMethod!._indexInInterface;
-
-                let isStatic = method?.isStatic;
-
-                this.i("debug", "interface expression");
-                // now we need to get the interface pointer
-                let interfacePointer = this.visitExpression(
-                    baseExpression.left,
-                    ctx,
-                );
-
-                this.i("debug", "method address of " + method.name);
-                // now we need to get the method
-                let methodReg = this.generateTmp();
-
-                this.i(
-                    "c_load_m",
-                    methodReg,
-                    interfacePointer,
-                    method.getUID(),
-                );
-
-                this.i("debug", "set up args");
-
-                let instructions: IRInstructionType[] = [];
-                let regs: string[] = [];
-
-                // generate the arguments, backwards
-                for (let i = 0; i < expr.args.length; i++) {
-                    let arg = expr.args[i];
-                    let tmp = this.visitExpression(arg, ctx);
-                    let pushArgInst = fnSetArgType(arg.inferredType!);
-                    instructions.push(pushArgInst);
-                    regs.push(tmp);
-                }
-
-                this.i("fn_alloc");
-
-                if (!isStatic) {
-                    // get class
-                    let classReg = this.generateTmp();
-                    // push the base object into the stack as parameter
-                    this.i("fn_set_reg_ptr", 0, interfacePointer);
-                    this.destroyTmp(classReg);
-                }
-                this.destroyTmp(interfacePointer);
-
-                for (let i = 0; i < instructions.length; i++) {
-                    this.i(instructions[i], i + (isStatic ? 0 : 1), regs[i]);
-                    this.destroyTmp(regs[i]);
-                }
-
-                let hasReturn = true;
-                if (
-                    expr.inferredType instanceof VoidType ||
-                    expr.inferredType instanceof TupleType
-                ) {
-                    hasReturn = false;
-                }
-
-                if (hasReturn) {
-                    let tmp = this.generateTmp();
-                    this.i("call_ptr", tmp, methodReg);
-                    this.destroyTmp(methodReg);
-                    return tmp;
-                } else {
-                    this.i("call_ptr", methodReg);
-                    this.destroyTmp(methodReg);
-                    return "";
-                }
+               return this.ir_generate_interface_method_call(expr, ctx, baseExpression, baseType.to(ctx, InterfaceType) as InterfaceType, accessElement);
             } else if (baseType instanceof ArrayType) {
-                // check if array extend method
-                if ((expr.lhs.right as ElementExpression).name == "extend") {
-                    let arrayReg = this.visitExpression(
-                        baseExpression.left,
-                        ctx,
-                    );
-                    let new_size = this.visitExpression(expr.args[0], ctx);
-                    this.i("a_extend", arrayReg, new_size);
-                    this.destroyTmp(arrayReg);
-                    this.destroyTmp(new_size);
-
-                    return null as any as string;
-                } else if (
-                    (expr.lhs.right as ElementExpression).name == "slice"
-                ) {
-                    let arrayReg = this.visitExpression(
-                        baseExpression.left,
-                        ctx,
-                    );
-                    let start = this.visitExpression(expr.args[0], ctx);
-                    let end = this.visitExpression(expr.args[1], ctx);
-                    let tmp = this.generateTmp();
-                    this.i("a_slice", tmp, arrayReg, start, end);
-                    this.destroyTmp(arrayReg);
-                    this.destroyTmp(start);
-                    this.destroyTmp(end);
-                    return tmp;
-                }
+                return this.ir_generate_array_method_call(expr, ctx, baseExpression, baseType);
             } else if (baseType instanceof MetaType) {
                 if (baseType instanceof MetaClassType) {
                     // Class static method call
-                    let classType = baseType.classType as ClassType;
-                    let method = expr._calledClassMethod;
-                    if (method == null) {
-                        throw ctx.parser.customError(
-                            "Unknown method " +
-                            (expr.lhs.right as ElementExpression).name,
-                            lhsType.location,
-                        );
-                    }
-
-                    this.i("debug", `static class method call ${method.name}`);
-
-                    let instructions: IRInstructionType[] = [];
-                    let regs: string[] = [];
-
-                    // generate the arguments, backwards
-                    for (let i = 0; i < expr.args.length; i++) {
-                        let arg = expr.args[i];
-                        let tmp = this.visitExpression(arg, ctx);
-                        let pushArgInst = fnSetArgType(arg.inferredType!);
-                        instructions.push(pushArgInst);
-                        regs.push(tmp);
-                    }
-
-                    this.i("fn_alloc");
-
-                    for (let i = 0; i < instructions.length; i++) {
-                        this.i(instructions[i], i, regs[i]);
-                        this.destroyTmp(regs[i]);
-                    }
-
-                    let hasReturn = true;
-                    if (
-                        expr.inferredType instanceof VoidType ||
-                        expr.inferredType instanceof TupleType
-                    ) {
-                        hasReturn = false;
-                    }
-
-                    if (hasReturn) {
-                        let tmp = this.generateTmp();
-                        this.i("call", tmp, method.context.uuid);
-                        return tmp;
-                    } else {
-                        this.i("call", method.context.uuid);
-                        return "";
-                    }
+                    return this.ir_generate_class_static_method_call(expr, ctx, baseExpression, baseType.classType as ClassType, lhsType);
                 }
             }
         }
@@ -1903,105 +1281,532 @@ export class FunctionGenerator {
             lhsType instanceof MetaType &&
             lhsType instanceof MetaVariantConstructorType
         ) {
-            // variant constructor
+           return this.ir_generate_variant_constructor_call(expr, ctx, lhsType);
+        } else if (lhsType instanceof FFIMethodType) {
+            return this.ir_generate_ffi_method_call(expr, ctx, lhsType);
+        } else {
+            // anonymous function call
+            return this.ir_generate_anonymous_function_call(expr, ctx);
+        }
 
-            // first we need to get the variant type
-            let variantType = expr.inferredType?.to(
-                ctx,
-                VariantConstructorType,
-            ) as VariantConstructorType;
+        throw ctx.parser.customError("Invalid expression", expr.location);
+    }
+    
+    ir_generate_anonymous_function_call(expr: FunctionCallExpression, ctx: Context): string {
+        let fnReg = this.visitExpression(expr.lhs, ctx);
+        // an indirect call such as f()() or x[0](1)
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
 
-            // now we need to get the variant ID
-            let variantID = variantType.getId();
+        // generate the arguments, backwards
+        for (let i = 0; i < expr.args.length; i++) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = fnSetArgType(arg.inferredType!);
 
-            let parameters = [...variantType.parameters];
-            parameters.sort((a, b) => a.getFieldID() - b.getFieldID());
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
 
-            // each parameter maps to the index of the parameter in the variant constructor
-            let parameterMapping = parameters.map((x) =>
-                variantType.parameters.indexOf(x),
-            );
+        this.i("fn_alloc");
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(instructions[i], i, regs[i]);
+            // mut regs not used for now..
+            //if(!mutRegs.includes(regs[i])){
+            this.destroyTmp(regs[i]);
+            //}
+        }
 
-            // evaluate the arguments
-            //let args = expr.args.map((x) => this.visitExpression(x, ctx))
-            let argsOffset = [0];
-            let variantSize = [2];
+        // check if the function returns a value
+        let hasReturn = true;
+        if (
+            expr.lhs.inferredType instanceof VoidType ||
+            expr.lhs.inferredType instanceof TupleType
+        ) {
+            hasReturn = false;
+        }
 
-            parameters.forEach((param, i) => {
-                let fsize = getDataTypeByteSize(param.type);
-                variantSize.push(fsize);
-                argsOffset.push(argsOffset[i] + variantSize[i]);
-            });
+        if (hasReturn) {
+            let tmp = this.generateTmp();
+            this.i("closure_call", tmp, fnReg);
+            this.destroyTmp(fnReg);
+            return tmp;
+        } else {
+            this.i("closure_call", fnReg);
+            this.destroyTmp(fnReg);
+            return "";
+        }
+    }
+    
+    ir_generate_ffi_method_call(expr: FunctionCallExpression, ctx: Context, lhsType: FFIMethodType): string {
+        let baseFFI = lhsType.parentFFI!;
+        let ffi_id = baseFFI.ffiId;
+        let method_id = baseFFI.getMethodIndex(lhsType.imethod.name);
 
-            // allocate the variant
-            let variantReg = this.generateTmp();
-            this.i("debug", "allocating variant");
+        let reg = this.generateTmp();
+        this.i("ffi_get_method", reg, ffi_id, method_id);
 
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
+
+        // disallow spill
+        // this.i("disallow_spill", 0)
+
+        for (let i = expr.args.length - 1; i >= 0; i--) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = pushStackType(arg.inferredType!);
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
+
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(instructions[i], regs[i]);
+            this.destroyTmp(regs[i]);
+        }
+
+        let hasReturn = true;
+        if (
+            expr.inferredType instanceof VoidType ||
+            expr.inferredType instanceof TupleType
+        ) {
+            hasReturn = false;
+        }
+
+        if (hasReturn) {
+            let tmp = this.generateTmp();
+            this.i("call_ffi", reg);
+            this.destroyTmp(reg);
+            let pop = popStackType(expr.inferredType!);
+            this.i(pop, tmp);
+            return tmp;
+        } else {
+            this.i("call_ffi", reg);
+            this.destroyTmp(reg);
+            return "";
+        }
+        //this.i("allow_spill")
+    }
+
+    ir_generate_variant_constructor_call(expr: FunctionCallExpression, ctx: Context, lhsType: MetaVariantConstructorType): string {
+        // variant constructor
+        // first we need to get the variant type
+        let variantType = expr.inferredType?.to(
+            ctx,
+            VariantConstructorType,
+        ) as VariantConstructorType;
+
+        // now we need to get the variant ID
+        let variantID = variantType.getId();
+
+        let parameters = [...variantType.parameters];
+        parameters.sort((a, b) => a.getFieldID() - b.getFieldID());
+
+        // each parameter maps to the index of the parameter in the variant constructor
+        let parameterMapping = parameters.map((x) =>
+            variantType.parameters.indexOf(x),
+        );
+
+        // evaluate the arguments
+        //let args = expr.args.map((x) => this.visitExpression(x, ctx))
+        let argsOffset = [0];
+        let variantSize = [2];
+
+        parameters.forEach((param, i) => {
+            let fsize = getDataTypeByteSize(param.type);
+            variantSize.push(fsize);
+            argsOffset.push(argsOffset[i] + variantSize[i]);
+        });
+
+        // allocate the variant
+        let variantReg = this.generateTmp();
+        this.i("debug", "allocating variant");
+
+        this.i(
+            "s_alloc",
+            variantReg,
+            argsOffset.length,
+            variantSize.reduce((a, b) => a + b, 0),
+        );
+        this.i("s_reg_field", variantReg, 0, 0); // TAG
+
+        //console.log(parameters.map((x) => x.name + ': '+x.getFieldID()))
+        for (let i = 0; i < parameters.length; i++) {
+            let param = parameters[i];
+            this.i("debug", `setting variant field offset ${param.name}`);
+            //console.log(">    s_reg_field", variantReg, i+1, param.getFieldID(), argsOffset[i+1])
             this.i(
-                "s_alloc",
+                "s_reg_field",
                 variantReg,
-                argsOffset.length,
-                variantSize.reduce((a, b) => a + b, 0),
+                i + 1,
+                param.getFieldID(),
+                argsOffset[i + 1],
             );
-            this.i("s_reg_field", variantReg, 0, 0); // TAG
+        }
 
-            //console.log(parameters.map((x) => x.name + ': '+x.getFieldID()))
-            for (let i = 0; i < parameters.length; i++) {
-                let param = parameters[i];
-                this.i("debug", `setting variant field offset ${param.name}`);
-                //console.log(">    s_reg_field", variantReg, i+1, param.getFieldID(), argsOffset[i+1])
-                this.i(
-                    "s_reg_field",
-                    variantReg,
-                    i + 1,
-                    param.getFieldID(),
-                    argsOffset[i + 1],
+        this.i("debug", `setting variant field tag`);
+        let variantIdReg = this.generateTmp();
+        this.i("const_u16", variantIdReg, variantID);
+        this.i("s_set_field_u16", variantReg, 0, variantIdReg);
+        this.destroyTmp(variantIdReg);
+
+        for (let i = 0; i < expr.args.length; i++) {
+            this.i("debug", `setting variant field ${parameters[i].name}`);
+            let idx = parameterMapping[i];
+            let arg = this.visitExpression(expr.args[idx], ctx);
+            let instr = structSetFieldType(parameters[i].type);
+            this.i(instr, variantReg, parameters[i].getFieldID(), arg);
+            this.destroyTmp(arg);
+        }
+
+        return variantReg;
+    }
+    ir_generate_class_static_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ClassType, lhsType: FunctionType): string {
+        let method = expr._calledClassMethod;
+        if (method == null) {
+            throw ctx.parser.customError(
+                "Unknown method " +
+                (baseExpression.right as ElementExpression).name,
+                lhsType.location,
+            );
+        }
+
+        this.i("debug", `static class method call ${method.name}`);
+
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
+
+        // generate the arguments, backwards
+        for (let i = 0; i < expr.args.length; i++) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = fnSetArgType(arg.inferredType!);
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
+
+        this.i("fn_alloc");
+
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(instructions[i], i, regs[i]);
+            this.destroyTmp(regs[i]);
+        }
+
+        let hasReturn = true;
+        if (
+            expr.inferredType instanceof VoidType ||
+            expr.inferredType instanceof TupleType
+        ) {
+            hasReturn = false;
+        }
+
+        if (hasReturn) {
+            let tmp = this.generateTmp();
+            this.i("call", tmp, method.context.uuid);
+            return tmp;
+        } else {
+            this.i("call", method.context.uuid);
+            return "";
+        }
+    }
+
+    ir_generate_array_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ArrayType): string {
+        if(!(expr.lhs instanceof MemberAccessExpression)){
+            throw ctx.parser.customError("Invalid expression", expr.location);
+        }
+        // check if array extend method
+        if ((expr.lhs.right as ElementExpression).name == "extend") {
+            let arrayReg = this.visitExpression(
+                baseExpression.left,
+                ctx,
+            );
+            let new_size = this.visitExpression(expr.args[0], ctx);
+            this.i("a_extend", arrayReg, new_size);
+            this.destroyTmp(arrayReg);
+            this.destroyTmp(new_size);
+
+            return "";
+        } else if (
+            (expr.lhs.right as ElementExpression).name == "slice"
+        ) {
+            let arrayReg = this.visitExpression(
+                baseExpression.left,
+                ctx,
+            );
+            let start = this.visitExpression(expr.args[0], ctx);
+            let end = this.visitExpression(expr.args[1], ctx);
+            let tmp = this.generateTmp();
+            this.i("a_slice", tmp, arrayReg, start, end);
+            this.destroyTmp(arrayReg);
+            this.destroyTmp(start);
+            this.destroyTmp(end);
+            return tmp;
+        }
+
+        throw ctx.parser.customError("Invalid expression", expr.location);
+    }
+
+    ir_generate_interface_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: InterfaceType, accessElement: string) {
+        // interface, must be a method
+        this.i("debug", "interface method call");
+        let interfaceType = baseType.to(
+            ctx,
+            InterfaceType,
+        ) as InterfaceType;
+
+        if (expr._calledInterfaceMethod == null) {
+            throw new Error("Method not found in cache");
+        }
+
+        let method = expr._calledInterfaceMethod;
+        let methodIndex =
+            expr._calledInterfaceMethod!._indexInInterface;
+
+        let isStatic = method?.isStatic;
+
+        this.i("debug", "interface expression");
+        // now we need to get the interface pointer
+        let interfacePointer = this.visitExpression(
+            baseExpression.left,
+            ctx,
+        );
+
+        this.i("debug", "method address of " + method.name);
+        // now we need to get the method
+        let methodReg = this.generateTmp();
+
+        this.i(
+            "c_load_m",
+            methodReg,
+            interfacePointer,
+            method.getUID(),
+        );
+
+        this.i("debug", "set up args");
+
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
+
+        // generate the arguments, backwards
+        for (let i = 0; i < expr.args.length; i++) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = fnSetArgType(arg.inferredType!);
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
+
+        this.i("fn_alloc");
+
+        if (!isStatic) {
+            // get class
+            let classReg = this.generateTmp();
+            // push the base object into the stack as parameter
+            this.i("fn_set_reg_ptr", 0, interfacePointer);
+            this.destroyTmp(classReg);
+        }
+        this.destroyTmp(interfacePointer);
+
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(instructions[i], i + (isStatic ? 0 : 1), regs[i]);
+            this.destroyTmp(regs[i]);
+        }
+
+        let hasReturn = true;
+        if (
+            expr.inferredType instanceof VoidType ||
+            expr.inferredType instanceof TupleType
+        ) {
+            hasReturn = false;
+        }
+
+        if (hasReturn) {
+            let tmp = this.generateTmp();
+            this.i("call_ptr", tmp, methodReg);
+            this.destroyTmp(methodReg);
+            return tmp;
+        } else {
+            this.i("call_ptr", methodReg);
+            this.destroyTmp(methodReg);
+            return "";
+        }
+    }
+    
+    ir_generate_class_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, accessElement: string, lhsType: FunctionType): string {
+        // gotta be a method
+        // check if it is static or not
+
+        if(!(expr.lhs instanceof MemberAccessExpression)){
+            throw ctx.parser.customError("Invalid expression", expr.location);
+        }
+
+
+        let typeArgs = (expr.lhs.right as ElementExpression)
+            .typeArguments;
+        let methodIndex = 0;
+
+        let class_pointer_reg = this.visitExpression(
+            baseExpression.left,
+            ctx,
+        );
+
+        // now generate the instruction to get the method
+        let methodReg = this.generateTmp();
+
+        let method: InterfaceMethod | null = null;
+
+        // make sure the cached method is not null
+        if (expr._calledClassMethod == null) {
+            throw new Error("Method not found in cache");
+        }
+        // if the method is generic, we need to use the concrete method
+        method = expr._calledClassMethod!.imethod;
+        methodIndex = expr._calledClassMethod!.indexInClass!;
+
+        let isStatic = method?.isStatic;
+        if (method == null) {
+            throw ctx.parser.customError(
+                "Unknown method " + accessElement,
+                lhsType.location,
+            );
+        }
+
+        this.i("debug", `class method call ${method.name}`);
+        this.i(
+            "c_load_m",
+            methodReg,
+            class_pointer_reg,
+            method.getUID(),
+        );
+
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
+
+        // generate the arguments, backwards
+        for (let i = 0; i < expr.args.length; i++) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = fnSetArgType(arg.inferredType!);
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
+
+        this.i("fn_alloc");
+
+        if (!isStatic) {
+            // push the base object into the stack as parameter
+            this.i("fn_set_reg_ptr", 0, class_pointer_reg);
+        }
+
+        this.destroyTmp(class_pointer_reg);
+
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(
+                instructions[i],
+                i + (isStatic ? 0 : 1),
+                regs[i],
+            );
+            this.destroyTmp(regs[i]);
+        }
+
+        let hasReturn = true;
+        if (
+            expr.inferredType instanceof VoidType ||
+            expr.inferredType instanceof TupleType
+        ) {
+            hasReturn = false;
+        }
+
+        if (hasReturn) {
+            let tmp = this.generateTmp();
+            this.i("call_ptr", tmp, methodReg);
+            this.destroyTmp(methodReg);
+            return tmp;
+        } else {
+            this.i("call_ptr", methodReg);
+            this.destroyTmp(methodReg);
+            return "";
+        }
+    }
+    
+    ir_generate_class_attribute_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ClassType, accessElement: string): string {
+        // it is an attribute, we get the proceed normally
+        let reg = this.visitExpression(expr.lhs, ctx);
+
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
+
+        // generate the arguments, backwards
+        for (let i = 0; i < expr.args.length; i++) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = fnSetArgType(arg.inferredType!);
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
+
+        this.i("fn_alloc");
+
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(instructions[i], i, regs[i]);
+            this.destroyTmp(regs[i]);
+        }
+
+        let hasReturn = true;
+        if (
+            expr.inferredType instanceof VoidType ||
+            expr.inferredType instanceof TupleType
+        ) {
+            hasReturn = false;
+        }
+
+        if (hasReturn) {
+            let tmp = this.generateTmp();
+            this.i("closure_call", tmp, reg);
+            this.destroyTmp(reg);
+            return tmp;
+        } else {
+            this.i("closure_call", reg);
+            this.destroyTmp(reg);
+            return "";
+        }
+    }
+    
+    ir_generate_direct_function_call(expr: FunctionCallExpression, ctx: Context, lhsType: FunctionType): string {
+        if(!(expr.lhs instanceof ElementExpression)){
+            throw ctx.parser.customError("Invalid expression", expr.location);
+        }
+
+        let sym = expr.lhs._scopedVar!.sym;
+
+        let instructions: IRInstructionType[] = [];
+        let regs: string[] = [];
+
+        // generate the arguments, backwards
+        for (let i = 0; i < expr.args.length; i++) {
+            let arg = expr.args[i];
+            let tmp = this.visitExpression(arg, ctx);
+            let pushArgInst = fnSetArgType(arg.inferredType!);
+
+            instructions.push(pushArgInst);
+            regs.push(tmp);
+        }
+
+        this.i("fn_alloc");
+        for (let i = 0; i < instructions.length; i++) {
+            this.i(instructions[i], i, regs[i]);
+            this.destroyTmp(regs[i]);
+        }
+
+        if (sym instanceof DeclaredFunction) {
+            let decl = expr.lhs._functionReference;
+            if (decl == null) {
+                throw new Error(
+                    "UNREACHABLE:Unknown function " + expr.lhs.name,
                 );
             }
 
-            this.i("debug", `setting variant field tag`);
-            let variantIdReg = this.generateTmp();
-            this.i("const_u16", variantIdReg, variantID);
-            this.i("s_set_field_u16", variantReg, 0, variantIdReg);
-            this.destroyTmp(variantIdReg);
-
-            for (let i = 0; i < expr.args.length; i++) {
-                this.i("debug", `setting variant field ${parameters[i].name}`);
-                let idx = parameterMapping[i];
-                let arg = this.visitExpression(expr.args[idx], ctx);
-                let instr = structSetFieldType(parameters[i].type);
-                this.i(instr, variantReg, parameters[i].getFieldID(), arg);
-                this.destroyTmp(arg);
-            }
-
-            return variantReg;
-        } else if (lhsType instanceof FFIMethodType) {
-            let baseFFI = lhsType.parentFFI!;
-            let ffi_id = baseFFI.ffiId;
-            let method_id = baseFFI.getMethodIndex(lhsType.imethod.name);
-
-            let reg = this.generateTmp();
-            this.i("ffi_get_method", reg, ffi_id, method_id);
-
-            let instructions: IRInstructionType[] = [];
-            let regs: string[] = [];
-
-            // disallow spill
-            // this.i("disallow_spill", 0)
-
-            for (let i = expr.args.length - 1; i >= 0; i--) {
-                let arg = expr.args[i];
-                let tmp = this.visitExpression(arg, ctx);
-                let pushArgInst = pushStackType(arg.inferredType!);
-                instructions.push(pushArgInst);
-                regs.push(tmp);
-            }
-
-            for (let i = 0; i < instructions.length; i++) {
-                this.i(instructions[i], regs[i]);
-                this.destroyTmp(regs[i]);
-            }
-
+            // check if the function returns a value
             let hasReturn = true;
             if (
                 expr.inferredType instanceof VoidType ||
@@ -2010,66 +1815,52 @@ export class FunctionGenerator {
                 hasReturn = false;
             }
 
-            if (hasReturn) {
-                let tmp = this.generateTmp();
-                this.i("call_ffi", reg);
-                this.destroyTmp(reg);
-                let pop = popStackType(expr.inferredType!);
-                this.i(pop, tmp);
-                return tmp;
+            // !important!
+            // a declared function, could still be a closure!
+            if (decl.codeGenProps.isClosure()) {
+                let cl_reg = this.ir_generate_closure(
+                    ctx,
+                    decl.codeGenProps,
+                    decl.context.uuid,
+                );
+
+                if (hasReturn) {
+                    let tmp = this.generateTmp();
+                    this.i("closure_call", tmp, cl_reg);
+                    this.destroyTmp(cl_reg);
+                    return tmp;
+                } else {
+                    this.i("call", cl_reg);
+                    this.destroyTmp(cl_reg);
+                    return "";
+                }
             } else {
-                this.i("call_ffi", reg);
-                this.destroyTmp(reg);
-                return "";
+                let jumpId = decl.context.uuid;
+                if (hasReturn) {
+                    let tmp = this.generateTmp();
+                    this.i("call", tmp, jumpId);
+                    return tmp;
+                } else {
+                    this.i("call", jumpId);
+                    return "";
+                }
             }
-            //this.i("allow_spill")
         } else {
-            let fnReg = this.visitExpression(expr.lhs, ctx);
-            // an indirect call such as f()() or x[0](1)
-            let instructions: IRInstructionType[] = [];
-            let regs: string[] = [];
-
-            // generate the arguments, backwards
-            for (let i = 0; i < expr.args.length; i++) {
-                let arg = expr.args[i];
-                let tmp = this.visitExpression(arg, ctx);
-                let pushArgInst = fnSetArgType(arg.inferredType!);
-
-                instructions.push(pushArgInst);
-                regs.push(tmp);
-            }
-
-            this.i("fn_alloc");
-            for (let i = 0; i < instructions.length; i++) {
-                this.i(instructions[i], i, regs[i]);
-                // mut regs not used for now..
-                //if(!mutRegs.includes(regs[i])){
-                this.destroyTmp(regs[i]);
-                //}
-            }
-
+            let reg = this.visitExpression(expr.lhs, ctx);
             // check if the function returns a value
-            let hasReturn = true;
-            if (
-                expr.lhs.inferredType instanceof VoidType ||
-                expr.lhs.inferredType instanceof TupleType
-            ) {
-                hasReturn = false;
-            }
+            let hasReturn = check_hasReturn(expr.inferredType);
 
             if (hasReturn) {
                 let tmp = this.generateTmp();
-                this.i("closure_call", tmp, fnReg);
-                this.destroyTmp(fnReg);
+                this.i("closure_call", tmp, reg);
+                this.destroyTmp(reg);
                 return tmp;
             } else {
-                this.i("closure_call", fnReg);
-                this.destroyTmp(fnReg);
+                this.i("closure_call", reg);
+                this.destroyTmp(reg);
                 return "";
             }
         }
-
-        throw ctx.parser.customError("Invalid expression", expr.location);
     }
 
     visitLambdaExpression(expr: LambdaExpression, ctx: Context): string {
@@ -2664,13 +2455,6 @@ export class FunctionGenerator {
         }
     }
 
-    visitCoroutineConstructionExpression(
-        expr: CoroutineConstructionExpression,
-        ctx: Context,
-    ): string {
-        throw new Error("Method not implemented.");
-    }
-
     visitLiteralExpression(expr: LiteralExpression, ctx: Context): string {
         let tmp = this.generateTmp();
         let tmpIndexReg = this.generateTmp();
@@ -2974,6 +2758,24 @@ export class FunctionGenerator {
         this.doExpressionTmpStack.pop();
 
         return tmp;
+    }
+
+    visitCoroutineConstructionExpression(expr: CoroutineConstructionExpression, ctx: Context): string {
+        let tmp = this.generateTmp();
+        let fnReg = this.visitExpression(expr.baseFn, ctx);
+        this.i("coroutine_alloc", tmp, fnReg);
+        this.destroyTmp(fnReg);
+        return tmp;
+    }
+
+    visitYieldExpression(expr: YieldExpression, ctx: Context): string {
+        this.ir_generate_return(expr.yieldExpression, ctx, null, null);
+        // yield either returns a tuple or a value
+        this.i("coroutine_yield");
+
+
+
+        return "";
     }
 
     /**
@@ -3296,48 +3098,7 @@ export class FunctionGenerator {
         }
 
         if (stmt.returnExpression) {
-            if (stmt.returnExpression instanceof TupleConstructionExpression) {
-                this.ir_generate_tuple_return(ctx, stmt.returnExpression);
-            } else if (
-                stmt.returnExpression.inferredType instanceof TupleType
-            ) {
-                // we have a function call that returns a tuple
-                let tmp = this.visitExpression(stmt.returnExpression, ctx);
-                this.destroyTmp(tmp);
-
-                // get all the return values
-                let tupleType = stmt.returnExpression.inferredType.to(
-                    ctx,
-                    TupleType,
-                ) as TupleType;
-                for (let i = 0; i < tupleType.types.length; i++) {
-                    let tmp = this.generateTmp();
-                    let read = fnGetRetType(tupleType.types[i]);
-                    let ret = retType(tupleType.types[i]);
-                    this.i(read, tmp, 255 - i);
-                    this.i(ret, tmp, i);
-                    this.destroyTmp(tmp);
-                }
-            } else {
-                // submit result
-                let tmp = this.visitExpression(stmt.returnExpression, ctx);
-                this.i("debug", "return statement " + tmp);
-                if (resTmp) {
-                    let iType = tmpType(stmt.returnExpression.inferredType!);
-                    this.i(iType, resTmp, "reg", tmp);
-                } else {
-                    let retInst = retType(stmt.returnExpression.inferredType!);
-                    this.i(retInst, tmp, 0);
-                }
-            }
-            // return
-
-            if (jmpLabel) {
-                this.i("j", jmpLabel);
-            } else {
-                // add a ret void to mark the end of the function
-                this.i("ret_void");
-            }
+            this.ir_generate_return(stmt.returnExpression, ctx, jmpLabel, resTmp);
         } else {
             this.i("debug", "return statement void");
             if (jmpLabel) {
@@ -3663,19 +3424,19 @@ export class FunctionGenerator {
         let aTmp = this.visitExpression(expr.left, ctx);
         // compare a with null
         let nullTmp = this.generateTmp();
-        
+
         // null is 0
         this.i("const_ptr", nullTmp, 0);
-        
+
         let lblEnd = this.generateLabel();
-        
+
         // if a is NOT NULL, we jump to end label
         // save result in tmpRes in case a is not null
         this.i("tmp_ptr", tmpRes, "reg", aTmp);
         this.i("j_cmp_ptr", aTmp, nullTmp, 1, lblEnd);
         this.destroyTmp(nullTmp);
         // save the result in tmpRes
-        
+
         // if a is null, we return b
         let bTmp = this.visitExpression(expr.right, ctx);
         this.i("tmp_ptr", tmpRes, "reg", bTmp);
@@ -3692,7 +3453,7 @@ export class FunctionGenerator {
         let tuples = expr.left as TupleConstructionExpression;
         let assignment = expr.right;
 
-                // (a, b) = f()
+        // (a, b) = f()
         // or
         // (a, b) = do { return (1, 2) } // not yet implemented
         // first generate the expression
@@ -3714,4 +3475,294 @@ export class FunctionGenerator {
             this.i(inst, elementReg, 255 - i);
         }
     }
+
+    ir_generate_return(returnExpression: Expression, ctx: Context, jmpLabel: string | null, resTmp: string | null) {
+        if (returnExpression instanceof TupleConstructionExpression) {
+            this.ir_generate_tuple_return(ctx, returnExpression);
+        } else if (
+            returnExpression.inferredType instanceof TupleType
+        ) {
+            // we have a function call that returns a tuple
+            let tmp = this.visitExpression(returnExpression, ctx);
+            this.destroyTmp(tmp);
+
+            // get all the return values
+            let tupleType = returnExpression.inferredType.to(
+                ctx,
+                TupleType,
+            ) as TupleType;
+            for (let i = 0; i < tupleType.types.length; i++) {
+                let tmp = this.generateTmp();
+                let read = fnGetRetType(tupleType.types[i]);
+                let ret = retType(tupleType.types[i]);
+                this.i(read, tmp, 255 - i);
+                this.i(ret, tmp, i);
+                this.destroyTmp(tmp);
+            }
+        } else {
+            // submit result
+            let tmp = this.visitExpression(returnExpression, ctx);
+            this.i("debug", "return statement " + tmp);
+            if (resTmp) {
+                let iType = tmpType(returnExpression.inferredType!);
+                this.i(iType, resTmp, "reg", tmp);
+            } else {
+                let retInst = retType(returnExpression.inferredType!);
+                this.i(retInst, tmp, 0);
+            }
+        }
+        // return
+
+        if (jmpLabel) {
+            this.i("j", jmpLabel);
+        } else {
+            // add a ret void to mark the end of the function
+            this.i("ret_void");
+        }
+    }
+
+    ir_generate_array_access(expr: IndexAccessExpression, ctx: Context) {
+        let inferredType = expr.lhs.inferredType!.dereference();
+        let arrayType = inferredType.to(ctx, ArrayType) as ArrayType;
+        if (expr.indexes.length != 1) {
+            throw new Error(
+                "Invalid index access expression, expected 1 index got " +
+                expr.indexes.length,
+            );
+        }
+
+        // make sure the index is an integer
+        if (!expr.indexes[0].inferredType!.is(ctx, BasicType)) {
+            throw new Error(
+                "Invalid index access expression, expected integer index got " +
+                expr.indexes[0].inferredType?.toString(),
+            );
+        } else {
+            let indexType = expr.indexes[0].inferredType!.to(
+                ctx,
+                BasicType,
+            ) as BasicType;
+            if (
+                indexType.kind != "u8" &&
+                indexType.kind != "u16" &&
+                indexType.kind != "u32" &&
+                indexType.kind != "u64"
+            ) {
+                throw new Error(
+                    "Invalid index access expression, expected unsigned integer index got " +
+                    expr.indexes[0].inferredType?.toString(),
+                );
+            }
+        }
+
+        let indexReg = this.visitExpression(expr.indexes[0], ctx);
+
+        // generate the array
+        let reg = this.visitExpression(expr.lhs, ctx);
+
+        this.i("debug", "array index access");
+        let instr = arrayGetIndexType(arrayType.arrayOf.dereference());
+        let tmp = this.generateTmp();
+        this.i(instr, tmp, indexReg, reg);
+        this.destroyTmp(reg);
+        this.destroyTmp(indexReg);
+
+        return tmp;
+    }
+
+    ir_generate_array_set(expr: IndexSetExpression, ctx: Context, mainExprType: ArrayType): string {
+        this.i("debug", "array index set");
+        this.i("debug", "array expression");
+        let array_reg = this.visitExpression(expr.lhs, ctx);
+        this.i("debug", "array index expression");
+        let index_reg = this.visitExpression(expr.indexes[0], ctx);
+        this.i("debug", "array value expression");
+        let value_reg = this.visitExpression(expr.value, ctx);
+
+        let instr = arraySetIndexType(mainExprType.arrayOf);
+        this.i(instr, array_reg, index_reg, value_reg);
+        this.destroyTmp(array_reg);
+        this.destroyTmp(index_reg);
+        this.destroyTmp(value_reg);
+        return value_reg;
+    }
+
+
+    ir_generate_variant_instance_check(expr: InstanceCheckExpression, ctx: Context, reg: string, actualType: VariantType, castType: DataType): string {
+        // variants are structs with a tag under the hood.
+        if (castType instanceof VariantType) {
+            throw new Error(
+                "Variant -> Variant checks are not yet implemented",
+            );
+        }
+
+        if (castType instanceof VariantConstructorType) {
+            let name = castType.name;
+            let constructor = actualType.getConstructor(name);
+            if (constructor == null) {
+                throw new Error("Unknown constructor " + name);
+            }
+
+            let id_reg = this.generateTmp();
+            this.i(
+                "debug",
+                `Variant -> VariantConstructor "${name}" Check`,
+            );
+            // offset 0 is the tag
+            this.i("s_get_field_u16", id_reg, reg, 0);
+            //this.i("debug_reg", id_reg)
+            this.destroyTmp(reg);
+
+            let tmp2 = this.generateTmp();
+
+            let lblFalse = this.generateLabel();
+            let lblEnd = this.generateLabel();
+
+            this.i("const_u16", tmp2, constructor.getId());
+            this.i("j_cmp_u16", id_reg, tmp2, 1, lblFalse);
+            this.destroyTmp(id_reg);
+            this.destroyTmp(tmp2);
+
+            let res_reg = this.generateTmp();
+
+            // here is true
+            this.i("const_u8", res_reg, 1);
+            this.i("j", lblEnd);
+            // here is false
+            this.i("label", lblFalse);
+            this.i("const_u8", res_reg, 0);
+            this.i("label", lblEnd);
+
+            return res_reg;
+        }
+
+        throw new Error("Unknown instance check type");
+    }
+
+    ir_generate_interface_instance_check(expr: InstanceCheckExpression, ctx: Context, reg: string, actualType: DataType, castType: DataType): string {
+        var actualTypeInterface = actualType.to(
+            ctx,
+            InterfaceType,
+        ) as InterfaceType;
+
+        if (castType instanceof ClassType) {
+            let tmp = this.generateTmp();
+            this.i("debug", "Instance -> Class Check");
+            this.i("i_is_c", tmp, reg, castType.classId);
+            this.destroyTmp(reg);
+            return tmp;
+        } else {
+            // castType has to be an interface
+            if (!castType.is(ctx, InterfaceType)) {
+                throw new Error(
+                    "Expected interface type, got " + castType.shortname(),
+                );
+            }
+
+            let castTypeInterface = castType.to(
+                ctx,
+                InterfaceType,
+            ) as InterfaceType;
+
+            // check if they align
+            if (actualTypeInterface.interfacesAlign(castTypeInterface)) {
+                this.destroyTmp(reg);
+                // simply return true
+                let tmp = this.generateTmp();
+                this.i("const_u8", tmp, 1);
+                return tmp;
+            } else {
+                let failLabel = this.generateLabel();
+                let endLabel = this.generateLabel();
+
+                let tmp = this.generateTmp();
+                this.i("debug", "Interface -> Interface Check");
+
+                let allMethods = [...castTypeInterface.getMethods()];
+                // sort by UID
+                allMethods.sort((a, b) => a.getUID() - b.getUID());
+
+                for (let i = 0; i < allMethods.length; i++) {
+                    let method = allMethods[i];
+                    let methodUID = method.getUID();
+                    this.i("i_has_m", methodUID, reg, failLabel);
+                }
+
+                this.destroyTmp(reg);
+                this.i("const_u8", tmp, 1);
+                this.i("j", endLabel);
+                this.i("label", failLabel);
+                this.i("const_u8", tmp, 0);
+                this.i("label", endLabel);
+
+                this.destroyTmp(reg);
+                return tmp;
+            }
+        }
+    }
+
+    ir_generate_class_instance_check(expr: InstanceCheckExpression, ctx: Context, reg: string, actualType: DataType, castType: DataType): string {
+        // castType has to be an interface
+        // WRONG: ~if this test has passed, it means that the class implements the interface~
+        // or is compatible with the interface
+
+        //// this can be generated by pattern matching too, making the last point in valid
+        // hence we need to check
+        if (!castType.is(ctx, InterfaceType)) {
+            throw new Error(
+                "Expected interface type, got " + castType.kind,
+            );
+        }
+
+        // simply return the result
+        this.destroyTmp(reg);
+        let tmp = this.generateTmp();
+        //let castable = actualType.canCast(castType, ctx).success;
+        let castable = canCastTypes(ctx, castType, actualType).success;
+        this.i("debug", "Class -> Interface Check");
+        this.i("const_u8", tmp, castable ? 1 : 0);
+
+        return tmp;
+    }
+
+    ir_generate_enum_access(expr: MemberAccessExpression, ctx: Context, elementName: string, sym: DeclaredType,type: EnumType): string {
+        // make sure expr.rhs is an element expression
+        if (!(expr.right instanceof ElementExpression)) {
+            throw ctx.parser.customError(
+                "Expected enum member name after `.`",
+                expr.location,
+            );
+        }
+        let field = expr.right.name;
+        this.i(
+            "debug",
+            `enum member access expression: ${elementName}.${field}`,
+        );
+
+        let tmp = this.generateTmp();
+        let value = type.getFieldValue(ctx, field);
+
+        if (type.as == "unset") {
+            throw new Error("Enum type is unresolved");
+        }
+
+        let inst = constType(
+            new BasicType(sym.location, type.as),
+        );
+        this.i(inst, tmp, value);
+
+        return tmp;
+    }
 }
+
+
+function check_hasReturn(inferredType: DataType | null) {
+    if (
+        inferredType instanceof VoidType ||
+        inferredType instanceof TupleType
+    ) {
+        return false;
+    }
+    return true;
+}
+

@@ -19,11 +19,13 @@ import { GenericType } from "./GenericType";
 export class FunctionType extends DataType {
     parameters: FunctionArgument[];
     returnType: DataType;
+    isCoroutine: boolean = false;
 
-    constructor(location: SymbolLocation, parameters: FunctionArgument[], returnType: DataType) {
+    constructor(location: SymbolLocation, parameters: FunctionArgument[], returnType: DataType, isCoroutine: boolean = false) {
         super(location, "fn");
         this.parameters = parameters;
         this.returnType = returnType;
+        this.isCoroutine = isCoroutine;
     }
 
     resolve(ctx: Context) {
@@ -37,15 +39,15 @@ export class FunctionType extends DataType {
     }
 
     shortname(): string {
-        return "fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
+        return (this.isCoroutine?"c ":"")+"fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
     }
 
     serialize(unpack: boolean = false): string {
-        return `@fn{@parameters[${this.parameters.map(e => e.serialize(unpack))}],@returnType[${this.returnType.serialize(unpack)}]}`
+        return `@${this.isCoroutine?"c ":""}fn{@parameters[${this.parameters.map(e => e.serialize(unpack))}],@returnType[${this.returnType.serialize(unpack)}]}`
     }
 
     clone(typeMap: {[key: string]: DataType}): FunctionType {
-        return new FunctionType(this.location, this.parameters.map(p => p.clone(typeMap)), this.returnType.clone(typeMap));
+        return new FunctionType(this.location, this.parameters.map(p => p.clone(typeMap)), this.returnType.clone(typeMap), this.isCoroutine);
     }
 
     allowedNullable(ctx: Context): boolean {
@@ -56,7 +58,7 @@ export class FunctionType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a FunctionType
         if(!originalType.is(ctx, FunctionType)){
-            throw ctx.parser.customError(`Expected function type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            throw ctx.parser.customError(`Expected ${this.isCoroutine?"coroutine ":""} function type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let functionType = originalType.to(ctx, FunctionType) as FunctionType;

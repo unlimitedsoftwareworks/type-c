@@ -12,6 +12,7 @@
 
 
 import { Expression } from "../ast/expressions/Expression";
+import { YieldExpression } from "../ast/expressions/YieldExpression";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { BlockStatement } from "../ast/statements/BlockStatement";
 import { ReturnStatement } from "../ast/statements/ReturnStatement";
@@ -33,7 +34,7 @@ import { matchDataTypes } from "./TypeChecking";
  * @param ctx 
  * @param returnStatements 
  */
-export function inferFunctionHeader(
+export function inferFunctionReturnFromHeader(
     ctx: Context,
     type: "method" | "function",
     returnStatements: { stmt: ReturnStatement, ctx: Context }[],
@@ -161,6 +162,143 @@ export function inferFunctionHeader(
     for (const ret of returnStatements) {
         // maybe set hint is just enough?
         ret.stmt.returnExpression?.inferReturn(ret.ctx, header.returnType);
+    }
+}
+
+
+/**
+ * Used to infer the return type of a function, given a list of return statements.
+ * If the function or method has an unset return type, it will be inferred
+ * @param ctx 
+ * @param returnStatements 
+ */
+export function inferFunctionYieldFromHeader(
+    ctx: Context,
+    yieldExpressions: { yield: YieldExpression, ctx: Context }[],
+    header: FunctionType,
+    body: BlockStatement | null,
+    expr: Expression | null) {
+
+    const definedReturnType: DataType = header.returnType;
+
+    // this should be unreachable, parser makes sure that. if it is, there is an issue with the arguments
+    if ((body === null) && (expr === null)) {
+        throw ctx.parser.customError(`Function has no body nor expression`, ctx.location);
+    }
+
+    // if we have unset, we need to infer the type based on the return statements
+    if (definedReturnType instanceof UnsetType) {
+        /**
+         * If it is a body, we have to go through all return statements and make sure they align
+         */
+        if (body !== null) {
+            body.infer(ctx);
+
+            // list of return types from the return statements
+            let returnTypes: DataType[] = [];
+
+            // if a single void is found (meaning a return without value), the return type is void
+            let voidFound = false;
+
+            for (const y of yieldExpressions) {
+                let retType = y.yield.getReturnType(y.ctx);
+                returnTypes.push(retType);
+                if (retType instanceof VoidType) {
+                    voidFound = true;
+                }
+            }
+
+            /**
+             * Case 1: Not a single return statement
+             */
+            if (returnTypes.length === 0) {
+                header.returnType = new VoidType(ctx.location);
+            }
+            /**
+             * Case 2: At least one void is found, then all must me void
+             */
+            else if (voidFound) {
+                let allVoid = returnTypes.every((t) => t instanceof VoidType);
+                if (!allVoid) {
+                    throw ctx.parser.customError(`Mixed return data types for function`, body.location);
+                }
+
+                header.returnType = new VoidType(ctx.location);
+            }
+
+            /**
+             * Case 3: Make sure all return types are the same
+             */
+            else {
+                let allMatch = findCompatibleTypes(ctx, returnTypes);
+                if (allMatch === null) {
+                    throw ctx.parser.customError(`Mixed return data types for function`, body.location);
+                }
+
+                header.returnType = allMatch;
+            }
+        }
+        /**
+         * If it is an expression, we can infer the type from the expression
+         */
+        else {
+            header.returnType = expr!.inferReturn(ctx);
+        }
+    }
+
+    // now if we have void, all shall be void
+    else if (definedReturnType instanceof VoidType) {
+        if (body !== null) {
+            body.infer(ctx);
+            for (const y of yieldExpressions) {
+                let retType = y.yield.getReturnType(y.ctx);
+                if (!(retType instanceof VoidType)) {
+                    ctx.parser.customError(`Mixed yield data types for functon`, body.location);
+                }
+            }
+        }
+        else {
+            // WARNING: for expression, void is ALLOWED, the output is just discarded
+            let retType = expr!.inferReturn(ctx);
+            if (!(retType instanceof VoidType)) {
+                expr?.setHint(new VoidType(expr.location));
+            }
+        }
+
+        header.returnType = new VoidType(ctx.location);
+    }
+
+    else {
+        if (body) {
+            body.infer(ctx);
+            if (yieldExpressions.length === 0) {
+                ctx.parser.customError(`Coroutine Function is required to yield a value`, body.location);
+            }
+
+            // all return types must match the defined return type
+            for (let i = 0; i < yieldExpressions.length; i++) {
+                let retType = yieldExpressions[i].yield.getReturnType(yieldExpressions[i].ctx);
+                if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
+                    throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, yieldExpressions[i].yield.location);
+                }
+                
+                yieldExpressions[i].yield.yieldExpression?.setHint(definedReturnType);
+            }
+        }
+        else {
+            let retType = expr!.inferReturn(ctx, definedReturnType);
+            if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
+                throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
+            }
+        }
+    }
+
+    header.resolve(ctx);
+    // We must update the hints of all return values, with the common type,
+    // so the code generator can generate the correct code to cast to the final adequate type
+    for (const y of yieldExpressions) {
+        // maybe set hint is just enough?
+        y.yield.yieldExpression?.inferReturn(y.ctx, header.returnType);
     }
 }
 

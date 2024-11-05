@@ -12,8 +12,9 @@
 
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 import { FunctionInferenceCache } from "../../typechecking/FunctionInference";
-import { buildGenericsMaps, inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
+import { buildGenericsMaps, inferFunctionReturnFromHeader, inferFunctionYieldFromHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { Expression } from "../expressions/Expression";
+import { YieldExpression } from "../expressions/YieldExpression";
 import { FunctionPrototype } from "../other/FunctionPrototype";
 import { BlockStatement } from "../statements/BlockStatement";
 import { FunctionDeclarationStatement } from "../statements/FunctionDeclarationStatement";
@@ -61,6 +62,12 @@ export class DeclaredFunction extends Symbol {
      */
     noRegister: boolean = false;
 
+    /**
+     * is Coroutine Callable:
+     * if a function has a yield expression, or calls another than is, then it is coroutine callable
+     */
+    isCoroutineCallable: boolean = false;
+    yieldExpressions: { yield: YieldExpression, ctx: Context }[] = [];
 
     constructor(location: SymbolLocation, context: Context, prototype: FunctionPrototype, expression: Expression | null, body: BlockStatement | null) {
         super(location, "function", prototype.name);
@@ -151,9 +158,6 @@ export class DeclaredFunction extends Symbol {
                 // set the generics to empty so we can properly infer its body and header by recalling this function
                 newFn.prototype.generics = [];
 
-
-                
-
                 // set the uid of the function
                 newFn.uid = this.uid+'<'+typeArgSignature+'>';
                 newFn.noRegister = true;
@@ -212,7 +216,12 @@ export class DeclaredFunction extends Symbol {
             }
         }
 
-        inferFunctionHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        if(this.prototype.header.isCoroutine) {
+            inferFunctionYieldFromHeader(this.context, this.yieldExpressions, this.prototype.header, this.body, this.expression);
+        }
+        else {
+            inferFunctionReturnFromHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+        }
         // adds imported functions to the global context
         // and symbols are added to the global context when they are declared anyway if they are functions/lambdas
         // or global level variables

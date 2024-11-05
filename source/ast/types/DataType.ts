@@ -55,7 +55,8 @@ export type DataTypeKind =
     "meta_variant_constructor" | // MetaVariantConstructorType, used for constructing variant constructors
     "meta_enum" | // MetaStructType, used for meta structs 
     "tuple" | // TupleType
-    "coroutine"; // CoroutineType
+    "coroutine"| // CoroutineType, representing a coroutine instance
+    "cofn"; // CoFunctionType, representing a coroutine function
 
 
 export class DataType {

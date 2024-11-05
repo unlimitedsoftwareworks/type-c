@@ -16,7 +16,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 
 export type StatementKind = "stmt_expression" | "stmt_let" | "function_decl" | "ifelse" | "match" 
-| "for" | "foreach" | "while" | "do" | "break" | "continue" | "return" | "block"; 
+| "for" | "foreach" | "while" | "do" | "break" | "continue" | "return" | "block" | "yield"; 
 
 export class Statement {
     kind: StatementKind;

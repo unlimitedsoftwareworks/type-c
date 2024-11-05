@@ -52,6 +52,8 @@ export class FunctionCallExpression extends Expression {
 
     _calledFunction: DeclaredFunction | null = null;
 
+    _isCoroutineCall: boolean = false;
+
     constructor(location: SymbolLocation, lhs: Expression, args: Expression[]) {
         super(location, "function_call");
         this.lhs = lhs;
@@ -437,15 +439,20 @@ export class FunctionCallExpression extends Expression {
     }
 
     inferCoroutine(ctx: Context, lhsType: DataType): DataType {
+        this._isCoroutineCall = true;
         let coroutineType = lhsType.to(ctx, CoroutineType) as CoroutineType;
 
-        // make sure we have no arguments
-        // TODO: change this behaviour to allow argument changes
-        
-        if(this.args.length !== 0) {
-            throw ctx.parser.customError(`Expected 0 arguments, got ${this.args.length}`, this.location);
+        // make sure we have all required arguments
+        if(this.args.length !== coroutineType.fnType.parameters.length) {
+            throw ctx.parser.customError(`Expected ${coroutineType.fnType.parameters.length} arguments, got ${this.args.length}`, this.location);
         }
 
+        // infer the arguments
+        for (let i = 0; i < this.args.length; i++) {
+            this.args[i].infer(ctx, coroutineType.fnType.parameters[i].type);
+        }
+
+        // set the inferred type
         this.inferredType = coroutineType.fnType.returnType;
         this.checkHint(ctx);
         return this.inferredType;

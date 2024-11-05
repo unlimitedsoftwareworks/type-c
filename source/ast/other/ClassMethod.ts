@@ -17,7 +17,7 @@ import { ReturnStatement } from "../statements/ReturnStatement";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { InterfaceMethod } from "./InterfaceMethod";
-import { inferFunctionHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
+import { inferFunctionReturnFromHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { DataType } from "../types/DataType";
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 import { Symbol } from "../symbol/Symbol";
@@ -55,6 +55,8 @@ export class ClassMethod extends Symbol {
      * Code gen properties
      */
     codeGenProps: FunctionCodegenProps
+
+    isCoroutineCallable: boolean = false;
 
     constructor(location: SymbolLocation, context: Context, imethod: InterfaceMethod, body: BlockStatement | null, expression: Expression | null) {
         super(location, "class_method", imethod.name);
@@ -116,7 +118,7 @@ export class ClassMethod extends Symbol {
             return ;
         }
 
-        inferFunctionHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
+        inferFunctionReturnFromHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
         this.codeGenProps.reportUnusedSymbols(ctx, this.imethod.header);
         this._wasInferred = true
     }

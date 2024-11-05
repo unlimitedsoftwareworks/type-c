@@ -18,9 +18,10 @@ import { Expression } from "./Expression";
 import { DataType } from "../types/DataType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ReturnStatement } from "../statements/ReturnStatement";
-import { inferFunctionHeader } from "../../typechecking/TypeInference";
+import { inferFunctionReturnFromHeader } from "../../typechecking/TypeInference";
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 import { Symbol } from "../symbol/Symbol";
+import { YieldExpression } from "./YieldExpression";
 
 /**
  * Since lambda expression are not registered in the symbol table, 
@@ -40,6 +41,12 @@ export class LambdaDefinition extends Symbol {
 
     codeGenProps: FunctionCodegenProps;
 
+    /**
+     * isCoroutineCallable is true if the lambda expression is a coroutine
+     */
+    isCoroutineCallable: boolean = false;
+    YieldExpressions: YieldExpression[] = [];
+    
     constructor(location: SymbolLocation, expression: LambdaExpression) {
         let name = "lambda-"+(LambdaDefinition.counter++);
         super(location, "lambda", name);
@@ -71,10 +78,12 @@ export class LambdaExpression extends Expression {
     definition: LambdaDefinition;
 
 
-    /**
+    /** 
      * Code gen properties
      */
     codeGenProps: FunctionCodegenProps
+    yieldExpressions: { yield: YieldExpression, ctx: Context }[] = [];
+    isCoroutineCallable: boolean = false;
 
     constructor(location: SymbolLocation, newContext: Context, header: FunctionType, body: BlockStatement | null, expression: Expression | null) {
         super(location, "lambda");
@@ -104,7 +113,7 @@ export class LambdaExpression extends Expression {
         this.setHint(hint);
 
         this.inferredType = this.header;
-        inferFunctionHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
+        inferFunctionReturnFromHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
         this.codeGenProps.reportUnusedSymbols(ctx, this.header);
 
         this.checkHint(ctx);

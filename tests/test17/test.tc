@@ -1,20 +1,42 @@
 
 
-fn loop(x: u32[]) -> (u32, bool) {
+cfn loop(x: u32[]) -> (u32, bool) {
     let i: u64 = 0
 
     while i < x.length {
         let j = i+1
-        x = yield (x[i], j == x.length)
+        yield (x[i], j == x.length)
         
-
         if j == x.length {
-            x = yield (x[i], true)
+            yield (x[i], true)
         }
     }
+
+    return (0, true)
 }
 
-fn main() -> u32 {
+cfn loop2(x: u32[]) -> (u32, bool) {
+    yield (x[0], true)
+}
+
+fn main() -> u32 {  
+    let co1 = coroutine loop2
+    /*
+     * co1: co<cfn (u32[]) -> (u32, bool)>
+    */
+    /**
+     * coroutine is a type as follows coroutine<U> where U is a function type
+     * such as `let co2: coroutine<fn (u32[]) -> (u32, bool)> = coroutine(loop)`
+     * API: co1.state -> returns the current state of the coroutine
+     * API: co1.resume(args...) -> resumes the coroutine and returns the current state
+     * API: co1.suspend() -> suspends the coroutine and returns the current state
+    */
+
+    let (_, end) = co1([1, 2, 3, 4, 5])
+    
+    while !end {
+        let (e, end) = co1([1])
+    }
 
     return 0
 }

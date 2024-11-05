@@ -79,8 +79,11 @@ This checklist containts only major changes and updates, for minor changes and u
 
 - 17/08/2024:
     - This expression now added recusively upwards, as an upvalue (obviously not added to the method itself, but any function/lambda within the class method)
+    - Any anonymous function now is treated as a closure, and is generated as a closure.
     - Closures are finally here!
 
+- 22/08/2024:
+    - Implemented coroutine functions, to declare coroutine functions that be instatiated into coroutine objects. Coroutine functions are same as regular functions, but are not called directly, because they must yield values back to the caller. They are declared with `fn` keyword, but from a compiler perspective they are of type `cofn`.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
