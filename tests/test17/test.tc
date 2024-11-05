@@ -1,85 +1,121 @@
 from std.string import String
 from std.io import println
+from std.unit.test import TestUnit, UnitSet
 
-/*
-cfn loop(x: u32[]) -> (u32, bool) {
-    println("loop")
-    let i: u64 = 0
 
-    while i < x.length {
-        let j = i+1
-        
-        if j == x.length {
-            yield! (x[i], true)
-        } else {
-            yield (x[i], false)
+fn test_case_1(rn: TestUnit) {
+    cfn loop(x: u32[]) -> (u32, bool) {
+        let i: u64 = 0
+
+        while i < x.length {
+            let j = i+1
+            
+            if j == x.length {
+                yield! (x[i], true)
+            } else {
+                yield (x[i], false)
+            }
+
+            i = j
         }
+    }
 
-        i = j
+    let z: u32[] = [5, 3, 1, 100, 10]
+
+    let co_iter = coroutine loop
+
+    let (a, a_) = co_iter(z)
+    rn.assert_eq<u32>(a, 5)
+    rn.assert_eq<bool>(a_, false)
+    rn.assert_eq<u8>(co_iter.state, 2)
+
+    println("State: " + co_iter.state)
+
+    let (b, b_) = co_iter(z)
+    rn.assert_eq<u32>(b, 3)
+    rn.assert_eq<bool>(b_, false)
+    rn.assert_eq<u8>(co_iter.state, 2)
+
+    let (c, c_) = co_iter(z)
+    rn.assert_eq<u32>(c, 1)
+    rn.assert_eq<bool>(c_, false)
+    rn.assert_eq<u8>(co_iter.state, 2)
+
+    let (d, d_) = co_iter(z)
+    rn.assert_eq<u32>(d, 100)
+    rn.assert_eq<bool>(d_, false)
+    rn.assert_eq<u8>(co_iter.state, 2)
+
+    let (e, e_) = co_iter(z)
+    rn.assert_eq<u32>(e, 10)
+    rn.assert_eq<bool>(e_, true)
+    rn.assert_eq<u8>(co_iter.state, 3)
+}
+
+type DataGenerator = class {
+    let co: coroutine<cfn() -> String>
+
+    fn init(f: cfn() -> String) {
+        this.co = coroutine f
     }
 }
 
-fn loop2(x: u32[]) -> (u32, bool) {
-    yield (x[0], false)
-    yield! (x[1], true)
-}
-
-fn loop3(x: String) -> (String, bool) {
-    yield (x, false)
-    yield! (x, true)
-}
-
-fn main() -> u32 {  
-    let co1 = coroutine loop
-
-    let co2: coroutine<cfn (x: u32[]) -> (u32, bool)> = coroutine loop2
-    let co3: coroutine<cfn (x: u32[]) -> (u32, bool)> = coroutine loop3
-
-    /*
-     * co1: co<cfn (u32[]) -> (u32, bool)>
-    */
-    /**
-     * coroutine is a type as follows coroutine<U> where U is a function type
-     * such as `let co2: coroutine<fn (u32[]) -> (u32, bool)> = coroutine(loop)`
-     * API: co1.state -> returns the current state of the coroutine
-     * API: co1.resume(args...) -> resumes the coroutine and returns the current state
-     * API: co1.suspend() -> suspends the coroutine and returns the current state
-    */
-/*
-    let z: u32[] = [1, 2, 3, 4, 5]
-    let (e, end) = co1(z)
-    
-    println("e = "+e+ ", end = "+end)
-
-    while !end {
-        let (e, end) = co1(z)
-        println("e = "+e+ ", end = "+end)
+fn test_case_2(rn: TestUnit) {
+    fn dataGenerator() -> String {
+        let data = ["hi", "hello", "hey"]
+        
+        yield data[0]
+        yield data[1]
+        yield! data[2]
     }
     
-    return 0
+    let s = {
+        co: coroutine dataGenerator
+    }
+
+    rn.assert_obj_eq<String>(s.co(), "hi")
+    rn.assert_obj_eq<String>(s.co(), "hello")
+    rn.assert_obj_eq<String>(s.co(), "hey")
+
+    let c = new DataGenerator(dataGenerator)
+
+    rn.assert_obj_eq<String>(c.co(), "hi")
+    rn.assert_obj_eq<String>(c.co(), "hello")
+    rn.assert_obj_eq<String>(c.co(), "hey")
 }
-*/
 
+fn test_case_3(rn: TestUnit) {
+    fn dataGenerator() -> String {
+        let data = ["hi", "hello", "hey"]
+        
+        yield data[0]
+        yield data[1]
+        yield! data[2]
+    }
 
-fn cofn1() -> String {
-    let data = ["hi", "hello", "world"]
-    yield data[0]
-    yield data[1]
-    yield data[2]
+    let arr = [coroutine dataGenerator, coroutine dataGenerator, coroutine dataGenerator]
+
+    rn.assert_obj_eq<String>(arr[0](), "hi")
+    rn.assert_obj_eq<String>(arr[0](), "hello")
+    rn.assert_obj_eq<String>(arr[0](), "hey")
+
+    rn.assert_obj_eq<String>(arr[1](), "hi")
+    rn.assert_obj_eq<String>(arr[1](), "hello")
+    rn.assert_obj_eq<String>(arr[1](), "hey")
+
+    rn.assert_obj_eq<String>(arr[2](), "hi")
+    rn.assert_obj_eq<String>(arr[2](), "hello")
+    rn.assert_obj_eq<String>(arr[2](), "hey")
 }
 
 fn main() -> u32 {
-    
-    let co1 = coroutine cofn1
+    let test_1 = new TestUnit("test 1", "Tests regular coroutines", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests coroutine generator", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tests coroutine array", test_case_3)
 
-    let e = co1()
-    println(e)
-    e = co1()
-    println(e)
-    e = co1()
-    println(e)
+    let set = new UnitSet("Coroutine Tests", "Tests coroutines",
+        [test_1, test_2, test_3]
+    )
 
-    e = co1()
-    println(e)
-    return 0
+    return set.run()
 }
