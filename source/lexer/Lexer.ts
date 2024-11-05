@@ -62,6 +62,7 @@ export class Lexer {
         [TokenType.TOK_TRUE, /^true\b/],
         [TokenType.TOK_TYPE, /^type\b/],
         [TokenType.TOK_WHILE, /^while\b/],
+        [TokenType.TOK_YIELD_FINAL, /^yield!/],
         [TokenType.TOK_YIELD, /^yield\b/],
 
         // Special types

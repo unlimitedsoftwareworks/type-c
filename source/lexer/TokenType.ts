@@ -37,6 +37,7 @@ export enum TokenType {
     TOK_IS = "is",
     TOK_INTERFACE = "interface",
     TOK_MUT = "mut",
+    TOK_YIELD_FINAL = "yield!",
     TOK_YIELD = "yield",
     TOK_I8 = "i8",
     TOK_I16 = "i16",

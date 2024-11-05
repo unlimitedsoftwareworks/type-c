@@ -2773,8 +2773,6 @@ export class FunctionGenerator {
         // yield either returns a tuple or a value
         this.i("coroutine_yield");
 
-
-
         return "";
     }
 
@@ -2800,7 +2798,8 @@ export class FunctionGenerator {
             this.visitForStatement(stmt, ctx);
         else if (stmt instanceof FunctionDeclarationStatement)
             this.visitFunctionDeclarationStatement(stmt, ctx);
-        else if (stmt instanceof IfStatement) this.visitIfStatement(stmt, ctx);
+        else if (stmt instanceof IfStatement) 
+            this.visitIfStatement(stmt, ctx);
         else if (stmt instanceof MatchStatement)
             this.visitMatchStatement(stmt, ctx);
         else if (stmt instanceof ReturnStatement)

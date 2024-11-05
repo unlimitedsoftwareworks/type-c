@@ -12,11 +12,11 @@ cfn loop(x: u32[]) -> (u32, bool) {
         }
     }
 
-    return (0, true)
+    yield (0, true)
 }
 
-cfn loop2(x: u32[]) -> (u32, bool) {
-    yield (x[0], true)
+fn loop2(x: u32[]) -> (u32, bool) {
+    yield! (x[0], true)
 }
 
 fn main() -> u32 {  

@@ -1392,11 +1392,11 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         parser.expect(")");
         return new NewExpression(loc, type, args);
     }
-    else if (lexeme.type === "yield") {
+    else if ((lexeme.type === "yield") || (lexeme.type === "yield!")) {
         parser.accept();
         let returnExpr = parseExpression(parser, ctx);
 
-        let yieldExpr = new YieldExpression(loc, returnExpr);
+        let yieldExpr = new YieldExpression(loc, returnExpr, lexeme.type === "yield!");
         
         let parentFunction = ctx.findParentFunction();
 

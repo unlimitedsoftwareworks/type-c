@@ -28,10 +28,12 @@ import { TupleConstructionExpression } from "./TupleConstructionExpression";
 
 export class YieldExpression extends Expression {
     yieldExpression: Expression;
+    isFinal: boolean;
     
-    constructor(location: SymbolLocation, yieldExpression: Expression) {
+    constructor(location: SymbolLocation, yieldExpression: Expression, isFinal: boolean = false) {
         super(location, "yield");
         this.yieldExpression = yieldExpression;
+        this.isFinal = isFinal;
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
@@ -55,7 +57,11 @@ export class YieldExpression extends Expression {
          * if we have 1 argument, we return it
          * if we have multiple arguments, we return a tuple
          */
+
+        // change of plans, yield returns void
+        this.inferredType = new VoidType(this.location);
         
+        /*
         if (header.parameters.length == 0) {
             this.inferredType = new VoidType(this.location);
         }
@@ -64,7 +70,8 @@ export class YieldExpression extends Expression {
         }
         else {
             this.inferredType = new TupleType(this.location, header.parameters.map(param => param.type));
-        }
+        }*/
+
 
         return this.inferredType;
     }
