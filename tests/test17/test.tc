@@ -1,13 +1,13 @@
 from std.string import String
 from std.io import println
 
+/*
 cfn loop(x: u32[]) -> (u32, bool) {
     println("loop")
     let i: u64 = 0
 
     while i < x.length {
         let j = i+1
-        //println("yield "+x[i])
         
         if j == x.length {
             yield! (x[i], true)
@@ -15,10 +15,8 @@ cfn loop(x: u32[]) -> (u32, bool) {
             yield (x[i], false)
         }
 
-
         i = j
     }
-
 }
 
 fn loop2(x: u32[]) -> (u32, bool) {
@@ -26,9 +24,16 @@ fn loop2(x: u32[]) -> (u32, bool) {
     yield! (x[1], true)
 }
 
+fn loop3(x: String) -> (String, bool) {
+    yield (x, false)
+    yield! (x, true)
+}
+
 fn main() -> u32 {  
     let co1 = coroutine loop
 
+    let co2: coroutine<cfn (x: u32[]) -> (u32, bool)> = coroutine loop2
+    let co3: coroutine<cfn (x: u32[]) -> (u32, bool)> = coroutine loop3
 
     /*
      * co1: co<cfn (u32[]) -> (u32, bool)>
@@ -40,7 +45,7 @@ fn main() -> u32 {
      * API: co1.resume(args...) -> resumes the coroutine and returns the current state
      * API: co1.suspend() -> suspends the coroutine and returns the current state
     */
-
+/*
     let z: u32[] = [1, 2, 3, 4, 5]
     let (e, end) = co1(z)
     
@@ -51,5 +56,30 @@ fn main() -> u32 {
         println("e = "+e+ ", end = "+end)
     }
     
+    return 0
+}
+*/
+
+
+fn cofn1() -> String {
+    let data = ["hi", "hello", "world"]
+    yield data[0]
+    yield data[1]
+    yield data[2]
+}
+
+fn main() -> u32 {
+    
+    let co1 = coroutine cofn1
+
+    let e = co1()
+    println(e)
+    e = co1()
+    println(e)
+    e = co1()
+    println(e)
+
+    e = co1()
+    println(e)
     return 0
 }

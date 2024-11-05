@@ -560,5 +560,10 @@ export enum BytecodeInstructionType{
     coroutine_call,
     coroutine_yield,
     coroutine_ret,
+
+    /**
+     * throw_rt code: i (1 byte)
+     */
+    throw_rt,
 }
 

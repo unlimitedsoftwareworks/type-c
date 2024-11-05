@@ -455,6 +455,8 @@ export type IRInstructionType =
     "coroutine_call" |
     "coroutine_yield" |
     "coroutine_ret" |
+
+    "throw_rt" |
     
     // source map instructions
     "srcmap_push_loc" |

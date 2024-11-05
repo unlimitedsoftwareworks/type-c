@@ -550,6 +550,8 @@ export class CodeSegment {
             case BytecodeInstructionType.coroutine_ret:
                 return -1;
             
+            case BytecodeInstructionType.throw_rt:
+                return this.writer.push_8(args[0]);
 
                 
             default:

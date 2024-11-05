@@ -1760,6 +1760,10 @@ export class BytecodeGenerator {
                 this.emit(BytecodeInstructionType.coroutine_ret);
             }
 
+            else if (instruction.type == "throw_rt") {
+                this.emit(BytecodeInstructionType.throw_rt, instruction.args[0] as number);
+            }
+
 
 
             else {

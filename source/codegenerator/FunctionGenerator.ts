@@ -308,14 +308,14 @@ export class FunctionGenerator {
                 !this.getLastInstruction().type.startsWith("ret_") &&
                 !this.isGlobal
             ) {
-                this.i("ret_void");
+                this.ir_generate_end_ret();
             }
         } else {
             this.srcMapPushLoc(this.fn.location);
             let tmp = "";
             if (expression instanceof TupleConstructionExpression) {
                 this.ir_generate_tuple_return(this.fn.context, expression);
-                this.i("ret_void");
+                this.ir_generate_end_ret();
             } else if (
                 expression?.inferredType?.is(this.fn.context, TupleType)
             ) {
@@ -336,7 +336,7 @@ export class FunctionGenerator {
                     this.i(ret, tmp, i);
                     this.destroyTmp(tmp);
                 }
-                this.i("ret_void");
+                this.ir_generate_end_ret();
             } else {
                 tmp = this.visitExpression(expression!, this.fn.context);
                 // check if the function is not void
@@ -351,10 +351,10 @@ export class FunctionGenerator {
                     );
                     // TODO: handle tuple for expression-functions return here
                     this.i(instr, tmp, 0);
-                    this.i("ret_void");
+                    this.ir_generate_end_ret();
                 } else {
                     this.destroyTmp(tmp);
-                    this.i("ret_void");
+                    this.ir_generate_end_ret();
                 }
             }
             this.srcMapPopLoc();
@@ -3130,7 +3130,7 @@ export class FunctionGenerator {
                 throw "Unreachable code";
             } else {
                 // add a ret void to mark the end of the function
-                this.i("ret_void");
+                this.ir_generate_end_ret();
             }
         }
     }
@@ -3542,7 +3542,7 @@ export class FunctionGenerator {
             this.i("j", jmpLabel);
         } else if(!isCoroutine){
             // add a ret void to mark the end of the function
-            this.i("ret_void");
+            this.ir_generate_end_ret();
         }
     }
 
@@ -3777,6 +3777,15 @@ export class FunctionGenerator {
         this.i(inst, tmp, value);
 
         return tmp;
+    }
+
+    ir_generate_end_ret() {
+        if(this.fn.isCoroutineCallable) {
+            this.i("throw_rt", 1);
+        }
+        else {
+            this.i("ret_void");
+        }
     }
 }
 
