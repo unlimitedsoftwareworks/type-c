@@ -216,11 +216,19 @@ export class DeclaredFunction extends Symbol {
             }
         }
 
-        if(this.prototype.header.isCoroutine) {
+        if(this.isCoroutineCallable) {
             inferFunctionYieldFromHeader(this.context, this.yieldExpressions, this.prototype.header, this.body, this.expression);
+            // make sure we have no return statements
+            if(this.returnStatements.length > 0) {
+                throw ctx.parser.customError("Coroutine function cannot have return statements", this.location);
+            }
         }
         else {
             inferFunctionReturnFromHeader(this.context, 'function', this.returnStatements, this.prototype.header, this.body, this.expression);
+            // make sure we have no yield expressions
+            if(this.yieldExpressions.length > 0) {
+                throw ctx.parser.customError("Function cannot have yield expressions", this.location);
+            }
         }
         // adds imported functions to the global context
         // and symbols are added to the global context when they are declared anyway if they are functions/lambdas

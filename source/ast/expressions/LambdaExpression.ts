@@ -18,7 +18,7 @@ import { Expression } from "./Expression";
 import { DataType } from "../types/DataType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ReturnStatement } from "../statements/ReturnStatement";
-import { inferFunctionReturnFromHeader } from "../../typechecking/TypeInference";
+import { inferFunctionReturnFromHeader, inferFunctionYieldFromHeader } from "../../typechecking/TypeInference";
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 import { Symbol } from "../symbol/Symbol";
 import { YieldExpression } from "./YieldExpression";
@@ -113,7 +113,22 @@ export class LambdaExpression extends Expression {
         this.setHint(hint);
 
         this.inferredType = this.header;
-        inferFunctionReturnFromHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
+        
+        if(this.isCoroutineCallable){
+            inferFunctionYieldFromHeader(this.context, this.yieldExpressions, this.header, this.body, this.expression);
+            // make sure we have no return statements
+            if(this.returnStatements.length > 0) {
+                throw ctx.parser.customError("Coroutine function cannot have return statements", this.location);
+            }
+        }
+        else {
+            inferFunctionReturnFromHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
+            // make sure we have no yield expressions
+            if(this.yieldExpressions.length > 0) {
+                throw ctx.parser.customError("Function cannot have yield expressions", this.location);
+            }
+        }
+
         this.codeGenProps.reportUnusedSymbols(ctx, this.header);
 
         this.checkHint(ctx);
