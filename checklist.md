@@ -83,7 +83,8 @@ This checklist containts only major changes and updates, for minor changes and u
     - Closures are finally here!
 
 - 22/08/2024:
-    - Implemented coroutine functions, to declare coroutine functions that be instatiated into coroutine objects. Coroutine functions are same as regular functions, but are not called directly, because they must yield values back to the caller. They are declared with `fn` keyword, but from a compiler perspective they are of type `cofn`.
+    - Implemented coroutine functions, to declare coroutine functions that be instatiated into coroutine objects. Coroutine functions are same as regular functions, but are not called directly, because they must yield values back to the caller. They are declared with `fn` or `cfn` keyword, but from a compiler perspective they are of type `cfn`.
+    - Coroutine Callable Functions now ends with `throw_rt` instruction, which is used to throw an error when coroutine reaches end of execution and has not yielded any value.
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
