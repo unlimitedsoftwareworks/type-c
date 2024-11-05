@@ -84,6 +84,10 @@ export function getDataTypeByteSize(type: DataType): number {
             return getDataTypeByteSize(ref.baseType);
         }
 
+        case "coroutine": {
+            return 8;
+        }
+
         default : {
             throw new Error(`${type.shortname()} aka ${type.kind} number types should not be used in the code generator`);
         }

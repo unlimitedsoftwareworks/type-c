@@ -1308,7 +1308,14 @@ export class FunctionGenerator {
             regs.push(tmp);
         }
 
-        this.i("fn_alloc");
+        const isCoroutine = expr._isCoroutineCall;
+        if(isCoroutine) {
+            this.i("coroutine_fn_alloc", fnReg);
+        }
+        else {
+            this.i("fn_alloc");
+        }
+
         for (let i = 0; i < instructions.length; i++) {
             this.i(instructions[i], i, regs[i]);
             // mut regs not used for now..
@@ -1320,21 +1327,35 @@ export class FunctionGenerator {
         // check if the function returns a value
         let hasReturn = true;
         if (
-            expr.lhs.inferredType instanceof VoidType ||
-            expr.lhs.inferredType instanceof TupleType
+            expr.inferredType instanceof VoidType ||
+            expr.inferredType instanceof TupleType
         ) {
             hasReturn = false;
         }
 
-        if (hasReturn) {
-            let tmp = this.generateTmp();
-            this.i("closure_call", tmp, fnReg);
-            this.destroyTmp(fnReg);
-            return tmp;
-        } else {
-            this.i("closure_call", fnReg);
-            this.destroyTmp(fnReg);
-            return "";
+        if(isCoroutine) {
+            if (hasReturn) {
+                let tmp = this.generateTmp();
+                this.i("coroutine_call", tmp, fnReg);
+                this.destroyTmp(fnReg);
+                return tmp;
+            } else {
+                this.i("coroutine_call", fnReg);
+                this.destroyTmp(fnReg);
+                return "";
+            }
+        }
+        else {
+            if (hasReturn) {
+                let tmp = this.generateTmp();
+                this.i("closure_call", tmp, fnReg);
+                this.destroyTmp(fnReg);
+                return tmp;
+            } else {
+                this.i("closure_call", fnReg);
+                this.destroyTmp(fnReg);
+                return "";
+            }
         }
     }
     
@@ -2769,9 +2790,14 @@ export class FunctionGenerator {
     }
 
     visitYieldExpression(expr: YieldExpression, ctx: Context): string {
-        this.ir_generate_return(expr.yieldExpression, ctx, null, null);
+        this.ir_generate_return(expr.yieldExpression, ctx, null, null, true);
         // yield either returns a tuple or a value
-        this.i("coroutine_yield");
+        if(expr.isFinal) {
+            this.i("coroutine_ret");
+        }
+        else {
+            this.i("coroutine_yield");
+        }
 
         return "";
     }
@@ -3475,7 +3501,7 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_return(returnExpression: Expression, ctx: Context, jmpLabel: string | null, resTmp: string | null) {
+    ir_generate_return(returnExpression: Expression, ctx: Context, jmpLabel: string | null, resTmp: string | null, isCoroutine: boolean = false) {
         if (returnExpression instanceof TupleConstructionExpression) {
             this.ir_generate_tuple_return(ctx, returnExpression);
         } else if (
@@ -3514,7 +3540,7 @@ export class FunctionGenerator {
 
         if (jmpLabel) {
             this.i("j", jmpLabel);
-        } else {
+        } else if(!isCoroutine){
             // add a ret void to mark the end of the function
             this.i("ret_void");
         }

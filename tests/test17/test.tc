@@ -1,26 +1,35 @@
-
+from std.string import String
+from std.io import println
 
 cfn loop(x: u32[]) -> (u32, bool) {
+    println("loop")
     let i: u64 = 0
 
     while i < x.length {
         let j = i+1
-        yield (x[i], j == x.length)
+        //println("yield "+x[i])
         
         if j == x.length {
-            yield (x[i], true)
+            yield! (x[i], true)
+        } else {
+            yield (x[i], false)
         }
+
+
+        i = j
     }
 
-    yield (0, true)
 }
 
 fn loop2(x: u32[]) -> (u32, bool) {
-    yield! (x[0], true)
+    yield (x[0], false)
+    yield! (x[1], true)
 }
 
 fn main() -> u32 {  
-    let co1 = coroutine loop2
+    let co1 = coroutine loop
+
+
     /*
      * co1: co<cfn (u32[]) -> (u32, bool)>
     */
@@ -32,11 +41,15 @@ fn main() -> u32 {
      * API: co1.suspend() -> suspends the coroutine and returns the current state
     */
 
-    let (_, end) = co1([1, 2, 3, 4, 5])
+    let z: u32[] = [1, 2, 3, 4, 5]
+    let (e, end) = co1(z)
     
-    while !end {
-        let (e, end) = co1([1])
-    }
+    println("e = "+e+ ", end = "+end)
 
+    while !end {
+        let (e, end) = co1(z)
+        println("e = "+e+ ", end = "+end)
+    }
+    
     return 0
 }

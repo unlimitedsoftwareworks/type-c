@@ -1718,6 +1718,49 @@ export class BytecodeGenerator {
                 this.emit(BytecodeInstructionType.closure_push_env_ptr, dest, arg);
             }
 
+            else if (instruction.type == "coroutine_alloc") {
+                // coroutine_alloc tmp, fnAddress
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let closureReg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.coroutine_alloc, dest, closureReg);
+            }
+
+            else if (instruction.type == "coroutine_fn_alloc") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                this.emit(BytecodeInstructionType.coroutine_fn_alloc, dest);
+            }
+
+            else if (instruction.type == "coroutine_get_state") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                this.emit(BytecodeInstructionType.coroutine_get_state, dest);
+            }
+
+            else if (instruction.type == "coroutine_call") {
+                //let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                //this.emit(BytecodeInstructionType.coroutine_call, reg);
+                //this.emit(BytecodeInstructionType.frame_precall);
+                // 2 cases: 1 with return, 2 without return
+                if (instruction.args.length == 1) {
+                    let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                    this.emit(BytecodeInstructionType.coroutine_call, reg);
+                }
+                else {
+                    let returnReg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                    let coroutineReg = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                    this.emit(BytecodeInstructionType.coroutine_call, coroutineReg);
+                    this.emit(BytecodeInstructionType.fn_get_ret_reg, returnReg, 255, 8);
+                }
+            }
+
+            else if (instruction.type == "coroutine_yield") {
+                this.emit(BytecodeInstructionType.coroutine_yield);
+            }
+
+            else if (instruction.type == "coroutine_ret") {
+                this.emit(BytecodeInstructionType.coroutine_ret);
+            }
+
+
 
             else {
                 throw new Error("Unknown instruction: " + instruction.type);
