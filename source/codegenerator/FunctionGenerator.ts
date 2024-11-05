@@ -135,6 +135,7 @@ import { allocateRegisters } from "./RegisterAllocator";
 import { getDataTypeByteSize } from "./utils";
 import { FunctionCodegenProps } from "./FunctionCodegenProps";
 import { YieldExpression } from "../ast/expressions/YieldExpression";
+import { CoroutineType } from "../ast/types/CoroutineType";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -812,6 +813,15 @@ export class FunctionGenerator {
             }
         }
 
+        if(baseType instanceof CoroutineType) {
+            if(rhs.name === "state") {
+                let tmp = this.generateTmp();
+                this.i("coroutine_get_state", tmp, lhsReg);
+                this.destroyTmp(lhsReg);
+                return tmp;
+            }
+        }
+
         if (baseType instanceof StructType) {
             let structType = baseType as StructType;
             let fieldType = structType.getFieldTypeByName(rhs.name);
@@ -880,7 +890,7 @@ export class FunctionGenerator {
 
         if (expr.operator == "=") {
             return this.ir_generate_assignment(expr, ctx);
-            
+
         } else if (["+=", "-=", "*=", "/=", "%="].includes(expr.operator)) {
             // generate the instruction
             let newInstruction = this.buildOpAssignBinaryExpr(
@@ -1030,7 +1040,7 @@ export class FunctionGenerator {
         this.i("label", lblEnd);
         return tmp;
     }
-    
+
     ir_generate_assignment(expr: BinaryExpression, ctx: Context) {
         if (expr.left instanceof TupleConstructionExpression) {
             this.ir_generate_tuple_assignment(ctx, expr);
@@ -1079,7 +1089,7 @@ export class FunctionGenerator {
             );
         }
     }
-    
+
     ir_generate_class_field_assignment(expr: BinaryExpression, ctx: Context, left: MemberAccessExpression, right: string, baseType: ClassType, element: ElementExpression) {
         let classType = baseType as ClassType;
         // we will assign the value to the class's field
@@ -1113,7 +1123,7 @@ export class FunctionGenerator {
 
     ir_generate_struct_field_assignment(expr: BinaryExpression, ctx: Context, left: MemberAccessExpression, right: string, baseType: StructType, element: ElementExpression) {
         let structType = baseType as StructType;
-                    // we will assign the value to the struct's field
+        // we will assign the value to the struct's field
         this.i(
             "debug",
             "struct field assignment, struct expression",
@@ -1247,7 +1257,7 @@ export class FunctionGenerator {
                 }
             } else if (baseType?.is(ctx, InterfaceType)) {
                 let accessElement = (expr.lhs.right as ElementExpression).name;
-               return this.ir_generate_interface_method_call(expr, ctx, baseExpression, baseType.to(ctx, InterfaceType) as InterfaceType, accessElement);
+                return this.ir_generate_interface_method_call(expr, ctx, baseExpression, baseType.to(ctx, InterfaceType) as InterfaceType, accessElement);
             } else if (baseType instanceof ArrayType) {
                 return this.ir_generate_array_method_call(expr, ctx, baseExpression, baseType);
             } else if (baseType instanceof MetaType) {
@@ -1281,7 +1291,7 @@ export class FunctionGenerator {
             lhsType instanceof MetaType &&
             lhsType instanceof MetaVariantConstructorType
         ) {
-           return this.ir_generate_variant_constructor_call(expr, ctx, lhsType);
+            return this.ir_generate_variant_constructor_call(expr, ctx, lhsType);
         } else if (lhsType instanceof FFIMethodType) {
             return this.ir_generate_ffi_method_call(expr, ctx, lhsType);
         } else {
@@ -1291,7 +1301,7 @@ export class FunctionGenerator {
 
         throw ctx.parser.customError("Invalid expression", expr.location);
     }
-    
+
     ir_generate_anonymous_function_call(expr: FunctionCallExpression, ctx: Context): string {
         let fnReg = this.visitExpression(expr.lhs, ctx);
         // an indirect call such as f()() or x[0](1)
@@ -1309,7 +1319,7 @@ export class FunctionGenerator {
         }
 
         const isCoroutine = expr._isCoroutineCall;
-        if(isCoroutine) {
+        if (isCoroutine) {
             this.i("coroutine_fn_alloc", fnReg);
         }
         else {
@@ -1333,7 +1343,7 @@ export class FunctionGenerator {
             hasReturn = false;
         }
 
-        if(isCoroutine) {
+        if (isCoroutine) {
             if (hasReturn) {
                 let tmp = this.generateTmp();
                 this.i("coroutine_call", tmp, fnReg);
@@ -1358,7 +1368,7 @@ export class FunctionGenerator {
             }
         }
     }
-    
+
     ir_generate_ffi_method_call(expr: FunctionCallExpression, ctx: Context, lhsType: FFIMethodType): string {
         let baseFFI = lhsType.parentFFI!;
         let ffi_id = baseFFI.ffiId;
@@ -1532,7 +1542,7 @@ export class FunctionGenerator {
     }
 
     ir_generate_array_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ArrayType): string {
-        if(!(expr.lhs instanceof MemberAccessExpression)){
+        if (!(expr.lhs instanceof MemberAccessExpression)) {
             throw ctx.parser.customError("Invalid expression", expr.location);
         }
         // check if array extend method
@@ -1652,12 +1662,12 @@ export class FunctionGenerator {
             return "";
         }
     }
-    
+
     ir_generate_class_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, accessElement: string, lhsType: FunctionType): string {
         // gotta be a method
         // check if it is static or not
 
-        if(!(expr.lhs instanceof MemberAccessExpression)){
+        if (!(expr.lhs instanceof MemberAccessExpression)) {
             throw ctx.parser.customError("Invalid expression", expr.location);
         }
 
@@ -1749,7 +1759,7 @@ export class FunctionGenerator {
             return "";
         }
     }
-    
+
     ir_generate_class_attribute_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ClassType, accessElement: string): string {
         // it is an attribute, we get the proceed normally
         let reg = this.visitExpression(expr.lhs, ctx);
@@ -1766,7 +1776,13 @@ export class FunctionGenerator {
             regs.push(tmp);
         }
 
-        this.i("fn_alloc");
+        const isCoroutine = expr._isCoroutineCall;
+        if (isCoroutine) {
+            this.i("coroutine_fn_alloc", reg);
+        }
+        else {
+            this.i("fn_alloc");
+        }
 
         for (let i = 0; i < instructions.length; i++) {
             this.i(instructions[i], i, regs[i]);
@@ -1781,20 +1797,34 @@ export class FunctionGenerator {
             hasReturn = false;
         }
 
-        if (hasReturn) {
-            let tmp = this.generateTmp();
-            this.i("closure_call", tmp, reg);
-            this.destroyTmp(reg);
-            return tmp;
-        } else {
-            this.i("closure_call", reg);
-            this.destroyTmp(reg);
-            return "";
+        if (isCoroutine) {
+            if (hasReturn) {
+                let tmp = this.generateTmp();
+                this.i("coroutine_call", tmp, reg);
+                this.destroyTmp(reg);
+                return tmp;
+            } else {
+                this.i("coroutine_call", reg);
+                this.destroyTmp(reg);
+                return "";
+            }
+        }
+        else {
+            if (hasReturn) {
+                let tmp = this.generateTmp();
+                this.i("closure_call", tmp, reg);
+                this.destroyTmp(reg);
+                return tmp;
+            } else {
+                this.i("closure_call", reg);
+                this.destroyTmp(reg);
+                return "";
+            }
         }
     }
-    
+
     ir_generate_direct_function_call(expr: FunctionCallExpression, ctx: Context, lhsType: FunctionType): string {
-        if(!(expr.lhs instanceof ElementExpression)){
+        if (!(expr.lhs instanceof ElementExpression)) {
             throw ctx.parser.customError("Invalid expression", expr.location);
         }
 
@@ -2792,7 +2822,7 @@ export class FunctionGenerator {
     visitYieldExpression(expr: YieldExpression, ctx: Context): string {
         this.ir_generate_return(expr.yieldExpression, ctx, null, null, true);
         // yield either returns a tuple or a value
-        if(expr.isFinal) {
+        if (expr.isFinal) {
             this.i("coroutine_ret");
         }
         else {
@@ -2824,7 +2854,7 @@ export class FunctionGenerator {
             this.visitForStatement(stmt, ctx);
         else if (stmt instanceof FunctionDeclarationStatement)
             this.visitFunctionDeclarationStatement(stmt, ctx);
-        else if (stmt instanceof IfStatement) 
+        else if (stmt instanceof IfStatement)
             this.visitIfStatement(stmt, ctx);
         else if (stmt instanceof MatchStatement)
             this.visitMatchStatement(stmt, ctx);
@@ -3540,7 +3570,7 @@ export class FunctionGenerator {
 
         if (jmpLabel) {
             this.i("j", jmpLabel);
-        } else if(!isCoroutine){
+        } else if (!isCoroutine) {
             // add a ret void to mark the end of the function
             this.ir_generate_end_ret();
         }
@@ -3750,7 +3780,7 @@ export class FunctionGenerator {
         return tmp;
     }
 
-    ir_generate_enum_access(expr: MemberAccessExpression, ctx: Context, elementName: string, sym: DeclaredType,type: EnumType): string {
+    ir_generate_enum_access(expr: MemberAccessExpression, ctx: Context, elementName: string, sym: DeclaredType, type: EnumType): string {
         // make sure expr.rhs is an element expression
         if (!(expr.right instanceof ElementExpression)) {
             throw ctx.parser.customError(
@@ -3780,7 +3810,7 @@ export class FunctionGenerator {
     }
 
     ir_generate_end_ret() {
-        if(this.fn.isCoroutineCallable) {
+        if (this.fn.isCoroutineCallable) {
             this.i("throw_rt", 1);
         }
         else {

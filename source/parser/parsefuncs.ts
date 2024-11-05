@@ -688,7 +688,7 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         return parseTypeInterface(parser, ctx);
     }
 
-    if (lexeme.type === "fn") {
+    if ((lexeme.type === "fn") || (lexeme.type === "cfn")) {
         parser.reject();
         return parseTypeFunction(parser, ctx);
     }

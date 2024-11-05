@@ -18,6 +18,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ArrayType } from "../types/ArrayType";
 import { BasicType } from "../types/BasicType";
 import { ClassType } from "../types/ClassType";
+import { CoroutineType } from "../types/CoroutineType";
 import { DataType } from "../types/DataType";
 import { EnumType } from "../types/EnumType";
 import { FFINamespaceType } from "../types/FFINamespaceType";
@@ -334,6 +335,17 @@ export class MemberAccessExpression extends Expression {
             this.isConstant = false;
             this.checkHint(ctx);
             return this.inferredType;
+        }
+        if(lhsType.is(ctx, CoroutineType)) {
+             /**
+             * Only one of the following are accepted: length, extend and slice
+             */
+             if (this.right.name === "state") {
+                this.inferredType = new BasicType(this.location, "u8");
+                this.isConstant = false;
+                this.checkHint(ctx);
+                return this.inferredType;
+            }
         }
 
         throw ctx.parser.customError(
