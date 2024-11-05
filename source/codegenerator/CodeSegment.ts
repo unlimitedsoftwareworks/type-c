@@ -539,7 +539,8 @@ export class CodeSegment {
                 return this.writer.push_8(args[0]);
             
             case BytecodeInstructionType.coroutine_get_state:
-                return this.writer.push_8(args[0]);
+                this.writer.push_8(args[0]);
+                return this.writer.push_8(args[1]);
             
             case BytecodeInstructionType.coroutine_call:
                 return this.writer.push_8(args[0]);

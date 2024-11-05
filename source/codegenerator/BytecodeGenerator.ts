@@ -1731,8 +1731,9 @@ export class BytecodeGenerator {
             }
 
             else if (instruction.type == "coroutine_get_state") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.coroutine_get_state, dest);
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);   
+                let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.coroutine_get_state, dest, src);
             }
 
             else if (instruction.type == "coroutine_call") {
