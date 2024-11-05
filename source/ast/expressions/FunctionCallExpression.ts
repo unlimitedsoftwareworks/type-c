@@ -271,6 +271,11 @@ export class FunctionCallExpression extends Expression {
     private inferFunction(ctx: Context, lhsType: DataType) {
 
         let lhsT = lhsType as FunctionType;
+
+        if(lhsT.isCoroutine) {
+            throw ctx.parser.customError(`Cannot call coroutine directly`, this.location);
+        }
+
         // regular function call
         // check if the number of arguments is correct
         if (this.args.length !== lhsT.parameters.length) {
