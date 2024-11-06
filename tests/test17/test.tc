@@ -29,8 +29,6 @@ fn test_case_1(rn: TestUnit) {
     rn.assert_eq<bool>(a_, false)
     rn.assert_eq<u8>(co_iter.state, 2)
 
-    println("State: " + co_iter.state)
-
     let (b, b_) = co_iter(z)
     rn.assert_eq<u32>(b, 3)
     rn.assert_eq<bool>(b_, false)
