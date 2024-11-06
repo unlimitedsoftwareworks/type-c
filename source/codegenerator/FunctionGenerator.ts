@@ -345,7 +345,8 @@ export class FunctionGenerator {
                     this.fn.codeGenProps.parentFnType &&
                     this.fn.codeGenProps.parentFnType.returnType &&
                     this.fn.codeGenProps.parentFnType.returnType.kind != "void" &&
-                    this.fn.codeGenProps.parentFnType.returnType.kind != "unset"
+                    this.fn.codeGenProps.parentFnType.returnType.kind != "unset" &&
+                    !this.fn.isCoroutineCallable
                 ) {
                     let instr = retType(
                         this.fn.codeGenProps.parentFnType.returnType,
@@ -444,7 +445,7 @@ export class FunctionGenerator {
         else if (expr instanceof IfElseExpression)
             tmp = this.visitIfElseExpression(expr, ctx);
         else if (expr instanceof LetInExpression)
-            tmp = this.visitLetInExpression(expr, ctx);
+            tmp = this.visitLetInExpression(expr, expr.context);
         else if (expr instanceof NewExpression)
             tmp = this.visitNewExpression(expr, ctx);
         else if (expr instanceof LiteralExpression)

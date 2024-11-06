@@ -28,6 +28,8 @@ export class LetInExpression extends Expression {
         this.variables = variables;
         this.inExpression = inExpression;
         this.context = context;
+
+        this.variables.forEach(v => this.context.addSymbol(v));
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
@@ -36,9 +38,9 @@ export class LetInExpression extends Expression {
 
         // infer the variables
         this.variables.forEach(v => v.infer(ctx));
-        this.inferredType = this.inExpression.infer(ctx, hint);
+        this.inferredType = this.inExpression.infer(this.context, hint);
 
-        this.checkHint(ctx);
+        this.checkHint(this.context);
         this.isConstant = this.inExpression.isConstant;
         return this.inferredType;
     }
