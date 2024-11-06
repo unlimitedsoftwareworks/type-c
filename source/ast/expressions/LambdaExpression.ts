@@ -142,6 +142,8 @@ export class LambdaExpression extends Expression {
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): LambdaExpression{
         let newCtx = this.context.clone(typeMap, ctx);
-        return new LambdaExpression(this.location, newCtx, this.header.clone(typeMap), this.body?.clone(typeMap, newCtx) || null, this.expression?.clone(typeMap, newCtx) || null);
+        let newLambda = new LambdaExpression(this.location, newCtx, this.header.clone(typeMap), this.body?.clone(typeMap, newCtx) || null, this.expression?.clone(typeMap, newCtx) || null);
+        newLambda.isCoroutineCallable = this.isCoroutineCallable;
+        return newLambda;
     }
 }

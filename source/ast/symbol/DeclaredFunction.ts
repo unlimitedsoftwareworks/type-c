@@ -254,6 +254,7 @@ export class DeclaredFunction extends Symbol {
         newM.declStatement = new FunctionDeclarationStatement(this.location, newM);
         newM.expression = this.expression?.clone(typeMap, newContext) || null;
         newM.body = this.body?.clone(typeMap, newContext) || null;
+        newM.isCoroutineCallable = this.isCoroutineCallable;
 
         if (newM.body) {
             newM.body.context.setOwner(newM);

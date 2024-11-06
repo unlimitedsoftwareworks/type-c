@@ -16,6 +16,7 @@
  * Also a yield expression cannot be used alongside return statement in the same function.
  */
 
+import { ReturnStatement } from "../statements/ReturnStatement";
 import { Context } from "../symbol/Context";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { SymbolLocation } from "../symbol/SymbolLocation";
@@ -23,7 +24,7 @@ import { DataType } from "../types/DataType";
 import { TupleType } from "../types/TupleType";
 import { VoidType } from "../types/VoidType";
 import { Expression } from "./Expression";
-import { LambdaDefinition } from "./LambdaExpression";
+import { LambdaDefinition, LambdaExpression } from "./LambdaExpression";
 import { TupleConstructionExpression } from "./TupleConstructionExpression";
 
 export class YieldExpression extends Expression {
@@ -59,7 +60,9 @@ export class YieldExpression extends Expression {
          */
 
         // change of plans, yield returns void
-        this.inferredType = new VoidType(this.location);
+        // another change of plans, yield returns the function's return type
+        // this.inferredType = new VoidType(this.location);
+        this.inferredType = header.returnType;
         
         /*
         if (header.parameters.length == 0) {
@@ -92,6 +95,9 @@ export class YieldExpression extends Expression {
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): YieldExpression {
-        return new YieldExpression(this.location, this.yieldExpression.clone(typeMap, ctx));
+        let newExpression = this.yieldExpression ? this.yieldExpression.clone(typeMap, ctx) : null;
+        let newYield = new YieldExpression(this.location, newExpression!, this.isFinal);
+        (ctx.findParentFunction() as (DeclaredFunction | LambdaExpression))?.yieldExpressions.push({ctx: ctx, yield: newYield});
+        return newYield;
     }
 }
