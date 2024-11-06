@@ -1,0 +1,27 @@
+from std.io import println
+from std.string import String
+
+fn main() {
+    fn dataGenerator<T>(data: T[]) -> T {
+        let old = 
+        yield data[0]
+        yield data[1]
+        yield! data[2]
+    }
+
+    let co = coroutine dataGenerator<String>
+
+    let e = co(["hi", "hello", "hey"])
+    println("result = "+e)
+    e = co(["hi", "bye", "hey"])
+    println("result = "+e)
+
+    let co2 = coroutine dataGenerator<u64>
+    let e2 = co2([1 as u64, 2, 3])
+    println("result = "+e2)
+    e2 = co2([1 as u64, 5, 3])
+    println("result = "+e2)
+
+    return 0
+    
+}

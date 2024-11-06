@@ -108,13 +108,62 @@ fn test_case_3(rn: TestUnit) {
     rn.assert_obj_eq<String>(arr[2](), "hey")
 }
 
+fn test_case_4(rn: TestUnit) {
+    fn dataGenerator<T>(data: T[]) -> T {
+        let old = data
+        yield old[0]
+        yield old[1]
+        yield! old[2]
+    }
+
+    let co = coroutine dataGenerator<String>
+
+    let e = co(["hi", "hello", "hey"])
+    rn.assert_obj_eq<String>(e, "hi")
+
+    e = co(["hi", "bye", "hey"])
+    rn.assert_obj_eq<String>(e, "hello")
+
+    let co2 = coroutine dataGenerator<u64>
+
+    let e2 = co2([1 as u64, 2, 3])
+    rn.assert_eq<u64>(e2, 1)
+
+    e2 = co2([1 as u64, 5, 3])
+    rn.assert_eq<u64>(e2, 2)
+}
+
+fn test_case_5(rn: TestUnit) {
+    fn dataGenerator<T>(data: T[]) -> T {
+        yield data[0]
+        yield data[1]
+        yield! data[2]
+    }
+
+    let co = coroutine dataGenerator<String>
+
+    let res = 
+        let e0 = co(["hi", "hello", "hey"]) in
+            let e1 = co(["hi", "hello", "hey"]) in
+                let e2 = co(["hi", "hello", "hey"]) in do {
+                    rn.assert_obj_eq<String>(e0, "hi")
+                    rn.assert_obj_eq<String>(e1, "hello")
+                    rn.assert_obj_eq<String>(e2, "hey")
+                    return co.state
+                }
+    
+    rn.assert_eq<u8>(res, 3)
+}
+
 fn main() -> u32 {
     let test_1 = new TestUnit("test 1", "Tests regular coroutines", test_case_1)
     let test_2 = new TestUnit("test 2", "Tests coroutine generator", test_case_2)
     let test_3 = new TestUnit("test 3", "Tests coroutine array", test_case_3)
+    let test_4 = new TestUnit("test 4", "Tests coroutine with generic parameters", test_case_4)
+    let test_5 = new TestUnit("test 5", "Tests coroutine with do statement and let-in expressions", test_case_5)
 
     let set = new UnitSet("Coroutine Tests", "Tests coroutines",
-        [test_1, test_2, test_3]
+        [test_1, test_2, test_3, test_4, test_5]
     )
 
     return set.run()
