@@ -73,6 +73,7 @@ export module TypeC {
         }
 
         compile() {
+            console.log("Compiling ", this.dir);
             // start with index
             let entry = path.join(this.dir, this.entry);
             let entrySource = this.readPackage(entry);
