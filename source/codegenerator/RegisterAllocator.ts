@@ -578,7 +578,11 @@ export class RegisterAllocator {
                     coloring.clear(); // Clear the coloring and retry
                     break;
                 } else {
-                    coloring.set(vreg, availableColors.values().next().value);
+                    let v = availableColors.values().next().value
+                    if(v === undefined) {
+                        throw new Error("No available color");
+                    }
+                    coloring.set(vreg, v);
                 }
             }
     

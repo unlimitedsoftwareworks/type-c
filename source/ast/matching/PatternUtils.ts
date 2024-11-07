@@ -7,7 +7,7 @@ import { MemberAccessExpression } from "../expressions/MemberAccessExpression";
 import { KeyValueExpressionPair, NamedStructConstructionExpression, StructKeyValueExpressionPair } from "../expressions/NamedStructConstructionExpression";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
-import { StructType } from "../types/StructType";
+import { StructField, StructType } from "../types/StructType";
 import { ArrayVariablePatternExpression } from "./ArrayVariablePatternExpression";
 import { LiteralPatternExpression } from "./LiteralPatternExpression";
 import { PatternExpression } from "./PatternExpression";
@@ -75,7 +75,7 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
         let structPattern = pattern.parent;
         let structType = base.inferredType?.to(ctx, StructType) as StructType;
         let allfields = structType.fields.map(e=> e.name);
-        let extractedFields = structPattern!.capturedFields.map(e=> e.name);
+        let extractedFields = structPattern!.capturedFields.map((e: StructField)=> e.name);
 
         let remainingFields = allfields.filter(e => !extractedFields.includes(e));
 
