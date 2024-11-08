@@ -75,7 +75,7 @@ export enum BytecodeInstructionType{
     mv_reg_global_ptr,
 
     /**
-     * s_alloc dest: r, fields-count: i, struct-size: i (2bytes)
+     ** OP_S_ALLOC dest: R, fields-count: I, ptr_field_bitmask, struct-size: I (2bytes)
      * creates new struct of given total ﬁelds count (arg1) and total memory
      * (arg2 and arg3), stores the address of the new struct into dest.
      */
@@ -113,11 +113,18 @@ export enum BytecodeInstructionType{
 
     /**
      * c_alloc 
-     * dest: r num-methods: i, class-fields-size: i (2 bytes), classid-size: z, classid: i
+     * OP_C_ALLOC dest: R num-methods: I, num-fields: I(1b), class-fields-size: I (2 bytes), classId-size: Z, classId: I
      * allocates new class of given total ﬁelds count (arg1) and total fields
      * size of (arg2 and arg3), stores the address of the new class into dest.
      */
     c_alloc,
+
+    /**
+     * c_reg_field dest: r, field_index: i, field offset: i (2 bytes)
+     * Registers a new field in the class stored in dest, with the given global field ID
+     * and field offset (local), must not exceed the total fields count of the class
+     */
+    c_reg_field,
 
     /**
      * c_storem destreg: r, methodindex: i, methodaddress: i(8 bytes)

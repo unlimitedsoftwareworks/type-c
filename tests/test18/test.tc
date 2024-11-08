@@ -1,84 +1,25 @@
-type User = {
-    name: u64,
-    age: u32
-}
+//from std.io import println
+//from std.string import String
 
-type DataArray = class {
-    let data: {
-        v: u16,
-        w: u16
-    }[]
+type Data = class {
+    let x: u32
+    let y: u32
+    let arr: u32[]
 
-    fn init() {
-        this.data = []
-        this.data.extend(20)
+    fn init(x: u32, y: u32) {
+        this.x = x
+        this.y = y
+
+        this.arr = [x, y, 5]
     }
 
-    fn get(index: u64) -> u16 {
-        return this.data[index].v
-    }
-
-    fn set(index: u64, value: u16) {
-        this.data[index] = {
-            v: value,
-            w: 1
-        }
-    }
-}
-
-fn test_case_7() {
-    let s: User? = {
-        name: 12 as u64,
-        age: 20
-    }
-
-    let y = new DataArray()
-
-    let aa: {s: User?, y: DataArray}? = {
-        s: s,
-        y: y
-    }
-
-    let s2: User? = {
-        name: 12 as u64,
-        age: 20
-    }
-
-    aa = null
-
-    match s {
-        null {
-        }
-        x {
-        }
-    }
-
-
-    let x = new DataArray()
-    x.set(0, 1)
-    x.set(1, 2)
-
-    match x {
-        // should match since u8 is a subtype of u16
-        interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u16) } {
-            let z = x as interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u16) }
-            z.set(2, 3)
-        }
-        x {
-        }
-    }
-
-    match x {
-        interface{ fn get(index: u64) -> u16 } & interface { fn set(index: u64, value: u64) } {
-        }
-        x {
-        }
-    }   
+    fn getX() -> u32 = this.x
+    fn getY() -> u32 = this.y
+    fn getArr() -> u32[] = this.arr
 }
 
 fn main() {
-    test_case_7()
+    let data = new Data(1, 2)
 
-    return 0
-    
+    return data.getArr()[2]
 }

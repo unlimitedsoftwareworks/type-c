@@ -6,29 +6,51 @@ import { DataType } from "../ast/types/DataType";
 import { EnumType } from "../ast/types/EnumType";
 import { IRInstructionType } from "./bytecode/IR";
 
+export function isPointer(v: DataType): boolean {
+    let u = v.dereference();
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return false;
+        if (u.kind == "u8") return false;
+        if (u.kind == "i16") return false;
+        if (u.kind == "u16") return false;
+        if (u.kind == "i32") return false;
+        if (u.kind == "u32") return false;
+        if (u.kind == "i64") return false;
+        if (u.kind == "u64") return false;
+        if (u.kind == "f32") return false;
+        if (u.kind == "f64") return false;
+        if (u.kind == "array") return false;
+        if (u.kind == "bool") return false;
+    }
+    if (u instanceof BooleanType) return false;
+    if (u instanceof EnumType) {
+        return false;
+    }
+    return true;
+}
 
 /**
  * A local is a local variable access
  */
 export function localType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "local_i8";
-        if(u.kind == "u8") return "local_u8";
-        if(u.kind == "i16") return "local_i16";
-        if(u.kind == "u16") return "local_u16";
-        if(u.kind == "i32") return "local_i32";
-        if(u.kind == "u32") return "local_u32";
-        if(u.kind == "i64") return "local_i64";
-        if(u.kind == "u64") return "local_u64";
-        if(u.kind == "f32") return "local_f32";
-        if(u.kind == "f64") return "local_f64";
-        if(u.kind == "array") return "local_ptr";
-        if(u.kind == "bool") return "local_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "local_i8";
+        if (u.kind == "u8") return "local_u8";
+        if (u.kind == "i16") return "local_i16";
+        if (u.kind == "u16") return "local_u16";
+        if (u.kind == "i32") return "local_i32";
+        if (u.kind == "u32") return "local_u32";
+        if (u.kind == "i64") return "local_i64";
+        if (u.kind == "u64") return "local_u64";
+        if (u.kind == "f32") return "local_f32";
+        if (u.kind == "f64") return "local_f64";
+        if (u.kind == "array") return "local_ptr";
+        if (u.kind == "bool") return "local_u8";
     }
-    if(u instanceof BooleanType) return  "local_u8"
-    if(u instanceof EnumType){
-        return ("local_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "local_u8"
+    if (u instanceof EnumType) {
+        return ("local_" + u.as) as IRInstructionType;
     }
     return "local_ptr";
 }
@@ -38,23 +60,23 @@ export function localType(v: DataType): IRInstructionType {
  */
 export function globalType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "global_i8";
-        if(u.kind == "u8") return "global_u8";
-        if(u.kind == "i16") return "global_i16";
-        if(u.kind == "u16") return "global_u16";
-        if(u.kind == "i32") return "global_i32";
-        if(u.kind == "u32") return "global_u32";
-        if(u.kind == "i64") return "global_i64";
-        if(u.kind == "u64") return "global_u64";
-        if(u.kind == "f32") return "global_f32";
-        if(u.kind == "f64") return "global_f64";
-        if(u.kind == "array") return "global_ptr";
-        if(u.kind == "bool") return "global_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "global_i8";
+        if (u.kind == "u8") return "global_u8";
+        if (u.kind == "i16") return "global_i16";
+        if (u.kind == "u16") return "global_u16";
+        if (u.kind == "i32") return "global_i32";
+        if (u.kind == "u32") return "global_u32";
+        if (u.kind == "i64") return "global_i64";
+        if (u.kind == "u64") return "global_u64";
+        if (u.kind == "f32") return "global_f32";
+        if (u.kind == "f64") return "global_f64";
+        if (u.kind == "array") return "global_ptr";
+        if (u.kind == "bool") return "global_u8";
     }
-    if(u instanceof BooleanType) return  "global_u8"
-    if(u instanceof EnumType){
-        return ("global_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "global_u8"
+    if (u instanceof EnumType) {
+        return ("global_" + u.as) as IRInstructionType;
     }
     return "global_ptr";
 }
@@ -66,23 +88,23 @@ export function globalType(v: DataType): IRInstructionType {
  */
 export function tmpType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "tmp_i8";
-        if(u.kind == "u8") return "tmp_u8";
-        if(u.kind == "i16") return "tmp_i16";
-        if(u.kind == "u16") return "tmp_u16";
-        if(u.kind == "i32") return "tmp_i32";
-        if(u.kind == "u32") return "tmp_u32";
-        if(u.kind == "i64") return "tmp_i64";
-        if(u.kind == "u64") return "tmp_u64";
-        if(u.kind == "f32") return "tmp_f32";
-        if(u.kind == "f64") return "tmp_f64";
-        if(u.kind == "array") return "tmp_ptr";
-        if(u.kind == "bool") return "tmp_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "tmp_i8";
+        if (u.kind == "u8") return "tmp_u8";
+        if (u.kind == "i16") return "tmp_i16";
+        if (u.kind == "u16") return "tmp_u16";
+        if (u.kind == "i32") return "tmp_i32";
+        if (u.kind == "u32") return "tmp_u32";
+        if (u.kind == "i64") return "tmp_i64";
+        if (u.kind == "u64") return "tmp_u64";
+        if (u.kind == "f32") return "tmp_f32";
+        if (u.kind == "f64") return "tmp_f64";
+        if (u.kind == "array") return "tmp_ptr";
+        if (u.kind == "bool") return "tmp_u8";
     }
-    if(u instanceof BooleanType) return "tmp_u8"
-    if(u instanceof EnumType){
-        return ("tmp_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "tmp_u8"
+    if (u instanceof EnumType) {
+        return ("tmp_" + u.as) as IRInstructionType;
     }
     return "tmp_ptr";
 }
@@ -90,23 +112,23 @@ export function tmpType(v: DataType): IRInstructionType {
 
 export function retType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "ret_i8";
-        if(u.kind == "u8") return "ret_u8";
-        if(u.kind == "i16") return "ret_i16";
-        if(u.kind == "u16") return "ret_u16";
-        if(u.kind == "i32") return "ret_i32";
-        if(u.kind == "u32") return "ret_u32";
-        if(u.kind == "i64") return "ret_i64";
-        if(u.kind == "u64") return "ret_u64";
-        if(u.kind == "f32") return "ret_f32";
-        if(u.kind == "f64") return "ret_f64";
-        if(u.kind == "array") return "ret_ptr";
-        if(u.kind == "bool") return "ret_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "ret_i8";
+        if (u.kind == "u8") return "ret_u8";
+        if (u.kind == "i16") return "ret_i16";
+        if (u.kind == "u16") return "ret_u16";
+        if (u.kind == "i32") return "ret_i32";
+        if (u.kind == "u32") return "ret_u32";
+        if (u.kind == "i64") return "ret_i64";
+        if (u.kind == "u64") return "ret_u64";
+        if (u.kind == "f32") return "ret_f32";
+        if (u.kind == "f64") return "ret_f64";
+        if (u.kind == "array") return "ret_ptr";
+        if (u.kind == "bool") return "ret_u8";
     }
-    if(u instanceof BooleanType) return "ret_u8"
-    if(u instanceof EnumType){
-        return ("ret_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "ret_u8"
+    if (u instanceof EnumType) {
+        return ("ret_" + u.as) as IRInstructionType;
     }
     return "ret_ptr";
 }
@@ -116,69 +138,69 @@ export function retType(v: DataType): IRInstructionType {
  */
 export function constType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "const_i8";
-        if(u.kind == "u8") return "const_u8";
-        if(u.kind == "i16") return "const_i16";
-        if(u.kind == "u16") return "const_u16";
-        if(u.kind == "i32") return "const_i32";
-        if(u.kind == "u32") return "const_u32";
-        if(u.kind == "i64") return "const_i64";
-        if(u.kind == "u64") return "const_u64";
-        if(u.kind == "f32") return "const_f32";
-        if(u.kind == "f64") return "const_f64";
-        if(u.kind == "array") return "const_ptr";
-        if(u.kind == "bool") return "const_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "const_i8";
+        if (u.kind == "u8") return "const_u8";
+        if (u.kind == "i16") return "const_i16";
+        if (u.kind == "u16") return "const_u16";
+        if (u.kind == "i32") return "const_i32";
+        if (u.kind == "u32") return "const_u32";
+        if (u.kind == "i64") return "const_i64";
+        if (u.kind == "u64") return "const_u64";
+        if (u.kind == "f32") return "const_f32";
+        if (u.kind == "f64") return "const_f64";
+        if (u.kind == "array") return "const_ptr";
+        if (u.kind == "bool") return "const_u8";
     }
-    if(u instanceof BooleanType) return  "const_u8"
-    if(u instanceof EnumType){
-        return ("const_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "const_u8"
+    if (u instanceof EnumType) {
+        return ("const_" + u.as) as IRInstructionType;
     }
     return "const_ptr";
 }
 
 export function arraySetIndexType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "a_set_index_i8";
-        if(u.kind == "u8") return "a_set_index_u8";
-        if(u.kind == "i16") return "a_set_index_i16";
-        if(u.kind == "u16") return "a_set_index_u16";
-        if(u.kind == "i32") return "a_set_index_i32";
-        if(u.kind == "u32") return "a_set_index_u32";
-        if(u.kind == "i64") return "a_set_index_i64";
-        if(u.kind == "u64") return "a_set_index_u64";
-        if(u.kind == "f32") return "a_set_index_f32";
-        if(u.kind == "f64") return "a_set_index_f64";
-        if(u.kind == "array") return "a_set_index_ptr";
-        if(u.kind == "bool") return "a_set_index_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "a_set_index_i8";
+        if (u.kind == "u8") return "a_set_index_u8";
+        if (u.kind == "i16") return "a_set_index_i16";
+        if (u.kind == "u16") return "a_set_index_u16";
+        if (u.kind == "i32") return "a_set_index_i32";
+        if (u.kind == "u32") return "a_set_index_u32";
+        if (u.kind == "i64") return "a_set_index_i64";
+        if (u.kind == "u64") return "a_set_index_u64";
+        if (u.kind == "f32") return "a_set_index_f32";
+        if (u.kind == "f64") return "a_set_index_f64";
+        if (u.kind == "array") return "a_set_index_ptr";
+        if (u.kind == "bool") return "a_set_index_u8";
     }
-    if(u instanceof BooleanType) return  "a_set_index_u8"
-    if(u instanceof EnumType){
-        return ("a_set_index_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "a_set_index_u8"
+    if (u instanceof EnumType) {
+        return ("a_set_index_" + u.as) as IRInstructionType;
     }
     return "a_set_index_ptr";
 }
 
 export function arrayGetIndexType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "a_get_index_i8";
-        if(u.kind == "u8") return "a_get_index_u8";
-        if(u.kind == "i16") return "a_get_index_i16";
-        if(u.kind == "u16") return "a_get_index_u16";
-        if(u.kind == "i32") return "a_get_index_i32";
-        if(u.kind == "u32") return "a_get_index_u32";
-        if(u.kind == "i64") return "a_get_index_i64";
-        if(u.kind == "u64") return "a_get_index_u64";
-        if(u.kind == "f32") return "a_get_index_f32";
-        if(u.kind == "f64") return "a_get_index_f64";
-        if(u.kind == "array") return "a_get_index_ptr";
-        if(u.kind == "bool") return "a_get_index_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "a_get_index_i8";
+        if (u.kind == "u8") return "a_get_index_u8";
+        if (u.kind == "i16") return "a_get_index_i16";
+        if (u.kind == "u16") return "a_get_index_u16";
+        if (u.kind == "i32") return "a_get_index_i32";
+        if (u.kind == "u32") return "a_get_index_u32";
+        if (u.kind == "i64") return "a_get_index_i64";
+        if (u.kind == "u64") return "a_get_index_u64";
+        if (u.kind == "f32") return "a_get_index_f32";
+        if (u.kind == "f64") return "a_get_index_f64";
+        if (u.kind == "array") return "a_get_index_ptr";
+        if (u.kind == "bool") return "a_get_index_u8";
     }
-    if(u instanceof BooleanType) return  "a_get_index_u8"
-    if(u instanceof EnumType){
-        return ("a_get_index_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "a_get_index_u8"
+    if (u instanceof EnumType) {
+        return ("a_get_index_" + u.as) as IRInstructionType;
     }
     return "a_get_index_ptr";
 }
@@ -186,68 +208,68 @@ export function arrayGetIndexType(v: DataType): IRInstructionType {
 
 export function structSetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "s_set_field_i8";
-        if(u.kind == "u8") return "s_set_field_u8";
-        if(u.kind == "i16") return "s_set_field_i16";
-        if(u.kind == "u16") return "s_set_field_u16";
-        if(u.kind == "i32") return "s_set_field_i32";
-        if(u.kind == "u32") return "s_set_field_u32";
-        if(u.kind == "i64") return "s_set_field_i64";
-        if(u.kind == "u64") return "s_set_field_u64";
-        if(u.kind == "f32") return "s_set_field_f32";
-        if(u.kind == "f64") return "s_set_field_f64";
-        if(u.kind == "array") return "s_set_field_ptr";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "s_set_field_i8";
+        if (u.kind == "u8") return "s_set_field_u8";
+        if (u.kind == "i16") return "s_set_field_i16";
+        if (u.kind == "u16") return "s_set_field_u16";
+        if (u.kind == "i32") return "s_set_field_i32";
+        if (u.kind == "u32") return "s_set_field_u32";
+        if (u.kind == "i64") return "s_set_field_i64";
+        if (u.kind == "u64") return "s_set_field_u64";
+        if (u.kind == "f32") return "s_set_field_f32";
+        if (u.kind == "f64") return "s_set_field_f64";
+        if (u.kind == "array") return "s_set_field_ptr";
     }
-    if(u instanceof BooleanType) return  "s_set_field_u8"
-    if(u instanceof EnumType){
-        return ("s_set_field_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "s_set_field_u8"
+    if (u instanceof EnumType) {
+        return ("s_set_field_" + u.as) as IRInstructionType;
     }
     return "s_set_field_ptr";
 }
 
 export function structGetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "s_get_field_i8";
-        if(u.kind == "u8") return "s_get_field_u8";
-        if(u.kind == "i16") return "s_get_field_i16";
-        if(u.kind == "u16") return "s_get_field_u16";
-        if(u.kind == "i32") return "s_get_field_i32";
-        if(u.kind == "u32") return "s_get_field_u32";
-        if(u.kind == "i64") return "s_get_field_i64";
-        if(u.kind == "u64") return "s_get_field_u64";
-        if(u.kind == "f32") return "s_get_field_f32";
-        if(u.kind == "f64") return "s_get_field_f64";
-        if(u.kind == "array") return "s_get_field_ptr";
-        if(u.kind == "bool") return "s_get_field_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "s_get_field_i8";
+        if (u.kind == "u8") return "s_get_field_u8";
+        if (u.kind == "i16") return "s_get_field_i16";
+        if (u.kind == "u16") return "s_get_field_u16";
+        if (u.kind == "i32") return "s_get_field_i32";
+        if (u.kind == "u32") return "s_get_field_u32";
+        if (u.kind == "i64") return "s_get_field_i64";
+        if (u.kind == "u64") return "s_get_field_u64";
+        if (u.kind == "f32") return "s_get_field_f32";
+        if (u.kind == "f64") return "s_get_field_f64";
+        if (u.kind == "array") return "s_get_field_ptr";
+        if (u.kind == "bool") return "s_get_field_u8";
     }
-    if(u instanceof BooleanType) return  "s_get_field_u8"
-    if(u instanceof EnumType){
-        return ("s_get_field_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "s_get_field_u8"
+    if (u instanceof EnumType) {
+        return ("s_get_field_" + u.as) as IRInstructionType;
     }
     return "s_get_field_ptr";
 }
 
 export function fnSetArgType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "fn_set_reg_i8";
-        if(u.kind == "u8") return "fn_set_reg_u8";
-        if(u.kind == "i16") return "fn_set_reg_i16";
-        if(u.kind == "u16") return "fn_set_reg_u16";
-        if(u.kind == "i32") return "fn_set_reg_i32";
-        if(u.kind == "u32") return "fn_set_reg_u32";
-        if(u.kind == "i64") return "fn_set_reg_i64";
-        if(u.kind == "u64") return "fn_set_reg_u64";
-        if(u.kind == "f32") return "fn_set_reg_f32";
-        if(u.kind == "f64") return "fn_set_reg_f64";
-        if(u.kind == "array") return "fn_set_reg_ptr";
-        if(u.kind == "bool") return "fn_set_reg_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "fn_set_reg_i8";
+        if (u.kind == "u8") return "fn_set_reg_u8";
+        if (u.kind == "i16") return "fn_set_reg_i16";
+        if (u.kind == "u16") return "fn_set_reg_u16";
+        if (u.kind == "i32") return "fn_set_reg_i32";
+        if (u.kind == "u32") return "fn_set_reg_u32";
+        if (u.kind == "i64") return "fn_set_reg_i64";
+        if (u.kind == "u64") return "fn_set_reg_u64";
+        if (u.kind == "f32") return "fn_set_reg_f32";
+        if (u.kind == "f64") return "fn_set_reg_f64";
+        if (u.kind == "array") return "fn_set_reg_ptr";
+        if (u.kind == "bool") return "fn_set_reg_u8";
     }
-    if(u instanceof BooleanType) return  "fn_set_reg_u8"
-    if(u instanceof EnumType){
-        return ("fn_set_reg_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "fn_set_reg_u8"
+    if (u instanceof EnumType) {
+        return ("fn_set_reg_" + u.as) as IRInstructionType;
     }
     return "fn_set_reg_ptr";
 }
@@ -255,132 +277,132 @@ export function fnSetArgType(v: DataType): IRInstructionType {
 
 export function fnGetRetType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "fn_get_reg_i8";
-        if(u.kind == "u8") return "fn_get_reg_u8";
-        if(u.kind == "i16") return "fn_get_reg_i16";
-        if(u.kind == "u16") return "fn_get_reg_u16";
-        if(u.kind == "i32") return "fn_get_reg_i32";
-        if(u.kind == "u32") return "fn_get_reg_u32";
-        if(u.kind == "i64") return "fn_get_reg_i64";
-        if(u.kind == "u64") return "fn_get_reg_u64";
-        if(u.kind == "f32") return "fn_get_reg_f32";
-        if(u.kind == "f64") return "fn_get_reg_f64";
-        if(u.kind == "array") return "fn_get_reg_ptr";
-        if(u.kind == "bool") return "fn_get_reg_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "fn_get_reg_i8";
+        if (u.kind == "u8") return "fn_get_reg_u8";
+        if (u.kind == "i16") return "fn_get_reg_i16";
+        if (u.kind == "u16") return "fn_get_reg_u16";
+        if (u.kind == "i32") return "fn_get_reg_i32";
+        if (u.kind == "u32") return "fn_get_reg_u32";
+        if (u.kind == "i64") return "fn_get_reg_i64";
+        if (u.kind == "u64") return "fn_get_reg_u64";
+        if (u.kind == "f32") return "fn_get_reg_f32";
+        if (u.kind == "f64") return "fn_get_reg_f64";
+        if (u.kind == "array") return "fn_get_reg_ptr";
+        if (u.kind == "bool") return "fn_get_reg_u8";
     }
-    if(u instanceof BooleanType) return  "fn_get_reg_u8"
-    if(u instanceof EnumType){
-        return ("fn_get_reg_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "fn_get_reg_u8"
+    if (u instanceof EnumType) {
+        return ("fn_get_reg_" + u.as) as IRInstructionType;
     }
     return "fn_get_reg_ptr";
 }
 
 export function pushStackType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "push_i8";
-        if(u.kind == "u8") return "push_u8";
-        if(u.kind == "i16") return "push_i16";
-        if(u.kind == "u16") return "push_u16";
-        if(u.kind == "i32") return "push_i32";
-        if(u.kind == "u32") return "push_u32";
-        if(u.kind == "i64") return "push_i64";
-        if(u.kind == "u64") return "push_u64";
-        if(u.kind == "f32") return "push_f32";
-        if(u.kind == "f64") return "push_f64";
-        if(u.kind == "array") return "push_ptr";
-        if(u.kind == "bool") return "push_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "push_i8";
+        if (u.kind == "u8") return "push_u8";
+        if (u.kind == "i16") return "push_i16";
+        if (u.kind == "u16") return "push_u16";
+        if (u.kind == "i32") return "push_i32";
+        if (u.kind == "u32") return "push_u32";
+        if (u.kind == "i64") return "push_i64";
+        if (u.kind == "u64") return "push_u64";
+        if (u.kind == "f32") return "push_f32";
+        if (u.kind == "f64") return "push_f64";
+        if (u.kind == "array") return "push_ptr";
+        if (u.kind == "bool") return "push_u8";
     }
-    if(u instanceof BooleanType) return  "push_u8"
-    if(u instanceof EnumType){
-        return ("push_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "push_u8"
+    if (u instanceof EnumType) {
+        return ("push_" + u.as) as IRInstructionType;
     }
     return "push_ptr";
 }
 
 export function popStackType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "pop_i8";
-        if(u.kind == "u8") return "pop_u8";
-        if(u.kind == "i16") return "pop_i16";
-        if(u.kind == "u16") return "pop_u16";
-        if(u.kind == "i32") return "pop_i32";
-        if(u.kind == "u32") return "pop_u32";
-        if(u.kind == "i64") return "pop_i64";
-        if(u.kind == "u64") return "pop_u64";
-        if(u.kind == "f32") return "pop_f32";
-        if(u.kind == "f64") return "pop_f64";
-        if(u.kind == "array") return "pop_ptr";
-        if(u.kind == "bool") return "pop_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "pop_i8";
+        if (u.kind == "u8") return "pop_u8";
+        if (u.kind == "i16") return "pop_i16";
+        if (u.kind == "u16") return "pop_u16";
+        if (u.kind == "i32") return "pop_i32";
+        if (u.kind == "u32") return "pop_u32";
+        if (u.kind == "i64") return "pop_i64";
+        if (u.kind == "u64") return "pop_u64";
+        if (u.kind == "f32") return "pop_f32";
+        if (u.kind == "f64") return "pop_f64";
+        if (u.kind == "array") return "pop_ptr";
+        if (u.kind == "bool") return "pop_u8";
     }
-    if(u instanceof BooleanType) return  "pop_u8"
-    if(u instanceof EnumType){
-        return ("pop_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "pop_u8"
+    if (u instanceof EnumType) {
+        return ("pop_" + u.as) as IRInstructionType;
     }
     return "pop_ptr";
 }
 
 export function classSetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "c_set_field_i8";
-        if(u.kind == "u8") return "c_set_field_u8";
-        if(u.kind == "i16") return "c_set_field_i16";
-        if(u.kind == "u16") return "c_set_field_u16";
-        if(u.kind == "i32") return "c_set_field_i32";
-        if(u.kind == "u32") return "c_set_field_u32";
-        if(u.kind == "i64") return "c_set_field_i64";
-        if(u.kind == "u64") return "c_set_field_u64";
-        if(u.kind == "f32") return "c_set_field_f32";
-        if(u.kind == "f64") return "c_set_field_f64";
-        if(u.kind == "array") return "c_set_field_ptr";
-        if(u.kind == "bool") return "c_set_field_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "c_set_field_i8";
+        if (u.kind == "u8") return "c_set_field_u8";
+        if (u.kind == "i16") return "c_set_field_i16";
+        if (u.kind == "u16") return "c_set_field_u16";
+        if (u.kind == "i32") return "c_set_field_i32";
+        if (u.kind == "u32") return "c_set_field_u32";
+        if (u.kind == "i64") return "c_set_field_i64";
+        if (u.kind == "u64") return "c_set_field_u64";
+        if (u.kind == "f32") return "c_set_field_f32";
+        if (u.kind == "f64") return "c_set_field_f64";
+        if (u.kind == "array") return "c_set_field_ptr";
+        if (u.kind == "bool") return "c_set_field_u8";
     }
-    if(u instanceof BooleanType) return  "c_set_field_u8"
-    if(u instanceof EnumType){
-        return ("c_set_field_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "c_set_field_u8"
+    if (u instanceof EnumType) {
+        return ("c_set_field_" + u.as) as IRInstructionType;
     }
     return "c_set_field_ptr";
 }
 
 export function classGetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "c_get_field_i8";
-        if(u.kind == "u8") return "c_get_field_u8";
-        if(u.kind == "i16") return "c_get_field_i16";
-        if(u.kind == "u16") return "c_get_field_u16";
-        if(u.kind == "i32") return "c_get_field_i32";
-        if(u.kind == "u32") return "c_get_field_u32";
-        if(u.kind == "i64") return "c_get_field_i64";
-        if(u.kind == "u64") return "c_get_field_u64";
-        if(u.kind == "f32") return "c_get_field_f32";
-        if(u.kind == "f64") return "c_get_field_f64";
-        if(u.kind == "array") return "c_get_field_ptr";
-        if(u.kind == "bool") return "c_get_field_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "c_get_field_i8";
+        if (u.kind == "u8") return "c_get_field_u8";
+        if (u.kind == "i16") return "c_get_field_i16";
+        if (u.kind == "u16") return "c_get_field_u16";
+        if (u.kind == "i32") return "c_get_field_i32";
+        if (u.kind == "u32") return "c_get_field_u32";
+        if (u.kind == "i64") return "c_get_field_i64";
+        if (u.kind == "u64") return "c_get_field_u64";
+        if (u.kind == "f32") return "c_get_field_f32";
+        if (u.kind == "f64") return "c_get_field_f64";
+        if (u.kind == "array") return "c_get_field_ptr";
+        if (u.kind == "bool") return "c_get_field_u8";
     }
-    if(u instanceof BooleanType) return  "c_get_field_u8"
-    if(u instanceof EnumType){
-        return ("c_get_field_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "c_get_field_u8"
+    if (u instanceof EnumType) {
+        return ("c_get_field_" + u.as) as IRInstructionType;
     }
     return "c_get_field_ptr";
 }
 
 export function closurePushEnvType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "closure_push_env_i8";
-        if(u.kind == "u8") return "closure_push_env_u8";
-        if(u.kind == "i16") return "closure_push_env_i16";
-        if(u.kind == "u16") return "closure_push_env_u16";
-        if(u.kind == "i32") return "closure_push_env_i32";
-        if(u.kind == "u32") return "closure_push_env_u32";
-        if(u.kind == "i64") return "closure_push_env_i64";
-        if(u.kind == "u64") return "closure_push_env_u64";
-        if(u.kind == "f32") return "closure_push_env_f32";
-        if(u.kind == "f64") return "closure_push_env_f64";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "closure_push_env_i8";
+        if (u.kind == "u8") return "closure_push_env_u8";
+        if (u.kind == "i16") return "closure_push_env_i16";
+        if (u.kind == "u16") return "closure_push_env_u16";
+        if (u.kind == "i32") return "closure_push_env_i32";
+        if (u.kind == "u32") return "closure_push_env_u32";
+        if (u.kind == "i64") return "closure_push_env_i64";
+        if (u.kind == "u64") return "closure_push_env_u64";
+        if (u.kind == "f32") return "closure_push_env_f32";
+        if (u.kind == "f64") return "closure_push_env_f64";
     }
     return "closure_push_env_ptr";
 }
@@ -390,23 +412,23 @@ export function closurePushEnvType(v: DataType): IRInstructionType {
  */
 export function argType(v: DataType): IRInstructionType {
     let u = v.dereference();
-    if(u instanceof BasicType) {
-        if(u.kind == "i8") return "arg_i8";
-        if(u.kind == "u8") return "arg_u8";
-        if(u.kind == "i16") return "arg_i16";
-        if(u.kind == "u16") return "arg_u16";
-        if(u.kind == "i32") return "arg_i32";
-        if(u.kind == "u32") return "arg_u32";
-        if(u.kind == "i64") return "arg_i64";
-        if(u.kind == "u64") return "arg_u64";
-        if(u.kind == "f32") return "arg_f32";
-        if(u.kind == "f64") return "arg_f64";
-        if(u.kind == "array") return "arg_ptr";
-        if(u.kind == "bool") return "arg_u8";
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "arg_i8";
+        if (u.kind == "u8") return "arg_u8";
+        if (u.kind == "i16") return "arg_i16";
+        if (u.kind == "u16") return "arg_u16";
+        if (u.kind == "i32") return "arg_i32";
+        if (u.kind == "u32") return "arg_u32";
+        if (u.kind == "i64") return "arg_i64";
+        if (u.kind == "u64") return "arg_u64";
+        if (u.kind == "f32") return "arg_f32";
+        if (u.kind == "f64") return "arg_f64";
+        if (u.kind == "array") return "arg_ptr";
+        if (u.kind == "bool") return "arg_u8";
     }
-    if(u instanceof BooleanType) return  "arg_u8"
-    if(u instanceof EnumType){
-        return ("arg_"+u.as) as IRInstructionType;
+    if (u instanceof BooleanType) return "arg_u8"
+    if (u instanceof EnumType) {
+        return ("arg_" + u.as) as IRInstructionType;
     }
     return "arg_ptr";
 }
@@ -416,7 +438,7 @@ export function argType(v: DataType): IRInstructionType {
  * Binary operators
  */
 
-const addInstructions: {[key:string]: IRInstructionType} = {
+const addInstructions: { [key: string]: IRInstructionType } = {
     "u8": "add_u8",
     "u16": "add_u16",
     "u32": "add_u32",
@@ -429,7 +451,7 @@ const addInstructions: {[key:string]: IRInstructionType} = {
     "f64": "add_f64"
 }
 
-const subInstructions: {[key:string]: IRInstructionType} = {
+const subInstructions: { [key: string]: IRInstructionType } = {
     "u8": "sub_u8",
     "u16": "sub_u16",
     "u32": "sub_u32",
@@ -442,7 +464,7 @@ const subInstructions: {[key:string]: IRInstructionType} = {
     "f64": "sub_f64"
 }
 
-const mulInstructions: {[key:string]: IRInstructionType} = {
+const mulInstructions: { [key: string]: IRInstructionType } = {
     "u8": "mul_u8",
     "u16": "mul_u16",
     "u32": "mul_u32",
@@ -455,7 +477,7 @@ const mulInstructions: {[key:string]: IRInstructionType} = {
     "f64": "mul_f64"
 }
 
-const divInstructions: {[key:string]: IRInstructionType} = {
+const divInstructions: { [key: string]: IRInstructionType } = {
     "u8": "div_u8",
     "u16": "div_u16",
     "u32": "div_u32",
@@ -468,7 +490,7 @@ const divInstructions: {[key:string]: IRInstructionType} = {
     "f64": "div_f64"
 }
 
-const modInstructions: {[key:string]: IRInstructionType} = {
+const modInstructions: { [key: string]: IRInstructionType } = {
     "u8": "mod_u8",
     "u16": "mod_u16",
     "u32": "mod_u32",
@@ -479,7 +501,7 @@ const modInstructions: {[key:string]: IRInstructionType} = {
     "i64": "mod_i64"
 }
 
-const lshiftInstructions: {[key:string]: IRInstructionType} = {
+const lshiftInstructions: { [key: string]: IRInstructionType } = {
     "u8": "lshift_u8",
     "u16": "lshift_u16",
     "u32": "lshift_u32",
@@ -490,7 +512,7 @@ const lshiftInstructions: {[key:string]: IRInstructionType} = {
     "i64": "lshift_i64"
 }
 
-const rshiftInstructions: {[key:string]: IRInstructionType} = {
+const rshiftInstructions: { [key: string]: IRInstructionType } = {
     "u8": "rshift_u8",
     "u16": "rshift_u16",
     "u32": "rshift_u32",
@@ -501,7 +523,7 @@ const rshiftInstructions: {[key:string]: IRInstructionType} = {
     "i64": "rshift_i64"
 }
 
-const cmpInstructions: {[key:string]: IRInstructionType} = {
+const cmpInstructions: { [key: string]: IRInstructionType } = {
     "u8": "j_cmp_u8",
     "u16": "j_cmp_u16",
     "u32": "j_cmp_u32",
@@ -515,7 +537,7 @@ const cmpInstructions: {[key:string]: IRInstructionType} = {
     "bool": "j_cmp_bool",
 }
 
-const bAndInstructions: {[key:string]: IRInstructionType} = {
+const bAndInstructions: { [key: string]: IRInstructionType } = {
     "u8": "band_u8",
     "u16": "band_u16",
     "u32": "band_u32",
@@ -526,7 +548,7 @@ const bAndInstructions: {[key:string]: IRInstructionType} = {
     "i64": "band_i64"
 }
 
-const bOrInstructions: {[key:string]: IRInstructionType} = {
+const bOrInstructions: { [key: string]: IRInstructionType } = {
     "u8": "bor_u8",
     "u16": "bor_u16",
     "u32": "bor_u32",
@@ -537,7 +559,7 @@ const bOrInstructions: {[key:string]: IRInstructionType} = {
     "i64": "bor_i64"
 }
 
-const bXorInstructions: {[key:string]: IRInstructionType} = {
+const bXorInstructions: { [key: string]: IRInstructionType } = {
     "u8": "bxor_u8",
     "u16": "bxor_u16",
     "u32": "bxor_u32",
@@ -548,11 +570,11 @@ const bXorInstructions: {[key:string]: IRInstructionType} = {
     "i64": "bxor_i64"
 }
 
-const andInstructions: {[key:string]: IRInstructionType} = {
+const andInstructions: { [key: string]: IRInstructionType } = {
     "bool": "and"
 }
 
-const orInstructions: {[key:string]: IRInstructionType} = {
+const orInstructions: { [key: string]: IRInstructionType } = {
     "bool": "or"
 }
 
@@ -564,70 +586,70 @@ const orInstructions: {[key:string]: IRInstructionType} = {
  * @returns 
  */
 export function getBinaryInstruction(dt: BasicType, op: BinaryExpressionOperator): IRInstructionType {
-    if(op == "+"){
+    if (op == "+") {
         return addInstructions[dt.kind];
     }
-    if(op == "-"){
+    if (op == "-") {
         return subInstructions[dt.kind];
     }
-    if(op == "*"){
+    if (op == "*") {
         return mulInstructions[dt.kind];
     }
-    if(op == "/"){
+    if (op == "/") {
         return divInstructions[dt.kind];
     }
-    if(op == "%"){
+    if (op == "%") {
         return modInstructions[dt.kind];
     }
-    if(op == "<<"){
+    if (op == "<<") {
         return lshiftInstructions[dt.kind];
     }
-    if(op == ">>"){
+    if (op == ">>") {
         return rshiftInstructions[dt.kind];
     }
     // cmp
-    if(op == "=="){
+    if (op == "==") {
         return cmpInstructions[dt.kind];
     }
-    if(op == "!="){
+    if (op == "!=") {
         return cmpInstructions[dt.kind];
     }
-    if(op == ">"){
+    if (op == ">") {
         return cmpInstructions[dt.kind];
     }
-    if(op == ">="){
+    if (op == ">=") {
         return cmpInstructions[dt.kind];
     }
-    if(op == "<"){
+    if (op == "<") {
         return cmpInstructions[dt.kind];
     }
-    if(op == "<="){
+    if (op == "<=") {
         return cmpInstructions[dt.kind];
     }
     // end of cmp
-    if(op == "&"){
+    if (op == "&") {
         return bAndInstructions[dt.kind];
     }
-    if(op == "|"){
+    if (op == "|") {
         return bOrInstructions[dt.kind];
     }
-    if(op == "^"){
+    if (op == "^") {
         return bXorInstructions[dt.kind];
     }
-    if(op == "&&"){
+    if (op == "&&") {
         return andInstructions[dt.kind];
     }
-    if(op == "||"){
+    if (op == "||") {
         return orInstructions[dt.kind];
     }
-    throw new Error("Unsupported binary operator " + op);   
+    throw new Error("Unsupported binary operator " + op);
 }
 
 
 /**
  * Unary operators
  */
-const bNotInstructions: {[key:string]: IRInstructionType} = {
+const bNotInstructions: { [key: string]: IRInstructionType } = {
     "u8": "bnot_u8",
     "u16": "bnot_u16",
     "u32": "bnot_u32",
@@ -638,11 +660,11 @@ const bNotInstructions: {[key:string]: IRInstructionType} = {
     "i64": "bnot_i64"
 }
 
-const notInstructions: {[key:string]: IRInstructionType} = {
+const notInstructions: { [key: string]: IRInstructionType } = {
     "bool": "not"
 }
 
-const bitwiseNotInstructions: {[key:string]: IRInstructionType} = {
+const bitwiseNotInstructions: { [key: string]: IRInstructionType } = {
     "u8": "bnot_u8",
     "u16": "bnot_u16",
     "u32": "bnot_u32",
@@ -653,7 +675,7 @@ const bitwiseNotInstructions: {[key:string]: IRInstructionType} = {
     "i64": "bnot_i64"
 }
 
-const negInstructions: {[key:string]: IRInstructionType} = {
+const negInstructions: { [key: string]: IRInstructionType } = {
     "u8": "sub_u8",
     "u16": "sub_u16",
     "u32": "sub_u32",
@@ -667,14 +689,14 @@ const negInstructions: {[key:string]: IRInstructionType} = {
 }
 
 export function getUnaryInstruction(dt: BasicType, op: string): IRInstructionType {
-    if(op == "!"){
+    if (op == "!") {
         return notInstructions[dt.kind];
     }
-    if(op == "~"){
+    if (op == "~") {
         return bitwiseNotInstructions[dt.kind];
     }
-    if(op == "-"){
+    if (op == "-") {
         return negInstructions[dt.kind];
     }
-    throw new Error("Unsupported unary operator " + op);   
+    throw new Error("Unsupported unary operator " + op);
 }

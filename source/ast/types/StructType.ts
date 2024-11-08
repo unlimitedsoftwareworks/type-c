@@ -3,6 +3,8 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { GenericType } from "./GenericType";
 import { getDataTypeByteSize } from "../../codegenerator/utils";
+import { isPointer } from "../../codegenerator/CodeGenTypes";
+
 
 export class StructField {
     name: string;
@@ -135,5 +137,22 @@ export class StructType extends DataType {
     toSortedStruct(){
         let sortedFields = this.fields.sort((a, b) => a.getFieldID() - b.getFieldID());
         return new StructType(this.location, sortedFields);
+    }
+
+
+    getFieldPointerBitMask(): number {
+        let mask = 0;
+
+        for (let i = 0; i < this.fields.length; i++) {
+            // Check if the field is a pointer
+            let isptr = isPointer(this.fields[i].type);
+
+            if (isptr) {
+                // Set the bit at position `i` to 1 if the field is a pointer
+                mask |= (1 << i);
+            }
+        }
+
+        return mask;
     }
 }

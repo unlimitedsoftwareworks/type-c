@@ -124,6 +124,7 @@ import {
     getBinaryInstruction,
     getUnaryInstruction,
     globalType,
+    isPointer,
     popStackType,
     pushStackType,
     retType,
@@ -842,8 +843,8 @@ export class FunctionGenerator {
             if (attr != null) {
                 let instr = classGetFieldType(attr.type);
                 let tmp = this.generateTmp();
-                let fieldOffset = classType.getAttributeOffset(ctx, rhs.name)!;
-                this.i(instr, tmp, lhsReg, fieldOffset);
+                let fieldIndex = classType.getAttributeIndex(rhs.name)!;
+                this.i(instr, tmp, lhsReg, fieldIndex);
                 this.destroyTmp(lhsReg);
                 return tmp;
             } else {
@@ -1110,13 +1111,12 @@ export class FunctionGenerator {
         }
 
         let fieldType = attr.type;
-        let fieldOffset = classType.getAttributeOffset(
-            ctx,
+        let fieldIndex = classType.getAttributeIndex(
             element.name,
         )!;
 
         let instr = classSetFieldType(fieldType);
-        this.i(instr, classExpr, fieldOffset, right);
+        this.i(instr, classExpr, fieldIndex, right);
         this.destroyTmp(classExpr);
 
         return right;
@@ -1439,6 +1439,14 @@ export class FunctionGenerator {
             variantType.parameters.indexOf(x),
         );
 
+        let ptr_mask = 0;
+        for (let i = 0; i < parameters.length; i++) {
+            let param = parameters[i];
+            if (isPointer(param.type)) {
+                ptr_mask |= 1 << i;
+            }
+        }
+
         // evaluate the arguments
         //let args = expr.args.map((x) => this.visitExpression(x, ctx))
         let argsOffset = [0];
@@ -1458,6 +1466,7 @@ export class FunctionGenerator {
             "s_alloc",
             variantReg,
             argsOffset.length,
+            ptr_mask,
             variantSize.reduce((a, b) => a + b, 0),
         );
         this.i("s_reg_field", variantReg, 0, 0); // TAG
@@ -2421,17 +2430,33 @@ export class FunctionGenerator {
             let classMethods = [...classType.getAllMethods()];
             let num_methods = classMethods.length;
 
+            let ptr_mask = 0;
+            for (let i = 0; i < num_attrs; i++) {
+                if (isPointer(classType.attributes[i].type)) {
+                    ptr_mask |= 1 << i;
+                }
+            }
+
             this.i(
                 "debug",
                 `class allocation\nnum methods: ${num_methods} \ndata size: ${size_attrs}`,
             );
+
             this.i(
                 "c_alloc",
                 tmp,
                 num_methods,
+                num_attrs,
+                ptr_mask,
                 size_attrs,
                 classType.getClassID(),
             );
+
+            let offsetCounter = 0;
+            for (const [i, field] of classType.attributes.entries()) {
+                this.i("c_reg_field", tmp, i, offsetCounter);
+                offsetCounter += getDataTypeByteSize(field.type);
+            }
 
             // initialize the methods
             // sort class methods by UID
@@ -2674,7 +2699,8 @@ export class FunctionGenerator {
 
         // Initially, we don't know the final array size due to destructured elements, so start with a basic allocation
         let arraySize = regularElts.length;
-        this.i("a_alloc", arrayReg, arraySize, elementSize);
+        let isPtr = isPointer(elementType);
+        this.i("a_alloc", arrayReg, isPtr?1:0, arraySize, elementSize);
 
         // Copy regular elements into the array
         for (let i = 0; i < arraySize; i++) {
@@ -3393,7 +3419,8 @@ export class FunctionGenerator {
 
         let structSize = st.getStructSize(ctx);
         this.i("debug", "anonymous struct construction expression ");
-        this.i("s_alloc", tmp, st.fields.length, structSize);
+        let ptrMask = st.getFieldPointerBitMask();
+        this.i("s_alloc", tmp, st.fields.length, ptrMask, structSize);
 
         let offsetCounter = 0;
         this.i("debug", "anonymous struct field offset");

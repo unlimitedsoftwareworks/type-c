@@ -118,6 +118,7 @@ export type IRInstructionType =
     "s_set_field_ptr" |
 
     "c_alloc" |
+    "c_reg_field" |
     "c_store_m" |
     "c_load_m" |
 
