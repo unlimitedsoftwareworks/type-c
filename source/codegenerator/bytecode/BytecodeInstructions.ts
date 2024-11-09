@@ -75,7 +75,7 @@ export enum BytecodeInstructionType{
     mv_reg_global_ptr,
 
     /**
-     ** OP_S_ALLOC dest: R, fields-count: I, ptr_field_bitmask, struct-size: I (2bytes)
+     ** OP_S_ALLOC dest: R, fields-count: I, struct-size: I (2bytes)
      * creates new struct of given total ﬁelds count (arg1) and total memory
      * (arg2 and arg3), stores the address of the new struct into dest.
      */

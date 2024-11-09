@@ -1,25 +1,22 @@
-//from std.io import println
-//from std.string import String
 
-type Data = class {
-    let x: u32
-    let y: u32
-    let arr: u32[]
-
-    fn init(x: u32, y: u32) {
-        this.x = x
-        this.y = y
-
-        this.arr = [x, y, 5]
-    }
-
-    fn getX() -> u32 = this.x
-    fn getY() -> u32 = this.y
-    fn getArr() -> u32[] = this.arr
-}
 
 fn main() {
-    let data = new Data(1, 2)
+    let main_obj = {
+        x: 0 as u64,
+        y: {
+            a: 1 as u64,
+            b: 2 as u64
+        }
+    }
+    for let i: u64 = 0; i < 10000000; i += 1 {
+        let secondary_obj = {
+            a: main_obj.y.a,
+            b: main_obj.y.b
+        }
+        main_obj.x += secondary_obj.a + secondary_obj.b
+        main_obj.y.a += secondary_obj.a - secondary_obj.b
+        main_obj.y.b += secondary_obj.b - secondary_obj.a
+    }
 
-    return data.getArr()[2]
+    return 0
 }

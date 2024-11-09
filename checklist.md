@@ -86,6 +86,13 @@ This checklist containts only major changes and updates, for minor changes and u
     - Implemented coroutine functions, to declare coroutine functions that be instatiated into coroutine objects. Coroutine functions are same as regular functions, but are not called directly, because they must yield values back to the caller. They are declared with `fn` or `cfn` keyword, but from a compiler perspective they are of type `cfn`.
     - Coroutine Callable Functions now ends with `throw_rt` instruction, which is used to throw an error when coroutine reaches end of execution and has not yielded any value.
 
+- 8/11/2024:
+    - Updated class, struct and array instructions to include bitmask for which fields are pointers.
+
+- 10/11/2024:
+    - Fixed a flaw with pointer bitmaps. Pointer fields in structs and classes are now specified when registering the field.
+    - Changed instructions again, we do not create pointer bitmask on creating object but on every *_reg_field. Array still unchanged (ptr flag given in a_alloc).
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.

@@ -13,6 +13,19 @@
 import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { DataWriter } from "./DataWriter";
 
+function assertArgs(args: any[], length: number){
+    if(args.length != length){
+        throw new Error(`Expected ${length} arguments, got ${args.length}`);
+    }
+
+    // make sure no null/undefined
+    for(let i = 0; i < length; i++) {
+        if(args[i] == null){
+            throw new Error(`Argument ${i} is null`);
+        }
+    }
+}
+
 export class CodeSegment {
     //instructions: PartialInstruction[] = [];
     writer: DataWriter = new DataWriter();
@@ -116,16 +129,18 @@ export class CodeSegment {
                 return this.writer.push_bytesNeeded(args[1]);
 
             case BytecodeInstructionType.s_alloc:
+                assertArgs(args, 3);
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_8(args[2]);
-                return this.writer.push_16(args[3]);
+                return this.writer.push_16(args[2]);
 
             case BytecodeInstructionType.s_reg_field:
+                assertArgs(args, 5);
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_32(args[2]);
-                return this.writer.push_16(args[3]);
+                this.writer.push_16(args[3]);
+                return this.writer.push_8(args[4]);
 
             case BytecodeInstructionType.s_loadf:
                 this.writer.push_8(args[0]);
@@ -162,17 +177,19 @@ export class CodeSegment {
                 return this.writer.push_8(args[2]);
                 
             case BytecodeInstructionType.c_alloc:
+                assertArgs(args, 5);
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
-                this.writer.push_8(args[3]);
-                this.writer.push_16(args[4]);
-                return this.writer.push_bytesNeeded(args[5]);
+                this.writer.push_16(args[3]);
+                return this.writer.push_bytesNeeded(args[4]);
             
             case BytecodeInstructionType.c_reg_field:
+                assertArgs(args, 4);
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_16(args[2]);
+                this.writer.push_16(args[2]);
+                return this.writer.push_8(args[3]);
                 
             case BytecodeInstructionType.c_storem:
                 this.writer.push_8(args[0]); // dest reg

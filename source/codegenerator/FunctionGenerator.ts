@@ -1439,14 +1439,6 @@ export class FunctionGenerator {
             variantType.parameters.indexOf(x),
         );
 
-        let ptr_mask = 0;
-        for (let i = 0; i < parameters.length; i++) {
-            let param = parameters[i];
-            if (isPointer(param.type)) {
-                ptr_mask |= 1 << i;
-            }
-        }
-
         // evaluate the arguments
         //let args = expr.args.map((x) => this.visitExpression(x, ctx))
         let argsOffset = [0];
@@ -1466,10 +1458,9 @@ export class FunctionGenerator {
             "s_alloc",
             variantReg,
             argsOffset.length,
-            ptr_mask,
             variantSize.reduce((a, b) => a + b, 0),
         );
-        this.i("s_reg_field", variantReg, 0, 0); // TAG
+        this.i("s_reg_field", variantReg, 0, 0, 0, 0); // TAG
 
         //console.log(parameters.map((x) => x.name + ': '+x.getFieldID()))
         for (let i = 0; i < parameters.length; i++) {
@@ -1482,6 +1473,7 @@ export class FunctionGenerator {
                 i + 1,
                 param.getFieldID(),
                 argsOffset[i + 1],
+                isPointer(param.type)?1:0,
             );
         }
 
@@ -2447,14 +2439,13 @@ export class FunctionGenerator {
                 tmp,
                 num_methods,
                 num_attrs,
-                ptr_mask,
                 size_attrs,
                 classType.getClassID(),
             );
 
             let offsetCounter = 0;
             for (const [i, field] of classType.attributes.entries()) {
-                this.i("c_reg_field", tmp, i, offsetCounter);
+                this.i("c_reg_field", tmp, i, offsetCounter, isPointer(field.type)?1:0);
                 offsetCounter += getDataTypeByteSize(field.type);
             }
 
@@ -3419,13 +3410,12 @@ export class FunctionGenerator {
 
         let structSize = st.getStructSize(ctx);
         this.i("debug", "anonymous struct construction expression ");
-        let ptrMask = st.getFieldPointerBitMask();
-        this.i("s_alloc", tmp, st.fields.length, ptrMask, structSize);
+        this.i("s_alloc", tmp, st.fields.length, structSize);
 
         let offsetCounter = 0;
         this.i("debug", "anonymous struct field offset");
         for (const [i, field] of st.fields.entries()) {
-            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter);
+            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter, isPointer(field.type)?1:0);
             offsetCounter += getDataTypeByteSize(field.type);
         }
 

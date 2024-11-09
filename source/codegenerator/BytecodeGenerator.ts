@@ -663,15 +663,16 @@ export class BytecodeGenerator {
              */
             else if (instruction.type == "s_alloc") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.s_alloc, reg, instruction.args[1] as number, instruction.args[2] as number, instruction.args[3] as number);
+                this.emit(BytecodeInstructionType.s_alloc, reg, instruction.args[1] as number, instruction.args[2] as number);
             }
             else if (instruction.type == "s_reg_field") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let localFieldID = instruction.args[1] as number;
                 let globalFieldID = instruction.args[2] as number;
                 let offset = instruction.args[3] as number;
+                let isPointer = instruction.args[4] as number;
 
-                this.emit(BytecodeInstructionType.s_reg_field, reg, localFieldID, globalFieldID, offset);
+                this.emit(BytecodeInstructionType.s_reg_field, reg, localFieldID, globalFieldID, offset, isPointer);
             }
             
             else if (instruction.type == "s_get_field_i8" || instruction.type == "s_get_field_u8") {
@@ -733,16 +734,17 @@ export class BytecodeGenerator {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let num_methods = instruction.args[1] as number;
                 let num_attrs = instruction.args[2] as number;
-                let ptr_mask = instruction.args[3] as number;
-                let size_attrs = instruction.args[4] as number;
-                let classID = instruction.args[5] as number;
-                this.emit(BytecodeInstructionType.c_alloc, dest, num_methods, num_attrs, ptr_mask, size_attrs, classID);
+                
+                let size_attrs = instruction.args[3] as number;
+                let classID = instruction.args[4] as number;
+                this.emit(BytecodeInstructionType.c_alloc, dest, num_methods, num_attrs,size_attrs, classID);
             }
             else if (instruction.type == "c_reg_field") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let idx = instruction.args[1] as number;
                 let offset = instruction.args[2] as number;
-                this.emit(BytecodeInstructionType.c_reg_field, dest, idx, offset);
+                let isPointer = instruction.args[3] as number;
+                this.emit(BytecodeInstructionType.c_reg_field, dest, idx, offset, isPointer);
             }
             else if (instruction.type == "c_store_m") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
