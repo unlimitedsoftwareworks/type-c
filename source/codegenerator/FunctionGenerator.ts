@@ -1898,7 +1898,7 @@ export class FunctionGenerator {
 
             if (hasReturn) {
                 let tmp = this.generateTmp();
-                this.i("closure_call", tmp, reg);
+                this.i("closure_call", reg);
                 this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
                 this.destroyTmp(reg);
                 return tmp;
