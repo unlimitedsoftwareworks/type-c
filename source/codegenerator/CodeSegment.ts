@@ -525,17 +525,6 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
 
-            case BytecodeInstructionType.spill_alloc:
-                return this.writer.push_16(args[0]);
-            
-            case BytecodeInstructionType.spill_reg:
-                this.writer.push_16(args[0]);
-                return this.writer.push_8(args[1]);
-
-            case BytecodeInstructionType.unspill_reg:
-                this.writer.push_8(args[0]);
-                return this.writer.push_16(args[1]);
-
             case BytecodeInstructionType.closure_alloc:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);

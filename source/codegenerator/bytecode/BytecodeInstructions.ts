@@ -527,22 +527,6 @@ export enum BytecodeInstructionType{
     load_std,
 
     /**
-     * spill_alloc num_spills: i[2 bytes]
-     */
-    spill_alloc,
-
-    /**
-     * spill_reg spill_slot: i[2 bytes], reg: r
-     */
-    spill_reg,
-
-    /**
-     * unspill_reg reg: r, spill_slot: i[2 bytes]
-     */
-    unspill_reg,
-
-
-    /**
      * closure_alloc, dest:R, num_args: I, fn_address: R
      * Allocates a closure, setting its function pointer to the address in
      * function-address and preparing an environment of environment-size slots.

@@ -18,6 +18,7 @@ import { VoidType } from "../ast/types/VoidType";
 import * as path from "path"
 import * as fs from "fs"
 import { LambdaDefinition } from "../ast/expressions/LambdaExpression";
+import { getDataTypeByteSize } from "./utils";
 
 export class CodeGenerator {
     functions: Map<string, FunctionGenerator> = new Map();
@@ -187,20 +188,20 @@ export class CodeGenerator {
             throw new Error("No main function found");
         }
         // make sure main either returns a void or an int, less than 32 bits
-        let mainHasReturn = false
+        let mainHasReturn = 0;
 
         if (main.prototype.header.returnType instanceof BasicType) {
             let basic = main.prototype.header.returnType as BasicType
             // make sure it is either void u8, i8, u16, i16, u32, i32
             if (["u8", "i8", "u16", "i16", "u32", "i32"].includes(basic.kind)) {
-                mainHasReturn = true;
+                mainHasReturn = getDataTypeByteSize(basic);
             }
             else {
                 throw basePackage.ctx.parser.customError("main function must return a void or u32/i32 or smaller integer", main.location);
             }
         }
         else if (main.prototype.header.returnType instanceof VoidType) {
-            mainHasReturn = false;
+            mainHasReturn = 0;
         }
         else {
             throw basePackage.ctx.parser.customError("main function must return a void or u32/i32 or smaller integer", main.location);

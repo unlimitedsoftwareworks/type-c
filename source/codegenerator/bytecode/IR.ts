@@ -431,10 +431,6 @@ export type IRInstructionType =
                          // fmt: file, col, row
     "src_map_pop" |     // pops the last trace location from the stack
     
-    "alloc_spill" | // allocate space for spilling
-    "spill" | // spill 
-    "unspill" | // unspill spill
-
     "closure_alloc" |
     "closure_push_env_i8" |
     "closure_push_env_u8" |
@@ -448,7 +444,7 @@ export type IRInstructionType =
     "closure_push_env_f64" |
     "closure_push_env_ptr" |
     "closure_call" |
-    "closure_backup" |
+    "closure_backup" | // automatically generated with closure_call in BytecodeGenerator
 
     "coroutine_alloc" |
     "coroutine_fn_alloc" |

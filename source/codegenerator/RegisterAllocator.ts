@@ -45,26 +45,11 @@ export class RegisterAllocator {
     private jumpTargets: Map<string, number> = new Map();
     private labels: Map<string, number> = new Map();
 
-    private spilledVRegs: number[] = [];
-
-    private spillingIRInstructions: { i: IRInstruction, idx: number }[] = [];
-
-    // map from vreg to an incremented spill id
-    private spillIdMap: Map<number, number> = new Map();
-    private spillId = 0;
 
     // some vregs are blank, they are just not used at all
     // this happens when a tmp is assigned a vreg but it later on used as a variable
     private blankVRegs: number[] = [];
 
-    spillID(vreg: number) {
-        let id = this.spillIdMap.get(vreg);
-        if (id === undefined) {
-            this.spillIdMap.set(vreg, this.spillId++);
-            return this.spillId - 1;
-        }
-        return id!;
-    }
 
     constructor(private fn: FunctionCodegenProps) {
         // for now, args registers will be forever occupied
@@ -404,10 +389,6 @@ export class RegisterAllocator {
                 continue;
             }
 
-            if (this.spilledVRegs.includes(i)) {
-                continue;
-            }
-
             // get the range of this vreg
             let range = this.registerInstructionsMap.get(i)!;
             if (range == null) {
@@ -448,114 +429,13 @@ export class RegisterAllocator {
     }
 
 
-    // Adds IR instructions to spill the physical register into the memory allocated for spilled vreg
-    insertSpillCode(vreg: number, physRegister: number, instruction: number) {
-        let spillID = this.spillID(vreg)
-        this.spillingIRInstructions.push({ i: new IRInstruction("spill", [spillID, physRegister]), idx: instruction});
-    }
-
-    // Adds IR instructions to unspill from the memory allocated for spilled vreg into the physical register
-    insertUnspillCode(vreg: number, instruction: number) {
-        // Choose a physical register for unspilling
-        let physRegister = this.choosePhysRegisterForUnspill(vreg);
-        let spillID = this.spillID(vreg)
-        this.spillingIRInstructions.push({ i: new IRInstruction("unspill", [physRegister, spillID]), idx: instruction});
-        return physRegister;
-    }
-
-    choosePhysRegisterForUnspill(vreg: number): number {
-        // Check for a free physical register
-        for (let i = 0; i < RegisterAllocator.GENERAL_REGISTERS; i++) {
-            if (!this.registerUsage[i]) {
-                this.registerUsage[i] = true; // Mark the register as used
-                return i; // Return the free register
-            }
-        }
-
-        // If no free register is available, choose a register to spill
-        for (let i = 0; i < RegisterAllocator.GENERAL_REGISTERS; i++) {
-            if (this.canSpillRegister(i)) {
-                this.spillRegister(i); // Implement this method to handle the spilling
-                return i; // Reuse the spilled register
-            }
-        }
-
-        throw new Error("No available registers for unspilling");
-    }
-
-    canSpillRegister(physRegister: number): boolean {
-        // Implement logic to determine if a physical register can be spilled
-        // For simplicity, this might just return true, but more complex logic could be used
-        // ...
-        return true;
-    }
-
-
-
-    spillRegister(vreg: number) {
-        this.spilledVRegs.push(vreg);
-
-        // check if the register is an argument
-        let isArg = false;
-        if (this.argVRegs.includes(vreg)){
-            isArg = true;
-        }
-
-        if (isArg) {
-            // insert spill code at the top of the function
-            this.insertSpillCode(vreg, vreg, 0);
-        }
-
-        let usagesInterval: number[][] = [];
-        // turn the usages into intervals, when the register is used in an uninterruptable block, it is considered used for the entire block
-        let usages = this.registerInstructionsMap.get(vreg)!;
-        let start = 0;
-        let end = 0;
-        for (let i = 0; i < usages.length; i++) {
-            if (i === 0) {
-                start = usages[i];
-                end = usages[i];
-                continue;
-            }
-
-            if (usages[i] === usages[i - 1] + 1) {
-                end = usages[i];
-            }
-            else {
-                usagesInterval.push([start, end]);
-                start = usages[i];
-                end = usages[i];
-            }
-        }
-
-        // add the last interval if it doesnt exist
-        if((usagesInterval.length > 0 ) && (start !== usagesInterval[usagesInterval.length - 1][0]) || (usagesInterval.length === 0)) {
-            usagesInterval.push([start, end]);
-        }
-
-        // now we have a list of intervals, we can start inserting unspill code before the interval and spill code after the interval
-        for (const interval of usagesInterval) {
-            // insert unspill code before
-            let preg = this.insertUnspillCode(vreg, interval[0]); // do we need -1?
-
-            // insert spill code after
-            this.insertSpillCode(vreg, preg, interval[1]+1); // do we need +1?
-        }
-
-        //this.registerInstructionsMap.delete(vreg);
-    }
-
     colorGraph(): Map<number, number> {
         let coloring: Map<number, number> = new Map();
-        let toSpill: number[] = [];
     
         this.buildInterferenceGraph();
         while (true) {
             for (const [vreg, neighbors] of this.interferenceGraph) {
-                if (toSpill.includes(vreg)) {
-                    continue; // Skip already spilled vregs
-                }
-
+                
                 // IMPORTANT!
                 if((vreg < this.arguments.length) && (this.predefinedVRegs.has(this.arguments[vreg]))) {
                     coloring.set(vreg, vreg);
@@ -574,7 +454,7 @@ export class RegisterAllocator {
                 });
     
                 if (availableColors.size === 0) {
-                    toSpill.push(vreg); // No available color, mark for spilling
+                    throw new Error("function too complex");
                     coloring.clear(); // Clear the coloring and retry
                     break;
                 } else {
@@ -586,17 +466,10 @@ export class RegisterAllocator {
                 }
             }
     
-            if (coloring.size === this.interferenceGraph.size - toSpill.length) {
+            if (coloring.size === this.interferenceGraph.size) {
                 break; // Successfully colored
             }
     
-            // Spill logic
-            for (const vreg of toSpill) {
-                this.spillRegister(vreg);
-            }
-            toSpill = [];
-    
-            // Rebuild your interference graph here without the spilled vregs
             this.buildInterferenceGraph();
         }
     
@@ -606,10 +479,7 @@ export class RegisterAllocator {
     excludeArgumentRegisters(availableColors: Set<number>) {
         // Assuming you have a way to get the physical registers used for arguments
         this.arguments.forEach((_, i) => {
-            if(!this.spilledVRegs.includes(i)) {
-                availableColors.delete(i);
-                //this.predefinedVRegs.delete(this.arguments[i]);
-            }
+            availableColors.delete(i);
         });
     }
 
@@ -624,72 +494,14 @@ export class RegisterAllocator {
             tmpColoring.set(tmp, color);
         }
 
-        // map from tmp to spill id
-        let spills: Map<string, number> = new Map();
-        for(const [tmp, vreg] of this.tmpVRegs) {
-            if(this.spilledVRegs.includes(vreg)) {
-                spills.set(tmp, this.spillID(vreg));
-            }
-        }
 
 
-        return {coloring: tmpColoring, spills: spills};
+        return {coloring: tmpColoring};
     }
 
-    updateIRInstructions() {
-        if (this.spillingIRInstructions.length === 0) {
-            return this.instructions;
-        }
-
-
-        // if head instruction is fn, remove it temporarily
-        let head = this.instructions[0];
-        let isFn = head.type === "fn"; 
-
-        
-        // Sort the spilling instructions by their original index
-        this.spillingIRInstructions.sort((a, b) => a.idx - b.idx);
-        
-        // Create an array to hold the final set of instructions
-        let updatedInstructions = [];
-        let currentIdx = 0; // Current index in the original instructions array
-    
-        for (let instr of this.spillingIRInstructions) {
-            // Add instructions from the original array up to the current index
-            while (currentIdx < instr.idx) {
-                updatedInstructions.push(this.instructions[currentIdx]);
-                currentIdx++;
-            }
-    
-            // Insert the new instruction from spillingIRInstructions
-            updatedInstructions.push(instr.i);
-            
-            // No need to track insertCount, as currentIdx is adjusted in the loop
-        }
-        
-        // Add any remaining instructions from the original list
-        while (currentIdx < this.instructions.length) {
-            updatedInstructions.push(this.instructions[currentIdx]);
-            currentIdx++;
-        }
-        
-        let alloc_i = new IRInstruction("alloc_spill", [this.spillId]);
-
-        if(isFn) {
-            // find and remove the fn instruction
-            let idx = updatedInstructions.findIndex((i) => i.type === "fn");
-            updatedInstructions.splice(idx, 1);
-            updatedInstructions = [head, alloc_i, ...updatedInstructions];
-        }
-        else {
-            updatedInstructions = [alloc_i, ...updatedInstructions];
-        }
-
-        // Update the instructions array
-        this.instructions = updatedInstructions;
+    getInstructions() {
         return this.instructions;
     }
-    
 }
 
 // Function to perform register allocation
@@ -699,7 +511,7 @@ export function allocateRegisters(fn: FunctionCodegenProps, instructions: IRInst
     allocator.processInstructions(instructions);
     // Build and color the interference graph
     const registerAssignments = allocator.colorGraph();
-    instructions = allocator.updateIRInstructions();
+    instructions = allocator.getInstructions();
     
     return {...allocator.updateColoringToTmps(registerAssignments), instructions: instructions};
 }

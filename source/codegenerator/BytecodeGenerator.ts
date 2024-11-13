@@ -213,19 +213,6 @@ export class BytecodeGenerator {
     codeSegment: CodeSegment = new CodeSegment();
 
     /**
-     * Spilled registers for tmp variables,
-     * since unspilling can be done in any register, we track tmp spilling changes here
-     */
-    lastSpillRegisterForTmp: Map<string, number> = new Map();
-    updateSpillSlot(fn: FunctionGenerator, id: number, reg: number){
-        // find the spilled tmp variable with the id
-        for(const [key, value] of fn.spills){
-            if(value == id){
-                this.lastSpillRegisterForTmp.set(key, reg);
-            }
-        }
-    }
-    /**
      * Src mapping utils
      */
     instructionSrcMap: { [key: number]: SourceMapEntry } = {};
@@ -253,13 +240,9 @@ export class BytecodeGenerator {
 
     getRegisterForVariable(fn: FunctionGenerator, variable: string): number {
         let res = fn.coloring.get(variable);
+        
         if (res == undefined) {
-            //throw "Variable " + variable + " not found in register allocation";
-            // we try to find it in the spilled registers
-            res = this.lastSpillRegisterForTmp.get(variable);
-            if (res == undefined) {
-                throw "Variable " + variable + " not found in register allocation";
-            }
+            throw "Variable " + variable + " not found in register allocation";
         }
 
         return res;
@@ -335,13 +318,14 @@ export class BytecodeGenerator {
         }
     }
 
-    emitCallMain(main_id: string, mainHasReturn: boolean) {
+    emitCallMain(main_id: string, mainReturnSize: number) {
         this.emit(BytecodeInstructionType.fn_alloc);
         let lbl = this.emit(BytecodeInstructionType.fn_calli, 0);
         this.addUnresolvedOffset(main_id, lbl);
 
-        if (mainHasReturn) {
-            this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, 8);
+        if (mainReturnSize != 0) {
+            // TODO: cast if needed!
+            this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, mainReturnSize);
             this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
@@ -970,19 +954,9 @@ export class BytecodeGenerator {
             }
             else if (instruction.type == "closure_call") {
                 //this.emit(BytecodeInstructionType.frame_precall);
-                if (instruction.args.length == 1) {
-                    let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                    this.emit(BytecodeInstructionType.closure_call, reg)
-                    this.emit(BytecodeInstructionType.closure_backup, reg);
-                }
-                else {
-                    let returnReg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                    let reg = this.getRegisterForVariable(fn, instruction.args[1] as string);
-                    this.emit(BytecodeInstructionType.closure_call, reg)
-                    this.emit(BytecodeInstructionType.closure_backup, reg);
-                    // TODO: check if poiner here...
-                    this.emit(BytecodeInstructionType.fn_get_ret_reg, returnReg, 255, 8);
-                }
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                this.emit(BytecodeInstructionType.closure_call, reg);
+                this.emit(BytecodeInstructionType.closure_backup, reg);
             }
             else if (instruction.type == "ret_i8" || instruction.type == "ret_u8") {
                 let i = instruction.args[1] as number
@@ -1677,22 +1651,6 @@ export class BytecodeGenerator {
             else if (instruction.type == "debug_reg") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 this.emit(BytecodeInstructionType.debug_reg, reg);
-            }
-
-            else if (instruction.type == "alloc_spill") {
-                this.emit(BytecodeInstructionType.spill_alloc, instruction.args[0] as number);
-            }
-            else if (instruction.type == "spill") {
-                let spillSlot = instruction.args[0] as number;
-                let reg = instruction.args[1] as number;
-                this.emit(BytecodeInstructionType.spill_reg, spillSlot, reg);
-
-            }
-            else if (instruction.type == "unspill") {
-                let reg = instruction.args[0] as number;
-                let spillSlot = instruction.args[1] as number;
-                this.updateSpillSlot(fn, spillSlot, reg);
-                this.emit(BytecodeInstructionType.unspill_reg, reg, spillSlot);
             }
 
             else if (instruction.type == "closure_alloc") {

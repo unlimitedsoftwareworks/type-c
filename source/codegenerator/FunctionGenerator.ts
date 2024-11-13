@@ -122,6 +122,7 @@ import {
     fnGetRetType,
     fnSetArgType,
     getBinaryInstruction,
+    getFnReturnType,
     getUnaryInstruction,
     globalType,
     isPointer,
@@ -219,9 +220,6 @@ export class FunctionGenerator {
 
     // graph coloring output
     coloring: Map<string, number> = new Map();
-
-    // spilled variables maps
-    spills: Map<string, number> = new Map();
 
     doExpressionLabelStack: string[] = [];
     doExpressionTmpStack: string[] = [];
@@ -372,13 +370,12 @@ export class FunctionGenerator {
         //this.instructions = this.instructions.filter((i) => !i.type.startsWith("srcmap"));
         //this.instructions = instructions;
         //console.log(this.instructions.map(e => e.toString()).join("\n"))
-        let { coloring, spills, instructions } = allocateRegisters(
+        let { coloring, instructions } = allocateRegisters(
             this.fn.codeGenProps,
             this.instructions,
         );
         this.instructions = instructions;
         this.applyColoring(coloring);
-        this.applySpills(spills);
 
         /*
         console.log(this.fn.context.uuid)
@@ -388,10 +385,6 @@ export class FunctionGenerator {
 
     applyColoring(coloring: Map<string, number>) {
         this.coloring = coloring;
-    }
-
-    applySpills(spills: Map<string, number>) {
-        this.spills = spills;
     }
 
     /**
@@ -1359,12 +1352,12 @@ export class FunctionGenerator {
         else {
             if (hasReturn) {
                 let tmp = this.generateTmp();
-                this.i("closure_call", tmp, fnReg);
+                this.i("closure_call", fnReg);
+                this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
                 this.destroyTmp(fnReg);
                 return tmp;
             } else {
                 this.i("closure_call", fnReg);
-                this.destroyTmp(fnReg);
                 return "";
             }
         }
@@ -1380,9 +1373,6 @@ export class FunctionGenerator {
 
         let instructions: IRInstructionType[] = [];
         let regs: string[] = [];
-
-        // disallow spill
-        // this.i("disallow_spill", 0)
 
         for (let i = expr.args.length - 1; i >= 0; i--) {
             let arg = expr.args[i];
@@ -1417,7 +1407,6 @@ export class FunctionGenerator {
             this.destroyTmp(reg);
             return "";
         }
-        //this.i("allow_spill")
     }
 
     ir_generate_variant_constructor_call(expr: FunctionCallExpression, ctx: Context, lhsType: MetaVariantConstructorType): string {
@@ -1535,7 +1524,8 @@ export class FunctionGenerator {
 
         if (hasReturn) {
             let tmp = this.generateTmp();
-            this.i("call", tmp, method.context.uuid);
+            this.i("call", method.context.uuid);
+            this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
             return tmp;
         } else {
             this.i("call", method.context.uuid);
@@ -1814,7 +1804,8 @@ export class FunctionGenerator {
         else {
             if (hasReturn) {
                 let tmp = this.generateTmp();
-                this.i("closure_call", tmp, reg);
+                this.i("closure_call", reg);
+                this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
                 this.destroyTmp(reg);
                 return tmp;
             } else {
@@ -1879,7 +1870,8 @@ export class FunctionGenerator {
 
                 if (hasReturn) {
                     let tmp = this.generateTmp();
-                    this.i("closure_call", tmp, cl_reg);
+                    this.i("closure_call", cl_reg);
+                    this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
                     this.destroyTmp(cl_reg);
                     return tmp;
                 } else {
@@ -1891,7 +1883,8 @@ export class FunctionGenerator {
                 let jumpId = decl.context.uuid;
                 if (hasReturn) {
                     let tmp = this.generateTmp();
-                    this.i("call", tmp, jumpId);
+                    this.i("call", jumpId);
+                    this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
                     return tmp;
                 } else {
                     this.i("call", jumpId);
@@ -1906,6 +1899,7 @@ export class FunctionGenerator {
             if (hasReturn) {
                 let tmp = this.generateTmp();
                 this.i("closure_call", tmp, reg);
+                this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
                 this.destroyTmp(reg);
                 return tmp;
             } else {
