@@ -1427,18 +1427,6 @@ export class FunctionGenerator {
         let parameterMapping = parameters.map((x) =>
             variantType.parameters.indexOf(x),
         );
-
-        // evaluate the arguments
-        //let args = expr.args.map((x) => this.visitExpression(x, ctx))
-        let argsOffset = [0];
-        let variantSize = [2];
-
-        parameters.forEach((param, i) => {
-            let fsize = getDataTypeByteSize(param.type);
-            variantSize.push(fsize);
-            argsOffset.push(argsOffset[i] + variantSize[i]);
-        });
-
         // allocate the variant
         let variantReg = this.generateTmp();
         this.i("debug", "allocating variant");
@@ -1446,8 +1434,8 @@ export class FunctionGenerator {
         this.i(
             "s_alloc",
             variantReg,
-            argsOffset.length,
-            variantSize.reduce((a, b) => a + b, 0),
+            parameters.length+1,
+            variantType.getStructSize(),
         );
         this.i("s_reg_field", variantReg, 0, 0, 0, 0); // TAG
 
@@ -1461,7 +1449,7 @@ export class FunctionGenerator {
                 variantReg,
                 i + 1,
                 param.getFieldID(),
-                argsOffset[i + 1],
+                variantType.getParameterOffset(i+1),
                 isPointer(param.type)?1:0,
             );
         }
@@ -2439,8 +2427,7 @@ export class FunctionGenerator {
 
             let offsetCounter = 0;
             for (const [i, field] of classType.attributes.entries()) {
-                this.i("c_reg_field", tmp, i, offsetCounter, isPointer(field.type)?1:0);
-                offsetCounter += getDataTypeByteSize(field.type);
+                this.i("c_reg_field", tmp, i, classType.getAttributeOffset(i), isPointer(field.type)?1:0);
             }
 
             // initialize the methods
@@ -3409,7 +3396,7 @@ export class FunctionGenerator {
         let offsetCounter = 0;
         this.i("debug", "anonymous struct field offset");
         for (const [i, field] of st.fields.entries()) {
-            this.i("s_reg_field", tmp, i, field.getFieldID(), offsetCounter, isPointer(field.type)?1:0);
+            this.i("s_reg_field", tmp, i, field.getFieldID(), st.getFieldOffset(i), isPointer(field.type)?1:0);
             offsetCounter += getDataTypeByteSize(field.type);
         }
 

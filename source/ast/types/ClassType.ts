@@ -653,30 +653,6 @@ export class ClassType extends DataType {
         return -1;
     }
 
-    getAttributesOffsetList(){
-        if(this.attributeOffsetList.length == 0){
-            let offset = 0;
-            
-            for(let attr of this.attributes){
-                // we do not consider static attributes
-                if(attr.isStatic) continue;
-                this.attributeOffsetList.push(offset);
-                offset += getDataTypeByteSize(attr.type.dereference());
-            }
-        }
-
-        return this.attributeOffsetList;
-    }
-
-    getAttributeOffset(ctx: Context, name: string){
-        let offsetList = this.getAttributesOffsetList();
-        let index = this.getAttributeIndex(name);
-        if(index == -1){
-            throw ctx.parser.customError(`Cannot find attribute ${name} in class ${this.shortname()}`, this.location);
-        }
-        return offsetList[index];
-    }
-
     /**
      * Finds a method by name and arguments. Only called during code generation, as
      * it requires that all method concrete types have been enumerated and generated 
@@ -768,6 +744,19 @@ export class ClassType extends DataType {
         return indexes;
     }
 
+    getAlignment(): number {
+        let sizes = this.attributes.map(f => getDataTypeByteSize(f.type));
+        return sizes.reduce((a, b) => Math.max(a, b), 0);
+    }
+
+
+    getStructSize(ctx: Context){
+        return this.getAlignment() * this.attributes.length;
+    }
+
+    getAttributeOffset(i: number){
+        return i * this.getAlignment();
+    }
 
     getAttributesBlockSize(){
         let size = 0;

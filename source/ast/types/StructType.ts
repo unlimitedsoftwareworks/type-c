@@ -125,20 +125,26 @@ export class StructType extends DataType {
     }
 
     // CODE GEN API
-    
+    getAlignment(): number {
+        let sizes = this.fields.map(f => getDataTypeByteSize(f.type));
+        return sizes.reduce((a, b) => Math.max(a, b), 0);
+    }
+
     getStructSize(ctx: Context){
-        let sum: number = 0;
-        for(let field of this.fields){
-            sum += getDataTypeByteSize(field.type)
-        }
-        return sum;
+        return this.getAlignment() * this.fields.length;
+    }
+
+    getFieldOffset(fieldNum: number): number {
+        let offset = 0;
+        let alignment = this.getAlignment();
+
+        return fieldNum*alignment;        
     }
 
     toSortedStruct(){
         let sortedFields = this.fields.sort((a, b) => a.getFieldID() - b.getFieldID());
         return new StructType(this.location, sortedFields);
     }
-
 
     getFieldPointerBitMask(): number {
         let mask = 0;

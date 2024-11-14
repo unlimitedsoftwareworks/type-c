@@ -5,6 +5,7 @@
  * tree = leaf | node, leaf and node are variant constructors.
  * tree is the variant type.
  */
+import { getDataTypeByteSize } from "../../codegenerator/utils";
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
@@ -123,5 +124,22 @@ export class VariantConstructorType  extends DataType{
 
     getParameterType(i: number): DataType {
         return this.parameters[i].type;
+    }
+
+    getAlignment(): number {
+        let sizes = this.parameters.map(f => getDataTypeByteSize(f.type));
+        return sizes.reduce((a, b) => Math.max(a, b), 0);
+    }
+
+    getStructSize(){
+        // +1 for the hidden `type` field
+        return this.getAlignment() * (this.parameters.length+1);
+    }
+
+    getParameterOffset(fieldNum: number): number {
+        let offset = 0;
+        let alignment = this.getAlignment();
+
+        return fieldNum*alignment;        
     }
 }
