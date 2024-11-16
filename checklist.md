@@ -69,6 +69,7 @@ This checklist containts only major changes and updates, for minor changes and u
     - Refactored bytecode for classes and interfaces. VM now only supports classes. Class methods are processed the same way as structs now, each
       method has a global id.
     - class to interface now is direct, interface to interface is now done through new `i_has_m` bytecode instruction, which checks if the class has the method.
+
 - 12/08/2024:
     - Isolated static methods, so static methods are stored in the base class type, not classes that are *concrete* implementations of that class. 
     - Static methods now support generics.
@@ -107,10 +108,10 @@ This checklist containts only major changes and updates, for minor changes and u
 
 - [x] Implement Nullish coalescing operator as a binary operator, will require additional parameter to `expresion.infer` so when we encounter nullable member access we can accept it knowing that there is a fallback value: `a?.b ?? 0`.
 - [ ] Add Short-circuiting logical operators and nullish coalescing operator (codegen)
-- [ ] Add language level support for threads
+- [ ] ~~Add language level support for threads~~
 - [x] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
 - [ ] ~~Add support Shadow Classes (requires VM integration too)~~
-- [ ] Bytecode generation
+- [x] Bytecode generation
 
 
 ## Cases to evaluate:
