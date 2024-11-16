@@ -25,6 +25,39 @@ function parseCStyleNumber(cNumberString: string): number {
     return numberValue;
 }
 
+function floatToUint32Bits(floatValue: number) {
+    // Create an ArrayBuffer with 4 bytes to hold a 32-bit float
+    const buffer = new ArrayBuffer(4);
+    // Create a DataView to manipulate the bits of the buffer
+    const view = new DataView(buffer);
+    
+    // Set the float value at byte offset 0
+    view.setFloat32(0, floatValue);
+    
+    // Read the bits as an unsigned 32-bit integer
+    return view.getUint32(0);
+}
+
+function doubleToUint64BitsLE(doubleValue: number) {
+    // Create an ArrayBuffer with 8 bytes to hold a 64-bit double
+    const buffer = new ArrayBuffer(8);
+    // Create a DataView to manipulate the bits of the buffer
+    const view = new DataView(buffer);
+    
+    // Set the double value at byte offset 0, little-endian
+    view.setFloat64(0, doubleValue, true); // true for little-endian
+    
+    // Read the bits as two 32-bit unsigned integers (low and high) in little-endian order
+    const low = view.getUint32(0, true);  // Little-endian
+    const high = view.getUint32(4, true); // Little-endian
+
+    // Combine the high and low parts into a 64-bit BigInt representation
+    const combined = (BigInt(high) << 32n) | BigInt(low);
+    
+    return combined;
+}
+
+
 interface SourceMapEntry {
     line: number;
     file: string;
@@ -62,7 +95,9 @@ type ByteCodeConstant = {
     arrayValue?: number[]; // for strings, stored as array of bytes (utf8 encoding)
 }
 
-
+/**
+ * Every constant will
+ */
 class ConstantSegment {
     u8: ByteCodeConstant[] = [];
     byteSize: number = 0;
@@ -261,7 +296,7 @@ export class BytecodeGenerator {
         offsets.push(offset);
     }
 
-    emit(instruction: BytecodeInstructionType, ...args: number[]) {
+    emit(instruction: BytecodeInstructionType, ...args: (number | bigint)[]) {
         let loc = this.getActiveMapLoc();
         if (loc != null) {
             this.pushCodeLoc(loc);
@@ -391,8 +426,9 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_null, reg)
                 }
                 else {
-                    let c = this.constantSegment.addConstant({ byteSize: 4, floatValue: intVal });
-                    this.emit(BytecodeInstructionType.mv_reg_const, reg, c, 4);
+                    //let c = this.constantSegment.addConstant({ byteSize: 4, floatValue: intVal });
+                    let fVal = floatToUint32Bits(intVal);
+                    this.emit(BytecodeInstructionType.mv_reg_i, reg, fVal);
                 }
             }
             else if (instruction.type == "const_i64" || instruction.type == "const_u64") {
@@ -413,8 +449,9 @@ export class BytecodeGenerator {
                     this.emit(BytecodeInstructionType.mv_reg_null, reg)
                 }
                 else {
-                    let c = this.constantSegment.addConstant({ byteSize: 8, floatValue: intVal });
-                    this.emit(BytecodeInstructionType.mv_reg_const, reg, c, 8);
+                    //let c = this.constantSegment.addConstant({ byteSize: 8, floatValue: intVal });
+                    let dVal = doubleToUint64BitsLE(intVal);
+                    this.emit(BytecodeInstructionType.mv_reg_i, reg, dVal);
                 }
             }
             else if (instruction.type == "const_ptr") {

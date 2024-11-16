@@ -69,7 +69,7 @@ export class CodeSegment {
     }
 
 
-    emit(instruction: BytecodeInstructionType, ...args: number[]){
+    emit(instruction: BytecodeInstructionType, ...args: (number | bigint)[]){
         let obj: any = {}
         obj[this.writer.writePosition] = [BytecodeInstructionType[instruction], ...args]
         this.jsonData.push(obj);

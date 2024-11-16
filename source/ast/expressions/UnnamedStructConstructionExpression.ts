@@ -15,6 +15,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { StructType } from "../types/StructType";
+import { isRHSConstSafe } from "./BinaryExpression";
 import { Expression } from "./Expression";
 
 export class UnnamedStructConstructionExpression extends Expression {
@@ -49,7 +50,7 @@ export class UnnamedStructConstructionExpression extends Expression {
             let element = this.elements[i];
             let fieldType = field.type;
             let elementType = element.infer(ctx, fieldType);
-            consts.push(element.isConstant);
+            consts.push(element.isConstant && !isRHSConstSafe(ctx, element));
         }
 
         this.isConstant = consts.some(c => c);

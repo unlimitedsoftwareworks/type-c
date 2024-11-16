@@ -29,32 +29,32 @@ export class DataWriter {
         }
     }
 
-    push_8(value: number) {
+    push_8(value: number | bigint) {
         this.ensureCapacity(1);
-        this.buffer.writeUInt8(value, this.writePosition);
+        this.buffer.writeUInt8(value as number, this.writePosition);
         this.writePosition += 1;
 
         return this.writePosition - 1;
     }
 
-    push_16(value: number, littleEndian: boolean = true) {
+    push_16(value: number | bigint, littleEndian: boolean = true) {
         this.ensureCapacity(2);
         if (littleEndian) {
-            this.buffer.writeUInt16LE(value, this.writePosition);
+            this.buffer.writeUInt16LE(value as number, this.writePosition);
         } else {
-            this.buffer.writeUInt16BE(value, this.writePosition);
+            this.buffer.writeUInt16BE(value as number, this.writePosition);
         }
         this.writePosition += 2;
 
         return this.writePosition - 2;
     }
 
-    push_32(value: number, littleEndian: boolean = true) {
+    push_32(value: number | bigint, littleEndian: boolean = true) {
         this.ensureCapacity(4);
         if (littleEndian) {
-            this.buffer.writeUInt32LE(value, this.writePosition);
+            this.buffer.writeUInt32LE(value as number, this.writePosition);
         } else {
-            this.buffer.writeUInt32BE(value, this.writePosition);
+            this.buffer.writeUInt32BE(value as number, this.writePosition);
         }
         this.writePosition += 4;
 
@@ -62,7 +62,7 @@ export class DataWriter {
     }
 
 
-    push_64(value: number, littleEndian: boolean = true) {
+    push_64(value: number | bigint, littleEndian: boolean = true) {
         let v = BigInt(value);
         this.ensureCapacity(8);
         if (littleEndian) {
@@ -75,7 +75,7 @@ export class DataWriter {
         return this.writePosition - 8;
     }
 
-    push_bytesNeeded(value: number): number {
+    push_bytesNeeded(value: number | bigint): number {
         if (value < 0) {
             throw new Error("Value must be non-negative");
         }
@@ -103,7 +103,7 @@ export class DataWriter {
         throw new Error("Unreachable");
     }
 
-    private calculateBytesNeeded(value: number): number {
+    private calculateBytesNeeded(value: number | bigint): number {
         if (value < 0x100) return 1; // Fits in 1 byte
         if (value < 0x10000) return 2; // Fits in 2 bytes
         if (value < 0x100000000) return 4; // Fits in 4 bytes

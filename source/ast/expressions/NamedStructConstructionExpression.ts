@@ -16,6 +16,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { StructField, StructType } from "../types/StructType";
+import { isRHSConstSafe } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
 import { Expression } from "./Expression";
 import { MemberAccessExpression } from "./MemberAccessExpression";
@@ -128,7 +129,7 @@ export class NamedStructConstructionExpression extends Expression {
                 }
                 
                 // Check if the field's value is constant
-                if (field.value.isConstant) {
+                if (field.value.isConstant && !isRHSConstSafe(ctx, field.value)) {
                     isAnyFieldConstant = true;
                 }
                 pairs.push(field);
@@ -139,7 +140,7 @@ export class NamedStructConstructionExpression extends Expression {
                 let inferredType = dec.expression.infer(ctx, null);
 
                 // Check if the field's value is constant
-                if (dec.expression.isConstant) {
+                if (dec.expression.isConstant && !isRHSConstSafe(ctx, dec.expression)) {
                     isAnyFieldConstant = true;
                 }
 

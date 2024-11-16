@@ -306,7 +306,9 @@ export function generateCode(compiler: TypeC.TCCompiler) {
         generator.generateSourceMap(src_map_outputFile);
     
         let instructions = generator.bytecodeGenerator.codeSegment.toJSON()
-        fs.writeFileSync(path.join(compiler.options.outputFolder || ".", "/program.json"), JSON.stringify(instructions));
+        fs.writeFileSync(path.join(compiler.options.outputFolder || ".", "/program.json"), JSON.stringify(instructions, (key, value) =>
+            typeof value === "bigint" ? value.toString() : value,
+          ));
     
         return [path.join(process.cwd(), bin_outputFile), path.join(process.cwd(), src_map_outputFile)];
 

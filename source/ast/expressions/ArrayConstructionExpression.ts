@@ -16,6 +16,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ArrayType } from "../types/ArrayType";
 import { DataType } from "../types/DataType";
+import { isRHSConstSafe } from "./BinaryExpression";
 import { Expression } from "./Expression";
 
 export class ArrayUnpackingExpression extends Expression {
@@ -73,7 +74,7 @@ export class ArrayConstructionExpression extends Expression {
         for(const element of this.elements){
             this.containsUnpackedArray = this.containsUnpackedArray || element instanceof ArrayUnpackingExpression;
             elementTypes.push(element.infer(ctx, baseHint?.arrayOf || null));
-            consts.push(element.isConstant);
+            consts.push(element.isConstant && !isRHSConstSafe(ctx, element));
         }
         
         if(!baseHint && (elementTypes.length == 0)){

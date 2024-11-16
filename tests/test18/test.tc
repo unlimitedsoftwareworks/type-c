@@ -1,7 +1,7 @@
 
 
 fn main() {
-    let const z: {x: u32, y: u32} = {x: 1, y: 2}
-    
-    let const y = {z: 1, ...z}
+    let const a: u32 = 1
+    let z = [1, a]
+    let s = {x: 1, y: a}
 }
