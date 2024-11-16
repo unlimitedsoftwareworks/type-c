@@ -1,26 +1,22 @@
-
-
 fn main() {
     let main_obj = {
         x: 0 as u64,
         y: {
             a: 1 as u64,
-            b: 2 as u64,
-            c: 1
-        },
-        kawai: {a: 1 as u32, b: 2}
+            b: 2 as u64
+        }
     }
     for let i: u64 = 0; i < 10000000; i += 1 {
-        let secondary_obj = {
+        let f = fn () = {
             a: main_obj.y.a,
             b: main_obj.y.b,
-            c: 1,
-            d: 1
+            z: main_obj
         }
+        let secondary_obj = f()
         main_obj.x += secondary_obj.a + secondary_obj.b
         main_obj.y.a += secondary_obj.a - secondary_obj.b
         main_obj.y.b += secondary_obj.b - secondary_obj.a
     }
 
-    return main_obj.kawai.b
+    return 0
 }
