@@ -102,101 +102,22 @@ This checklist containts only major changes and updates, for minor changes and u
     dt.callMe({"user", 20})
     ```
     In such case, the compiler will not infer the unnamed struct construction `{"user", 20}` with the method argument, due to method overload resolution.
-- Pad structs in the VM, for faster CPU access
+
+
 
 ## Roadmap:
 
-- [x] Implement Nullish coalescing operator as a binary operator, will require additional parameter to `expresion.infer` so when we encounter nullable member access we can accept it knowing that there is a fallback value: `a?.b ?? 0`.
+- [ ] Pad constants segment 
+- [ ] Pad global segment for faster access
 - [ ] Add Short-circuiting logical operators and nullish coalescing operator (codegen)
+- [x] Implement Nullish coalescing operator as a binary operator, will require additional parameter to `expresion.infer` so when we encounter nullable member access we can accept it knowing that there is a fallback value: `a?.b ?? 0`.
 - [ ] ~~Add language level support for threads~~
-- [x] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
 - [ ] ~~Add support Shadow Classes (requires VM integration too)~~
+- [x] Infer generic method call without exilicitly specifying the generic types (from within `FunctionCallExpression`)
 - [x] Bytecode generation
-
+- [x] Pad structs in the VM, for faster CPU access
 
 ## Cases to evaluate:
-### Case 1: Casting with hint
-```tc
-let l1: lock<u32> = new lock(0)
-
-fn f1() -> i32 {
-    let z: i32 = 1
-
-    return z
-}
-
-let thread1 = spawn f1()
-let x: u64 = (await thread1) as u32
-```
-results in: 
-```
-tests/test18/test.tc:17:30:Cannot cast u32 to u64: Type mismatch, expected u32, got u64
-let x: u64 = (await thread1) as u32
-```
--> Casting with target u32 and a hint of u64.
-
-### Case 2: Mutable basic types
-```tc
-fn changeme(mut x: u32){ 
-    x = 1
-}
-
-let y: u32 = 0
-changeme(y) // doesn't work! compiler needs to get the value back and update
-```
-
-### Case 3: Duplicate Class methods, generic and non-generic
-```tc
-class A {
-    fn f1<T>(x: T){}
-    fn f1(x: u32){}
-}
-```
-
-and call `new A().f1(0)`, should not have ambiguity, an error should be thrown.
-
-### Allowing for class methods to be used as first class citizens
-
-If we somehow convert class methods into closures, we can allow for class methods to be used as fuctions, first class citizens.
-
-```
-class x {
-    let x = 1
-
-    fn addSomething(y: u32) {
-        x += y
-    }
-}
-```
-
-We transform `addSomething` into a closure, requiring `this` as an upvalue, meaning compiled code is 
-something as follows:
-
-```
-class x {
-    fn __compiler_init__() {
-        this = new X()
-        x.addSomething = fn(y: u32) {
-            this.x += y
-        }
-
-        return x
-    }
-}
-```
-
-Hence making `x.addSomething(1)` a method that is bound to the instance of the class.
-
-Even better, if we can add syntatic sugar to allow such things, because closures comes with overhead.
-
-```
-class x {
-    let x = 1
-
-    @closure
-    fn addSomething(y: u32) {
-    }
-}
 
 ### Pattern matching over custom types:
 bytecode generation for pattern matching uses primitive types such as array slicing in case
