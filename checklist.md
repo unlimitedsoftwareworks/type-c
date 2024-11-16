@@ -94,6 +94,10 @@ This checklist containts only major changes and updates, for minor changes and u
     - Fixed a flaw with pointer bitmaps. Pointer fields in structs and classes are now specified when registering the field.
     - Changed instructions again, we do not create pointer bitmask on creating object but on every *_reg_field. Array still unchanged (ptr flag given in a_alloc).
 
+- 16/11/2024:
+    - Fixed const/mut analysis
+    - Added `mutate` expression, which is used to mutate a variable.
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.
