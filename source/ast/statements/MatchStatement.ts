@@ -32,7 +32,7 @@ export class MatchStatement extends Statement {
 
     infer(ctx: Context){
         let type = this.expression.infer(ctx);
-        this.cases.forEach(c => c.infer(ctx, type));
+        this.cases.forEach(c => c.infer(ctx, type, this.expression.isConstant));
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): MatchStatement {

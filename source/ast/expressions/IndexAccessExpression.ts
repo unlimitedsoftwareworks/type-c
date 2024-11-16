@@ -81,7 +81,7 @@ export class IndexAccessExpression extends Expression {
 
         
         this.checkHint(ctx);
-        this.isConstant = false;
+        this.isConstant = this.lhs.isConstant;
         return this.inferredType;
     }
 

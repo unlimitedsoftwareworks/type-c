@@ -33,7 +33,7 @@ export function buildLengthCheckExpression(location: SymbolLocation, baseExpress
     );
 }
 
-export function buildVariableAssignment(location: SymbolLocation, baseExpression: Expression, pattern: VariablePatternExpression): Expression {
+export function buildVariableAssignment(location: SymbolLocation, baseExpression: Expression, pattern: VariablePatternExpression): BinaryExpression {
     return new BinaryExpression(
         location, 
         new ElementExpression(location, pattern.name), 
@@ -46,8 +46,9 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
     // if it is a regular variable pattern, we can just check if the base expression is assignable to the pattern
     if (pattern instanceof VariablePatternExpression) {
         let rhs = base;
+        // we ignore constness here, but we know the assignment is valid because constness is inherited
         let variable = buildVariableAssignment(pattern.location, rhs, pattern);
-        variable.infer(ctx);
+        variable.infer(ctx, null, {ignoreConst: true});
         return {condition: null, variableAssignments: [variable]};
     }
     else if (pattern instanceof ArrayVariablePatternExpression) {

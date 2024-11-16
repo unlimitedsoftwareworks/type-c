@@ -17,11 +17,13 @@ import { SymbolLocation } from "./SymbolLocation";
 export class VariablePattern extends Symbol {
     name: string;
     type: DataType
+    isConst: boolean | 0 = false;
 
-    constructor(location: SymbolLocation, name: string, type: DataType) {
+    constructor(location: SymbolLocation, name: string, type: DataType, isConst: boolean | 0 = false) {
         super(location, "variable_pattern", name);
         this.name = name;
         this.type = type;
+        this.isConst = isConst;
     }
 
     clone(typeMap: {[key: string]: DataType}): VariablePattern {

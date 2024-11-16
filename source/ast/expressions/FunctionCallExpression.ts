@@ -60,6 +60,18 @@ export class FunctionCallExpression extends Expression {
         this.args = args;
     }
 
+    checkMutability(ctx: Context, header: FunctionType) {
+        // we make sure that no constant expression is passed to a mut argument
+        for(let i = 0; i < this.args.length; i++) {
+            if(header.parameters[i].isMutable) {
+                // we also make  sure that we respect the constraints of the parameter, i.e mutability
+                if (!checkExpressionArgConst(this.args[i], this.args[i].inferredType!, header.parameters[i], header)) {
+                    throw ctx.parser.customError(`Argument ${this.args[i].isConstant?"const":""} ${i} is not assignable to parameter ${header.parameters[i].isMutable ? "mut " : ""}${header.parameters[i].name}, mutability missmatch`, this.args[i].location);
+                }
+            }
+        }
+    }
+
     infer(ctx: Context, hint: DataType | null): DataType {
         this.setHint(hint);
 
@@ -174,6 +186,7 @@ export class FunctionCallExpression extends Expression {
         this.operatorOverloadState.setMethodRef(method);
 
         this.inferredType = matchCall(ctx, method, this.args);
+        this.checkMutability(ctx, method.header);
         this.checkHint(ctx);
         return this.inferredType;
     }
@@ -204,9 +217,9 @@ export class FunctionCallExpression extends Expression {
 
         }
         this.inferredType = interfaceMethod.header.returnType;
+        this.checkMutability(ctx, interfaceMethod.header);
 
         this.checkHint(ctx);
-        this.isConstant = true;
         return this.inferredType;
     }
 
@@ -254,6 +267,7 @@ export class FunctionCallExpression extends Expression {
 
             // save the reference to the source method to be used in the code generator
             this._calledClassMethod = method._sourceMethod;
+            this.checkMutability(ctx, method.header);
 
             // manually set the inferred type of the lhs, since 
             // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
@@ -290,14 +304,10 @@ export class FunctionCallExpression extends Expression {
             if (!res.success) {
                 throw ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
             }
-
-            // we also make sure that we respect the constraints of the parameter, i.e mutability
-            if (!checkExpressionArgConst(this.args[i], argType, lhsT.parameters[i], lhsType)) {
-                throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
-            }
         }
 
         this.inferredType = lhsT.returnType;
+        this.checkMutability(ctx, lhsT);
         this.checkHint(ctx);
         return this.inferredType;
     }
@@ -332,6 +342,7 @@ export class FunctionCallExpression extends Expression {
 
         // save the reference to the source method to be used in the code generator
         this._calledInterfaceMethod = method;
+        this.checkMutability(ctx, method.header);
 
         // manually set the inferred type of the lhs, since 
         // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
@@ -459,6 +470,7 @@ export class FunctionCallExpression extends Expression {
 
         // set the inferred type
         this.inferredType = coroutineType.fnType.returnType;
+        this.checkMutability(ctx, coroutineType.fnType);
         this.checkHint(ctx);
         return this.inferredType;
     }

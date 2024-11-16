@@ -46,6 +46,13 @@ export class IndexSetExpression extends Expression {
         let lhsType = this.lhs.infer(ctx, null);
 
         /**
+         * Make sure we are not assigning to a constant
+         */
+        if(this.lhs.isConstant || !lhsType.isAssignable()) {
+            throw ctx.parser.customError(`Cannot modify the state of a constant expression/variable`, this.location);
+        }
+
+        /**
          * Same as index access, index set is applicable to arrays and classes/interfaces which implement the __index_set__ method
          */
 

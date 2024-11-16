@@ -90,7 +90,7 @@ fn test_case_1(rn: TestUnit) {
 }
 
 type UserClass = class {
-    let name: String
+    let const name: String
 
     fn init(name: String) {
         this.name = name

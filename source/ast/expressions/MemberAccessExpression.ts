@@ -36,6 +36,7 @@ import { VariantType } from "../types/VariantType";
 import { VoidType } from "../types/VoidType";
 import { ElementExpression } from "./ElementExpression";
 import { Expression } from "./Expression";
+import { ThisExpression } from "./ThisExpression";
 
 export class MemberAccessExpression extends Expression {
     left: Expression;
@@ -109,7 +110,9 @@ export class MemberAccessExpression extends Expression {
                     ],
                     new VoidType(this.location),
                 );
-                this.isConstant = false;
+
+                // inherit constness from lhs
+                this.isConstant = this.left.isConstant;
                 this.checkHint(ctx);
                 return this.inferredType;
             }
@@ -131,6 +134,7 @@ export class MemberAccessExpression extends Expression {
                     ],
                     new ArrayType(this.location, arrayType.arrayOf),
                 );
+                // a new array is not constant
                 this.isConstant = false;
                 this.checkHint(ctx);
                 return this.inferredType;
@@ -159,7 +163,8 @@ export class MemberAccessExpression extends Expression {
 
             this.inferredType = field.type;
 
-            this.isConstant = false;
+            // inherit constness from lhs
+            this.isConstant = this.left.isConstant;
             this.checkHint(ctx);
             return this.inferredType;
         }
@@ -178,6 +183,14 @@ export class MemberAccessExpression extends Expression {
             }
 
             this.inferredType = field.type;
+            
+            /**
+             * The constness of a member access of a class fiel generally is OR(class is final, attribute is final)
+             * But in the case where we are within a constructor and we are accessing `this` expression,
+             * we set the constness to 0, to allow initialization of immutable fields
+             */
+            let withinConstructor = ctx.env.withinClass && ctx.getActiveMethod()?.isConstructor();
+            this.isConstant = ((this.left instanceof ThisExpression) && field.isConst && withinConstructor)?0:this.right.isConstant||field.isConst;
             this.checkHint(ctx);
             return this.inferredType;
         }
@@ -195,6 +208,7 @@ export class MemberAccessExpression extends Expression {
                 );
             }
             this.inferredType = method;
+            // ffi methods are not constant
             this.isConstant = false;
             this.checkHint(ctx);
             return this.inferredType;
@@ -218,7 +232,9 @@ export class MemberAccessExpression extends Expression {
             }
 
             this.inferredType = parameter.type;
-            this.isConstant = false;
+            
+            // inherit constness from lhs
+            this.isConstant = this.left.isConstant;
             this.checkHint(ctx);
             return this.inferredType;
         }

@@ -193,4 +193,8 @@ export class ClassMethod extends Symbol {
     needsInfer() {
         return !this._wasInferred;
     }
+
+    isConstructor() {
+        return this.imethod.name === "init";
+    }
 }

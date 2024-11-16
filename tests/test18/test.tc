@@ -1,22 +1,23 @@
-fn main() {
-    let main_obj = {
-        x: 0 as u64,
-        y: {
-            a: 1 as u64,
-            b: 2 as u64
-        }
-    }
-    for let i: u64 = 0; i < 10000000; i += 1 {
-        let f = fn () = {
-            a: main_obj.y.a,
-            b: main_obj.y.b,
-            z: main_obj
-        }
-        let secondary_obj = f()
-        main_obj.x += secondary_obj.a + secondary_obj.b
-        main_obj.y.a += secondary_obj.a - secondary_obj.b
-        main_obj.y.b += secondary_obj.b - secondary_obj.a
+fn f(mut x: u32[]) {
+    
+}
+
+type Z = class {
+    
+    let const a: {x: {y: u32}[]}
+
+    fn init(x: u32) {
+        this.a.x[0].y = x
+        let u = this.a.x
+        u[0].y = 1
     }
 
+    fn kill () {
+        let u = mutate this.a.x
+        u[0].y = 1
+    }
+}
+
+fn main() {
     return 0
 }

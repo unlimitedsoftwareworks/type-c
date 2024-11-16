@@ -39,7 +39,7 @@ export class DataTypePatternExpression extends PatternExpression {
         this.args = args;
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         /**
          * When matching against a data type, we have to distinguish between the following cases:
          * 1. expressionType is a variant:
@@ -77,7 +77,7 @@ export class DataTypePatternExpression extends PatternExpression {
 
             // infer arguments
             this.args.forEach((arg, index) => {
-                arg.infer(ctx, variantConstructorType.parameters[index].type);
+                arg.infer(ctx, variantConstructorType.parameters[index].type, isConst);
             });
         }
         else if (expressionType.is(ctx, VariantConstructorType)) {
@@ -100,7 +100,7 @@ export class DataTypePatternExpression extends PatternExpression {
 
             // infer arguments
             this.args.forEach((arg, index) => {
-                arg.infer(ctx, (expressionType as VariantConstructorType).parameters[index].type);
+                arg.infer(ctx, (expressionType as VariantConstructorType).parameters[index].type, isConst);
             });
         }
         else if (expressionType.is(ctx, EnumType)) {

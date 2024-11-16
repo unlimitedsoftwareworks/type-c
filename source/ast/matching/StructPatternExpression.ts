@@ -42,7 +42,7 @@ export class StructPatternExpression extends PatternExpression {
         if(this.variablePattern) this.variablePattern.setParent(this);
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         // since we capture the fields, we only need to infer once otherwise we might run into run time error?
         if (this._inferred) return;
 
@@ -59,7 +59,7 @@ export class StructPatternExpression extends PatternExpression {
                 throw ctx.parser.customError(`Struct type ${structType.shortname()} does not have field ${fieldPattern.name}`, this.location);
             }
 
-            fieldPattern.pattern.infer(ctx, field.type);
+            fieldPattern.pattern.infer(ctx, field.type, isConst);
             this.capturedFields.push(field);
 
             if (this.variablePattern !== null) {
@@ -72,7 +72,7 @@ export class StructPatternExpression extends PatternExpression {
                 }
 
                 let newStructType = new StructType(this.location, newFields);
-                this.variablePattern.infer(ctx, newStructType);
+                this.variablePattern.infer(ctx, newStructType, isConst);
             }
         }
         this._inferred = true;

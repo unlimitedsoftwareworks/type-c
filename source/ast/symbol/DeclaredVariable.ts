@@ -11,6 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { isLHSAssignable, isRHSConstSafe } from "../expressions/BinaryExpression";
 import { Expression } from "../expressions/Expression";
 import { DataType } from "../types/DataType";
 import { LiteralIntType } from "../types/LiteralNumberType";
@@ -75,6 +76,13 @@ export class DeclaredVariable extends Symbol {
         if (this.annotation instanceof TupleType) {
             throw ctx.parser.customError("A variable cannot be annotated or assigned a tuple type", this.location);
         }
+
+        if(!this.isConst && this.initializer.isConstant && !isRHSConstSafe(ctx, this.initializer)){
+            isRHSConstSafe(ctx, this.initializer)
+            throw ctx.parser.customError("Cannot assign a constant expression to a non-constant variable", this.initializer.location);
+        }
+
+
     }
 
 

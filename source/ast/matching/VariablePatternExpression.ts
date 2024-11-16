@@ -34,9 +34,9 @@ export class VariablePatternExpression extends PatternExpression {
     }
 
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         if(!this.symbolPointer) {
-            this.symbolPointer = new VariablePattern(this.location, this.name, expressionType);
+            this.symbolPointer = new VariablePattern(this.location, this.name, expressionType, isConst);
             ctx.addSymbol(this.symbolPointer);
         }
     }

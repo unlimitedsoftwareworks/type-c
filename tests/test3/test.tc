@@ -133,7 +133,7 @@ fn test_case_1(runner: TestUnit) {
 type BasicArray = class {
     let data: i32[]
     
-    fn init(data: i32[]) {
+    fn init(mut data: i32[]) {
         this.data = data
     }
 

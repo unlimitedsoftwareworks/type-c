@@ -53,9 +53,9 @@ export class MatchCaseExpression {
      * @param ctx 
      * @param expressionType 
      */
-    infer(ctx: Context, expressionType: DataType): DataType | null{
+    infer(ctx: Context, expressionType: DataType, isParentConst: boolean | 0): DataType | null{
         if (this._inferred) return this._inferredType;
-        this.pattern.infer(this.context, expressionType);
+        this.pattern.infer(this.context, expressionType, isParentConst);
 
         if(this.guard) {
             this.guard.infer(this.context, null);
@@ -115,7 +115,7 @@ export class MatchExpression extends Expression {
         let type = this.expression.infer(ctx);
         type.resolve(ctx);
 
-        let matchExprsTypes = this.cases.map(c => c.infer(ctx, type)!);
+        let matchExprsTypes = this.cases.map(c => c.infer(ctx, type, this.expression.isConstant)!);
         let res = findCompatibleTypes(ctx, matchExprsTypes);
 
         if(!res) {

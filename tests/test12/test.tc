@@ -265,7 +265,7 @@ type A = class {
 type Random = class {
     let x: u32[]?
 
-    fn init(x: u32[]?) {
+    fn init(mut x: u32[]?) {
         this.x = x
     }
 }

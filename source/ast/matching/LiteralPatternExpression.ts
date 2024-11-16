@@ -27,7 +27,7 @@ export class LiteralPatternExpression extends PatternExpression {
         this.literal = literal;
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         let r = matchDataTypes(ctx, expressionType, this.literal.infer(ctx, expressionType));
         if(!r.success) {
             throw ctx.parser.customError(`Cannot match ${expressionType.shortname()} against literal: ${r.message}`, this.location);

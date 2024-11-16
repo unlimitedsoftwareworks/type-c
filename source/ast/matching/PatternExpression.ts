@@ -35,7 +35,7 @@ export class PatternExpression {
         this.matchType = matchType;
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         throw "Not implemented";
     }
 

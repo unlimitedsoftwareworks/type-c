@@ -15,7 +15,7 @@ type Map<K, V> = class {
         this.array = []
     }
 
-    fn insert(key: K, value: V) -> void {
+    fn insert(key: K, mut value: V) -> void {
         for let i: u64 = 0 ; i < this.array.length ; i+=1 {
             if (this.array[i].key == key) {
                 this.array[i].value = value

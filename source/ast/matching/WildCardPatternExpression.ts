@@ -20,7 +20,7 @@ export class WildCardPatternExpression extends PatternExpression {
         super(location, "wildcard");
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         // Wildcard matches anything
     }
 

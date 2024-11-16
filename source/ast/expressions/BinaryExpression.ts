@@ -26,6 +26,8 @@ import { BasicType } from "../types/BasicType";
 import { NullableType } from "../types/NullableType";
 import { TupleDeconstructionExpression } from "./TupleDeconstructionExpression";
 import { TupleConstructionExpression } from "./TupleConstructionExpression";
+import { VoidType } from "../types/VoidType";
+import { EnumType } from "../types/EnumType";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -178,8 +180,15 @@ export class BinaryExpression extends Expression {
                 ctx.parser.customError("Cannot assign to this", this.location);
             }
 
-            let canAssign = isLHSAssignable(ctx, this.left);
-            if(!canAssign.success) {
+            let canAssign = meta?.ignoreConst ? Ok() : canAssignLHSRHS(ctx, this.left, this.right);
+
+            /**
+             * We need to ignore constness when assigning a `this` field/subfield to a class constructor
+             */
+            let ignoreConst = this.left.isConstant === 0;
+
+            //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
+            if(!canAssign.success && !ignoreConst) {
                 ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
             }
         }
@@ -192,6 +201,8 @@ export class BinaryExpression extends Expression {
             ctx.parser.customError(`Cannot apply operator ${this.operator} to types ${lhsType} and ${rhsType}`, this.location);
         }
 
+        this.isConstant = this.left.isConstant;
+
         return this.inferredType;
     }
 
@@ -201,8 +212,33 @@ export class BinaryExpression extends Expression {
     }
 }
 
+export function canAssignLHSRHS(ctx: Context, lhs: Expression, rhs: Expression): TypeMatchResult{
+    let lhsRes = isLHSAssignable(ctx, lhs);
+    if (!lhsRes.success) return lhsRes;
+
+    let rhsSafe = isRHSConstSafe(ctx, rhs);
+    
+    // a lot of times, rhs is a const, but actually safe, such as let x = 3 + 4
+    if (!lhs.isConstant && rhsSafe) return Ok();
+    
+    if (rhs.isConstant && !lhs.isConstant) return Err("Cannot assign a constant expression to a non-constant expression");
+
+    return Ok();
+}
+
+export function isRHSConstSafe(ctx: Context, rhs: Expression): boolean{
+    if(rhs.inferredType?.is(ctx, VoidType)) return false;
+    
+    // we can assign const basic types to non-const basic types
+    if(rhs.inferredType?.is(ctx, BasicType) || (rhs.inferredType?.is(ctx, EnumType))){
+        return true;
+    }
+    // will need to check rhs.const
+    return false;
+}
+
 export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
-    if(lhs.isConstant && !lhs.inferredType?.isAssignable()) return Err("Cannot modify the state of a constant expression/variable");
+    if(lhs.isConstant || !lhs.inferredType?.isAssignable()) return Err("Cannot modify the state of a constant expression/variable");
     
     if(lhs instanceof ElementExpression) {
         if(lhs.isVariable()){

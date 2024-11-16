@@ -163,7 +163,7 @@ export class EnumType extends DataType {
     }
 
     isAssignable(): boolean {
-        return false;
+        return true;
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}): EnumType{

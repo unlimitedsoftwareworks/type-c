@@ -36,7 +36,7 @@ export class ArrayPatternExpression extends PatternExpression {
         this.elements = elements;
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         if(!expressionType.is(ctx, ArrayType)) {
             throw ctx.parser.customError(`Cannot perform array matching on non-array type ${expressionType.shortname()}`, this.location);
         }
@@ -48,10 +48,10 @@ export class ArrayPatternExpression extends PatternExpression {
 
             if(pattern instanceof ArrayVariablePatternExpression) {
                 pattern.setPosition(i)
-                pattern.infer(ctx, arrayElement);
+                pattern.infer(ctx, arrayElement, isConst);
             }
             else {
-                pattern.infer(ctx, arrayElement);
+                pattern.infer(ctx, arrayElement, isConst);
             }
         }
     }

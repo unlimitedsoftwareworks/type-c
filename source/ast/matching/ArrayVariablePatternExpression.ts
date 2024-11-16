@@ -34,10 +34,10 @@ export class ArrayVariablePatternExpression extends PatternExpression {
         this.name = name;
     }
 
-    infer(ctx: Context, expressionType: DataType) {
+    infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         if(!this.symbolPointer) {
             // used to cause an error when cloned, fixed by not adding variable pattern within Context.clone
-            this.symbolPointer = new VariablePattern(this.location, this.name, new ArrayType(this.location, expressionType));
+            this.symbolPointer = new VariablePattern(this.location, this.name, new ArrayType(this.location, expressionType), isConst);
             ctx.addSymbol(this.symbolPointer);
         }
     }

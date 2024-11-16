@@ -26,6 +26,7 @@ export class ThisExpression extends Expression {
     infer(ctx: Context, hint: DataType | null): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
+        this.isConstant = false;
 
         if(ctx.env.withinClass) {
             let cls = ctx.getActiveClass();

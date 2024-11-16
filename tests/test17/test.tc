@@ -108,7 +108,7 @@ fn test_case_3(rn: TestUnit) {
 
 fn test_case_4(rn: TestUnit) {
     fn dataGenerator<T>(data: T[]) -> T {
-        let old = data
+        let const old = data
         yield old[0]
         yield old[1]
         yield! old[2]
