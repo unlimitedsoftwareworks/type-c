@@ -43,14 +43,16 @@ export class UnnamedStructConstructionExpression extends Expression {
             throw ctx.parser.customError(`Unnamed struct construction has ${this.elements.length} elements, but struct has ${structType.fields.length} fields`, this.location);
         }
 
+        let consts = [];
         for(let i = 0; i < this.elements.length; i++) {
             let field = structType.fields[i];
             let element = this.elements[i];
             let fieldType = field.type;
             let elementType = element.infer(ctx, fieldType);
+            consts.push(element.isConstant);
         }
 
-        this.isConstant = false;
+        this.isConstant = consts.some(c => c);
         this.inferredType = hint;
         // this.checkHint(ctx); not needed
         return this.inferredType;

@@ -69,9 +69,11 @@ export class ArrayConstructionExpression extends Expression {
 
         // infer all elements
         let elementTypes: DataType[] = [];
+        let consts = []
         for(const element of this.elements){
             this.containsUnpackedArray = this.containsUnpackedArray || element instanceof ArrayUnpackingExpression;
             elementTypes.push(element.infer(ctx, baseHint?.arrayOf || null));
+            consts.push(element.isConstant);
         }
         
         if(!baseHint && (elementTypes.length == 0)){
@@ -104,6 +106,7 @@ export class ArrayConstructionExpression extends Expression {
             this.inferredType = hint!;
         }
         
+        this.isConstant = consts.some(c => c);
         this.checkHint(ctx);
         return this.inferredType;
     }

@@ -85,6 +85,7 @@ export class NamedStructConstructionExpression extends Expression {
         }
 
         let hasUnpacked = false;
+        let isAnyFieldConstant = false;
 
         let fields: StructField[] = [];
         let pairs: StructKeyValueExpressionPair[] = [];
@@ -125,13 +126,22 @@ export class NamedStructConstructionExpression extends Expression {
                     mergedStruct.fields.push(new StructField(field.location, field.name, field.value.inferredType!));
                     fields.push(newField);
                 }
-
+                
+                // Check if the field's value is constant
+                if (field.value.isConstant) {
+                    isAnyFieldConstant = true;
+                }
                 pairs.push(field);
             }
             else {
                 hasUnpacked = true;
                 let dec = field as StructUnpackedElement;
                 let inferredType = dec.expression.infer(ctx, null);
+
+                // Check if the field's value is constant
+                if (dec.expression.isConstant) {
+                    isAnyFieldConstant = true;
+                }
 
                 // now we get the inferred type of e
                 if (!inferredType.is(ctx, StructType)) {
@@ -187,7 +197,7 @@ export class NamedStructConstructionExpression extends Expression {
         }
 
         this.checkHint(ctx, false);
-        this.isConstant = false;
+        this.isConstant = isAnyFieldConstant;
         return this.inferredType;
     }
 

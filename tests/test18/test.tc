@@ -1,30 +1,7 @@
-fn f(mut x: u32[]) {
-    
-}
 
-type Z = class {
-    
-    let const a: {x: {y: u32}[]}
-
-    fn init(x: u32) {
-        this.a.x[0].y = x
-        let u = this.a.x
-        u[0].y = 1
-    }
-
-    fn kill () {
-        let u = mutate this.a.x
-        u[0].y = 1
-    }
-}
 
 fn main() {
-    let const z = {x: [{y: 1}]}
-    let y = mutate z
-    y.x[0].y = 2 // Ok
-
-    // or
-
-    (mutate y).x[0].y = 3 // Ok
-    return 0
+    let const z: {x: u32, y: u32} = {x: 1, y: 2}
+    
+    let const y = {z: 1, ...z}
 }
