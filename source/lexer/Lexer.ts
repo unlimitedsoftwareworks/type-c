@@ -49,6 +49,7 @@ export class Lexer {
         [TokenType.TOK_IN, /^in\b/],
         [TokenType.TOK_IS, /^is\b/],
         [TokenType.TOK_INTERFACE, /^interface\b/],
+        [TokenType.TOK_MUTATE, /^mutate\b/],
         [TokenType.TOK_MUT, /^mut\b/],
         [TokenType.TOK_LET, /^let\b/],
         [TokenType.TOK_NEW, /^new\b/],

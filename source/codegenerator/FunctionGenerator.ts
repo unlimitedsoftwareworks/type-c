@@ -138,6 +138,7 @@ import { getDataTypeByteSize } from "./utils";
 import { FunctionCodegenProps } from "./FunctionCodegenProps";
 import { YieldExpression } from "../ast/expressions/YieldExpression";
 import { CoroutineType } from "../ast/types/CoroutineType";
+import { MutateExpression } from "../ast/expressions/MutateExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -452,6 +453,8 @@ export class FunctionGenerator {
             tmp = this.visitCoroutineConstructionExpression(expr, ctx);
         else if (expr instanceof YieldExpression)
             tmp = this.visitYieldExpression(expr, ctx);
+        else if (expr instanceof MutateExpression)
+            tmp = this.visitMutateExpression(expr, ctx);
         else throw new Error("Invalid expression " + expr.toString());
 
         if (tmp != "") {
@@ -2831,6 +2834,12 @@ export class FunctionGenerator {
         return "";
     }
 
+    //ezpezlemonsqez
+    visitMutateExpression(expr: MutateExpression, ctx: Context): string {
+        let resTmp = this.visitExpression(expr.expression, ctx);
+        return resTmp;
+    }
+
     /**
      * Statements
      */
@@ -3206,7 +3215,7 @@ export class FunctionGenerator {
             let assign = new BinaryExpression(decl.location, left, right, "=");
             // we need to set ignoreConst to true, because we the variable might be const,
             // and we are changing the structure of the assignment
-            assign.infer(ctx, decl.annotation);
+            assign.infer(ctx, decl.annotation, {ignoreConst: true});
             let tmp = this.visitExpression(assign, ctx);
             this.destroyTmp(tmp);
         }

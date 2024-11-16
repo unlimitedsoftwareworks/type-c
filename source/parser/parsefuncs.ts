@@ -94,6 +94,7 @@ import { DoExpression } from "../ast/expressions/DoExpression";
 import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstructionExpression";
 import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
 import { YieldExpression } from "../ast/expressions/YieldExpression";
+import { MutateExpression } from "../ast/expressions/MutateExpression";
 
 
 
@@ -986,9 +987,32 @@ function parseClassAttribute(parser: Parser, ctx: Context): ClassAttribute {
     parser.expect("let");
 
     let tok = parser.peek();
+
+    // we have const, static, static const or const static
     let isStatic = tok.type === "static";
+    let isConst = tok.type === "const";
+
     if (isStatic) {
         parser.accept();
+        let tok2 = parser.peek();
+        if (tok2.type === "const") {
+            parser.accept();
+            isConst = true;
+        }
+        else {
+            parser.reject();
+        }
+    }
+    else if (isConst) {
+        parser.accept();
+        let tok2 = parser.peek();
+        if (tok2.type === "static") {
+            parser.accept();
+            isStatic = true;
+        }
+        else {
+            parser.reject();
+        }
     }
     else {
         parser.reject();
@@ -997,7 +1021,7 @@ function parseClassAttribute(parser: Parser, ctx: Context): ClassAttribute {
     let id = parser.expect("identifier");
     parser.expect(":");
     let type = parseType(parser, ctx);
-    return new ClassAttribute(loc, id.value, type, isStatic);
+    return new ClassAttribute(loc, id.value, type, isStatic, isConst);
 }
 
 function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod = "class"): ClassMethod {
@@ -1422,6 +1446,11 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         let baseFn = parseExpression(parser, ctx);
         //parser.expect(")");
         return new CoroutineConstructionExpression(loc, baseFn);
+    }
+    else if (lexeme.type === "mutate") {
+        parser.accept();
+        let expression = parseExpression(parser, ctx);
+        return new MutateExpression(loc, expression);
     }
     else {
         parser.reject();

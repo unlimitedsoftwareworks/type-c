@@ -24,6 +24,7 @@ import { matchDataTypes } from "../../typechecking/TypeChecking";
  */
 export type InferenceMeta = {
     isWithinNullishCoalescing?: boolean;
+    ignoreConst?: boolean; // from code generator
 }
 
 export type ExpressionKind = 
@@ -67,7 +68,8 @@ export type ExpressionKind =
     "object_deconstruction" | // { a, b, ...rest } = { a: 1, b: 2, c: 3 }
     "coroutine_construction" | // coroutine  ...
     "do_expression" | // do { ... }
-    "yield"  // yield x
+    "yield"  | // yield x
+    "mutate" // mutate x
 ;
 
 export class Expression {
@@ -92,8 +94,11 @@ export class Expression {
     /**
      * isConstant is true if the expression is a constant expression.
      * When isConstant is true, the expression cannot have its state changed.
+     * 
+     * 0 is used to indicate that the base expression is `this` and constness depends
+     * if we are within a class constructoror not.
      */
-    isConstant: boolean = false;
+    isConstant: true | false | 0  = false;
 
     static _expressionCounter: number = 0;
     id: number = Expression._expressionCounter++;
