@@ -16,6 +16,8 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { NullableType } from "../types/NullableType";
 import { Expression } from "./Expression";
+import { LiteralExpression } from "./LiteralExpression";
+import { ThisExpression } from "./ThisExpression";
 
 export class MutateExpression extends Expression {
     
@@ -28,6 +30,14 @@ export class MutateExpression extends Expression {
 
     infer(ctx: Context, hint: DataType | null): DataType {
         this.setHint(hint);
+
+        if(this.expression instanceof ThisExpression) {
+            ctx.parser.customError("`this` mutable by default", this.location);
+        }
+
+        if(this.expression instanceof LiteralExpression) {
+            ctx.parser.customError("What are you doing?", this.location);
+        }
 
         // 1. infer base expression without a hint
         let expressionType = this.expression.infer(ctx, hint);
