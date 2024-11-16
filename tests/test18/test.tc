@@ -19,5 +19,12 @@ type Z = class {
 }
 
 fn main() {
+    let const z = {x: [{y: 1}]}
+    let y = mutate z
+    y.x[0].y = 2 // Ok
+
+    // or
+
+    (mutate y).x[0].y = 3 // Ok
     return 0
 }

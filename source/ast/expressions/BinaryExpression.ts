@@ -310,6 +310,9 @@ export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
         case "this":{
             return Ok()
         }
+        case "mutate":{
+            return Ok()
+        }
         case "array_construction":{
             return Err("Cannot assign to array construction expression");
         }
