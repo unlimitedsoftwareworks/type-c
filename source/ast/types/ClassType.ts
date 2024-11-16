@@ -140,7 +140,7 @@ export class ClassType extends DataType {
         for (let i = 0; i < this.methods.length; i++) {
             for (let j = i + 1; j < this.methods.length; j++) {
                 if (this.methods[i].imethod.name === this.methods[j].imethod.name) {
-                    if (areSignaturesIdentical(ctx, this.methods[i].imethod.header, this.methods[j].imethod.header)) {
+                    if (areSignaturesIdentical(ctx, this.methods[i].imethod, this.methods[j].imethod)) {
                         ctx.parser.customError(`Method ${this.methods[i].imethod.name} is overloaded`, this.location);
                     }
                 }
@@ -422,8 +422,9 @@ export class ClassType extends DataType {
                                     }
                                 }
                             }
-
-                            return [concreteMethod.imethod];
+                            candidates.push(concreteMethod.imethod);
+                            continue;
+                            //return [concreteMethod.imethod];
                         }
                     }
                     else {

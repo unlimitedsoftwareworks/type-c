@@ -102,13 +102,14 @@ export class InterfaceType extends DataType {
          * type-c support method overloading, as long as the argument types are different
          */
         let methodNames: string[] = allMethods.map((method) => method.name);
-        let methodTypes: FunctionType[] = allMethods.map((method) => method.header);
 
         for(let i = 0; i < methodNames.length; i++){
             for(let j = i+1; j < methodNames.length; j++){
                 if(methodNames[i] == methodNames[j]){
+                    // if one of them is generic, we do allow duplicates
+
                     // we perform the check solely based on the arguments, not the return type
-                    if(areSignaturesIdentical(ctx, methodTypes[i], methodTypes[j])){
+                    if(areSignaturesIdentical(ctx, allMethods[i], allMethods[j])){
                         ctx.parser.customError(`Method ${methodNames[i]} is duplicated with the same signature`, allMethods[j].location);
                         return;
                     }

@@ -37,6 +37,7 @@ import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { getDataTypeByteSize } from "../codegenerator/utils";
+import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 
 
 export type TypeMatchResult = {
@@ -854,14 +855,23 @@ function matchTuples(ctx: Context, t1: TupleType, t2: TupleType, strict: boolean
  * @param b second method
  * @returns 
  */
-export function areSignaturesIdentical(ctx: Context, a: FunctionType, b: FunctionType): boolean {
+export function areSignaturesIdentical(ctx: Context, a: InterfaceMethod, b: InterfaceMethod): boolean {
     // first, check if the number of parameters is the same
-    if (a.parameters.length !== b.parameters.length) return false;
+    if (a.header.parameters.length !== b.header.parameters.length) return false;
+
+    // for generics, the signature checks will be done later
+    // when all generic methods are instantiated
+    if(a.isGeneric() || b.isGeneric()){
+        return false;
+    }
 
     // return type do not matter when overloading methods, so we check parameter types
 
-    for (let i = 0; i < a.parameters.length; i++) {
-        if (!areDataTypesIdentical(ctx, a.parameters[i].type, b.parameters[i].type)) {
+    let aGenerics = a.generics.map(e => e.name);
+    let bGenerics = b.generics.map(e => e.name);
+
+    for (let i = 0; i < a.header.parameters.length; i++) {
+        if (!areDataTypesIdentical(ctx, a.header.parameters[i].type, b.header.parameters[i].type)) {
             return false;
         }
     }
