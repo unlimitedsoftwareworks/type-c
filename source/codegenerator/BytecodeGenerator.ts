@@ -348,7 +348,7 @@ export class BytecodeGenerator {
             }
 
             for (let offset of offsets) {
-                this.codeSegment.emitAtCustom(offset, value, 8);
+                this.codeSegment.emitAtCustom(offset, value, 4);
             }
         }
     }
@@ -577,7 +577,7 @@ export class BytecodeGenerator {
                     this.emitCustom(8, 1);
                     let lbl = this.codeSegment.writer.writePosition;
                     this.addUnresolvedOffset(id, lbl);
-                    this.emitCustom(0, 8);
+                    this.emitCustom(0, 4);
                 }
             }
             else if (instruction.type == "local_i8" || instruction.type == "local_u8" || instruction.type == "arg_i8" || instruction.type == "arg_u8") {
@@ -952,7 +952,7 @@ export class BytecodeGenerator {
                 if (this.isClassMethod(fn)) {
                     // we have to prefix it with the method ID
                     let methodUID = InterfaceMethod.getMethodUID((fn.fn as ClassMethod).imethod);
-                    this.emitCustom(methodUID, 8);
+                    this.emitCustom(methodUID, 4);
                 }
                 this.resolveLabel(id, this.codeSegment.writer.writePosition);
             }

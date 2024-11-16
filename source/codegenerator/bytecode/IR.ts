@@ -91,6 +91,7 @@ export type IRInstructionType =
     "tmp_ptr" |
 
     "s_alloc" |
+    "s_alloc_t" |
     "s_reg_field" |
 
     "s_get_field_i8" |
@@ -118,6 +119,7 @@ export type IRInstructionType =
     "s_set_field_ptr" |
 
     "c_alloc" |
+    "c_alloc_t" |
     "c_reg_field" |
     "c_store_m" |
     "c_load_m" |

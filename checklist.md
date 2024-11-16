@@ -64,10 +64,8 @@ This checklist containts only major changes and updates, for minor changes and u
 
 
 - 10/08/2024:
-    - Refactored bytecode for structs, a global id for every field is generated, covering all combinations, this global id is used to access the 
-      field in the struct, using an additional offset byte.
-    - Refactored bytecode for classes and interfaces. VM now only supports classes. Class methods are processed the same way as structs now, each
-      method has a global id.
+    - Refactored bytecode for structs, a global id for every field is generated, covering all combinations, this global id is used to access the field in the struct, using an additional offset byte.
+    - Refactored bytecode for classes and interfaces. VM now only supports classes. Class methods are processed the same way as structs now, each method has a global id.
     - class to interface now is direct, interface to interface is now done through new `i_has_m` bytecode instruction, which checks if the class has the method.
 
 - 12/08/2024:

@@ -2,10 +2,10 @@
  * Filename: CodeSegment.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models the segment portion of the bytecode
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -13,14 +13,14 @@
 import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { DataWriter } from "./DataWriter";
 
-function assertArgs(args: any[], length: number){
-    if(args.length != length){
+function assertArgs(args: any[], length: number) {
+    if (args.length != length) {
         throw new Error(`Expected ${length} arguments, got ${args.length}`);
     }
 
     // make sure no null/undefined
-    for(let i = 0; i < length; i++) {
-        if(args[i] == null){
+    for (let i = 0; i < length; i++) {
+        if (args[i] == null) {
             throw new Error(`Argument ${i} is null`);
         }
     }
@@ -30,10 +30,10 @@ export class CodeSegment {
     //instructions: PartialInstruction[] = [];
     writer: DataWriter = new DataWriter();
 
-    jsonData: any = []
-    lastInstruction: any = {}
+    jsonData: any = [];
+    lastInstruction: any = {};
 
-    toJSON(){
+    toJSON() {
         return this.jsonData;
     }
 
@@ -42,11 +42,10 @@ export class CodeSegment {
     }
 
     emitCustom(data: number, bytes: number | null) {
-        if(bytes == null){
+        if (bytes == null) {
             return this.writer.push_bytesNeeded(data);
-        }
-        else {
-            switch(bytes){
+        } else {
+            switch (bytes) {
                 case 1:
                     return this.writer.push_8(data);
                 case 2:
@@ -68,14 +67,16 @@ export class CodeSegment {
         this.writer.writePosition = oldPos;
     }
 
-
-    emit(instruction: BytecodeInstructionType, ...args: (number | bigint)[]){
-        let obj: any = {}
-        obj[this.writer.writePosition] = [BytecodeInstructionType[instruction], ...args]
+    emit(instruction: BytecodeInstructionType, ...args: (number | bigint)[]) {
+        let obj: any = {};
+        obj[this.writer.writePosition] = [
+            BytecodeInstructionType[instruction],
+            ...args,
+        ];
         this.jsonData.push(obj);
 
         this.writer.push_8(instruction);
-        switch(instruction){
+        switch (instruction) {
             case BytecodeInstructionType.mv_reg_reg:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
@@ -84,14 +85,14 @@ export class CodeSegment {
             case BytecodeInstructionType.mv_reg_reg_ptr:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
-            
+
             case BytecodeInstructionType.mv_reg_null:
                 return this.writer.push_8(args[0]);
 
             case BytecodeInstructionType.mv_reg_i:
                 this.writer.push_8(args[0]);
                 return this.writer.push_bytesNeeded(args[1]);
-            
+
             case BytecodeInstructionType.mv_reg_i_ptr:
                 this.writer.push_8(args[0]);
                 return this.writer.push_64(args[1]);
@@ -101,12 +102,9 @@ export class CodeSegment {
                 this.writer.push_bytesNeeded(args[1]);
                 return this.writer.push_8(args[2]);
 
-
             case BytecodeInstructionType.mv_reg_const_ptr:
                 this.writer.push_8(args[0]);
                 return this.writer.push_bytesNeeded(args[1]);
-                
-
 
             case BytecodeInstructionType.mv_global_reg:
                 this.writer.push_bytesNeeded(args[0]);
@@ -116,8 +114,6 @@ export class CodeSegment {
             case BytecodeInstructionType.mv_global_reg_ptr:
                 this.writer.push_bytesNeeded(args[0]);
                 return this.writer.push_8(args[1]);
-                
-                
 
             case BytecodeInstructionType.mv_reg_global:
                 this.writer.push_8(args[0]);
@@ -148,54 +144,53 @@ export class CodeSegment {
                 this.writer.push_32(args[2]);
                 return this.writer.push_8(args[3]);
 
-
             case BytecodeInstructionType.s_loadf_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_32(args[2]);
-                
+
             case BytecodeInstructionType.s_storef_const:
                 this.writer.push_8(args[0]);
                 this.writer.push_32(args[1]);
-                this.writer.push_64(args[2]);
+                this.writer.push_32(args[2]);
                 return this.writer.push_8(args[3]);
-                
+
             case BytecodeInstructionType.s_storef_const_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_32(args[1]);
-                return this.writer.push_64(args[2]);
-                
+                return this.writer.push_32(args[2]);
+
             case BytecodeInstructionType.s_storef_reg:
                 this.writer.push_8(args[0]);
                 this.writer.push_32(args[1]);
                 this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
-                
+
             case BytecodeInstructionType.s_storef_reg_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_32(args[1]);
                 return this.writer.push_8(args[2]);
-                
+
             case BytecodeInstructionType.c_alloc:
                 assertArgs(args, 5);
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_8(args[2]);
+                this.writer.push_16(args[2]);
                 this.writer.push_16(args[3]);
-                return this.writer.push_bytesNeeded(args[4]);
-            
+                return this.writer.push_32(args[4]);
+
             case BytecodeInstructionType.c_reg_field:
                 assertArgs(args, 4);
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_16(args[2]);
                 return this.writer.push_8(args[3]);
-                
+
             case BytecodeInstructionType.c_storem:
                 this.writer.push_8(args[0]); // dest reg
                 this.writer.push_8(args[1]); // local method offset
                 this.writer.push_32(args[2]); // global method offset
-                return this.writer.push_64(args[3]);
+                return this.writer.push_32(args[3]);
 
             case BytecodeInstructionType.c_loadm:
                 this.writer.push_8(args[0]);
@@ -205,25 +200,25 @@ export class CodeSegment {
             case BytecodeInstructionType.c_storef_reg:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_8(args[2]);  
+                this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
-                
+
             case BytecodeInstructionType.c_storef_reg_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]);  
+                return this.writer.push_8(args[2]);
 
             case BytecodeInstructionType.c_storef_const:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_64(args[2]);  
+                this.writer.push_32(args[2]);
                 return this.writer.push_8(args[3]);
 
             case BytecodeInstructionType.c_storef_const_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_64(args[2]);
-            
+                return this.writer.push_32(args[2]);
+
             case BytecodeInstructionType.c_loadf:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
@@ -233,32 +228,31 @@ export class CodeSegment {
             case BytecodeInstructionType.c_loadf_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]);            
+                return this.writer.push_8(args[2]);
 
-                
             case BytecodeInstructionType.i_is_c:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_64(args[2]);   
+                return this.writer.push_32(args[2]);
 
             case BytecodeInstructionType.i_has_m:
                 this.writer.push_32(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_64(args[2]); 
+                return this.writer.push_32(args[2]);
 
             case BytecodeInstructionType.a_alloc:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_64(args[2]);
-                return this.writer.push_8(args[3]); 
-                
+                return this.writer.push_8(args[3]);
+
             case BytecodeInstructionType.a_extend:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
-                
+
             case BytecodeInstructionType.a_len:
                 this.writer.push_8(args[0]);
-                return this.writer.push_8(args[1]); 
+                return this.writer.push_8(args[1]);
 
             case BytecodeInstructionType.a_slice:
             case BytecodeInstructionType.a_insert_a:
@@ -266,28 +260,28 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
-                
+
             case BytecodeInstructionType.a_storef_reg:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_8(args[2]); 
+                this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
 
             case BytecodeInstructionType.a_storef_reg_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_8(args[2]); 
+                return this.writer.push_8(args[2]);
 
             case BytecodeInstructionType.a_storef_const:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                this.writer.push_64(args[2]); 
+                this.writer.push_32(args[2]);
                 return this.writer.push_8(args[3]);
 
             case BytecodeInstructionType.a_storef_const_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
-                return this.writer.push_64(args[2]); 
+                return this.writer.push_32(args[2]);
 
             case BytecodeInstructionType.a_loadf:
                 this.writer.push_8(args[0]);
@@ -299,7 +293,7 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
-                
+
             case BytecodeInstructionType.push:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
@@ -314,12 +308,12 @@ export class CodeSegment {
             case BytecodeInstructionType.pop:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
-            
+
             case BytecodeInstructionType.pop_ptr:
                 return this.writer.push_8(args[0]);
-                
+
             case BytecodeInstructionType.fn_alloc:
-                return -1
+                return -1;
 
             case BytecodeInstructionType.fn_set_reg:
                 this.writer.push_8(args[0]);
@@ -334,17 +328,16 @@ export class CodeSegment {
                 return this.writer.push_8(args[0]);
 
             case BytecodeInstructionType.fn_calli:
-                this.writer.push_8(8); // presume 8 bytes
-                return this.writer.push_64(args[0]);
+                return this.writer.push_32(args[0]);
 
             case BytecodeInstructionType.fn_ret:
-                return -1
+                return -1;
 
             case BytecodeInstructionType.fn_get_ret_reg:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
-    
+
             case BytecodeInstructionType.fn_get_ret_reg_ptr:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
@@ -362,7 +355,7 @@ export class CodeSegment {
             case BytecodeInstructionType.cast_i64_f64:
             case BytecodeInstructionType.cast_f64_i64:
                 return this.writer.push_8(args[0]);
-                
+
             case BytecodeInstructionType.upcast_i:
             case BytecodeInstructionType.upcast_u:
             case BytecodeInstructionType.upcast_f:
@@ -372,7 +365,7 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
-            
+
             case BytecodeInstructionType.add_i8:
             case BytecodeInstructionType.add_u8:
             case BytecodeInstructionType.add_i16:
@@ -462,7 +455,6 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
-        
 
             case BytecodeInstructionType.bnot_8:
             case BytecodeInstructionType.bnot_16:
@@ -471,11 +463,10 @@ export class CodeSegment {
             case BytecodeInstructionType.not:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
-                
+
             case BytecodeInstructionType.j:
                 this.writer.push_8(8); // presume 8 bytes
-                return this.writer.push_64(args[0]);
-                
+                return this.writer.push_32(args[0]);
 
             case BytecodeInstructionType.j_cmp_i8:
             case BytecodeInstructionType.j_cmp_u8:
@@ -492,8 +483,7 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
-                return this.writer.push_64(args[3]);
-
+                return this.writer.push_32(args[3]);
 
             case BytecodeInstructionType.reg_ffi:
                 this.writer.push_bytesNeeded(args[0]);
@@ -506,17 +496,16 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_16(args[1]);
                 return this.writer.push_8(args[2]);
-            
+
             case BytecodeInstructionType.call_ffi:
                 return this.writer.push_8(args[0]);
 
             case BytecodeInstructionType.close_ffi:
                 return this.writer.push_16(args[0]);
-            
-            
+
             case BytecodeInstructionType.debug_reg:
                 return this.writer.push_8(args[0]);
-            
+
             case BytecodeInstructionType.halt:
                 return this.writer.push_8(args[0]);
 
@@ -529,7 +518,7 @@ export class CodeSegment {
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
-                return this.writer.push_64(args[3]);
+                return this.writer.push_32(args[3]);
 
             case BytecodeInstructionType.closure_push_env:
                 this.writer.push_8(args[0]); // dest
@@ -542,36 +531,37 @@ export class CodeSegment {
 
             case BytecodeInstructionType.closure_call:
                 return this.writer.push_8(args[0]);
-            
+
             case BytecodeInstructionType.closure_backup:
                 return this.writer.push_8(args[0]);
-            
+
             case BytecodeInstructionType.coroutine_alloc:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
-            
+
             case BytecodeInstructionType.coroutine_fn_alloc:
                 return this.writer.push_8(args[0]);
-            
+
             case BytecodeInstructionType.coroutine_get_state:
                 this.writer.push_8(args[0]);
                 return this.writer.push_8(args[1]);
-            
+
             case BytecodeInstructionType.coroutine_call:
                 return this.writer.push_8(args[0]);
-            
+
             case BytecodeInstructionType.coroutine_yield:
                 return -1;
-            
+
             case BytecodeInstructionType.coroutine_ret:
                 return -1;
-            
+
             case BytecodeInstructionType.throw_rt:
                 return this.writer.push_8(args[0]);
 
-                
             default:
-                throw new Error(`Unsupported instruction: ${BytecodeInstructionType[instruction]}`);
+                throw new Error(
+                    `Unsupported instruction: ${BytecodeInstructionType[instruction]}`,
+                );
         }
     }
 }

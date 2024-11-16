@@ -2,10 +2,10 @@
  * Filename: DataWriter.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Writes bytecode instructions to a buffer
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -22,7 +22,9 @@ export class DataWriter {
     ensureCapacity(additionalSize: number) {
         const availableSpace = this.buffer.length - this.writePosition;
         if (availableSpace < additionalSize) {
-            const newSize = this.buffer.length + Math.max(additionalSize, this.buffer.length);
+            const newSize =
+                this.buffer.length +
+                Math.max(additionalSize, this.buffer.length);
             const newBuffer = Buffer.alloc(newSize);
             this.buffer.copy(newBuffer);
             this.buffer = newBuffer;
@@ -58,9 +60,8 @@ export class DataWriter {
         }
         this.writePosition += 4;
 
-        return this.writePosition
+        return this.writePosition - 4;
     }
-
 
     push_64(value: number | bigint, littleEndian: boolean = true) {
         let v = BigInt(value);
@@ -110,7 +111,12 @@ export class DataWriter {
         return 8; // Needs 8 bytes
     }
 
-    overwriteAt(index: number, value: number, byteSize: number, littleEndian: boolean = true) {
+    overwriteAt(
+        index: number,
+        value: number,
+        byteSize: number,
+        littleEndian: boolean = true,
+    ) {
         let v = BigInt(value);
         if (index < 0 || index >= this.buffer.length) {
             throw new Error("Index out of bounds");
@@ -147,5 +153,23 @@ export class DataWriter {
 
     getBuffer(): Buffer {
         return this.buffer.slice(0, this.writePosition);
+    }
+
+    // make sure we stay aligned to 8 bytes for faster access
+    // used by template segment
+    alignTo8() {
+        // Calculate how many bytes are needed to align to 8 bytes
+        const misalignment = this.writePosition % 8;
+        if (misalignment !== 0) {
+            const paddingSize = 8 - misalignment;
+
+            // Ensure enough capacity for the padding
+            this.ensureCapacity(paddingSize);
+
+            // Add padding bytes (usually zero)
+            for (let i = 0; i < paddingSize; i++) {
+                this.push_8(0);
+            }
+        }
     }
 }

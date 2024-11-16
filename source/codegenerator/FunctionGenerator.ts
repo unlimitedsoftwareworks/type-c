@@ -241,8 +241,8 @@ export class FunctionGenerator {
 
     // generates an IR instruction
     i(type: IRInstructionType, ...args: (string | number)[]) {
-        if ((type == "ret_ptr") && (args[0] == "")) {
-            console.log(this.fn.name)
+        if (type == "ret_ptr" && args[0] == "") {
+            console.log(this.fn.name);
         }
         if (type == null) {
             throw new Error("IR instruction type is null");
@@ -344,8 +344,10 @@ export class FunctionGenerator {
                 if (
                     this.fn.codeGenProps.parentFnType &&
                     this.fn.codeGenProps.parentFnType.returnType &&
-                    this.fn.codeGenProps.parentFnType.returnType.kind != "void" &&
-                    this.fn.codeGenProps.parentFnType.returnType.kind != "unset" &&
+                    this.fn.codeGenProps.parentFnType.returnType.kind !=
+                        "void" &&
+                    this.fn.codeGenProps.parentFnType.returnType.kind !=
+                        "unset" &&
                     !this.fn.isCoroutineCallable
                 ) {
                     let instr = retType(
@@ -473,13 +475,9 @@ export class FunctionGenerator {
                 inferredType instanceof NullableType ||
                 hintType instanceof NullableType;
 
-
             this.i(
                 "debug",
-                "casting from " +
-                inferredType?.kind +
-                " to " +
-                hintType?.kind,
+                "casting from " + inferredType?.kind + " to " + hintType?.kind,
             );
             tmp = this.visitCastExpression(
                 new CastExpression(
@@ -565,7 +563,7 @@ export class FunctionGenerator {
         if (!expr.operatorOverloadState.isMethodCall) {
             throw new Error(
                 "Invalid index access expression, expected array or callable got " +
-                expr.inferredType?.toString(),
+                    expr.inferredType?.toString(),
             );
         }
 
@@ -753,14 +751,32 @@ export class FunctionGenerator {
         let castType = expr.type.dereference();
 
         if (actualType instanceof ClassType) {
-            return this.ir_generate_class_instance_check(expr, ctx, reg, actualType, castType);
+            return this.ir_generate_class_instance_check(
+                expr,
+                ctx,
+                reg,
+                actualType,
+                castType,
+            );
         }
 
         if (actualType.is(ctx, InterfaceType)) {
-            return this.ir_generate_interface_instance_check(expr, ctx, reg, actualType, castType);
+            return this.ir_generate_interface_instance_check(
+                expr,
+                ctx,
+                reg,
+                actualType,
+                castType,
+            );
         }
         if (actualType instanceof VariantType) {
-            return this.ir_generate_variant_instance_check(expr, ctx, reg, actualType, castType);
+            return this.ir_generate_variant_instance_check(
+                expr,
+                ctx,
+                reg,
+                actualType,
+                castType,
+            );
         }
 
         throw new Error(
@@ -782,7 +798,13 @@ export class FunctionGenerator {
             if (sym instanceof DeclaredType) {
                 // case 1: Enum
                 if (sym.type instanceof EnumType) {
-                    return this.ir_generate_enum_access(expr, ctx, elementName, sym, sym.type);
+                    return this.ir_generate_enum_access(
+                        expr,
+                        ctx,
+                        elementName,
+                        sym,
+                        sym.type,
+                    );
                 }
 
                 // case 2: Variant
@@ -811,8 +833,8 @@ export class FunctionGenerator {
             }
         }
 
-        if(baseType instanceof CoroutineType) {
-            if(rhs.name === "state") {
+        if (baseType instanceof CoroutineType) {
+            if (rhs.name === "state") {
                 let tmp = this.generateTmp();
                 this.i("coroutine_get_state", tmp, lhsReg);
                 this.destroyTmp(lhsReg);
@@ -888,7 +910,6 @@ export class FunctionGenerator {
 
         if (expr.operator == "=") {
             return this.ir_generate_assignment(expr, ctx);
-
         } else if (["+=", "-=", "*=", "/=", "%="].includes(expr.operator)) {
             // generate the instruction
             let newInstruction = this.buildOpAssignBinaryExpr(
@@ -910,9 +931,9 @@ export class FunctionGenerator {
         ) {
             throw ctx.parser.customError(
                 "Binary operation " +
-                expr.operator +
-                " is not yet implemented for " +
-                expr.inferredType?.shortname(),
+                    expr.operator +
+                    " is not yet implemented for " +
+                    expr.inferredType?.shortname(),
                 expr.location,
             );
         }
@@ -947,11 +968,13 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_comparison(expr: BinaryExpression, ctx: Context, left: string, right: string) {
-        this.i(
-            "debug",
-            "generating comparaison expression " + expr.operator,
-        );
+    ir_generate_comparison(
+        expr: BinaryExpression,
+        ctx: Context,
+        left: string,
+        right: string,
+    ) {
+        this.i("debug", "generating comparaison expression " + expr.operator);
         // result will be either 0 or 1
         let tmp = this.generateTmp();
         // first we cmp
@@ -972,9 +995,9 @@ export class FunctionGenerator {
             if (expr.operator != "==" && expr.operator != "!=") {
                 throw ctx.parser.customError(
                     "Cannot compare " +
-                    expr.left.inferredType?.kind +
-                    " with " +
-                    expr.right.inferredType?.kind,
+                        expr.left.inferredType?.kind +
+                        " with " +
+                        expr.right.inferredType?.kind,
                     expr.location,
                 );
             }
@@ -1063,7 +1086,11 @@ export class FunctionGenerator {
             return right;
         }
         if (isFunctionArgument(expr.left, ctx)) {
-            return this.ir_generate_function_argument_assignment(expr, ctx, right);
+            return this.ir_generate_function_argument_assignment(
+                expr,
+                ctx,
+                right,
+            );
         }
         if (expr.left instanceof MemberAccessExpression) {
             // check if it is struct
@@ -1073,30 +1100,46 @@ export class FunctionGenerator {
             let baseType = left.left.inferredType?.dereference();
 
             if (baseType instanceof StructType) {
-                return this.ir_generate_struct_field_assignment(expr, ctx, left, right, baseType, element);
+                return this.ir_generate_struct_field_assignment(
+                    expr,
+                    ctx,
+                    left,
+                    right,
+                    baseType,
+                    element,
+                );
             } else if (baseType instanceof ClassType) {
-                return this.ir_generate_class_field_assignment(expr, ctx, left, right, baseType, element);
+                return this.ir_generate_class_field_assignment(
+                    expr,
+                    ctx,
+                    left,
+                    right,
+                    baseType,
+                    element,
+                );
             }
         }
         {
             this.i("debug", "assignment of " + expr.left.kind);
             throw new Error(
-                "Assignment to " +
-                expr.left.kind +
-                " is not yet implemented",
+                "Assignment to " + expr.left.kind + " is not yet implemented",
             );
         }
     }
 
-    ir_generate_class_field_assignment(expr: BinaryExpression, ctx: Context, left: MemberAccessExpression, right: string, baseType: ClassType, element: ElementExpression) {
+    ir_generate_class_field_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        left: MemberAccessExpression,
+        right: string,
+        baseType: ClassType,
+        element: ElementExpression,
+    ) {
         let classType = baseType as ClassType;
         // we will assign the value to the class's field
         this.i("debug", "class field assignment, class expression");
         let classExpr = this.visitExpression(left.left, ctx);
-        this.i(
-            "debug",
-            "class field assignment, class member " + element.name,
-        );
+        this.i("debug", "class field assignment, class member " + element.name);
         let attr = classType.getAttribute(element.name);
 
         if (attr == null) {
@@ -1107,9 +1150,7 @@ export class FunctionGenerator {
         }
 
         let fieldType = attr.type;
-        let fieldIndex = classType.getAttributeIndex(
-            element.name,
-        )!;
+        let fieldIndex = classType.getAttributeIndex(element.name)!;
 
         let instr = classSetFieldType(fieldType);
         this.i(instr, classExpr, fieldIndex, right);
@@ -1118,23 +1159,24 @@ export class FunctionGenerator {
         return right;
     }
 
-    ir_generate_struct_field_assignment(expr: BinaryExpression, ctx: Context, left: MemberAccessExpression, right: string, baseType: StructType, element: ElementExpression) {
+    ir_generate_struct_field_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        left: MemberAccessExpression,
+        right: string,
+        baseType: StructType,
+        element: ElementExpression,
+    ) {
         let structType = baseType as StructType;
         // we will assign the value to the struct's field
-        this.i(
-            "debug",
-            "struct field assignment, struct expression",
-        );
+        this.i("debug", "struct field assignment, struct expression");
         let structExpr = this.visitExpression(left.left, ctx);
         this.i(
             "debug",
-            "struct field assignment, struct member " +
-            element.name,
+            "struct field assignment, struct member " + element.name,
         );
 
-        let fieldType = structType.getFieldTypeByName(
-            element.name,
-        )!;
+        let fieldType = structType.getFieldTypeByName(element.name)!;
         let field = structType.getField(element.name);
 
         let instr = structSetFieldType(fieldType);
@@ -1144,7 +1186,11 @@ export class FunctionGenerator {
         return right;
     }
 
-    ir_generate_function_argument_assignment(expr: BinaryExpression, ctx: Context, right: string) {
+    ir_generate_function_argument_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        right: string,
+    ) {
         // arguments needs to be handled differently
         // arg_u32 x tmp_0 needs to be become:
         // 1. tmp_u32 tmp_1, x
@@ -1162,10 +1208,12 @@ export class FunctionGenerator {
         return right;
     }
 
-    ir_generate_upvalue_assignment(expr: BinaryExpression, ctx: Context, right: string) {
-        let sym = ctx.lookupScope(
-            (expr.left as ElementExpression).name,
-        );
+    ir_generate_upvalue_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        right: string,
+    ) {
+        let sym = ctx.lookupScope((expr.left as ElementExpression).name);
         this.i("debug", "upvalue variable assignment, treated as arg");
         let inst = tmpType(expr.left.inferredType!);
         let tmp = this.generateTmp();
@@ -1174,11 +1222,13 @@ export class FunctionGenerator {
         return right;
     }
 
-    ir_generate_local_variable_assignment(expr: BinaryExpression, ctx: Context, right: string) {
+    ir_generate_local_variable_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        right: string,
+    ) {
         this.i("debug", "local variable assignment");
-        let sym = ctx.lookupScope(
-            (expr.left as ElementExpression).name,
-        );
+        let sym = ctx.lookupScope((expr.left as ElementExpression).name);
         // local variable
         if (this.isGlobal) {
             let inst = globalType(expr.left.inferredType!);
@@ -1248,19 +1298,48 @@ export class FunctionGenerator {
 
                 if (attr != null) {
                     this.i("debug", `class attribute call ${accessElement}`);
-                    return this.ir_generate_class_attribute_call(expr, ctx, baseExpression, baseType, accessElement);
+                    return this.ir_generate_class_attribute_call(
+                        expr,
+                        ctx,
+                        baseExpression,
+                        baseType,
+                        accessElement,
+                    );
                 } else {
-                    return this.ir_generate_class_method_call(expr, ctx, baseExpression, accessElement, lhsType);
+                    return this.ir_generate_class_method_call(
+                        expr,
+                        ctx,
+                        baseExpression,
+                        accessElement,
+                        lhsType,
+                    );
                 }
             } else if (baseType?.is(ctx, InterfaceType)) {
                 let accessElement = (expr.lhs.right as ElementExpression).name;
-                return this.ir_generate_interface_method_call(expr, ctx, baseExpression, baseType.to(ctx, InterfaceType) as InterfaceType, accessElement);
+                return this.ir_generate_interface_method_call(
+                    expr,
+                    ctx,
+                    baseExpression,
+                    baseType.to(ctx, InterfaceType) as InterfaceType,
+                    accessElement,
+                );
             } else if (baseType instanceof ArrayType) {
-                return this.ir_generate_array_method_call(expr, ctx, baseExpression, baseType);
+                return this.ir_generate_array_method_call(
+                    expr,
+                    ctx,
+                    baseExpression,
+                    baseType,
+                );
             } else if (baseType instanceof MetaType) {
                 if (baseType instanceof MetaClassType) {
                     // Class static method call
-                    return this.ir_generate_class_static_method_call(expr, ctx, baseExpression, baseType.classType as ClassType, lhsType);
+                    return this.ir_generate_class_static_method_call(
+                        expr,
+                        ctx,
+                        baseExpression,
+                        baseType.classType as ClassType,
+                        lhsType,
+                    );
                 }
             }
         }
@@ -1288,7 +1367,11 @@ export class FunctionGenerator {
             lhsType instanceof MetaType &&
             lhsType instanceof MetaVariantConstructorType
         ) {
-            return this.ir_generate_variant_constructor_call(expr, ctx, lhsType);
+            return this.ir_generate_variant_constructor_call(
+                expr,
+                ctx,
+                lhsType,
+            );
         } else if (lhsType instanceof FFIMethodType) {
             return this.ir_generate_ffi_method_call(expr, ctx, lhsType);
         } else {
@@ -1299,7 +1382,10 @@ export class FunctionGenerator {
         throw ctx.parser.customError("Invalid expression", expr.location);
     }
 
-    ir_generate_anonymous_function_call(expr: FunctionCallExpression, ctx: Context): string {
+    ir_generate_anonymous_function_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+    ): string {
         let fnReg = this.visitExpression(expr.lhs, ctx);
         // an indirect call such as f()() or x[0](1)
         let instructions: IRInstructionType[] = [];
@@ -1318,8 +1404,7 @@ export class FunctionGenerator {
         const isCoroutine = expr._isCoroutineCall;
         if (isCoroutine) {
             this.i("coroutine_fn_alloc", fnReg);
-        }
-        else {
+        } else {
             this.i("fn_alloc");
         }
 
@@ -1351,12 +1436,16 @@ export class FunctionGenerator {
                 this.destroyTmp(fnReg);
                 return "";
             }
-        }
-        else {
+        } else {
             if (hasReturn) {
                 let tmp = this.generateTmp();
                 this.i("closure_call", fnReg);
-                this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
+                this.i(
+                    getFnReturnType(expr.inferredType!),
+                    tmp,
+                    255,
+                    getDataTypeByteSize(expr.inferredType!),
+                );
                 this.destroyTmp(fnReg);
                 return tmp;
             } else {
@@ -1366,7 +1455,11 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_ffi_method_call(expr: FunctionCallExpression, ctx: Context, lhsType: FFIMethodType): string {
+    ir_generate_ffi_method_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        lhsType: FFIMethodType,
+    ): string {
         let baseFFI = lhsType.parentFFI!;
         let ffi_id = baseFFI.ffiId;
         let method_id = baseFFI.getMethodIndex(lhsType.imethod.name);
@@ -1412,7 +1505,11 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_variant_constructor_call(expr: FunctionCallExpression, ctx: Context, lhsType: MetaVariantConstructorType): string {
+    ir_generate_variant_constructor_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        lhsType: MetaVariantConstructorType,
+    ): string {
         // variant constructor
         // first we need to get the variant type
         let variantType = expr.inferredType?.to(
@@ -1437,7 +1534,7 @@ export class FunctionGenerator {
         this.i(
             "s_alloc",
             variantReg,
-            parameters.length+1,
+            parameters.length + 1,
             variantType.getStructSize(),
         );
         this.i("s_reg_field", variantReg, 0, 0, 0, 0); // TAG
@@ -1452,8 +1549,8 @@ export class FunctionGenerator {
                 variantReg,
                 i + 1,
                 param.getFieldID(),
-                variantType.getParameterOffset(i+1),
-                isPointer(param.type)?1:0,
+                variantType.getParameterOffset(i + 1),
+                isPointer(param.type) ? 1 : 0,
             );
         }
 
@@ -1474,12 +1571,18 @@ export class FunctionGenerator {
 
         return variantReg;
     }
-    ir_generate_class_static_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ClassType, lhsType: FunctionType): string {
+    ir_generate_class_static_method_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        baseExpression: MemberAccessExpression,
+        baseType: ClassType,
+        lhsType: FunctionType,
+    ): string {
         let method = expr._calledClassMethod;
         if (method == null) {
             throw ctx.parser.customError(
                 "Unknown method " +
-                (baseExpression.right as ElementExpression).name,
+                    (baseExpression.right as ElementExpression).name,
                 lhsType.location,
             );
         }
@@ -1516,7 +1619,12 @@ export class FunctionGenerator {
         if (hasReturn) {
             let tmp = this.generateTmp();
             this.i("call", method.context.uuid);
-            this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
+            this.i(
+                getFnReturnType(expr.inferredType!),
+                tmp,
+                255,
+                getDataTypeByteSize(expr.inferredType!),
+            );
             return tmp;
         } else {
             this.i("call", method.context.uuid);
@@ -1524,29 +1632,26 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_array_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ArrayType): string {
+    ir_generate_array_method_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        baseExpression: MemberAccessExpression,
+        baseType: ArrayType,
+    ): string {
         if (!(expr.lhs instanceof MemberAccessExpression)) {
             throw ctx.parser.customError("Invalid expression", expr.location);
         }
         // check if array extend method
         if ((expr.lhs.right as ElementExpression).name == "extend") {
-            let arrayReg = this.visitExpression(
-                baseExpression.left,
-                ctx,
-            );
+            let arrayReg = this.visitExpression(baseExpression.left, ctx);
             let new_size = this.visitExpression(expr.args[0], ctx);
             this.i("a_extend", arrayReg, new_size);
             this.destroyTmp(arrayReg);
             this.destroyTmp(new_size);
 
             return "";
-        } else if (
-            (expr.lhs.right as ElementExpression).name == "slice"
-        ) {
-            let arrayReg = this.visitExpression(
-                baseExpression.left,
-                ctx,
-            );
+        } else if ((expr.lhs.right as ElementExpression).name == "slice") {
+            let arrayReg = this.visitExpression(baseExpression.left, ctx);
             let start = this.visitExpression(expr.args[0], ctx);
             let end = this.visitExpression(expr.args[1], ctx);
             let tmp = this.generateTmp();
@@ -1560,41 +1665,35 @@ export class FunctionGenerator {
         throw ctx.parser.customError("Invalid expression", expr.location);
     }
 
-    ir_generate_interface_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: InterfaceType, accessElement: string) {
+    ir_generate_interface_method_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        baseExpression: MemberAccessExpression,
+        baseType: InterfaceType,
+        accessElement: string,
+    ) {
         // interface, must be a method
         this.i("debug", "interface method call");
-        let interfaceType = baseType.to(
-            ctx,
-            InterfaceType,
-        ) as InterfaceType;
+        let interfaceType = baseType.to(ctx, InterfaceType) as InterfaceType;
 
         if (expr._calledInterfaceMethod == null) {
             throw new Error("Method not found in cache");
         }
 
         let method = expr._calledInterfaceMethod;
-        let methodIndex =
-            expr._calledInterfaceMethod!._indexInInterface;
+        let methodIndex = expr._calledInterfaceMethod!._indexInInterface;
 
         let isStatic = method?.isStatic;
 
         this.i("debug", "interface expression");
         // now we need to get the interface pointer
-        let interfacePointer = this.visitExpression(
-            baseExpression.left,
-            ctx,
-        );
+        let interfacePointer = this.visitExpression(baseExpression.left, ctx);
 
         this.i("debug", "method address of " + method.name);
         // now we need to get the method
         let methodReg = this.generateTmp();
 
-        this.i(
-            "c_load_m",
-            methodReg,
-            interfacePointer,
-            method.getUID(),
-        );
+        this.i("c_load_m", methodReg, interfacePointer, method.getUID());
 
         this.i("debug", "set up args");
 
@@ -1646,7 +1745,13 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_class_method_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, accessElement: string, lhsType: FunctionType): string {
+    ir_generate_class_method_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        baseExpression: MemberAccessExpression,
+        accessElement: string,
+        lhsType: FunctionType,
+    ): string {
         // gotta be a method
         // check if it is static or not
 
@@ -1654,15 +1759,10 @@ export class FunctionGenerator {
             throw ctx.parser.customError("Invalid expression", expr.location);
         }
 
-
-        let typeArgs = (expr.lhs.right as ElementExpression)
-            .typeArguments;
+        let typeArgs = (expr.lhs.right as ElementExpression).typeArguments;
         let methodIndex = 0;
 
-        let class_pointer_reg = this.visitExpression(
-            baseExpression.left,
-            ctx,
-        );
+        let class_pointer_reg = this.visitExpression(baseExpression.left, ctx);
 
         // now generate the instruction to get the method
         let methodReg = this.generateTmp();
@@ -1686,12 +1786,7 @@ export class FunctionGenerator {
         }
 
         this.i("debug", `class method call ${method.name}`);
-        this.i(
-            "c_load_m",
-            methodReg,
-            class_pointer_reg,
-            method.getUID(),
-        );
+        this.i("c_load_m", methodReg, class_pointer_reg, method.getUID());
 
         let instructions: IRInstructionType[] = [];
         let regs: string[] = [];
@@ -1715,11 +1810,7 @@ export class FunctionGenerator {
         this.destroyTmp(class_pointer_reg);
 
         for (let i = 0; i < instructions.length; i++) {
-            this.i(
-                instructions[i],
-                i + (isStatic ? 0 : 1),
-                regs[i],
-            );
+            this.i(instructions[i], i + (isStatic ? 0 : 1), regs[i]);
             this.destroyTmp(regs[i]);
         }
 
@@ -1743,7 +1834,13 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_class_attribute_call(expr: FunctionCallExpression, ctx: Context, baseExpression: MemberAccessExpression, baseType: ClassType, accessElement: string): string {
+    ir_generate_class_attribute_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        baseExpression: MemberAccessExpression,
+        baseType: ClassType,
+        accessElement: string,
+    ): string {
         // it is an attribute, we get the proceed normally
         let reg = this.visitExpression(expr.lhs, ctx);
 
@@ -1762,8 +1859,7 @@ export class FunctionGenerator {
         const isCoroutine = expr._isCoroutineCall;
         if (isCoroutine) {
             this.i("coroutine_fn_alloc", reg);
-        }
-        else {
+        } else {
             this.i("fn_alloc");
         }
 
@@ -1791,12 +1887,16 @@ export class FunctionGenerator {
                 this.destroyTmp(reg);
                 return "";
             }
-        }
-        else {
+        } else {
             if (hasReturn) {
                 let tmp = this.generateTmp();
                 this.i("closure_call", reg);
-                this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
+                this.i(
+                    getFnReturnType(expr.inferredType!),
+                    tmp,
+                    255,
+                    getDataTypeByteSize(expr.inferredType!),
+                );
                 this.destroyTmp(reg);
                 return tmp;
             } else {
@@ -1807,7 +1907,11 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_direct_function_call(expr: FunctionCallExpression, ctx: Context, lhsType: FunctionType): string {
+    ir_generate_direct_function_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        lhsType: FunctionType,
+    ): string {
         if (!(expr.lhs instanceof ElementExpression)) {
             throw ctx.parser.customError("Invalid expression", expr.location);
         }
@@ -1862,7 +1966,12 @@ export class FunctionGenerator {
                 if (hasReturn) {
                     let tmp = this.generateTmp();
                     this.i("closure_call", cl_reg);
-                    this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
+                    this.i(
+                        getFnReturnType(expr.inferredType!),
+                        tmp,
+                        255,
+                        getDataTypeByteSize(expr.inferredType!),
+                    );
                     this.destroyTmp(cl_reg);
                     return tmp;
                 } else {
@@ -1875,7 +1984,12 @@ export class FunctionGenerator {
                 if (hasReturn) {
                     let tmp = this.generateTmp();
                     this.i("call", jumpId);
-                    this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
+                    this.i(
+                        getFnReturnType(expr.inferredType!),
+                        tmp,
+                        255,
+                        getDataTypeByteSize(expr.inferredType!),
+                    );
                     return tmp;
                 } else {
                     this.i("call", jumpId);
@@ -1890,7 +2004,12 @@ export class FunctionGenerator {
             if (hasReturn) {
                 let tmp = this.generateTmp();
                 this.i("closure_call", reg);
-                this.i(getFnReturnType(expr.inferredType!), tmp, 255, getDataTypeByteSize(expr.inferredType!));
+                this.i(
+                    getFnReturnType(expr.inferredType!),
+                    tmp,
+                    255,
+                    getDataTypeByteSize(expr.inferredType!),
+                );
                 this.destroyTmp(reg);
                 return tmp;
             } else {
@@ -1923,10 +2042,10 @@ export class FunctionGenerator {
         let structType =
             expr.hintType != null
                 ? getLargestStruct(
-                    ctx,
-                    expr.hintType!.to(ctx, StructType) as StructType,
-                    expr.inferredType!.to(ctx, StructType) as StructType,
-                )
+                      ctx,
+                      expr.hintType!.to(ctx, StructType) as StructType,
+                      expr.inferredType!.to(ctx, StructType) as StructType,
+                  )
                 : (expr.inferredType!.to(ctx, StructType) as StructType);
 
         this.i("debug", "named struct construction expression ");
@@ -2338,7 +2457,7 @@ export class FunctionGenerator {
         this.i(
             "debug",
             "let-in expression: " +
-            expr.variables.map((v) => v.name).join(", "),
+                expr.variables.map((v) => v.name).join(", "),
         );
         // generate the variables
         var processed: DeclaredVariable[] = [];
@@ -2407,13 +2526,6 @@ export class FunctionGenerator {
             let classMethods = [...classType.getAllMethods()];
             let num_methods = classMethods.length;
 
-            let ptr_mask = 0;
-            for (let i = 0; i < num_attrs; i++) {
-                if (isPointer(classType.attributes[i].type)) {
-                    ptr_mask |= 1 << i;
-                }
-            }
-
             this.i(
                 "debug",
                 `class allocation\nnum methods: ${num_methods} \ndata size: ${size_attrs}`,
@@ -2422,15 +2534,21 @@ export class FunctionGenerator {
             this.i(
                 "c_alloc",
                 tmp,
-                num_methods,
                 num_attrs,
+                num_methods,
                 size_attrs,
                 classType.getClassID(),
             );
 
             let offsetCounter = 0;
             for (const [i, field] of classType.attributes.entries()) {
-                this.i("c_reg_field", tmp, i, classType.getAttributeOffset(i), isPointer(field.type)?1:0);
+                this.i(
+                    "c_reg_field",
+                    tmp,
+                    i,
+                    classType.getAttributeOffset(i),
+                    isPointer(field.type) ? 1 : 0,
+                );
             }
 
             // initialize the methods
@@ -2502,7 +2620,7 @@ export class FunctionGenerator {
         } else {
             throw new Error(
                 "Invalid new expression, expected class got " +
-                baseType?.toString(),
+                    baseType?.toString(),
             );
         }
     }
@@ -2655,7 +2773,7 @@ export class FunctionGenerator {
         if (!(expr.inferredType! instanceof ArrayType)) {
             throw new Error(
                 "Invalid array construction expression, expected array got " +
-                expr.inferredType?.toString(),
+                    expr.inferredType?.toString(),
             );
         }
 
@@ -2675,7 +2793,7 @@ export class FunctionGenerator {
         // Initially, we don't know the final array size due to destructured elements, so start with a basic allocation
         let arraySize = regularElts.length;
         let isPtr = isPointer(elementType);
-        this.i("a_alloc", arrayReg, isPtr?1:0, arraySize, elementSize);
+        this.i("a_alloc", arrayReg, isPtr ? 1 : 0, arraySize, elementSize);
 
         // Copy regular elements into the array
         for (let i = 0; i < arraySize; i++) {
@@ -2813,7 +2931,10 @@ export class FunctionGenerator {
         return tmp;
     }
 
-    visitCoroutineConstructionExpression(expr: CoroutineConstructionExpression, ctx: Context): string {
+    visitCoroutineConstructionExpression(
+        expr: CoroutineConstructionExpression,
+        ctx: Context,
+    ): string {
         let tmp = this.generateTmp();
         let fnReg = this.visitExpression(expr.baseFn, ctx);
         this.i("coroutine_alloc", tmp, fnReg);
@@ -2826,8 +2947,7 @@ export class FunctionGenerator {
         // yield either returns a tuple or a value
         if (expr.isFinal) {
             this.i("coroutine_ret");
-        }
-        else {
+        } else {
             this.i("coroutine_yield");
         }
 
@@ -2862,8 +2982,7 @@ export class FunctionGenerator {
             this.visitForStatement(stmt, ctx);
         else if (stmt instanceof FunctionDeclarationStatement)
             this.visitFunctionDeclarationStatement(stmt, ctx);
-        else if (stmt instanceof IfStatement)
-            this.visitIfStatement(stmt, ctx);
+        else if (stmt instanceof IfStatement) this.visitIfStatement(stmt, ctx);
         else if (stmt instanceof MatchStatement)
             this.visitMatchStatement(stmt, ctx);
         else if (stmt instanceof ReturnStatement)
@@ -3154,14 +3273,19 @@ export class FunctionGenerator {
         if (this.doExpressionLabelStack.length > 0) {
             jmpLabel =
                 this.doExpressionLabelStack[
-                this.doExpressionLabelStack.length - 1
+                    this.doExpressionLabelStack.length - 1
                 ];
             resTmp =
                 this.doExpressionTmpStack[this.doExpressionTmpStack.length - 1];
         }
 
         if (stmt.returnExpression) {
-            this.ir_generate_return(stmt.returnExpression, ctx, jmpLabel, resTmp);
+            this.ir_generate_return(
+                stmt.returnExpression,
+                ctx,
+                jmpLabel,
+                resTmp,
+            );
         } else {
             this.i("debug", "return statement void");
             if (jmpLabel) {
@@ -3215,7 +3339,7 @@ export class FunctionGenerator {
             let assign = new BinaryExpression(decl.location, left, right, "=");
             // we need to set ignoreConst to true, because we the variable might be const,
             // and we are changing the structure of the assignment
-            assign.infer(ctx, decl.annotation, {ignoreConst: true});
+            assign.infer(ctx, decl.annotation, { ignoreConst: true });
             let tmp = this.visitExpression(assign, ctx);
             this.destroyTmp(tmp);
         }
@@ -3405,7 +3529,14 @@ export class FunctionGenerator {
         let offsetCounter = 0;
         this.i("debug", "anonymous struct field offset");
         for (const [i, field] of st.fields.entries()) {
-            this.i("s_reg_field", tmp, i, field.getFieldID(), st.getFieldOffset(i), isPointer(field.type)?1:0);
+            this.i(
+                "s_reg_field",
+                tmp,
+                i,
+                field.getFieldID(),
+                st.getFieldOffset(i),
+                isPointer(field.type) ? 1 : 0,
+            );
             offsetCounter += getDataTypeByteSize(field.type);
         }
 
@@ -3462,8 +3593,7 @@ export class FunctionGenerator {
 
             if (sym.uid == "$this") {
                 this.i(instruction, tmpReg, "arg", sym.uid);
-            }
-            else {
+            } else {
                 let symScope = ctx.lookupScope(sym.name)!;
                 if (symScope.scope == "global") {
                     throw "Unreachable";
@@ -3512,7 +3642,6 @@ export class FunctionGenerator {
     }
 
     ir_generate_tuple_assignment(ctx: Context, expr: BinaryExpression) {
-
         let tuples = expr.left as TupleConstructionExpression;
         let assignment = expr.right;
 
@@ -3522,10 +3651,7 @@ export class FunctionGenerator {
         // first generate the expression
 
         this.i("debug", "tuple assignment deconstruction group");
-        let fnReg = this.visitExpression(
-            assignment,
-            ctx,
-        );
+        let fnReg = this.visitExpression(assignment, ctx);
 
         this.destroyTmp(fnReg);
 
@@ -3539,12 +3665,16 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_return(returnExpression: Expression, ctx: Context, jmpLabel: string | null, resTmp: string | null, isCoroutine: boolean = false) {
+    ir_generate_return(
+        returnExpression: Expression,
+        ctx: Context,
+        jmpLabel: string | null,
+        resTmp: string | null,
+        isCoroutine: boolean = false,
+    ) {
         if (returnExpression instanceof TupleConstructionExpression) {
             this.ir_generate_tuple_return(ctx, returnExpression);
-        } else if (
-            returnExpression.inferredType instanceof TupleType
-        ) {
+        } else if (returnExpression.inferredType instanceof TupleType) {
             // we have a function call that returns a tuple
             let tmp = this.visitExpression(returnExpression, ctx);
             this.destroyTmp(tmp);
@@ -3590,7 +3720,7 @@ export class FunctionGenerator {
         if (expr.indexes.length != 1) {
             throw new Error(
                 "Invalid index access expression, expected 1 index got " +
-                expr.indexes.length,
+                    expr.indexes.length,
             );
         }
 
@@ -3598,7 +3728,7 @@ export class FunctionGenerator {
         if (!expr.indexes[0].inferredType!.is(ctx, BasicType)) {
             throw new Error(
                 "Invalid index access expression, expected integer index got " +
-                expr.indexes[0].inferredType?.toString(),
+                    expr.indexes[0].inferredType?.toString(),
             );
         } else {
             let indexType = expr.indexes[0].inferredType!.to(
@@ -3613,7 +3743,7 @@ export class FunctionGenerator {
             ) {
                 throw new Error(
                     "Invalid index access expression, expected unsigned integer index got " +
-                    expr.indexes[0].inferredType?.toString(),
+                        expr.indexes[0].inferredType?.toString(),
                 );
             }
         }
@@ -3633,7 +3763,11 @@ export class FunctionGenerator {
         return tmp;
     }
 
-    ir_generate_array_set(expr: IndexSetExpression, ctx: Context, mainExprType: ArrayType): string {
+    ir_generate_array_set(
+        expr: IndexSetExpression,
+        ctx: Context,
+        mainExprType: ArrayType,
+    ): string {
         this.i("debug", "array index set");
         this.i("debug", "array expression");
         let array_reg = this.visitExpression(expr.lhs, ctx);
@@ -3650,8 +3784,13 @@ export class FunctionGenerator {
         return value_reg;
     }
 
-
-    ir_generate_variant_instance_check(expr: InstanceCheckExpression, ctx: Context, reg: string, actualType: VariantType, castType: DataType): string {
+    ir_generate_variant_instance_check(
+        expr: InstanceCheckExpression,
+        ctx: Context,
+        reg: string,
+        actualType: VariantType,
+        castType: DataType,
+    ): string {
         // variants are structs with a tag under the hood.
         if (castType instanceof VariantType) {
             throw new Error(
@@ -3667,10 +3806,7 @@ export class FunctionGenerator {
             }
 
             let id_reg = this.generateTmp();
-            this.i(
-                "debug",
-                `Variant -> VariantConstructor "${name}" Check`,
-            );
+            this.i("debug", `Variant -> VariantConstructor "${name}" Check`);
             // offset 0 is the tag
             this.i("s_get_field_u16", id_reg, reg, 0);
             //this.i("debug_reg", id_reg)
@@ -3702,7 +3838,13 @@ export class FunctionGenerator {
         throw new Error("Unknown instance check type");
     }
 
-    ir_generate_interface_instance_check(expr: InstanceCheckExpression, ctx: Context, reg: string, actualType: DataType, castType: DataType): string {
+    ir_generate_interface_instance_check(
+        expr: InstanceCheckExpression,
+        ctx: Context,
+        reg: string,
+        actualType: DataType,
+        castType: DataType,
+    ): string {
         var actualTypeInterface = actualType.to(
             ctx,
             InterfaceType,
@@ -3764,7 +3906,13 @@ export class FunctionGenerator {
         }
     }
 
-    ir_generate_class_instance_check(expr: InstanceCheckExpression, ctx: Context, reg: string, actualType: DataType, castType: DataType): string {
+    ir_generate_class_instance_check(
+        expr: InstanceCheckExpression,
+        ctx: Context,
+        reg: string,
+        actualType: DataType,
+        castType: DataType,
+    ): string {
         // castType has to be an interface
         // WRONG: ~if this test has passed, it means that the class implements the interface~
         // or is compatible with the interface
@@ -3772,9 +3920,7 @@ export class FunctionGenerator {
         //// this can be generated by pattern matching too, making the last point in valid
         // hence we need to check
         if (!castType.is(ctx, InterfaceType)) {
-            throw new Error(
-                "Expected interface type, got " + castType.kind,
-            );
+            throw new Error("Expected interface type, got " + castType.kind);
         }
 
         // simply return the result
@@ -3788,7 +3934,13 @@ export class FunctionGenerator {
         return tmp;
     }
 
-    ir_generate_enum_access(expr: MemberAccessExpression, ctx: Context, elementName: string, sym: DeclaredType, type: EnumType): string {
+    ir_generate_enum_access(
+        expr: MemberAccessExpression,
+        ctx: Context,
+        elementName: string,
+        sym: DeclaredType,
+        type: EnumType,
+    ): string {
         // make sure expr.rhs is an element expression
         if (!(expr.right instanceof ElementExpression)) {
             throw ctx.parser.customError(
@@ -3809,9 +3961,7 @@ export class FunctionGenerator {
             throw new Error("Enum type is unresolved");
         }
 
-        let inst = constType(
-            new BasicType(sym.location, type.as),
-        );
+        let inst = constType(new BasicType(sym.location, type.as));
         this.i(inst, tmp, value);
 
         return tmp;
@@ -3820,21 +3970,15 @@ export class FunctionGenerator {
     ir_generate_end_ret() {
         if (this.fn.isCoroutineCallable) {
             this.i("throw_rt", 1);
-        }
-        else {
+        } else {
             this.i("ret_void");
         }
     }
 }
 
-
 function check_hasReturn(inferredType: DataType | null) {
-    if (
-        inferredType instanceof VoidType ||
-        inferredType instanceof TupleType
-    ) {
+    if (inferredType instanceof VoidType || inferredType instanceof TupleType) {
         return false;
     }
     return true;
 }
-

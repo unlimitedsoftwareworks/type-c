@@ -81,6 +81,14 @@ export enum BytecodeInstructionType{
      */
     s_alloc,
 
+
+    /**
+     * s_alloc_t dest: R, template_offset: I (8 bytes)
+     * Creates new struct from a template, stored at template_offset
+     */
+    s_alloc_t,
+
+
     /**
      * s_reg_field: dest: R,  local_field_index: I(1byte), globalFieldID: I (4 bytes), field offset: I (2 bytes)
      * Registers a new field in the struct stored in dest, with the given global field ID
@@ -118,6 +126,12 @@ export enum BytecodeInstructionType{
      * size of (arg2 and arg3), stores the address of the new class into dest.
      */
     c_alloc,
+
+    /**
+     * c_alloc_t dest: R, template_offset: I (8 bytes)
+     * Creates new class from a template, stored at template_offset
+     */
+    c_alloc_t,
 
     /**
      * c_reg_field dest: r, field_index: i, field offset: i (2 bytes)
