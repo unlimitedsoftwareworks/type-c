@@ -1,11 +1,13 @@
 {
-    "name": "type-c-typescript",
+    "name": "@unlimitedsoftwareworks/type-c",
     "version": "1.0.0",
     "description": "Type-C Programming Language Compiler",
-    "main": "index.js",
+    "main": "dist/compiler.js",
+    "types": "dist/compiler.d.ts",
     "scripts": {
-        "start": "node --loader ts-node/esm index.ts",
-        "build": "rimraf ./build && tsc"
+        "start": "node --loader ts-node/esm src/index.ts",
+        "build": "rimraf ./dist && tsc --outDir dist",
+        "prepare": "npm run build"
     },
     "keywords": [
         "compiler",
@@ -16,12 +18,20 @@
     "devDependencies": {
         "@types/node": "^20.10.7",
         "ts-node": "^10.9.2",
-        "typescript": "^5.2.2"
+        "typescript": "^5.2.2",
+        "rimraf": "^5.0.5"
     },
     "dependencies": {
-        "fs": "^0.0.1-security",
         "js-xxhash": "^3.0.1",
-        "rimraf": "^5.0.5",
         "ts-graphviz": "^1.8.1"
+    },
+    "bin": {
+        "type-c": "./dist/index.js"
+    },
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">=14.0.0"
     }
 }

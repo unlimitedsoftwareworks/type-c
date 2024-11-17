@@ -1,6 +1,7 @@
+#!/usr/bin/env node
 
-import { exit } from 'process';
-import { TypeC } from './compiler';
+import { exit } from "process";
+import { TypeC } from "./compiler";
 
 const args = process.argv.slice(2); // Remove the first two elements
 
@@ -8,35 +9,49 @@ const compilerVersion = "0.0.1";
 
 interface RunTestsOptions {
     // Add specific options for the run-tests command here
-    
 }
 
 function parseCompileOptions(args: string[]): TypeC.CompileOptions {
+    const compileIndex = args.findIndex(
+        (arg) => arg === "--compile" || arg === "-c",
+    );
+    const dir =
+        compileIndex !== -1 && args[compileIndex + 1]
+            ? args[compileIndex + 1]
+            : "";
 
-    const compileIndex = args.findIndex(arg => arg === '--compile' || arg === '-c');
-    const dir = compileIndex !== -1 && args[compileIndex + 1] ? args[compileIndex + 1] : '';
+    const generateBinaries = !args.includes("--no-generate-binaries");
 
-    const generateBinaries = !args.includes('--no-generate-binaries');
+    const outputIndex = args.findIndex(
+        (arg) => arg === "--output" || arg === "-o",
+    );
+    const outputFolder =
+        outputIndex !== -1 && args[outputIndex + 1]
+            ? args[outputIndex + 1]
+            : "default_output_folder";
 
-    const outputIndex = args.findIndex(arg => arg === '--output' || arg === '-o');
-    const outputFolder = outputIndex !== -1 && args[outputIndex + 1] ? args[outputIndex + 1] : 'default_output_folder';
+    const runOutput = args.includes("--run") || args.includes("-r");
 
-    const runOutput = args.includes('--run') || args.includes('-r');
+    const generateIR = args.includes("--generate-ir") || args.includes("-g");
 
-    const generateIR = args.includes('--generate-ir') || args.includes('-g');
+    const noWarnings = args.includes("--no-warnings") || args.includes("-nw");
 
-    const noWarnings = args.includes('--no-warnings') || args.includes('-nw');
-
-    return { dir, generateBinaries, outputFolder, runOutput, generateIR, noWarnings };
+    return {
+        dir,
+        generateBinaries,
+        outputFolder,
+        runOutput,
+        generateIR,
+        noWarnings,
+    };
 }
-
 
 function parseRunTestsOptions(args: string[]): RunTestsOptions {
     // Parse options specific to the run-tests command
     return {};
 }
 
-function printHelp(){
+function printHelp() {
     console.log(`
 
     ████▓▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▓▓▓█████
@@ -65,9 +80,9 @@ function printHelp(){
     ███████████████▓░      ░▒███████████▓▒▒░▒▒▒▒▒▒░▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒░▒▒▒▒▒░▒▒▒▒▒▒▒▒░▒▒▒▒░▒▒▒▒▒▒▒▓██▒█
     ██████▓▒▒░░░░░░▒▓██████████▓▓▒▒▒ ▒▒▒▒▒▒░▒▒▒▒▒▒░▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒░▒▒▒▒▒░▒▒▒▒▒▒▒▓░▒▒▒▒░▒▒▒▒▒▒▒▓██▒█
     ████▓▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▓▓▓█████
-    
 
-    
+
+
 Type-c compiler, version ${compilerVersion}.
 Usage: type-c <command> [options]
         --run-tests             Run all unit test
@@ -77,21 +92,18 @@ Usage: type-c <command> [options]
         --run                   Run the generated output
         --generate-ir           Generate IR and DOT files
         --no-warnings           Do not show warnings
-    `)
+    `);
 }
 
 // Main logic to determine which command to run
-if(args.includes('--help') || args.includes('-h')) {
+if (args.includes("--help") || args.includes("-h")) {
     printHelp();
-}
-else if (args.includes('--run-tests')) {
+} else if (args.includes("--run-tests")) {
     // const options = parseRunTestsOptions(args);
     //let code = TypeC.runTests();
     //exit(code)
     throw new Error("Not implemented yet");
-
-    
-} else if (args.includes('--compile') || args.includes('-c')) {
+} else if (args.includes("--compile") || args.includes("-c")) {
     const options = parseCompileOptions(args);
     TypeC.compile(options);
 } else {

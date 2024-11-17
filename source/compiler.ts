@@ -1,25 +1,23 @@
-import * as fs from 'fs';
-import { Lexer } from './lexer/Lexer';
-import { promisify } from 'util';
+import * as fs from "fs";
+import { Lexer } from "./lexer/Lexer";
+import { promisify } from "util";
 
-import * as path from 'path';
-import { BasePackage } from './ast/BasePackage';
-import { Parser } from './parser/Parser';
-import { ImportNode } from './ast/ImportNode';
-import { BuiltinModules } from './BuiltinModules';
-import { generateCode } from './codegenerator/CodeGenerator';
-import { spawnSync } from 'child_process';
-import { colors } from './utils/termcolors';
+import * as path from "path";
+import { BasePackage } from "./ast/BasePackage";
+import { Parser } from "./parser/Parser";
+import { ImportNode } from "./ast/ImportNode";
+import { BuiltinModules } from "./BuiltinModules";
+import { generateCode } from "./codegenerator/CodeGenerator";
+import { spawnSync } from "child_process";
+import { colors } from "./utils/termcolors";
 
 export function readFile(filename: string): string {
-    return fs.readFileSync(filename, 'utf-8');
+    return fs.readFileSync(filename, "utf-8");
 }
 
 function normalizePath(filePath: string): string {
     return path.resolve(filePath).toLowerCase();
 }
-
-
 
 export module TypeC {
     export interface CompileOptions {
@@ -35,9 +33,16 @@ export module TypeC {
         target: "runnable" | "library" = "runnable";
         entry: string = "index.tc";
         dir: string = "";
-        static stdlibDir: string = "../stdlib/";
+        static stdlibDir: string = process.env.TYPE_C_STDLIB ?? "../stdlib/";
         rawConfig: any = {};
-        options: CompileOptions = { dir: "", generateBinaries: true, outputFolder: "bin", runOutput: true, generateIR: false, noWarnings: false }
+        options: CompileOptions = {
+            dir: "",
+            generateBinaries: true,
+            outputFolder: "bin",
+            runOutput: true,
+            generateIR: false,
+            noWarnings: false,
+        };
         basePackage: BasePackage | null = null;
 
         // map from url to package source
@@ -79,10 +84,14 @@ export module TypeC {
             let entrySource = this.readPackage(entry);
             let lexer = new Lexer(entry, entrySource);
             lexer.filepath = entry;
-            let parser = new Parser(lexer, entry, "compiler", !this.options.noWarnings);
-            this.basePackage = parser.basePackage
+            let parser = new Parser(
+                lexer,
+                entry,
+                "compiler",
+                !this.options.noWarnings,
+            );
+            this.basePackage = parser.basePackage;
             parser.parse();
-
 
             let entryKey = normalizePath(entry);
             this.packageBaseContextMap.set(entryKey, this.basePackage);
@@ -90,21 +99,27 @@ export module TypeC {
             //et sym = BuiltinModules.getStringClass(this);
             //BuiltinModules.getRunnableInterface(this);
             //BuiltinModules.getArrayInterface(this);
-            
+
             // add built-in symbols
 
             let importString = BuiltinModules.getStringClass(this);
             this.basePackage.imports.push(BuiltinModules.stringImport);
 
-            for(let imp of this.basePackage.imports) {
+            for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
-                if(!base) {
-                    throw parser.customError(`Could not resolve import ${imp.basePath.join("/")}`, imp.location);
+                if (!base) {
+                    throw parser.customError(
+                        `Could not resolve import ${imp.basePath.join("/")}`,
+                        imp.location,
+                    );
                 }
 
                 let sym = base.ctx.lookup(imp.actualName);
-                if(!sym) {
-                    throw parser.customError(`Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`, imp.location);
+                if (!sym) {
+                    throw parser.customError(
+                        `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
+                        imp.location,
+                    );
                 }
 
                 this.basePackage.ctx.addExternalSymbol(sym, imp.alias);
@@ -115,20 +130,20 @@ export module TypeC {
 
         resolveImport(imp: ImportNode) {
             let filepath = this.dir;
-            for(let base of imp.basePath) {
-                filepath = path.join(filepath, base)
+            for (let base of imp.basePath) {
+                filepath = path.join(filepath, base);
             }
             filepath += ".tc";
 
             // first we check if the file exists relative to the current folder
             // otherwise we check if it exists in the stdlib
 
-            if(!fs.existsSync(filepath)) {
+            if (!fs.existsSync(filepath)) {
                 filepath = TCCompiler.stdlibDir;
-                for(let base of imp.basePath) {
-                    filepath = path.join(filepath, base)
+                for (let base of imp.basePath) {
+                    filepath = path.join(filepath, base);
                 }
-                filepath += ".tc"
+                filepath += ".tc";
 
                 if (!fs.existsSync(filepath)) {
                     throw new Error(`Could not find module '${filepath}'`);
@@ -136,7 +151,7 @@ export module TypeC {
             }
 
             let key = normalizePath(filepath);
-            if(this.packageBaseContextMap.has(key)) {
+            if (this.packageBaseContextMap.has(key)) {
                 return this.packageBaseContextMap.get(key)!;
             }
 
@@ -151,15 +166,21 @@ export module TypeC {
             this.packageBaseContextMap.set(key, basePackage);
 
             // resolve imports
-            for(let imp of basePackage.imports) {
+            for (let imp of basePackage.imports) {
                 let base = this.resolveImport(imp);
-                if(!base) {
-                    throw parser.customError(`Could not resolve import ${imp.basePath.join("/")}`, imp.location);
+                if (!base) {
+                    throw parser.customError(
+                        `Could not resolve import ${imp.basePath.join("/")}`,
+                        imp.location,
+                    );
                 }
 
                 let sym = base.ctx.lookup(imp.actualName);
-                if(!sym) {
-                    throw parser.customError(`Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`, imp.location);
+                if (!sym) {
+                    throw parser.customError(
+                        `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
+                        imp.location,
+                    );
                 }
 
                 basePackage.ctx.addExternalSymbol(sym, imp.alias);
@@ -175,22 +196,38 @@ export module TypeC {
     }
 
     export const compile = (options: CompileOptions) => {
+        // make sure all env variables are set
+        if (process.env.TYPE_C_STDLIB == undefined) {
+            throw new Error(
+                "type-c requires TYPE_C_STDLIB environment variable to be set, please set it to the path of the stdlib folder",
+            );
+        }
+
+        if (options.runOutput) {
+            if (process.env.TYPE_V_PATH == undefined) {
+                throw new Error(
+                    "--run argument requires TYPE_V_PATH environment variable to be set, please set it to the path of the type_v binary",
+                );
+            }
+        }
+
         let compiler = TCCompiler.create(options);
         compiler.compile();
 
         if (options.generateBinaries) {
             let [binFile, srcMapFile] = compiler.generateBytecode();
             if (options.runOutput) {
-                let interpreterPath = "/Users/praisethemoon/projects/type-c/type-v/cmake-build-debug/";
+                let interpreterPath = process.env.TYPE_V_PATH!;
+
                 const command = `cd ${interpreterPath} && ./type_v ${binFile} ${srcMapFile}`;
-                
+
                 const result = spawnSync(command, { shell: true });
 
-                if(result.stdout){
+                if (result.stdout) {
                     console.log(colors.BgBlue, "stdout: ", colors.Reset);
                     console.log(result.stdout.toString());
                 }
-                if(result.stderr){
+                if (result.stderr) {
                     console.log(colors.BgRed, "stderr: ", colors.Reset);
                     console.log(result.stderr.toString());
                 }
@@ -198,5 +235,5 @@ export module TypeC {
             }
         }
         process.exit(0);
-    }
+    };
 }
