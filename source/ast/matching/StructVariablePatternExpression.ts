@@ -10,7 +10,6 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import exp from "constants";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
