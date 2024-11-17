@@ -35,6 +35,7 @@ import { InterfaceMethod } from "../other/InterfaceMethod";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { UnaryExpression } from "./UnaryExpression";
 import { NullableType } from "../types/NullableType";
+import { MutateExpression } from "./MutateExpression";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -62,11 +63,11 @@ export class FunctionCallExpression extends Expression {
 
     checkMutability(ctx: Context, header: FunctionType) {
         // we make sure that no constant expression is passed to a mut argument
-        for(let i = 0; i < this.args.length; i++) {
-            if(header.parameters[i].isMutable) {
+        for (let i = 0; i < this.args.length; i++) {
+            if (header.parameters[i].isMutable) {
                 // we also make  sure that we respect the constraints of the parameter, i.e mutability
                 if (!checkExpressionArgConst(this.args[i], this.args[i].inferredType!, header.parameters[i], header)) {
-                    throw ctx.parser.customError(`Argument ${this.args[i].isConstant?"const":""} ${i} is not assignable to parameter ${header.parameters[i].isMutable ? "mut " : ""}${header.parameters[i].name}, mutability missmatch`, this.args[i].location);
+                    throw ctx.parser.customError(`Argument ${this.args[i].isConstant ? "const" : ""} ${i} is not assignable to parameter ${header.parameters[i].isMutable ? "mut " : ""}${header.parameters[i].name}, mutability missmatch`, this.args[i].location);
                 }
             }
         }
@@ -90,9 +91,23 @@ export class FunctionCallExpression extends Expression {
 
         let left = this.lhs;
 
-        if(left instanceof UnaryExpression) {
-            if(left.operator === "!!") {
+        if (left instanceof MutateExpression) {
+            left = left.expression;
+
+            if (left instanceof UnaryExpression) {
+                if (left.operator === "!!") {
+                    left = left.expression;
+                }
+            }
+        }
+
+        if (left instanceof UnaryExpression) {
+            if (left.operator === "!!") {
                 left = left.expression;
+
+                if (left instanceof MutateExpression) {
+                    left = left.expression;
+                }
             }
         }
 
@@ -119,16 +134,16 @@ export class FunctionCallExpression extends Expression {
             }
         }
 
-        if((left instanceof ElementExpression) && (left.typeArguments.length === 0) && (left.isGenericFunction(ctx))) {
+        if ((left instanceof ElementExpression) && (left.typeArguments.length === 0) && (left.isGenericFunction(ctx))) {
             left.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null));
         }
 
-        if(left instanceof ElementExpression) {
+        if (left instanceof ElementExpression) {
             left.numParams = this.args.length;
         }
 
         let lhsType = this.lhs.infer(ctx, null);
-        if(lhsType.is(ctx, NullableType)) {
+        if (lhsType.is(ctx, NullableType)) {
             throw ctx.parser.customError("Cannot call a possibly null value", this.location);
         }
 
@@ -286,7 +301,7 @@ export class FunctionCallExpression extends Expression {
 
         let lhsT = lhsType as FunctionType;
 
-        if(lhsT.isCoroutine) {
+        if (lhsT.isCoroutine) {
             throw ctx.parser.customError(`Cannot call coroutine directly`, this.location);
         }
 
@@ -389,7 +404,7 @@ export class FunctionCallExpression extends Expression {
 
             // save the reference to the source method to be used in the code generator
             this._calledClassMethod = method._sourceMethod;
-            
+
             // manually set the inferred type of the lhs, since 
             // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
             // this is because we do not allow class methods to be used except in a function call context
@@ -459,7 +474,7 @@ export class FunctionCallExpression extends Expression {
         let coroutineType = lhsType.to(ctx, CoroutineType) as CoroutineType;
 
         // make sure we have all required arguments
-        if(this.args.length !== coroutineType.fnType.parameters.length) {
+        if (this.args.length !== coroutineType.fnType.parameters.length) {
             throw ctx.parser.customError(`Expected ${coroutineType.fnType.parameters.length} arguments, got ${this.args.length}`, this.location);
         }
 

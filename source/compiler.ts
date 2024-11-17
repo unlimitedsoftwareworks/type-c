@@ -93,9 +93,8 @@ export module TypeC {
             
             // add built-in symbols
 
-            
-            //let importString = BuiltinModules.getStringClass(this);
-            //this.basePackage.imports.push(BuiltinModules.stringImport);
+            let importString = BuiltinModules.getStringClass(this);
+            this.basePackage.imports.push(BuiltinModules.stringImport);
 
             for(let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);

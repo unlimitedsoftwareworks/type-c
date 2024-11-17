@@ -65,6 +65,7 @@ export class Lexer {
         [TokenType.TOK_WHILE, /^while\b/],
         [TokenType.TOK_YIELD_FINAL, /^yield!/],
         [TokenType.TOK_YIELD, /^yield\b/],
+        [TokenType.TOK_UNREACHABLE, /^unreachable\b/],
 
         // Special types
         [TokenType.TOK_I8, /^i8\b/],

@@ -216,7 +216,7 @@ class GlobalSegment {
         }
         this.variables.set(variable.uid, this.byteSize);
         if (variable instanceof DeclaredVariable) {
-            this.byteSize += getDataTypeByteSize(variable.annotation!);
+            this.byteSize += 8 ; //getDataTypeByteSize(variable.annotation!);
         }
         else {
             if (attributeSize == undefined) {
@@ -339,6 +339,7 @@ export class BytecodeGenerator {
 
     resolveLabel(label: string, offset: number) {
         let res = this.resolvedOffsets.get(label);
+        this.templateSegment.resolveForLabel(label, offset);
         if (res != undefined) {
             throw "Label " + label + " already resolved";
         }
@@ -359,6 +360,24 @@ export class BytecodeGenerator {
 
             // resolve for template
             this.templateSegment.resolveForLabel(label, value);
+        }
+
+
+        /**
+         * Because template segment and function generator are not in sync, template might reference a class method that is not yet resolved
+         * We resolve it here, at the end of bytecode generation
+         */
+        if(!this.templateSegment.checkAllResolved()) {
+            // get what it is missing from unresolvedOffsets
+            for(const [lbl, offsets] of Object.entries(this.templateSegment.unresolvedLabels)) {
+                if(this.unresolvedOffsets.has(lbl)) {
+                    throw "Label " + lbl + " not resolved";
+                }
+                else {
+                    // resolve it
+                    this.templateSegment.resolveForLabel(lbl, this.resolvedOffsets.get(lbl)!);
+                }
+            }
         }
     }
 

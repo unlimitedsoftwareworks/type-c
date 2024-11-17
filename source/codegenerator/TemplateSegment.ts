@@ -38,6 +38,10 @@ export class TemplateSegment {
         }
     }
 
+    checkAllResolved() {
+        return Object.keys(this.unresolvedLabels).length == 0;
+    }
+
     emitCustom(data: number, bytes: number | null) {
         switch (bytes) {
             case 1:
@@ -145,7 +149,7 @@ export class TemplateSegment {
             let method = classMethods[i];
             this.writer.push_32(method.imethod.getUID());
             let lbl = this.writer.push_32(0); // will be resolved later
-            this.addLabel(method.imethod.getUID().toString(), lbl);
+            this.addLabel(method.context.uuid, lbl);
         }
 
         this.registredOffsets[id] = classWritePos;

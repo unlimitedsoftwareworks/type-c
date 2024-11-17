@@ -95,6 +95,7 @@ import { ArrayDeconstructionExpression } from "../ast/expressions/ArrayDeconstru
 import { StructDeconstructionExpression } from "../ast/expressions/StructDeconstructionExpression";
 import { YieldExpression } from "../ast/expressions/YieldExpression";
 import { MutateExpression } from "../ast/expressions/MutateExpression";
+import { UnreachableExpression } from "../ast/expressions/UnreachableExpression";
 
 
 
@@ -1451,6 +1452,10 @@ function parseExpressionUnary(parser: Parser, ctx: Context): Expression {
         parser.accept();
         let expression = parseExpression(parser, ctx);
         return new MutateExpression(loc, expression);
+    }
+    else if (lexeme.type === "unreachable") {
+        parser.accept();
+        return new UnreachableExpression(loc);
     }
     else {
         parser.reject();

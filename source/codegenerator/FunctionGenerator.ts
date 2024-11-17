@@ -140,6 +140,7 @@ import { YieldExpression } from "../ast/expressions/YieldExpression";
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { MutateExpression } from "../ast/expressions/MutateExpression";
 import { TemplateSegment } from "./TemplateSegment";
+import { UnreachableExpression } from "../ast/expressions/UnreachableExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -460,6 +461,8 @@ export class FunctionGenerator {
             tmp = this.visitYieldExpression(expr, ctx);
         else if (expr instanceof MutateExpression)
             tmp = this.visitMutateExpression(expr, ctx);
+        else if (expr instanceof UnreachableExpression)
+            tmp = this.visitUnreachableExpression(expr, ctx);
         else throw new Error("Invalid expression " + expr.toString());
 
         if (tmp != "") {
@@ -2534,28 +2537,8 @@ export class FunctionGenerator {
                 `class allocation\nnum methods: ${num_methods} \ndata size: ${size_attrs}`,
             );
 
-            this.i("c_alloc_t", tmp, this.templateSegment.registerClass(ctx, classType));
-
-            // initialize the methods
-            // sort class methods by UID
-            classMethods.sort(
-                (a, b) => a.imethod.getUID() - b.imethod.getUID(),
-            );
-
-            for (let i = 0; i < classMethods.length; i++) {
-                let method = classMethods[i];
-                this.i(
-                    "debug",
-                    `setting class method ${i}:${method.imethod.name}`,
-                );
-                this.i(
-                    "c_store_m",
-                    tmp,
-                    i,
-                    method.imethod.getUID(),
-                    method.context.uuid,
-                );
-            }
+            const templateIdx = this.templateSegment.registerClass(ctx, classType);
+            this.i("c_alloc_t", tmp, templateIdx);
 
             // last call the constructor
             let constructor = expr._calledInitMethod;
@@ -2943,6 +2926,14 @@ export class FunctionGenerator {
     visitMutateExpression(expr: MutateExpression, ctx: Context): string {
         let resTmp = this.visitExpression(expr.expression, ctx);
         return resTmp;
+    }
+
+    visitUnreachableExpression(expr: UnreachableExpression, ctx: Context): string {
+        this.i("debug", "unreachable expression");
+        this.i("throw_rt", 0);
+        let tmp = this.generateTmp();
+        this.i("const_u8", tmp, 0);
+        return tmp;
     }
 
     /**

@@ -28,6 +28,7 @@ import { TupleDeconstructionExpression } from "./TupleDeconstructionExpression";
 import { TupleConstructionExpression } from "./TupleConstructionExpression";
 import { VoidType } from "../types/VoidType";
 import { EnumType } from "../types/EnumType";
+import { CoroutineType } from "../types/CoroutineType";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -266,6 +267,9 @@ export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
             let mem = lhs as MemberAccessExpression;
             if(mem.left.inferredType!.is(ctx, ArrayType)){
                 return Err("Cannot assign to static array fields or methods");
+            }
+            if(mem.left.inferredType!.is(ctx, CoroutineType)){
+                return Err("Cannot assign to coroutine fields");
             }
 
             return isLHSAssignable(ctx, (lhs as MemberAccessExpression).left);

@@ -69,7 +69,8 @@ export type ExpressionKind =
     "coroutine_construction" | // coroutine  ...
     "do_expression" | // do { ... }
     "yield"  | // yield x
-    "mutate" // mutate x
+    "mutate" | // mutate x
+    "unreachable" // unreachable
 ;
 
 export class Expression {
