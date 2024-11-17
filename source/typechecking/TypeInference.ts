@@ -23,6 +23,7 @@ import { FunctionType } from "../ast/types/FunctionType";
 import { GenericType } from "../ast/types/GenericType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { StructField, StructType } from "../ast/types/StructType";
+import { UnreachableType } from "../ast/types/UnreachableType";
 import { UnsetType } from "../ast/types/UnsetType";
 import { VariantConstructorType } from "../ast/types/VariantConstructorType";
 import { VoidType } from "../ast/types/VoidType";
@@ -302,7 +303,8 @@ export function inferFunctionYieldFromHeader(
     }
 }
 
-export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | null {
+export function findCompatibleTypes(ctx: Context, types: DataType[]): DataType | null {
+    let t = types.filter(t => !(t instanceof UnreachableType));
 
     function findCommonSupertypeOrCompatibleType(ctx: Context, t1: DataType, t2: DataType): DataType | null {
         // case 1: two variant constructors, make sure they have the same parent and return the parent
@@ -411,6 +413,9 @@ export function findCompatibleTypes(ctx: Context, t: DataType[]): DataType | nul
         return null;
     }
 
+    if((t.length === 0) && (types.length > 0)){
+        throw ctx.parser.customError("All types are unreachable", ctx.location);
+    }
 
     // Check for base cases
     if (t.length === 0) {

@@ -1,5 +1,5 @@
 /**
- * Filename: Expression.ts
+ * Filename: UnreachableExpression.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
  * 
@@ -13,6 +13,7 @@
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
+import { UnreachableType } from "../types/UnreachableType";
 import { Expression } from "./Expression";
 
 
@@ -22,11 +23,8 @@ export class UnreachableExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
-        if(!hint){
-            throw new Error("Unreachable expression must have a hint");
-        }
-        this.inferredType = hint;
-        return hint;
+        this.inferredType = new UnreachableType(this.location);
+        return this.inferredType;
     }
 
 

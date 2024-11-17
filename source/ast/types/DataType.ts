@@ -44,6 +44,7 @@ export type DataTypeKind =
     "bool" | // BoolType
     "null" |  // NullType
     "void" | // VoidType
+    "unreachable" | // UnreachableType
     "nullable" | // NullableType
     "ffi_method" | // FFI Method
     "ffi_namespace_type" |

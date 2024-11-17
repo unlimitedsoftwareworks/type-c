@@ -38,6 +38,7 @@ import { VoidType } from "../ast/types/VoidType";
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { getDataTypeByteSize } from "../codegenerator/utils";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
+import { UnreachableType } from "../ast/types/UnreachableType";
 
 
 export type TypeMatchResult = {
@@ -127,6 +128,12 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
 
     let res = Ok();
+
+    if(t1 instanceof UnreachableType || t2 instanceof UnreachableType){
+        scopeCache.set(typeKey, res);
+        return res;
+    }
+
 
     // Nullable pushed on the top because Nullable<Class>.is(ClassType) == true
     // so we first check if t1 is nullable
