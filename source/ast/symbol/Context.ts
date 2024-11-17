@@ -60,6 +60,11 @@ export class Context {
     private parent: Context | null = null;
 
     /**
+     * Children of this Context, this is used when the compiler is used in IDE mode
+     */
+    private _children: Context[] = [];
+
+    /**
      * The owner of this symbol table,
      * used to find the function or class that this symbol table belongs to, etc
      */
@@ -144,6 +149,12 @@ export class Context {
             env.withinDoExpression || this.env.withinDoExpression;
 
         //Context._contextMap.set(this.uuid, this);
+
+        if (parser.mode == "intellisense") {
+            if (parent) {
+                parent._children.push(this);
+            }
+        }
     }
 
     setOwner(owner: ContextOwner) {
@@ -512,5 +523,16 @@ export class Context {
                 }
             }
         }
+    }
+
+    /**
+     * Intellisense API
+     */
+    getSymbols(): Symbol[] {
+        return Array.from(this.symbols.values());
+    }
+
+    getChildContexts(): Context[] {
+        return this._children;
     }
 }
