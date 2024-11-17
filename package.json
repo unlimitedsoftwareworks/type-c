@@ -1,6 +1,6 @@
 {
     "name": "@unlimitedsoftwareworks/type-c",
-    "version": "1.0.0",
+    "version": "1.0.2-dev",
     "description": "Type-C Programming Language Compiler",
     "main": "dist/compiler.js",
     "types": "dist/compiler.d.ts",
@@ -17,16 +17,16 @@
     "license": "Apache-2.0",
     "devDependencies": {
         "@types/node": "^20.10.7",
+        "rimraf": "^5.0.5",
         "ts-node": "^10.9.2",
-        "typescript": "^5.2.2",
-        "rimraf": "^5.0.5"
+        "typescript": "^5.2.2"
     },
     "dependencies": {
         "js-xxhash": "^3.0.1",
         "ts-graphviz": "^1.8.1"
     },
     "bin": {
-        "type-c": "./dist/index.js"
+        "typec": "./dist/index.js"
     },
     "files": [
         "dist"
