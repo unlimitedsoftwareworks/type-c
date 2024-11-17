@@ -381,8 +381,12 @@ export class BytecodeGenerator {
         }
     }
 
-    emitCallMain(main_id: string, mainReturnSize: number) {
+    emitCallMain(main_id: string, mainReturnSize: number, mainRequireArgs: boolean) {
         this.emit(BytecodeInstructionType.fn_alloc);
+        // the argument is saved into R0 within the VM, so we set it R0 of the main function. i.e state->next->regs[0]
+        if (mainRequireArgs) {
+            this.emit(BytecodeInstructionType.fn_set_reg_ptr, 0, 0);
+        }
         let lbl = this.emit(BytecodeInstructionType.fn_calli, 0);
         this.addUnresolvedOffset(main_id, lbl);
 
