@@ -139,6 +139,7 @@ import { FunctionCodegenProps } from "./FunctionCodegenProps";
 import { YieldExpression } from "../ast/expressions/YieldExpression";
 import { CoroutineType } from "../ast/types/CoroutineType";
 import { MutateExpression } from "../ast/expressions/MutateExpression";
+import { TemplateSegment } from "./TemplateSegment";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -204,6 +205,7 @@ export function isUpvalueVariable(expr: Expression, ctx: Context) {
 }
 
 export class FunctionGenerator {
+    templateSegment: TemplateSegment;
     // IR instructions
     instructions: IRInstruction[] = [];
 
@@ -225,8 +227,9 @@ export class FunctionGenerator {
     doExpressionLabelStack: string[] = [];
     doExpressionTmpStack: string[] = [];
 
-    constructor(fn: FunctionGenType, isGlobal: boolean = false) {
+    constructor(fn: FunctionGenType, templateSegment: TemplateSegment, isGlobal: boolean = false) {
         this.fn = fn;
+        this.templateSegment = templateSegment;
         this.isGlobal = isGlobal;
     }
 
@@ -2531,25 +2534,7 @@ export class FunctionGenerator {
                 `class allocation\nnum methods: ${num_methods} \ndata size: ${size_attrs}`,
             );
 
-            this.i(
-                "c_alloc",
-                tmp,
-                num_attrs,
-                num_methods,
-                size_attrs,
-                classType.getClassID(),
-            );
-
-            let offsetCounter = 0;
-            for (const [i, field] of classType.attributes.entries()) {
-                this.i(
-                    "c_reg_field",
-                    tmp,
-                    i,
-                    classType.getAttributeOffset(i),
-                    isPointer(field.type) ? 1 : 0,
-                );
-            }
+            this.i("c_alloc_t", tmp, this.templateSegment.registerClass(ctx, classType));
 
             // initialize the methods
             // sort class methods by UID
@@ -3522,23 +3507,9 @@ export class FunctionGenerator {
         let st = structType.toSortedStruct();
         let tmp: string = reg ?? this.generateTmp();
 
-        let structSize = st.getStructSize(ctx);
-        this.i("debug", "anonymous struct construction expression ");
-        this.i("s_alloc", tmp, st.fields.length, structSize);
-
-        let offsetCounter = 0;
-        this.i("debug", "anonymous struct field offset");
-        for (const [i, field] of st.fields.entries()) {
-            this.i(
-                "s_reg_field",
-                tmp,
-                i,
-                field.getFieldID(),
-                st.getFieldOffset(i),
-                isPointer(field.type) ? 1 : 0,
-            );
-            offsetCounter += getDataTypeByteSize(field.type);
-        }
+        this.i("debug", "struct construction expression ");
+        let idx = this.templateSegment.registerStruct(ctx, st)
+        this.i("s_alloc_t", tmp, idx);
 
         return { reg: tmp, sortedStruct: st };
     }

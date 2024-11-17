@@ -96,7 +96,7 @@ export class CodeGenerator {
             null,
             block);
 
-        let globalScope = new FunctionGenerator(fnGlobal, true);
+        let globalScope = new FunctionGenerator(fnGlobal, this.bytecodeGenerator.templateSegment, true);
         // we assign statements later to avoid local scope stack length analysis
         block.statements = basePackage.statements;
         globalScope.generate();
@@ -114,14 +114,14 @@ export class CodeGenerator {
             if (sym instanceof DeclaredFunction) {
                 // check if it is generic
                 if (!sym.isGeneric()) {
-                    let generator = new FunctionGenerator(sym);
+                    let generator = new FunctionGenerator(sym, this.bytecodeGenerator.templateSegment);
                     generator.generate();
                     this.functions.set(sym.uid, generator);
                     this.bytecodeGenerator.generateBytecode(generator);
                 }
                 else {
                     for (const [key, concreteSym] of sym.concreteGenerics) {
-                        let generator = new FunctionGenerator(concreteSym);
+                        let generator = new FunctionGenerator(concreteSym, this.bytecodeGenerator.templateSegment);
                         generator.generate();
                         this.functions.set(concreteSym.uid, generator);
                         this.bytecodeGenerator.generateBytecode(generator);
@@ -129,7 +129,7 @@ export class CodeGenerator {
                 }
             }
             else if (sym instanceof LambdaDefinition) {
-                let generator = new FunctionGenerator(sym);
+                let generator = new FunctionGenerator(sym, this.bytecodeGenerator.templateSegment);
                 generator.generate();
                 this.functions.set(sym.uid, generator);
                 this.bytecodeGenerator.generateBytecode(generator);
@@ -166,7 +166,7 @@ export class CodeGenerator {
             if(method.needsInfer()){
                 method.infer(method.context);
             }
-            let generator = new FunctionGenerator(method);
+            let generator = new FunctionGenerator(method, this.bytecodeGenerator.templateSegment);
             generator.generate();
             this.functions.set(method.uid, generator);
             this.bytecodeGenerator.generateBytecode(generator);
@@ -175,7 +175,7 @@ export class CodeGenerator {
     generateClassMethods(type: ClassType) {
         let methods = type.getAllNonStaticMethods();
         for (const method of methods) {
-            let generator = new FunctionGenerator(method);
+            let generator = new FunctionGenerator(method, this.bytecodeGenerator.templateSegment);
             generator.generate();
             this.functions.set(method.uid, generator);
             this.bytecodeGenerator.generateBytecode(generator);

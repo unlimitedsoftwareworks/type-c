@@ -130,6 +130,11 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 return this.writer.push_16(args[2]);
 
+            case BytecodeInstructionType.s_alloc_t:
+                assertArgs(args, 2);
+                this.writer.push_8(args[0]);
+                return this.writer.push_32(args[1]);
+
             case BytecodeInstructionType.s_reg_field:
                 assertArgs(args, 5);
                 this.writer.push_8(args[0]);
@@ -178,6 +183,11 @@ export class CodeSegment {
                 this.writer.push_16(args[2]);
                 this.writer.push_16(args[3]);
                 return this.writer.push_32(args[4]);
+            
+            case BytecodeInstructionType.c_alloc_t:
+                assertArgs(args, 2);
+                this.writer.push_8(args[0]);
+                return this.writer.push_32(args[1]);
 
             case BytecodeInstructionType.c_reg_field:
                 assertArgs(args, 4);

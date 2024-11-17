@@ -1,11 +1,16 @@
 import { ClassAttribute } from "../ast/other/ClassAttribute";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
+import { Context } from "../ast/symbol/Context";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
+import { ClassType } from "../ast/types/ClassType";
+import { DataType } from "../ast/types/DataType";
+import { StructType } from "../ast/types/StructType";
 import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { CodeSegment } from "./CodeSegment";
 import { DataWriter } from "./DataWriter";
 import { FunctionGenerator } from "./FunctionGenerator";
+import { TemplateSegment } from "./TemplateSegment";
 import { getDataTypeByteSize } from "./utils";
 
 function parseCStyleNumber(cNumberString: string): number {
@@ -30,10 +35,10 @@ function floatToUint32Bits(floatValue: number) {
     const buffer = new ArrayBuffer(4);
     // Create a DataView to manipulate the bits of the buffer
     const view = new DataView(buffer);
-    
+
     // Set the float value at byte offset 0
     view.setFloat32(0, floatValue);
-    
+
     // Read the bits as an unsigned 32-bit integer
     return view.getUint32(0);
 }
@@ -43,17 +48,17 @@ function doubleToUint64BitsLE(doubleValue: number) {
     const buffer = new ArrayBuffer(8);
     // Create a DataView to manipulate the bits of the buffer
     const view = new DataView(buffer);
-    
+
     // Set the double value at byte offset 0, little-endian
     view.setFloat64(0, doubleValue, true); // true for little-endian
-    
+
     // Read the bits as two 32-bit unsigned integers (low and high) in little-endian order
     const low = view.getUint32(0, true);  // Little-endian
     const high = view.getUint32(4, true); // Little-endian
 
     // Combine the high and low parts into a 64-bit BigInt representation
     const combined = (BigInt(high) << 32n) | BigInt(low);
-    
+
     return combined;
 }
 
@@ -67,9 +72,9 @@ interface SourceMapEntry {
 
 /**
  * Converts JSON sourcemap to a line-mapped text format
- * @param sourceMap 
- * @param totalLines 
- * @returns 
+ * @param sourceMap
+ * @param totalLines
+ * @returns
  */
 function convertToLineMappedText(sourceMap: Record<string, SourceMapEntry>): string {
     let totalLines = Object.keys(sourceMap)
@@ -108,7 +113,7 @@ class ConstantSegment {
     /**
      * Adds a constant to the segment
      * @returns the offset of the constant in the segment
-     * @param constant 
+     * @param constant
      */
     addConstant(constant: ByteCodeConstant): number {
         // first, if it is a string, we just add it to the segment
@@ -242,6 +247,7 @@ class GlobalSegment {
 export class BytecodeGenerator {
     constantSegment: ConstantSegment = new ConstantSegment();
     globalSegment: GlobalSegment = new GlobalSegment();
+    templateSegment: TemplateSegment = new TemplateSegment();
     unresolvedOffsets: Map<string, number[]> = new Map();
     resolvedOffsets: Map<string, number> = new Map();
 
@@ -275,7 +281,7 @@ export class BytecodeGenerator {
 
     getRegisterForVariable(fn: FunctionGenerator, variable: string): number {
         let res = fn.coloring.get(variable);
-        
+
         if (res == undefined) {
             throw "Variable " + variable + " not found in register allocation";
         }
@@ -307,7 +313,7 @@ export class BytecodeGenerator {
 
     emitCustom(data: number, bytes: number | null) {
         let num = this.codeSegment.emitCustom(data, bytes);
-        return num 
+        return num
     }
 
     /**
@@ -324,8 +330,8 @@ export class BytecodeGenerator {
 
     /**
      * Checks if a function is a class method
-     * @param fn 
-     * @returns 
+     * @param fn
+     * @returns
      */
     isClassMethod(fnGen: FunctionGenerator): boolean {
         return fnGen.fn instanceof ClassMethod;
@@ -350,6 +356,9 @@ export class BytecodeGenerator {
             for (let offset of offsets) {
                 this.codeSegment.emitAtCustom(offset, value, 4);
             }
+
+            // resolve for template
+            this.templateSegment.resolveForLabel(label, value);
         }
     }
 
@@ -385,7 +394,7 @@ export class BytecodeGenerator {
             else if (instruction.type == "label") {
                 this.resolveLabel(instruction.args[0] as string, this.codeSegment.writer.writePosition);
             }
-            
+
             else if (instruction.type == "const_i8" || instruction.type == "const_u8") {
                 let intVal = parseCStyleNumber(instruction.args[1] + "")
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -467,7 +476,7 @@ export class BytecodeGenerator {
             }
             else if (instruction.type == "const_ptr_fn") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                
+
                 let lbl = this.emit(BytecodeInstructionType.mv_reg_i_ptr, reg, 0);
                 this.addUnresolvedOffset(instruction.args[1] as string, lbl);
             }
@@ -686,6 +695,11 @@ export class BytecodeGenerator {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 this.emit(BytecodeInstructionType.s_alloc, reg, instruction.args[1] as number, instruction.args[2] as number);
             }
+            else if (instruction.type == "s_alloc_t") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let templateID = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.s_alloc_t, reg, templateID);
+            }
             else if (instruction.type == "s_reg_field") {
                 let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let localFieldID = instruction.args[1] as number;
@@ -695,7 +709,7 @@ export class BytecodeGenerator {
 
                 this.emit(BytecodeInstructionType.s_reg_field, reg, localFieldID, globalFieldID, offset, isPointer);
             }
-            
+
             else if (instruction.type == "s_get_field_i8" || instruction.type == "s_get_field_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
@@ -755,10 +769,15 @@ export class BytecodeGenerator {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let num_methods = instruction.args[1] as number;
                 let num_attrs = instruction.args[2] as number;
-                
+
                 let size_attrs = instruction.args[3] as number;
                 let classID = instruction.args[4] as number;
                 this.emit(BytecodeInstructionType.c_alloc, dest, num_methods, num_attrs,size_attrs, classID);
+            }
+            else if (instruction.type == "c_alloc_t") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let templateID = instruction.args[1] as number;
+                this.emit(BytecodeInstructionType.c_alloc_t, dest, templateID);
             }
             else if (instruction.type == "c_reg_field") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -872,7 +891,7 @@ export class BytecodeGenerator {
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string)
                 let start = this.getRegisterForVariable(fn, instruction.args[2] as string)
                 let end = this.getRegisterForVariable(fn, instruction.args[3] as string)
-                this.emit(BytecodeInstructionType.a_slice, dest, src, start, end);   
+                this.emit(BytecodeInstructionType.a_slice, dest, src, start, end);
             }
             else if (instruction.type == "a_insert_a") {
                 let dest_offset = this.getRegisterForVariable(fn, instruction.args[0] as string)
@@ -1453,7 +1472,7 @@ export class BytecodeGenerator {
                 let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
                 this.emit(BytecodeInstructionType.rshift_i64, dest, src1, src2);
             }
-            
+
             else if (instruction.type == "not") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
@@ -1739,7 +1758,7 @@ export class BytecodeGenerator {
             }
 
             else if (instruction.type == "coroutine_get_state") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);   
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 this.emit(BytecodeInstructionType.coroutine_get_state, dest, src);
             }
@@ -1785,38 +1804,47 @@ export class BytecodeGenerator {
     encodeProgram() {
         let constantSegmentSize = this.constantSegment.byteSize;
         let globalSegmentSize = this.globalSegment.byteSize;
+        let templateSegmentSize = this.templateSegment.getByteSize();
         let codeSegmentSize = this.codeSegment.getByteSize();
 
-        //console.log(`Program size:\n\tConstants: ${constantSegmentSize}b\n\tGlobals: ${globalSegmentSize}b\n\tCode: ${codeSegmentSize}b`);
+        //console.log(`Program size:\n\tConstants: ${constantSegmentSize}b\n\tGlobals: ${globalSegmentSize}b\n\tTemplates:${templateSegmentSize}b\n\tCode: ${codeSegmentSize}b`);
 
         let constantBuffer = this.constantSegment.serialize();
         let globalBuffer = this.globalSegment.serialize();
+        let templateBuffer = this.templateSegment.writer.buffer;
         let codeBuffer = this.codeSegment.writer.buffer;
 
-        let programSize = 8 * 3 + constantSegmentSize + globalSegmentSize + codeSegmentSize;
+        let programSize = 8 * 4 + constantSegmentSize + globalSegmentSize + templateSegmentSize + codeSegmentSize;
         let programBuffer = Buffer.alloc(programSize);
         let offset = 0;
         // write constant segment position
-        programBuffer.writeBigUInt64LE(BigInt(24), offset);
+        programBuffer.writeBigUInt64LE(BigInt(32), offset);
         offset += 8;
         // write global segment position
-        programBuffer.writeBigUInt64LE(BigInt(24 + constantSegmentSize), offset);
+        programBuffer.writeBigUInt64LE(BigInt(32 + constantSegmentSize), offset);
+        offset += 8;
+        // write template segment position
+        programBuffer.writeBigUInt64LE(BigInt(32 + constantSegmentSize + globalSegmentSize), offset);
         offset += 8;
         // write code segment position
-        programBuffer.writeBigUInt64LE(BigInt(24 + constantSegmentSize + globalSegmentSize), offset);
+        programBuffer.writeBigUInt64LE(BigInt(32 + constantSegmentSize + globalSegmentSize + templateSegmentSize), offset);
         offset += 8;
 
         // Copy the constant segment data
         let constantSegmentBuffer = Buffer.from(constantBuffer);
-        constantSegmentBuffer.copy(programBuffer, 24, 0, constantSegmentBuffer.length);
+        constantSegmentBuffer.copy(programBuffer, 32, 0, constantSegmentBuffer.length);
 
         // Copy the global segment data
         let globalSegmentBuffer = Buffer.from(globalBuffer);
-        globalSegmentBuffer.copy(programBuffer, 24 + constantSegmentSize, 0, globalSegmentBuffer.length);
+        globalSegmentBuffer.copy(programBuffer, 32 + constantSegmentSize, 0, globalSegmentBuffer.length);
+
+        // Copy the template segment data
+        let templateSegmentBuffer = Buffer.from(templateBuffer);
+        templateSegmentBuffer.copy(programBuffer, 32 + constantSegmentSize + globalSegmentSize, 0, templateSegmentSize);
 
         // Copy the code segment data
         let codeSegmentBuffer = Buffer.from(codeBuffer);
-        codeSegmentBuffer.copy(programBuffer, 24 + constantSegmentSize + globalSegmentSize, 0, codeSegmentBuffer.length);
+        codeSegmentBuffer.copy(programBuffer, 32 + constantSegmentSize + globalSegmentSize + templateSegmentSize, 0, codeSegmentBuffer.length);
 
         let prog = {
             constants: this.constantSegment.toJSON(),

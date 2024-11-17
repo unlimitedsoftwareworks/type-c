@@ -12,6 +12,10 @@ export class TemplateSegment {
 
     unresolvedLabels: { [key: string]: number[] } = {};
 
+    getByteSize() {
+        return this.writer.writePosition;
+    }
+
     addLabel(label: string, position: number) {
         if (this.unresolvedLabels[label] == null) {
             this.unresolvedLabels[label] = [position];
@@ -56,7 +60,7 @@ export class TemplateSegment {
         this.writer.writePosition = oldPos;
     }
 
-    constructor(initialSize: number = 64) {}
+    constructor() {}
 
     registerStruct(ctx: Context, dt: DataType) {
         let st = (
@@ -93,7 +97,7 @@ export class TemplateSegment {
         }
 
         // ensure 8 byte alignment
-        this.writer.alignTo8();
+        //this.writer.alignTo8();
 
         this.registredOffsets[id] = structWritePos;
         return structWritePos;
@@ -116,6 +120,9 @@ export class TemplateSegment {
          * for each attribute: offset[2], isPtr[1]
          * for each method: method_id[4], method_offset[4]
          */
+
+        let classWritePos = this.writer.writePosition;
+
         let num_attrs = classType.attributes.length;
         let size_attrs = classType.getAttributesBlockSize();
         // !!! IMPORTANT: we have to create new array as some other methods awaiting to be generated
@@ -141,6 +148,8 @@ export class TemplateSegment {
             this.addLabel(method.imethod.getUID().toString(), lbl);
         }
 
-        this.registredOffsets[id] = this.writer.writePosition;
+        this.registredOffsets[id] = classWritePos;
+        //this.writer.alignTo8();
+        return classWritePos;
     }
 }
