@@ -34,7 +34,7 @@ fn fib(n: u32) -> u32 =
     match n {
         0 => 0,
         1 => 1,
-        _ => fib(n - 1) + fib(n - 2)
+        _ => fib(n - 1) + fib(n - 2),
     }
 
 fn test_case_2(rn: TestUnit) {
@@ -47,7 +47,7 @@ fn test_case_2(rn: TestUnit) {
 
 type ServerResponse = variant {
     Ok(code: u32),
-    Error(code: u32, message: String)
+    Error(code: u32, message: String),
 }
 
 
@@ -80,7 +80,7 @@ fn test_case_3(rn: TestUnit) {
 
 type Response = enum {
     Ok,
-    Error
+    Error,
 }
 
 fn test_case_4(rn: TestUnit) {

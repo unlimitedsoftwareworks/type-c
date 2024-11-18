@@ -5,11 +5,10 @@ from std.string import String
 fn fib(x: u32) -> u32 = match x {
 	0 => 0,
 	1 => 1,
-	_ => fib(x-1) + fib(x-2)
+	_ => fib(x-1) + fib(x-2),
 }
 
 fn main(x: String[]) {
-	let z = 1/0
     println("fib(20) = " + fib(20))
 
     return z+1

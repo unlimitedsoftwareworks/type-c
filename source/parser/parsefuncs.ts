@@ -224,8 +224,16 @@ function parseStructFields(
         fields.push(new StructField(loc, id.value, type));
         let token = parser.peek();
         canLoop = token.type === ",";
+
         if (canLoop) {
             parser.accept();
+
+            let token2 = parser.peek();
+            if (token2.type === "}") {
+                canLoop = false;
+            }
+            // reject in all cases, parent will .expect("}")
+            parser.reject();
         } else {
             parser.reject();
         }
@@ -312,6 +320,13 @@ function parseVariantConstructor(
         canLoop = token.type === ",";
         if (canLoop) {
             parser.accept();
+            let tok = parser.peek();
+            if (tok.type === "}") {
+                canLoop = false;
+            }
+
+            // reject in all cases
+            parser.reject();
         } else {
             parser.reject();
         }
@@ -889,6 +904,13 @@ function parseTypeEnum(parser: Parser, ctx: Context): DataType {
         canLoop = lexeme.type === ",";
         if (canLoop) {
             parser.accept();
+            let tok = parser.peek();
+            if (tok.type === "}") {
+                canLoop = false;
+            }
+
+            // reject in all cases
+            parser.reject();
         } else {
             parser.reject();
         }
@@ -1187,10 +1209,10 @@ function parseClassMethod(
 function parseExpression(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let expr = parseExpressionLet(parser, ctx, opts);
-    if ((expr == null) && (!opts.allowNullable)) {
+    if (expr == null && !opts.allowNullable) {
         ctx.parser.customError("Invalid expression!", parser.loc());
         return new UnreachableExpression(parser.loc());
     }
@@ -1200,7 +1222,7 @@ function parseExpression(
 function parseExpressionLet(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
@@ -1224,7 +1246,7 @@ function parseExpressionLet(
 function parseExpressionMatch(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
@@ -1263,7 +1285,7 @@ function parseExpressionMatch(
 function parseExpressionOpAssign(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionConditional(parser, ctx, opts);
@@ -1306,7 +1328,7 @@ function parseExpressionOpAssign(
 function parseExpressionConditional(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let lexeme = parser.peek();
     if (lexeme.type === "if") {
@@ -1350,7 +1372,7 @@ function parseExpressionConditional(
 function parseCoalescingOp(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionLogicalOr(parser, ctx, opts);
@@ -1376,7 +1398,7 @@ function parseCoalescingOp(
 function parseExpressionLogicalOr(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionLogicalAnd(parser, ctx, opts);
@@ -1402,7 +1424,7 @@ function parseExpressionLogicalOr(
 function parseExpressionLogicalAnd(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionBitwiseInclusiveOr(parser, ctx, opts);
@@ -1428,7 +1450,7 @@ function parseExpressionLogicalAnd(
 function parseExpressionBitwiseInclusiveOr(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionBitwiseXOR(parser, ctx, opts);
@@ -1454,7 +1476,7 @@ function parseExpressionBitwiseInclusiveOr(
 function parseExpressionBitwiseXOR(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionBitwiseAND(parser, ctx, opts);
@@ -1479,7 +1501,7 @@ function parseExpressionBitwiseXOR(
 function parseExpressionBitwiseAND(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionEquality(parser, ctx, opts);
@@ -1505,7 +1527,7 @@ function parseExpressionBitwiseAND(
 function parseExpressionEquality(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionRelational(parser, ctx, opts);
@@ -1531,7 +1553,7 @@ function parseExpressionEquality(
 function parseExpressionRelational(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionShift(parser, ctx, opts);
@@ -1563,7 +1585,7 @@ function parseExpressionRelational(
 function parseExpressionShift(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionAdditive(parser, ctx, opts);
@@ -1589,7 +1611,7 @@ function parseExpressionShift(
 function parseExpressionAdditive(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let left = parseExpressionMultiplicative(parser, ctx, opts);
     let lexeme = parser.peek();
@@ -1612,7 +1634,7 @@ function parseExpressionAdditive(
 function parseExpressionMultiplicative(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionInstance(parser, ctx, opts);
@@ -1637,7 +1659,7 @@ function parseExpressionMultiplicative(
 function parseExpressionInstance(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let left = parseExpressionUnary(parser, ctx, opts);
@@ -1688,7 +1710,7 @@ function parseExpressionInstance(
 function parseExpressionUnary(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
@@ -1720,7 +1742,8 @@ function parseExpressionUnary(
         parser.expect("(");
         lexeme = parser.peek();
         parser.reject();
-        let args = lexeme.type == ")" ? [] : parseExpressionList(parser, ctx, opts);
+        let args =
+            lexeme.type == ")" ? [] : parseExpressionList(parser, ctx, opts);
         parser.expect(")");
         return new NewExpression(loc, type, args);
     } else if (lexeme.type === "yield" || lexeme.type === "yield!") {
@@ -1780,7 +1803,7 @@ function parseExpressionUnary(
 function parseExpressionPostfix(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let expression = parseExpressionPrimary(parser, ctx, opts);
@@ -1806,7 +1829,7 @@ function parseExpressionMemberSelection(
     parser: Parser,
     ctx: Context,
     lhs: Expression,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
@@ -1838,7 +1861,8 @@ function parseExpressionMemberSelection(
         parser.accept();
         lexeme = parser.peek();
         parser.reject();
-        let args = lexeme.type == ")" ? [] : parseExpressionList(parser, ctx, opts);
+        let args =
+            lexeme.type == ")" ? [] : parseExpressionList(parser, ctx, opts);
         parser.expect(")");
         return parseExpressionMemberSelection(
             parser,
@@ -1851,7 +1875,8 @@ function parseExpressionMemberSelection(
         parser.accept();
         lexeme = parser.peek();
         parser.reject();
-        let index = lexeme.type == "]" ? [] : parseExpressionList(parser, ctx, opts);
+        let index =
+            lexeme.type == "]" ? [] : parseExpressionList(parser, ctx, opts);
         parser.expect("]");
         return parseExpressionMemberSelection(
             parser,
@@ -1869,7 +1894,7 @@ function parseExpressionMemberSelection(
 function parseExpressionPrimary(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     let lexeme = parser.peek();
@@ -2006,7 +2031,7 @@ function parserElementHasGenerics(parser: Parser, ctx: Context) {
 function parseArrayConstruction(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     parser.expect("[");
@@ -2080,7 +2105,7 @@ function parseStructElements(
 function parseStructConstruction(
     parser: Parser,
     ctx: Context,
-    opts: ExpressionParseOptions
+    opts: ExpressionParseOptions,
 ): Expression {
     let loc = parser.loc();
     parser.expect("{");
@@ -2475,7 +2500,7 @@ function parseExpressionList(
     parser: Parser,
     ctx: Context,
     opts: ExpressionParseOptions,
-    allowDestructuring: boolean = false
+    allowDestructuring: boolean = false,
 ): Expression[] {
     let canLoop = true;
     let expressions: Expression[] = [];
@@ -2577,13 +2602,14 @@ function parseMatchCases(
                 parser.reject();
                 canLoop = false;
             }
-        } else {
-            lexeme = parser.peek();
-            if (lexeme.type === "}") {
-                canLoop = false;
-            }
-            parser.reject();
         }
+
+        // allow trailing comma
+        lexeme = parser.peek();
+        if (lexeme.type === "}") {
+            canLoop = false;
+        }
+        parser.reject();
         newScope.endLocation = parser.loc();
     }
     return cases;

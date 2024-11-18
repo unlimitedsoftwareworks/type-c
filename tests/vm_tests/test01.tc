@@ -2,7 +2,7 @@
 
 type HttpResponse = variant {
     Success(code: u32, time: f32),
-    Error(buffer: u8[], code: u32)
+    Error(buffer: u8[], code: u32),
 }
 
 type Data<T> = class {

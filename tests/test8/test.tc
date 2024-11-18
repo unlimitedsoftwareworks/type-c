@@ -4,7 +4,7 @@ from std.unit.test import TestUnit, UnitSet
 
 type User<T> = struct {
     name: T,
-    age: i32
+    age: i32,
 }
 
 type Iterable<T> = interface {
