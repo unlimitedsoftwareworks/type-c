@@ -4,7 +4,7 @@ import { promisify } from "util";
 
 import * as path from "path";
 import { BasePackage } from "./ast/BasePackage";
-import { Parser } from "./parser/Parser";
+import { Parser, ParserMode } from "./parser/Parser";
 import { ImportNode } from "./ast/ImportNode";
 import { BuiltinModules } from "./BuiltinModules";
 import { generateCode } from "./codegenerator/CodeGenerator";
@@ -33,7 +33,7 @@ export module TypeC {
         target: "runnable" | "library" = "runnable";
         entry: string = "index.tc";
         dir: string = "";
-        static stdlibDir: string = process.env.TYPE_C_STDLIB ?? "../stdlib/";
+        static stdlibDir: string = process.env.TYPE_C_STDLIB!;
         rawConfig: any = {};
         options: CompileOptions = {
             dir: "",
@@ -77,7 +77,7 @@ export module TypeC {
             return data;
         }
 
-        compile() {
+        compile(mode: ParserMode = "compiler") {
             console.log("Compiling ", this.dir);
             // start with index
             let entry = path.join(this.dir, this.entry);
@@ -87,7 +87,7 @@ export module TypeC {
             let parser = new Parser(
                 lexer,
                 entry,
-                "compiler",
+                mode,
                 !this.options.noWarnings,
             );
             this.basePackage = parser.basePackage;
@@ -197,7 +197,7 @@ export module TypeC {
 
     export const compile = (options: CompileOptions) => {
         // make sure all env variables are set
-        if (process.env.TYPE_C_STDLIB == undefined) {
+        if (!TCCompiler.stdlibDir) {
             throw new Error(
                 "type-c requires TYPE_C_STDLIB environment variable to be set, please set it to the path of the stdlib folder",
             );
