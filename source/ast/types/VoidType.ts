@@ -27,7 +27,7 @@ export class VoidType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a VoidType
         if(!originalType.is(ctx, VoidType)){
-            throw ctx.parser.customError(`Expected void type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected void type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
     }
 }

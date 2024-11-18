@@ -181,7 +181,7 @@ export class ClassType extends DataType {
             if (this.methods[i].imethod.name === "init") {
                 // 1. must be non static
                 if (this.methods[i].imethod.isStatic) {
-                    throw ctx.parser.customError("init method cannot be static", this.methods[i].location);
+                    ctx.parser.customError("init method cannot be static", this.methods[i].location);
                 }
 
                 // 2. must return void
@@ -191,13 +191,13 @@ export class ClassType extends DataType {
                         this.methods[i].imethod.header.returnType = new VoidType(this.methods[i].location);
                     }
                     else {
-                        throw ctx.parser.customError("init method must return void", this.methods[i].location);
+                        ctx.parser.customError("init method must return void", this.methods[i].location);
                     }
                 }
 
                 // 3. must be non-generic
                 if (this.methods[i].imethod.generics.length > 0) {
-                    throw ctx.parser.customError("init method cannot be generic", this.methods[i].location);
+                    ctx.parser.customError("init method cannot be generic", this.methods[i].location);
                 }
             }
         }
@@ -335,7 +335,7 @@ export class ClassType extends DataType {
                         if (genericArguments.length > 0) {
                             // make sure all generic types are provided
                             if (genericArguments.length !== method.imethod.generics.length) {
-                                throw ctx.parser.customError(`Expected ${method.imethod.generics.length} generic types, got ${genericArguments.length}`, this.location);
+                                ctx.parser.customError(`Expected ${method.imethod.generics.length} generic types, got ${genericArguments.length}`, this.location);
                             }
 
                             let typeMap: { [key: string]: DataType } = {};
@@ -406,7 +406,7 @@ export class ClassType extends DataType {
 
                             for (const generic of method.imethod.generics) {
                                 if (map[generic.name] === undefined) {
-                                    throw ctx.parser.customError(`Required generic type ${generic.name} not found in type map`, this.location);
+                                    ctx.parser.customError(`Required generic type ${generic.name} not found in type map`, this.location);
                                 }
 
                                 typeArgs.push(map[generic.name]);
@@ -489,7 +489,7 @@ export class ClassType extends DataType {
                 let method = allMethods[i];
                 if (method.imethod.name === name) {
                     if (method.imethod.generics.length > 0) {
-                        throw ctx.parser.customError(`Cannot find non-generic method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in class ${this.shortname()}`, this.location);
+                        ctx.parser.customError(`Cannot find non-generic method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in class ${this.shortname()}`, this.location);
                     }
 
                     if (returnType !== null) {
@@ -525,7 +525,7 @@ export class ClassType extends DataType {
         }
 
         if (index === -1) {
-            throw ctx.parser.customError(`Cannot find method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in class ${this.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot find method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in class ${this.shortname()}`, this.location);
         }
 
         return index;
@@ -615,7 +615,7 @@ export class ClassType extends DataType {
         for (let i = 0; i < classType.attributes.length; i++) {
             // make sure attribute names match otherwise throw an error
             if (this.attributes[i].name !== classType.attributes[i].name) {
-                throw ctx.parser.customError(`Expected attribute ${this.attributes[i].name} got ${classType.attributes[i].name}`, this.location);
+                ctx.parser.customError(`Expected attribute ${this.attributes[i].name} got ${classType.attributes[i].name}`, this.location);
             }
             classType.attributes[i].type.getGenericParametersRecursive(ctx, classType.attributes[i].type, declaredGenerics, typeMap);
         }
@@ -623,7 +623,7 @@ export class ClassType extends DataType {
         for (let i = 0; i < this.methods.length; i++) {
             // make sure method names match otherwise throw an error
             if (this.methods[i].imethod.name !== classType.methods[i].imethod.name) {
-                throw ctx.parser.customError(`Expected method ${this.methods[i].imethod.name} got ${classType.methods[i].imethod.name}`, this.location);
+                ctx.parser.customError(`Expected method ${this.methods[i].imethod.name} got ${classType.methods[i].imethod.name}`, this.location);
             }
             this.methods[i].imethod.header.getGenericParametersRecursive(ctx, classType.methods[i].imethod.header, declaredGenerics, typeMap);
         }

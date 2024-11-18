@@ -49,13 +49,13 @@ export class BasicType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType matches this type
         if(!originalType.is(ctx, BasicType)){
-            throw ctx.parser.customError(`Expected basic type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected basic type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let basicType = originalType.to(ctx, BasicType) as BasicType;
         let res = matchDataTypes(ctx, this, basicType);
         if(!res.success){
-            throw ctx.parser.customError(`Expected basic type ${this.shortname()}, got ${basicType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected basic type ${this.shortname()}, got ${basicType.shortname()} instead.`, this.location);
         }
     }
 }

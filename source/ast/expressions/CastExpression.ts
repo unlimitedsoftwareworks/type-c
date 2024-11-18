@@ -49,7 +49,7 @@ export class CastExpression extends Expression {
         let r = canCastTypes(ctx, this.target, expressionType);
 
         if(!r.success && (this.castType === 'regular')) {
-            throw ctx.parser.customError(`Cannot cast ${expressionType.shortname()} to ${this.target.shortname()}: ${r.message}`, this.location);
+            ctx.parser.customError(`Cannot cast ${expressionType.shortname()} to ${this.target.shortname()}: ${r.message}`, this.location);
         }
 
         if(r.success && (this.castType === 'force')) {
@@ -74,7 +74,7 @@ export class CastExpression extends Expression {
         else {
             let res = matchDataTypes(ctx, this.target, hint);
             if(!res.success && (this.castType !== 'force')) {
-                throw ctx.parser.customError(`Cannot cast ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);
+                ctx.parser.customError(`Cannot cast ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);
             }
             else if (!res.success && (this.castType === 'force')) {
                 ctx.parser.customWarning(`Dangerous forced cast from ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);

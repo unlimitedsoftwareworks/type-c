@@ -66,20 +66,20 @@ export class DeclaredVariable extends Symbol {
 
         // last sanity checks
         if(this.annotation instanceof VoidType){
-            throw ctx.parser.customError("Cannot declare a variable of type void", this.location);
+            ctx.parser.customError("Cannot declare a variable of type void", this.location);
         }
 
         if(this.annotation instanceof LiteralIntType){
-            throw ctx.parser.customError("Variables needs type hint, cannot infer type from number literal", this.location);
+            ctx.parser.customError("Variables needs type hint, cannot infer type from number literal", this.location);
         }
 
         if (this.annotation instanceof TupleType) {
-            throw ctx.parser.customError("A variable cannot be annotated or assigned a tuple type", this.location);
+            ctx.parser.customError("A variable cannot be annotated or assigned a tuple type", this.location);
         }
 
         if(!this.isConst && this.initializer.isConstant && !isRHSConstSafe(ctx, this.initializer)){
             isRHSConstSafe(ctx, this.initializer)
-            throw ctx.parser.customError("Cannot assign a constant expression to a non-constant variable", this.initializer.location);
+            ctx.parser.customError("Cannot assign a constant expression to a non-constant variable", this.initializer.location);
         }
 
 

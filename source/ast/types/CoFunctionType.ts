@@ -57,21 +57,21 @@ export class CoFunctionType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a FunctionType
         if(!originalType.is(ctx, CoFunctionType)){
-            throw ctx.parser.customError(`Expected cofunction type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected cofunction type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let coFunctionType = originalType.to(ctx, CoFunctionType) as CoFunctionType;
         
         // make sure the number of parameters is the same
         if(this.parameters.length != coFunctionType.parameters.length){
-            throw ctx.parser.customError(`Expected ${coFunctionType.parameters.length} parameters, got ${this.parameters.length} instead.`, this.location);
+            ctx.parser.customError(`Expected ${coFunctionType.parameters.length} parameters, got ${this.parameters.length} instead.`, this.location);
         }
 
         // get generics for the parameters
         for(let i = 0; i < this.parameters.length; i++){
             // make sure the mutability is the same
             if(this.parameters[i].isMutable != coFunctionType.parameters[i].isMutable){
-                throw ctx.parser.customError(`Expected ${coFunctionType.parameters[i].isMutable} mutability, got ${this.parameters[i].isMutable} instead.`, this.location);
+                ctx.parser.customError(`Expected ${coFunctionType.parameters[i].isMutable} mutability, got ${this.parameters[i].isMutable} instead.`, this.location);
             }
 
             this.parameters[i].type.getGenericParametersRecursive(ctx, coFunctionType.parameters[i].type, declaredGenerics, typeMap);

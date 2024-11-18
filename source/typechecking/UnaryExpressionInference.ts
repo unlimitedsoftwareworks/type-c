@@ -14,7 +14,7 @@ function inferNegative(ctx: Context, uhs: DataType, expr: UnaryExpression): Data
         if(isNeg(ctx, uhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__neg__", uhs as OverridableMethodType, []);
             if(method == null){
-                throw ctx.parser.customError(`Cannot use - operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
+                ctx.parser.customError(`Cannot use - operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
             }
             return setUnaryOverrideMethodHint(ctx, uhs, method, expr);
         }
@@ -22,11 +22,11 @@ function inferNegative(ctx: Context, uhs: DataType, expr: UnaryExpression): Data
 
 
     if(!uhs.is(ctx, BasicType)){
-        throw ctx.parser.customError(`Cannot use - operator on non-basic type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use - operator on non-basic type ${uhs.shortname()}`, expr.location);
     }
     
     if(!(["u8" , "u16" , "u32" , "u64" , "i8" , "i16" , "i32" , "i64", "f32" , "f64"].includes(uhs.kind))){
-        throw ctx.parser.customError(`Cannot use - operator on non-numeric type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use - operator on non-numeric type ${uhs.shortname()}`, expr.location);
     }
 
     if(uhs.kind == "u8"){
@@ -62,7 +62,7 @@ function inferNot(ctx: Context, uhs: DataType, expr: UnaryExpression): DataType 
         if(isNot(ctx, uhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__not__", uhs as OverridableMethodType, []);
             if(method == null){
-                throw ctx.parser.customError(`Cannot use ! operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
+                ctx.parser.customError(`Cannot use ! operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
             }
             return setUnaryOverrideMethodHint(ctx, uhs, method, expr);
         }
@@ -70,13 +70,13 @@ function inferNot(ctx: Context, uhs: DataType, expr: UnaryExpression): DataType 
     if(uhs.is(ctx, NullableType)){
         return new BooleanType(expr.location);
     }
-    throw ctx.parser.customError(`Cannot use ! operator on type ${uhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use ! operator on type ${uhs.shortname()}`, expr.location);
 }
 
 // denull(!!) requires a nullable input and returns a non-nullable version of it
 function inferDenull(ctx: Context, uhs: DataType, expr: UnaryExpression): DataType {
     if(!uhs.is(ctx, NullableType)){
-        throw ctx.parser.customError(`Cannot use !! operator on non-nullable type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use !! operator on non-nullable type ${uhs.shortname()}`, expr.location);
     }
     return (uhs.to(ctx, NullableType) as NullableType).type;
 }
@@ -87,16 +87,16 @@ function inferBitwiseNot(ctx: Context, uhs: DataType, expr: UnaryExpression): Da
         if(isBNot(ctx, uhs as OverridableMethodType)){
             let method = getOperatorOverloadType(ctx, "__bnot__", uhs as OverridableMethodType, []);
             if(method == null){
-                throw ctx.parser.customError(`Cannot use ~ operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
+                ctx.parser.customError(`Cannot use ~ operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
             }
             return setUnaryOverrideMethodHint(ctx, uhs, method, expr);
         }
     }
     if(!uhs.is(ctx, BasicType)){
-        throw ctx.parser.customError(`Cannot use ~ operator on non-basic type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use ~ operator on non-basic type ${uhs.shortname()}`, expr.location);
     }
     if(!(["i8", "i16", "i32", "i64", "u8" , "u16" , "u32" , "u64"].includes(uhs.kind))){
-        throw ctx.parser.customError(`Cannot use ~ operator on non-numeric type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use ~ operator on non-numeric type ${uhs.shortname()}`, expr.location);
     }
 
     return uhs;
@@ -108,24 +108,24 @@ function inferIncrementDecrement(ctx: Context, uhs: DataType, expr: UnaryExpress
         if(isInc(ctx, uhs as OverridableMethodType) && (expr.operator == "post++" || expr.operator == "pre++")){
             let method = getOperatorOverloadType(ctx, "__inc__", uhs as OverridableMethodType, []);
             if(method == null){
-                throw ctx.parser.customError(`Cannot use ++ operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
+                ctx.parser.customError(`Cannot use ++ operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
             }
             return setUnaryOverrideMethodHint(ctx, uhs, method, expr);
         }
         if(isDec(ctx, uhs as OverridableMethodType) && (expr.operator == "post--" || expr.operator == "pre--")){
             let method = getOperatorOverloadType(ctx, "__dec__", uhs as OverridableMethodType, []);
             if(method == null){
-                throw ctx.parser.customError(`Cannot use -- operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
+                ctx.parser.customError(`Cannot use -- operator on type ${uhs.shortname()}, no operator overload found`, expr.location);
             }
             return setUnaryOverrideMethodHint(ctx, uhs, method, expr);
         }
     }
     
     if(!(uhs instanceof BasicType)){
-        throw ctx.parser.customError(`Cannot use ++/-- operator on non-basic type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use ++/-- operator on non-basic type ${uhs.shortname()}`, expr.location);
     }
     if(!(["u8" , "u16" , "u32" , "u64" , "i8" , "i16" , "i32" , "i64"].includes(uhs.kind))){
-        throw ctx.parser.customError(`Cannot use ++/-- operator on non-numeric type ${uhs.shortname()}`, expr.location);
+        ctx.parser.customError(`Cannot use ++/-- operator on non-numeric type ${uhs.shortname()}`, expr.location);
     }
 
     return uhs;

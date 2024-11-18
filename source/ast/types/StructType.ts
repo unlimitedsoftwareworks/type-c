@@ -110,14 +110,14 @@ export class StructType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a StructType
         if(!originalType.is(ctx, StructType)){
-            throw ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let structType = originalType.to(ctx, StructType) as StructType;
         for(let i = 0; i < this.fields.length; i++){
             // make sure field names matches
             if(this.fields[i].name != structType.fields[i].name){
-                throw ctx.parser.customError(`Expected field ${this.fields[i].name}, got ${structType.fields[i].name} instead.`, this.location);
+                ctx.parser.customError(`Expected field ${this.fields[i].name}, got ${structType.fields[i].name} instead.`, this.location);
             }
 
             this.fields[i].type.getGenericParametersRecursive(ctx, structType.fields[i].type, declaredGenerics, typeMap);

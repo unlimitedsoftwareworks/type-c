@@ -2,16 +2,16 @@
  * Filename: Lexer.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Lexer data structure
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
 import { TokenType } from "./TokenType";
-import { Token } from './Token'
+import { Token } from "./Token";
 
 export class Lexer {
     filepath: string;
@@ -83,7 +83,6 @@ export class Lexer {
         [TokenType.TOK_STRING, /^string\b/],
         [TokenType.TOK_CHAR, /^char\b/],
 
-
         [TokenType.TOK_COALESCING, /^\?\?/], // must be before TOK_NULLABLE
         [TokenType.TOK_NULLDOT, /^\?\./],
         [TokenType.TOK_NULLABLE, /^\?/],
@@ -145,9 +144,8 @@ export class Lexer {
         [TokenType.TOK_PERCENT, /^%/],
         [TokenType.TOK_BITWISE_NOT, /^~/],
 
-        [TokenType.TOK_EOF, /^$/]
+        [TokenType.TOK_EOF, /^$/],
     ];
-
 
     constructor(filePath: string, data: string) {
         this.filepath = filePath;
@@ -169,11 +167,10 @@ export class Lexer {
 
     inc() {
         // check if we have new line
-        if (this.currentChar() == '\n') {
+        if (this.currentChar() == "\n") {
             this.lineC++;
             this.colC = 0;
-        }
-        else {
+        } else {
             this.colC++;
         }
         this.dataIndex++;
@@ -186,7 +183,7 @@ export class Lexer {
      * @param pattern
      */
     compare(pattern: string): boolean {
-        if (pattern.length > (this.dataLength - this.dataIndex)) {
+        if (pattern.length > this.dataLength - this.dataIndex) {
             return false;
         }
 
@@ -204,27 +201,29 @@ export class Lexer {
     skipWhitespaces() {
         let reskip = false;
 
-        while (this.currentChar() == " " || this.currentChar() == "\t" || this.currentChar() == "\n") {
+        while (
+            this.currentChar() == " " ||
+            this.currentChar() == "\t" ||
+            this.currentChar() == "\n"
+        ) {
             this.inc();
         }
 
         // skip comments
         if (this.compare("//")) {
-            while (this.canLookAhead() && (this.currentChar() != "\n")) {
+            while (this.canLookAhead() && this.currentChar() != "\n") {
                 this.inc();
             }
             reskip = true;
-        }
-        else if (this.compare("/*")) {
+        } else if (this.compare("/*")) {
             while (this.canLookAhead() && !this.compare("*/")) {
                 this.inc();
             }
             reskip = true;
         }
-        if(reskip){
+        if (reskip) {
             this.skipWhitespaces();
         }
-
     }
 
     nextToken(): Token {
@@ -237,20 +236,50 @@ export class Lexer {
                 // Update dataIndex to point after this token
                 this.dataIndex += lexeme.length;
                 // Create new Token object and return
-                let res = new Token(tokenType, lexeme, this.dataIndex - lexeme.length, this.lineC, this.colC, this.filepath);
-                if((res.type == "identifier") && (res.value == "_")){
-                    res = new Token(TokenType.TOK_WILDCARD, lexeme, this.dataIndex - lexeme.length, this.lineC, this.colC, this.filepath);
+                let res = new Token(
+                    tokenType,
+                    lexeme,
+                    this.dataIndex - lexeme.length,
+                    this.lineC,
+                    this.colC,
+                    this.filepath,
+                );
+                if (res.type == "identifier" && res.value == "_") {
+                    res = new Token(
+                        TokenType.TOK_WILDCARD,
+                        lexeme,
+                        this.dataIndex - lexeme.length,
+                        this.lineC,
+                        this.colC,
+                        this.filepath,
+                    );
                 }
                 this.colC += lexeme.length;
                 return res;
             }
         }
 
-        if(!this.canLookAhead()){
-            return new Token(TokenType.TOK_EOF, "", this.dataIndex, this.lineC, this.colC, this.filepath);
+        if (!this.canLookAhead()) {
+            return new Token(
+                TokenType.TOK_EOF,
+                "",
+                this.dataIndex,
+                this.lineC,
+                this.colC,
+                this.filepath,
+            );
         }
 
         // If we get here, we didn't find any token at the current position
-        throw new Error(`Unexpected token at line ${this.lineC}, column ${this.colC}`);
+        throw new Error(
+            `Unexpected token at line ${this.lineC}, column ${this.colC}`,
+        );
+    }
+
+    skipToNextLine() {
+        while (this.canLookAhead() && this.currentChar() != "\n") {
+            this.inc();
+        }
+        this.inc();
     }
 }

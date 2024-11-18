@@ -171,7 +171,7 @@ export class StringLiteralExpression extends LiteralExpression {
         this.setHint(hint);
     
         if(BuiltinModules.String == undefined){
-            throw ctx.parser.customError("Default String class is not defined.", this.location);
+            ctx.parser.customError("Default String class is not defined.", this.location);
         }
 
         this.inferredType = BuiltinModules.String;
@@ -226,7 +226,7 @@ export class CharLiteralExpression extends LiteralExpression {
 
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
-        throw ctx.parser.customError("Not implemented", this.location);
+        ctx.parser.customError("Not implemented", this.location);
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context) {
@@ -258,7 +258,7 @@ export class IntLiteralExpression extends LiteralExpression {
         }
         else {
             this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
-            throw ctx.parser.customError(`Unexpected type, ${hint.shortname()} expected but found ${this.inferredType?.shortname()}`, this.location);
+            ctx.parser.customError(`Unexpected type, ${hint.shortname()} expected but found ${this.inferredType?.shortname()}`, this.location);
         }
         this.setInferredToHint();
         return this.inferredType;

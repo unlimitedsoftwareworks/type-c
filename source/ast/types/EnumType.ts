@@ -117,7 +117,7 @@ export class EnumType extends DataType {
                 this.as = "u32";
             }
             else {
-                throw ctx.parser.customError("Enum fields cannot be more than 4294967295", this.location);
+                ctx.parser.customError("Enum fields cannot be more than 4294967295", this.location);
             }
         } else {
             // TODO: fix literal types etc
@@ -173,24 +173,24 @@ export class EnumType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is an EnumType
         if(!originalType.is(ctx, EnumType)){
-            throw ctx.parser.customError(`Expected enum type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected enum type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let enumType = originalType.to(ctx, EnumType) as EnumType;
         let res = matchDataTypes(ctx, this, enumType);
         if(!res.success){
-            throw ctx.parser.customError(`Expected enum type ${this.shortname()}, got ${enumType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected enum type ${this.shortname()}, got ${enumType.shortname()} instead.`, this.location);
         }
     }
 
     getFieldValue(ctx: Context, name: string): number {
         let field = this.fields.find((f) => f.name == name);
         if(!field){
-            throw ctx.parser.customError("Enum " + this.shortname() + " does not have a field named " + name, this.location);
+            ctx.parser.customError("Enum " + this.shortname() + " does not have a field named " + name, this.location);
         }
 
         if(field.value == undefined){
-            throw ctx.parser.customError("Enum " + this.shortname() + " does not have a value for field " + name, this.location);
+            ctx.parser.customError("Enum " + this.shortname() + " does not have a value for field " + name, this.location);
         }
 
         return field.toNumber()!;
@@ -198,7 +198,7 @@ export class EnumType extends DataType {
 
     toBasicType(ctx: Context): BasicType {
         if (this.as == "unset") {
-            throw ctx.parser.customError("Cannot convert enum type to basic type", this.location);
+            ctx.parser.customError("Cannot convert enum type to basic type", this.location);
         }
         return new BasicType(this.location, this.as as BasicTypeKind);
     }

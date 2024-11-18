@@ -35,14 +35,14 @@ export class TupleDeconstructionExpression extends Expression {
         let tupleType = this.tupleExpression.infer(ctx, null);
 
         if (!tupleType.is(ctx, TupleType)) {
-            throw ctx.parser.customError(`Expected tuple type, got ${tupleType.shortname()}`, this.location);
+            ctx.parser.customError(`Expected tuple type, got ${tupleType.shortname()}`, this.location);
         }
 
         let tuple = tupleType.to(ctx, TupleType) as TupleType;
         let indexValue = this.index
 
         if (indexValue < 0 || indexValue >= tuple.types.length) {
-            throw ctx.parser.customError(`Tuple index out of bounds: ${indexValue}`, this.location);
+            ctx.parser.customError(`Tuple index out of bounds: ${indexValue}`, this.location);
         }
 
         this.inferredType = tuple.types[indexValue];

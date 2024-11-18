@@ -47,7 +47,7 @@ export class YieldExpression extends Expression {
             parentFunction.isCoroutineCallable = true;
         }
         else {
-            throw ctx.parser.customError("Cannot use yield expression outside of a function/lambda expression", this.location);
+            ctx.parser.customError("Cannot use yield expression outside of a function/lambda expression", this.location);
         }
 
         let header = (parentFunction instanceof DeclaredFunction) ? parentFunction.prototype.header : (parentFunction as LambdaDefinition).header;

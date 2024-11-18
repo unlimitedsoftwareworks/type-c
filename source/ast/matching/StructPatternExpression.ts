@@ -47,7 +47,7 @@ export class StructPatternExpression extends PatternExpression {
         if (this._inferred) return;
 
         if (!expressionType.is(ctx, StructType)) {
-            throw ctx.parser.customError(`Cannot perform struct matching on non-struct type ${expressionType.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot perform struct matching on non-struct type ${expressionType.shortname()}`, this.location);
         }
 
         let structType = expressionType.to(ctx, StructType) as StructType;
@@ -56,7 +56,7 @@ export class StructPatternExpression extends PatternExpression {
             let fieldPattern = this.fieldPatterns[i];
             let field = structType.fields.find(f => f.name === fieldPattern.name);
             if (!field) {
-                throw ctx.parser.customError(`Struct type ${structType.shortname()} does not have field ${fieldPattern.name}`, this.location);
+                ctx.parser.customError(`Struct type ${structType.shortname()} does not have field ${fieldPattern.name}`, this.location);
             }
 
             fieldPattern.pattern.infer(ctx, field.type, isConst);
@@ -68,7 +68,7 @@ export class StructPatternExpression extends PatternExpression {
 
                 // make sure we do not have empty struct
                 if (newFields.length === 0) {
-                    throw ctx.parser.customError(`Cannot create empty struct, all fields are captured`, this.location);
+                    ctx.parser.customError(`Cannot create empty struct, all fields are captured`, this.location);
                 }
 
                 let newStructType = new StructType(this.location, newFields);

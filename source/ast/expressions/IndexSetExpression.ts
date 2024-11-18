@@ -49,7 +49,7 @@ export class IndexSetExpression extends Expression {
          * Make sure we are not assigning to a constant
          */
         if(this.lhs.isConstant || !lhsType.isAssignable()) {
-            throw ctx.parser.customError(`Cannot modify the state of a constant expression/variable`, this.location);
+            ctx.parser.customError(`Cannot modify the state of a constant expression/variable`, this.location);
         }
 
         /**
@@ -59,13 +59,13 @@ export class IndexSetExpression extends Expression {
         if(lhsType.is(ctx,InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isIndexSettable(ctx, lhsT)) {
-                throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
+                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
             }
 
             let valueType = this.value.infer(ctx, null);
             let m = getOperatorOverloadType(ctx, "__index_set__", lhsT, [valueType, ...this.indexes.map((index) => index.infer(ctx, null))]);
             if(m === null) {
-                throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -79,28 +79,28 @@ export class IndexSetExpression extends Expression {
 
             // make sure we have exactly one index
             if(this.indexes.length != 1) {
-                throw ctx.parser.customError(`Array index set expects exactly one index, got ${this.indexes.length}`, this.location);
+                ctx.parser.customError(`Array index set expects exactly one index, got ${this.indexes.length}`, this.location);
             }
 
             // make sure the value type matches the array type
             let res = matchDataTypes(ctx, arrayType.arrayOf, valueType);
             if(!res.success) {
-                throw ctx.parser.customError(`Type mismatch in array index set: ${res.message}`, this.location);
+                ctx.parser.customError(`Type mismatch in array index set: ${res.message}`, this.location);
             }
 
             // infer the type of the index
             let indexType = this.indexes[0].infer(ctx, null);
             if(!indexType.is(ctx, BasicType)) {
-                throw ctx.parser.customError(`Array index must be of type int, got ${indexType.shortname()}`, this.location);
+                ctx.parser.customError(`Array index must be of type int, got ${indexType.shortname()}`, this.location);
             }
             
             let basicIndexType = indexType.to(ctx, BasicType) as BasicType;
             if(["u8", "u16", "u32", "u64"].indexOf(basicIndexType.kind) == -1) {
-                throw ctx.parser.customError(`Array index must be of type int, got ${basicIndexType.kind}`, this.location);
+                ctx.parser.customError(`Array index must be of type int, got ${basicIndexType.kind}`, this.location);
             }
         }
         else {
-            throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
+            ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
         }
 
         this.checkHint(ctx);

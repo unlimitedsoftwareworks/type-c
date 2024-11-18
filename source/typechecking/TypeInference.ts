@@ -47,7 +47,7 @@ export function inferFunctionReturnFromHeader(
 
     // this should be unreachable, parser makes sure that. if it is, there is an issue with the arguments
     if ((body === null) && (expr === null)) {
-        throw ctx.parser.customError(`${type} has no body nor expression`, ctx.location);
+        ctx.parser.customError(`${type} has no body nor expression`, ctx.location);
     }
 
     // if we have unset, we need to infer the type based on the return statements
@@ -84,7 +84,7 @@ export function inferFunctionReturnFromHeader(
             else if (voidFound) {
                 let allVoid = returnTypes.every((t) => t instanceof VoidType);
                 if (!allVoid) {
-                    throw ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
+                    ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
                 }
 
                 header.returnType = new VoidType(ctx.location);
@@ -96,7 +96,7 @@ export function inferFunctionReturnFromHeader(
             else {
                 let allMatch = findCompatibleTypes(ctx, returnTypes);
                 if (allMatch === null) {
-                    throw ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
+                    ctx.parser.customError(`Mixed return data types for ${type}`, body.location);
                 }
 
                 header.returnType = allMatch;
@@ -143,7 +143,7 @@ export function inferFunctionReturnFromHeader(
             for (let i = 0; i < returnStatements.length; i++) {
                 let retType = returnStatements[i].stmt.getReturnType(returnStatements[i].ctx);
                 if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                    throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, returnStatements[i].stmt.location);
+                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, returnStatements[i].stmt.location);
                 }
                 
                 returnStatements[i].stmt.returnExpression?.setHint(definedReturnType);
@@ -152,7 +152,7 @@ export function inferFunctionReturnFromHeader(
         else {
             let retType = expr!.inferReturn(ctx, definedReturnType);
             if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
+                ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
             }
         }
     }
@@ -184,7 +184,7 @@ export function inferFunctionYieldFromHeader(
 
     // this should be unreachable, parser makes sure that. if it is, there is an issue with the arguments
     if ((body === null) && (expr === null)) {
-        throw ctx.parser.customError(`Function has no body nor expression`, ctx.location);
+        ctx.parser.customError(`Function has no body nor expression`, ctx.location);
     }
 
     // if we have unset, we need to infer the type based on the return statements
@@ -221,7 +221,7 @@ export function inferFunctionYieldFromHeader(
             else if (voidFound) {
                 let allVoid = returnTypes.every((t) => t instanceof VoidType);
                 if (!allVoid) {
-                    throw ctx.parser.customError(`Mixed return data types for function`, body.location);
+                    ctx.parser.customError(`Mixed return data types for function`, body.location);
                 }
 
                 header.returnType = new VoidType(ctx.location);
@@ -233,7 +233,7 @@ export function inferFunctionYieldFromHeader(
             else {
                 let allMatch = findCompatibleTypes(ctx, returnTypes);
                 if (allMatch === null) {
-                    throw ctx.parser.customError(`Mixed return data types for function`, body.location);
+                    ctx.parser.customError(`Mixed return data types for function`, body.location);
                 }
 
                 header.returnType = allMatch;
@@ -280,7 +280,7 @@ export function inferFunctionYieldFromHeader(
             for (let i = 0; i < yieldExpressions.length; i++) {
                 let retType = yieldExpressions[i].yield.getReturnType(yieldExpressions[i].ctx);
                 if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                    throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, yieldExpressions[i].yield.location);
+                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, yieldExpressions[i].yield.location);
                 }
                 
                 yieldExpressions[i].yield.yieldExpression?.setHint(definedReturnType);
@@ -289,7 +289,7 @@ export function inferFunctionYieldFromHeader(
         else {
             let retType = expr!.inferReturn(ctx, definedReturnType);
             if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
+                ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
             }
         }
     }
@@ -414,12 +414,12 @@ export function findCompatibleTypes(ctx: Context, types: DataType[]): DataType |
     }
 
     if((t.length === 0) && (types.length > 0)){
-        throw ctx.parser.customError("All types are unreachable", ctx.location);
+        ctx.parser.customError("All types are unreachable", ctx.location);
     }
 
     // Check for base cases
     if (t.length === 0) {
-        throw ctx.parser.customError("Cannot find a common type for an empty list of types", ctx.location);
+        ctx.parser.customError("Cannot find a common type for an empty list of types", ctx.location);
     }
 
     // If there's only one type, it's trivially compatible with itself.
@@ -487,7 +487,7 @@ export function signatureFromGenerics(types: DataType[]): string {
  */
 export function buildGenericsMaps(ctx: Context, generics: GenericType[], concreteTypes: DataType[]): { [key: string]: DataType } {
     if (generics.length != concreteTypes.length) {
-        throw ctx.parser.customError(`Expected ${generics.length} generics, but got ${concreteTypes.length}`, ctx.location);
+        ctx.parser.customError(`Expected ${generics.length} generics, but got ${concreteTypes.length}`, ctx.location);
     }
 
     let map: { [key: string]: DataType } = {};
@@ -499,7 +499,7 @@ export function buildGenericsMaps(ctx: Context, generics: GenericType[], concret
         if (generic.constraint) {
             let ok = generic.constraint.checkType(ctx, concrete);
             if (!ok) {
-                throw ctx.parser.customError(`Generic type ${generic.name} does not respect the constraints: ${generic.constraint.types.map(e => e.shortname()).join(" | ")}`, ctx.location);
+                ctx.parser.customError(`Generic type ${generic.name} does not respect the constraints: ${generic.constraint.types.map(e => e.shortname()).join(" | ")}`, ctx.location);
             }
         }
 

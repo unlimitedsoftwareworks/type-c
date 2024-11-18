@@ -76,7 +76,7 @@ export class MemberAccessExpression extends Expression {
         let lhsType = this.left.infer(ctx, null);
 
         if (lhsType.is(ctx, NullableType)) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 `Cannot access member ${this.right.name} on nullable type`,
                 this.location,
             );
@@ -140,7 +140,7 @@ export class MemberAccessExpression extends Expression {
                 return this.inferredType;
             }
 
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 `Invalid member access of field ${this.right.name} on array type ${arrayType.arrayOf.shortname()}`,
                 this.location,
             );
@@ -155,7 +155,7 @@ export class MemberAccessExpression extends Expression {
                 (f) => f.name === this.right.name,
             );
             if (!field) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Field ${this.right.name} not found on struct ${structType.shortname()}`,
                     this.location,
                 );
@@ -176,7 +176,7 @@ export class MemberAccessExpression extends Expression {
                 (f) => f.name === this.right.name,
             );
             if (!field) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Field ${this.right.name} not found on class ${classType.shortname()}`,
                     this.location,
                 );
@@ -202,7 +202,7 @@ export class MemberAccessExpression extends Expression {
                 (m) => m.imethod.name === this.right.name,
             );
             if (!method) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Method ${this.right.name} not found on FFI namespace ${ffiType.shortname()}`,
                     this.location,
                 );
@@ -225,7 +225,7 @@ export class MemberAccessExpression extends Expression {
             );
 
             if (!parameter) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Parameter ${this.right.name} not found on variant constructor ${variantConstructorType.shortname()}`,
                     this.location,
                 );
@@ -251,14 +251,14 @@ export class MemberAccessExpression extends Expression {
                 (f) => f.name === this.right.name,
             );
             if (!field) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Field ${this.right.name} not found on class ${classType.shortname()}`,
                     this.location,
                 );
             }
 
             if (!field.isStatic) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Field ${this.right.name} is not static`,
                     this.location,
                 );
@@ -296,7 +296,7 @@ export class MemberAccessExpression extends Expression {
             );
 
             if (!constructor) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Constructor ${this.right.name} not found on variant ${variantType.shortname()}`,
                     this.location,
                 );
@@ -306,7 +306,7 @@ export class MemberAccessExpression extends Expression {
                 this.right.typeArguments.length > 0 &&
                 metaVariantType.typeArguments.length > 0
             ) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Generics are not allowed on both the variant and the constructor`,
                     this.location,
                 );
@@ -330,7 +330,7 @@ export class MemberAccessExpression extends Expression {
 
         if (lhsType.is(ctx, MetaEnumType)) {
             if (this.right.typeArguments.length > 0) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Enum ${lhsType.shortname()} is not allowed to have generics`,
                     this.location,
                 );
@@ -341,7 +341,7 @@ export class MemberAccessExpression extends Expression {
 
             let value = enumType.fields.find((v) => v.name === this.right.name);
             if (!value) {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     `Value ${this.right.name} not found on enum ${enumType.shortname()}`,
                     this.location,
                 );
@@ -364,7 +364,7 @@ export class MemberAccessExpression extends Expression {
             }
         }
 
-        throw ctx.parser.customError(
+        ctx.parser.customError(
             `Invalid member access of field ${this.right.name} on type ${lhsType.shortname()}`,
             this.location,
         );

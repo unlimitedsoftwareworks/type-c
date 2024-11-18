@@ -80,7 +80,7 @@ export class ElementExpression extends Expression {
         let variable: Symbol | null = scopedVar?.sym || null;
 
         if(variable === null){
-            throw ctx.parser.customError(`Variable ${this.name} not found`, this.location);
+            ctx.parser.customError(`Variable ${this.name} not found`, this.location);
         }
         
         if (variable instanceof DeclaredVariable) {
@@ -114,11 +114,11 @@ export class ElementExpression extends Expression {
 
             let numParams = variable.prototype.header.parameters.length;
             if((this.numParams != -1) && (this.numParams!= numParams)) {
-                throw ctx.parser.customError(`Function ${variable.name} expects ${numParams} parameters, but got ${this.numParams} instead`, this.location);
+                ctx.parser.customError(`Function ${variable.name} expects ${numParams} parameters, but got ${this.numParams} instead`, this.location);
             }
             // case 1
             if((variable.prototype.generics.length == 0) && (this.typeArguments.length > 0)) {
-                throw ctx.parser.customError(`Function ${variable.name} is not generic and does not expect type arguments`, this.location);
+                ctx.parser.customError(`Function ${variable.name} is not generic and does not expect type arguments`, this.location);
             }
 
             // case 2 and 3
@@ -145,13 +145,13 @@ export class ElementExpression extends Expression {
                 return this.inferredType;
             }
 
-            throw ctx.parser.customError(`Function expected to have ${variable.prototype.generics.length} type arguments, got ${this.typeArguments.length}`, this.location);
+            ctx.parser.customError(`Function expected to have ${variable.prototype.generics.length} type arguments, got ${this.typeArguments.length}`, this.location);
         }
         else if (variable instanceof FunctionArgument) {
             this.inferredType = variable.type;
 
             if(this.typeArguments.length > 0) {
-                throw ctx.parser.customError(`Function argument ${variable.name} is not allowed to have generics`, this.location);
+                ctx.parser.customError(`Function argument ${variable.name} is not allowed to have generics`, this.location);
             }
             // we can promote the type here as well
 
@@ -171,7 +171,7 @@ export class ElementExpression extends Expression {
         else if (variable instanceof VariablePattern) {
             // we do not allow generics here
             if(this.typeArguments.length > 0) {
-                throw ctx.parser.customError(`Variable pattern ${variable.name} is not allowed to have generics`, this.location);
+                ctx.parser.customError(`Variable pattern ${variable.name} is not allowed to have generics`, this.location);
             }
             this.inferredType = variable.type;
 
@@ -191,7 +191,7 @@ export class ElementExpression extends Expression {
         else if (variable instanceof DeclaredFFI){
             // we make sure we have no hint
             if(hint) {
-                throw ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a FFI`, this.location);
+                ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a FFI`, this.location);
             }
 
             this.inferredType = new FFINamespaceType(this.location, variable);
@@ -202,11 +202,11 @@ export class ElementExpression extends Expression {
         else if (variable instanceof DeclaredType) {
             // we make sure we have no hint
             if(hint) {
-                throw ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a MetaType`, this.location);
+                ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a MetaType`, this.location);
             }
 
             if(this.typeArguments.length > 0) {
-                throw ctx.parser.customError(`Type ${variable.name} is not allowed to have generics`, this.location);
+                ctx.parser.customError(`Type ${variable.name} is not allowed to have generics`, this.location);
             }
 
             /**
@@ -231,7 +231,7 @@ export class ElementExpression extends Expression {
             if(variable.type.is(ctx, InterfaceType)) {
                 // no generics are allowed here, so we make sure we have none
                 if(this.typeArguments.length > 0) {
-                    throw ctx.parser.customError(`Interface ${variable.type.shortname()} is not allowed to have generics`, this.location);
+                    ctx.parser.customError(`Interface ${variable.type.shortname()} is not allowed to have generics`, this.location);
                 }
                 this.inferredType = new MetaInterfaceType(this.location, variable.type);
                 this.isConstant = false;
@@ -242,7 +242,7 @@ export class ElementExpression extends Expression {
             if(variable.type.is(ctx, EnumType)) {
                 // make sure we have no generics
                 if(this.typeArguments.length > 0) {
-                    throw ctx.parser.customError(`Enum ${variable.type.shortname()} is not allowed to have generics`, this.location);
+                    ctx.parser.customError(`Enum ${variable.type.shortname()} is not allowed to have generics`, this.location);
                 }
 
                 this.inferredType = new MetaEnumType(this.location, variable.type);
@@ -261,7 +261,7 @@ export class ElementExpression extends Expression {
 
         }
 
-        throw ctx.parser.customError(`Not implemented`, this.location);
+        ctx.parser.customError(`Not implemented`, this.location);
     }
 
     /**

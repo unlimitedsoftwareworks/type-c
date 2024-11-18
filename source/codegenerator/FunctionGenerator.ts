@@ -463,7 +463,7 @@ export class FunctionGenerator {
             tmp = this.visitMutateExpression(expr, ctx);
         else if (expr instanceof UnreachableExpression)
             tmp = this.visitUnreachableExpression(expr, ctx);
-        else throw new Error("Invalid expression " + expr.toString());
+        else throw new Error("Invalid expression!" + expr.toString());
 
         if (tmp != "") {
             this.handleTypeCasting(expr, ctx, tmp);
@@ -607,7 +607,7 @@ export class FunctionGenerator {
         this.i("debug", "replacing index set expression with method call");
 
         if (!expr.operatorOverloadState.isMethodCall) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Invalid index set expression, expected method call",
                 expr.location,
             );
@@ -935,7 +935,7 @@ export class FunctionGenerator {
             !(expr.inferredType instanceof BasicType) &&
             !(expr.inferredType instanceof BooleanType)
         ) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Binary operation " +
                     expr.operator +
                     " is not yet implemented for " +
@@ -999,7 +999,7 @@ export class FunctionGenerator {
         } else {
             // make sure that the operator is == or !=
             if (expr.operator != "==" && expr.operator != "!=") {
-                throw ctx.parser.customError(
+                ctx.parser.customError(
                     "Cannot compare " +
                         expr.left.inferredType?.kind +
                         " with " +
@@ -1149,7 +1149,7 @@ export class FunctionGenerator {
         let attr = classType.getAttribute(element.name);
 
         if (attr == null) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Can only assign to class attributes",
                 element.location,
             );
@@ -1385,7 +1385,7 @@ export class FunctionGenerator {
             return this.ir_generate_anonymous_function_call(expr, ctx);
         }
 
-        throw ctx.parser.customError("Invalid expression", expr.location);
+        ctx.parser.customError("Invalid expression!", expr.location);
     }
 
     ir_generate_anonymous_function_call(
@@ -1586,7 +1586,7 @@ export class FunctionGenerator {
     ): string {
         let method = expr._calledClassMethod;
         if (method == null) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Unknown method " +
                     (baseExpression.right as ElementExpression).name,
                 lhsType.location,
@@ -1645,7 +1645,7 @@ export class FunctionGenerator {
         baseType: ArrayType,
     ): string {
         if (!(expr.lhs instanceof MemberAccessExpression)) {
-            throw ctx.parser.customError("Invalid expression", expr.location);
+            ctx.parser.customError("Invalid expression!", expr.location);
         }
         // check if array extend method
         if ((expr.lhs.right as ElementExpression).name == "extend") {
@@ -1668,7 +1668,7 @@ export class FunctionGenerator {
             return tmp;
         }
 
-        throw ctx.parser.customError("Invalid expression", expr.location);
+        ctx.parser.customError("Invalid expression!", expr.location);
     }
 
     ir_generate_interface_method_call(
@@ -1762,7 +1762,7 @@ export class FunctionGenerator {
         // check if it is static or not
 
         if (!(expr.lhs instanceof MemberAccessExpression)) {
-            throw ctx.parser.customError("Invalid expression", expr.location);
+            ctx.parser.customError("Invalid expression!", expr.location);
         }
 
         let typeArgs = (expr.lhs.right as ElementExpression).typeArguments;
@@ -1785,7 +1785,7 @@ export class FunctionGenerator {
 
         let isStatic = method?.isStatic;
         if (method == null) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Unknown method " + accessElement,
                 lhsType.location,
             );
@@ -1919,7 +1919,7 @@ export class FunctionGenerator {
         lhsType: FunctionType,
     ): string {
         if (!(expr.lhs instanceof ElementExpression)) {
-            throw ctx.parser.customError("Invalid expression", expr.location);
+            ctx.parser.customError("Invalid expression!", expr.location);
         }
 
         let sym = expr.lhs._scopedVar!.sym;
@@ -3533,7 +3533,7 @@ export class FunctionGenerator {
 
         // make sure we have less than 255 upvalues
         if (upvalues.size > 255) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Too many upvalues for a single closure, max is 255",
                 ctx.location,
             );
@@ -3905,7 +3905,7 @@ export class FunctionGenerator {
     ): string {
         // make sure expr.rhs is an element expression
         if (!(expr.right instanceof ElementExpression)) {
-            throw ctx.parser.customError(
+            ctx.parser.customError(
                 "Expected enum member name after `.`",
                 expr.location,
             );

@@ -38,7 +38,7 @@ export class StructDeconstructionExpression extends Expression {
         
 
         if (!structType.is(ctx, StructType)) {
-            throw ctx.parser.customError(`Expected tuple type, got ${structType.shortname()}`, this.location);
+            ctx.parser.customError(`Expected tuple type, got ${structType.shortname()}`, this.location);
         }
 
         let stType = structType.to(ctx, StructType) as StructType;
@@ -52,7 +52,7 @@ export class StructDeconstructionExpression extends Expression {
 
             // make sure the remaining fields are not empty
             if (remainingFields.length === 0) {
-                throw ctx.parser.customError(`All fields of struct ${stType.shortname()} have been deconstructed, nothing left to deconstruct`, this.location);
+                ctx.parser.customError(`All fields of struct ${stType.shortname()} have been deconstructed, nothing left to deconstruct`, this.location);
             } else {
                 this.inferredType = remainingFieldsType;
             }
@@ -60,7 +60,7 @@ export class StructDeconstructionExpression extends Expression {
         else {
             // make sure the field exists in the struct
             if (stType.getField(this.field!) == null) {
-                throw ctx.parser.customError(`Cannot deconstruct non field ${this.field} that does not exist in struct ${stType.shortname()}`, this.location);
+                ctx.parser.customError(`Cannot deconstruct non field ${this.field} that does not exist in struct ${stType.shortname()}`, this.location);
             }
 
             this.inferredType = stType.getField(this.field!)!.type;

@@ -10,6 +10,7 @@ import { BuiltinModules } from "./BuiltinModules";
 import { generateCode } from "./codegenerator/CodeGenerator";
 import { spawnSync } from "child_process";
 import { colors } from "./utils/termcolors";
+import { getStdLibPath } from "./cli/stdlib";
 
 export function readFile(filename: string): string {
     return fs.readFileSync(filename, "utf-8");
@@ -33,7 +34,7 @@ export module TypeC {
         target: "runnable" | "library" = "runnable";
         entry: string = "index.tc";
         dir: string = "";
-        static stdlibDir: string = process.env.TYPE_C_STDLIB!;
+        static stdlibDir: string = getStdLibPath();
         rawConfig: any = {};
         options: CompileOptions = {
             dir: "",
@@ -77,12 +78,19 @@ export module TypeC {
             return data;
         }
 
-        compile(mode: ParserMode = "compiler") {
+        /*
+         * if mode is intellisense and content is set, it used over the file,
+         * this is used by vscode extention to process unsaved file content
+         */
+        compile(mode: ParserMode = "compiler", content?: string) {
             console.log("Compiling ", this.dir);
             // start with index
             let entry = path.join(this.dir, this.entry);
             let entrySource = this.readPackage(entry);
-            let lexer = new Lexer(entry, entrySource);
+            let lexer = new Lexer(
+                entry,
+                mode == "intellisense" && content ? content : entrySource,
+            );
             lexer.filepath = entry;
             let parser = new Parser(
                 lexer,
@@ -108,7 +116,7 @@ export module TypeC {
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
                 if (!base) {
-                    throw parser.customError(
+                    parser.customError(
                         `Could not resolve import ${imp.basePath.join("/")}`,
                         imp.location,
                     );
@@ -116,10 +124,11 @@ export module TypeC {
 
                 let sym = base.ctx.lookup(imp.actualName);
                 if (!sym) {
-                    throw parser.customError(
+                    parser.customError(
                         `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
                         imp.location,
                     );
+                    continue;
                 }
 
                 this.basePackage.ctx.addExternalSymbol(sym, imp.alias);
@@ -169,7 +178,7 @@ export module TypeC {
             for (let imp of basePackage.imports) {
                 let base = this.resolveImport(imp);
                 if (!base) {
-                    throw parser.customError(
+                    parser.customError(
                         `Could not resolve import ${imp.basePath.join("/")}`,
                         imp.location,
                     );
@@ -177,10 +186,11 @@ export module TypeC {
 
                 let sym = base.ctx.lookup(imp.actualName);
                 if (!sym) {
-                    throw parser.customError(
+                    parser.customError(
                         `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
                         imp.location,
                     );
+                    continue;
                 }
 
                 basePackage.ctx.addExternalSymbol(sym, imp.alias);
@@ -199,7 +209,7 @@ export module TypeC {
         // make sure all env variables are set
         if (!TCCompiler.stdlibDir) {
             throw new Error(
-                "type-c requires TYPE_C_STDLIB environment variable to be set, please set it to the path of the stdlib folder",
+                "stdlib path not found, please use `typec stdlib install` to install the stdlib",
             );
         }
 

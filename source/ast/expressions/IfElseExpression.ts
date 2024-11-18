@@ -61,7 +61,7 @@ export class IfElseExpression extends Expression {
         if(!hint) {
             let commonType = findCompatibleTypes(ctx, typesCombined);
             if(!commonType) {
-                throw ctx.parser.customError(`No common type found for if-else expression inferred types: [${typesCombined.map(e => e.shortname()).join(",")}]`, this.location);
+                ctx.parser.customError(`No common type found for if-else expression inferred types: [${typesCombined.map(e => e.shortname()).join(",")}]`, this.location);
             }
             else {
                 this.inferredType = commonType;
@@ -75,7 +75,7 @@ export class IfElseExpression extends Expression {
             for (let i = 0; i < typesCombined.length; i++) {
                 let r = matchDataTypes(ctx, hint, typesCombined[i]);
                 if(!r.success) {
-                    throw ctx.parser.customError(`Incompatible type for condition ${i+1} expression, expected ${hint.shortname()} but ${typesCombined[i].shortname()} was found: ${r.message}`, this.location);
+                    ctx.parser.customError(`Incompatible type for condition ${i+1} expression, expected ${hint.shortname()} but ${typesCombined[i].shortname()} was found: ${r.message}`, this.location);
                 }
             }
 

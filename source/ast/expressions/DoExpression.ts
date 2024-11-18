@@ -46,23 +46,23 @@ export class DoExpression extends Expression {
 
         // make sure we have at least one statement
         if (this.block?.statements.length === 0) {
-            throw ctx.parser.error("Do-expression must have at least one statement", this.location);
+            ctx.parser.error("Do-expression must have at least one statement", this.location);
         }
 
         // make sure the last statement is a return statement
         let lastStatement = this.block?.statements[this.block.statements.length - 1];
         if (lastStatement && !(lastStatement instanceof ReturnStatement)) {
-            throw ctx.parser.error("Do-expression must end with a return statement", lastStatement.location);
+            ctx.parser.error("Do-expression must end with a return statement", lastStatement.location);
         }
 
         // make sure every return statement has a return expression and it is not a tuple construction
         for (let i = 0; i < this.returnStatements.length; i++) {
             let ret = this.returnStatements[i].stmt;
             if (ret.returnExpression == null) {
-                throw ctx.parser.error("Return statement must have a return expression", ret.location);
+                ctx.parser.error("Return statement must have a return expression", ret.location);
             }
             if (ret.returnExpression instanceof TupleConstructionExpression) {
-                throw ctx.parser.error("Tuple construction is not allowed in return statements", ret.location);
+                ctx.parser.error("Tuple construction is not allowed in return statements", ret.location);
             }
         }
 
@@ -80,7 +80,7 @@ export class DoExpression extends Expression {
 
             let allMatch = findCompatibleTypes(ctx, returnTypes);
             if (allMatch === null) {
-                throw ctx.parser.customError(`Mixed return data types in do-expression body`, this.block!.location);
+                ctx.parser.customError(`Mixed return data types in do-expression body`, this.block!.location);
             }
 
             this.inferredType = allMatch;
@@ -94,7 +94,7 @@ export class DoExpression extends Expression {
             for (let i = 0; i < this.returnStatements.length; i++) {
                 let retType = this.returnStatements[i].stmt.getReturnType(this.returnStatements[i].ctx);
                 if (!matchDataTypes(ctx, hint, retType, false).success) {
-                    throw ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${hint.shortname()}`, this.returnStatements[i].stmt.location);
+                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${hint.shortname()}`, this.returnStatements[i].stmt.location);
                 }
                 
                 this.returnStatements[i].stmt.returnExpression?.setHint(hint);

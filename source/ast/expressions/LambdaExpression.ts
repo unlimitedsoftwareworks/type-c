@@ -118,14 +118,14 @@ export class LambdaExpression extends Expression {
             inferFunctionYieldFromHeader(this.context, this.yieldExpressions, this.header, this.body, this.expression);
             // make sure we have no return statements
             if(this.returnStatements.length > 0) {
-                throw ctx.parser.customError("Coroutine function cannot have return statements", this.location);
+                ctx.parser.customError("Coroutine function cannot have return statements", this.location);
             }
         }
         else {
             inferFunctionReturnFromHeader(this.context, 'function', this.returnStatements, this.header, this.body, this.expression);
             // make sure we have no yield expressions
             if(this.yieldExpressions.length > 0) {
-                throw ctx.parser.customError("Function cannot have yield expressions", this.location);
+                ctx.parser.customError("Function cannot have yield expressions", this.location);
             }
         }
 

@@ -47,7 +47,7 @@ export class CoroutineType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a CoroutineType
         if(!originalType.is(ctx, CoroutineType)){
-            throw ctx.parser.customError(`Expected coroutine type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected coroutine type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let coroutineType = originalType.to(ctx, CoroutineType) as CoroutineType;

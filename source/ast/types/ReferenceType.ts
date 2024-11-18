@@ -66,11 +66,11 @@ export class ReferenceType extends DataType{
         // we first check what Data is, depending on that we check Processor
         let type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(initialPkg) : this._usageContext?.lookup(initialPkg);
         if(type == null){
-            throw ctx.parser.customError(`Type ${initialPkg} not found`, this.location);
+            ctx.parser.customError(`Type ${initialPkg} not found`, this.location);
         }
 
         if(!(type instanceof DeclaredType)){
-            throw ctx.parser.customError(`Type ${initialPkg} is not a declared type`, this.location);
+            ctx.parser.customError(`Type ${initialPkg} is not a declared type`, this.location);
         }
 
         // in case of variant constructor, we need to keep reference to the parent type
@@ -86,16 +86,16 @@ export class ReferenceType extends DataType{
         }
         
         if(type == null){
-            throw ctx.parser.customError(`Type ${fullPkg} not found`, this.location);
+            ctx.parser.customError(`Type ${fullPkg} not found`, this.location);
         }
 
         if(!(type instanceof DeclaredType)){
-            throw ctx.parser.customError(`Type ${fullPkg} is not a declared type`, this.location);
+            ctx.parser.customError(`Type ${fullPkg} is not a declared type`, this.location);
         }
 
         // check if we have the right number of type arguments
         if(type.genericParameters.length != this.typeArgs.length){
-            throw ctx.parser.customError(`Type ${fullPkg} requires ${type.genericParameters.length} type arguments [${type.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
+            ctx.parser.customError(`Type ${fullPkg} requires ${type.genericParameters.length} type arguments [${type.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
         }
 
 
@@ -121,7 +121,7 @@ export class ReferenceType extends DataType{
                     // now get the constructor matching this.pkg[1]
                     let constructor = parentVariant.constructors.find(c => c.name === this.pkg[1]);
                     if(constructor == null){
-                        throw ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
+                        ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
                     }
                     this.baseType = constructor;
                     this.baseDecl = type;
@@ -193,7 +193,7 @@ export class ReferenceType extends DataType{
             return this.baseType.methodExists(ctx, methodName);
         }
 
-        throw ctx.parser.customError("Reference is not a class neither an interface", this.location);
+        ctx.parser.customError("Reference is not a class neither an interface", this.location);
     }
 
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {

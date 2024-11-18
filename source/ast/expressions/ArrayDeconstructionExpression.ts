@@ -36,7 +36,7 @@ export class ArrayDeconstructionExpression extends Expression {
         let arrayType = this.arrayExpression.infer(ctx, null);
 
         if (!arrayType.is(ctx, ArrayType)) {
-            throw ctx.parser.customError(`Expected tuple type, got ${arrayType.shortname()}`, this.location);
+            ctx.parser.customError(`Expected tuple type, got ${arrayType.shortname()}`, this.location);
         }
 
         if(this.rest) {

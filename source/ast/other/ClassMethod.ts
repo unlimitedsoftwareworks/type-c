@@ -108,7 +108,7 @@ export class ClassMethod extends Symbol {
         
         /** removed in favor of location base type checking for classes
         if(this.imethod.header.returnType instanceof UnsetType) {
-            throw ctx.parser.customError(`Method ${this.imethod.name} has no return type`, this.location);
+            ctx.parser.customError(`Method ${this.imethod.name} has no return type`, this.location);
         }
          */
 
@@ -171,12 +171,12 @@ export class ClassMethod extends Symbol {
             arg.constraint.types.forEach(t => {t.resolve(ctx)});
 
             if(typeMap[arg.name] === undefined) {
-                throw ctx.parser.customError(`Generic type ${arg.name} not found in type map`, this.location);
+                ctx.parser.customError(`Generic type ${arg.name} not found in type map`, this.location);
             }
 
             let res = arg.constraint.checkType(ctx, typeMap[arg.name]);
             if(res === false) {
-                throw ctx.parser.customError(`Type ${typeMap[arg.name].shortname()} does not satisfy constraint set on generic type ${arg.name}`, this.location);
+                ctx.parser.customError(`Type ${typeMap[arg.name].shortname()} does not satisfy constraint set on generic type ${arg.name}`, this.location);
             }
         }
 

@@ -48,7 +48,7 @@ export class ArrayType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is an Array
         if(!originalType.is(ctx, ArrayType)){
-            throw ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let arrayType = originalType.to(ctx, ArrayType) as ArrayType;

@@ -64,7 +64,7 @@ export class GenericType extends DataType {
          * We throw an error because resolving generic types is not supported.
          * Resolving types must occur when all types are concrete.
          */
-        throw ctx.parser.customError("Generic type not resolved", this.location)
+        ctx.parser.customError("Generic type not resolved", this.location)
     }
 
     shortname(): string {
@@ -92,12 +92,12 @@ export class GenericType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure this is a declared generic
         if(!(this.name in declaredGenerics)){
-            throw ctx.parser.customError(`Generic type ${this.name} is not declared`, this.location);
+            ctx.parser.customError(`Generic type ${this.name} is not declared`, this.location);
         }
 
         // make sure the original type matches the constraint
         if(!this.constraint.checkType(ctx, originalType)){
-            throw ctx.parser.customError(`Generic type ${this.name} does not match constraint`, originalType.location);
+            ctx.parser.customError(`Generic type ${this.name} does not match constraint`, originalType.location);
         }
 
         if(this.name in typeMap){
@@ -108,12 +108,12 @@ export class GenericType extends DataType {
                 // Find a common type
                 let commonType = findCompatibleTypes(ctx, [typeMap[this.name], originalType]);
                 if(commonType === null){
-                    throw ctx.parser.customError(`Generic type ${this.name} do not match its same instance: expected ${typeMap[this.name].shortname()}, but ${originalType.shortname()} found`, originalType.location);
+                    ctx.parser.customError(`Generic type ${this.name} do not match its same instance: expected ${typeMap[this.name].shortname()}, but ${originalType.shortname()} found`, originalType.location);
                 }
                 else {
                     // we match the common type against the constraint of the generic type
                     if(!this.constraint.checkType(ctx, commonType)){
-                        throw ctx.parser.customError(`Inferred generic type ${this.name}: ${commonType.shortname()} does not match constraint, found multiple different usages of generic type: ${typeMap[this.name].shortname()} and ${originalType.shortname()}`, originalType.location);
+                        ctx.parser.customError(`Inferred generic type ${this.name}: ${commonType.shortname()} does not match constraint, found multiple different usages of generic type: ${typeMap[this.name].shortname()} and ${originalType.shortname()}`, originalType.location);
                     }
                     
                     // we update the type map

@@ -31,17 +31,17 @@ export class UnnamedStructConstructionExpression extends Expression {
         this.setHint(hint);
 
         if(hint === null) {
-            throw ctx.parser.customError("Cannot infer type of unnamed struct construction without a hint", this.location);
+            ctx.parser.customError("Cannot infer type of unnamed struct construction without a hint", this.location);
         }
 
         if(!hint.is(ctx, StructType)) {
-            throw ctx.parser.customError(`Cannot construct unnamed struct of type ${hint.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot construct unnamed struct of type ${hint.shortname()}`, this.location);
         }
 
         let structType = hint.to(ctx, StructType) as StructType;
         // make sure the number of elements matches the number of fields
         if(this.elements.length !== structType.fields.length) {
-            throw ctx.parser.customError(`Unnamed struct construction has ${this.elements.length} elements, but struct has ${structType.fields.length} fields`, this.location);
+            ctx.parser.customError(`Unnamed struct construction has ${this.elements.length} elements, but struct has ${structType.fields.length} fields`, this.location);
         }
 
         let consts = [];

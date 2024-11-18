@@ -202,7 +202,7 @@ export class InterfaceType extends DataType {
             return -1;
         }
         if (candidates.length > 1) {
-            throw ctx.parser.customError(`Ambiguous method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in interface ${this.shortname()}`, this.location);
+            ctx.parser.customError(`Ambiguous method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in interface ${this.shortname()}`, this.location);
         }
         return candidates[0]._indexInInterface;
     }
@@ -220,19 +220,19 @@ export class InterfaceType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is an InterfaceType
         if(!originalType.is(ctx, InterfaceType)){
-            throw ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         // make sure number of methods is the same
         let interfaceType = originalType.to(ctx, InterfaceType) as InterfaceType;
         if(this._allMethods.length != interfaceType._allMethods.length){
-            throw ctx.parser.customError(`Expected ${interfaceType.methods.length} methods, got ${this._allMethods.length} instead.`, this.location);
+            ctx.parser.customError(`Expected ${interfaceType.methods.length} methods, got ${this._allMethods.length} instead.`, this.location);
         }
 
         for(let i = 0; i < this._allMethods.length; i++){
             // make sure method name is the same
             if(this._allMethods[i].name != interfaceType.methods[i].name){
-                throw ctx.parser.customError(`Expected method ${interfaceType._allMethods[i].name}, got ${this._allMethods[i].name} instead.`, this.location);
+                ctx.parser.customError(`Expected method ${interfaceType._allMethods[i].name}, got ${this._allMethods[i].name} instead.`, this.location);
             }
 
             // get generics for the method
@@ -290,7 +290,7 @@ export class InterfaceType extends DataType {
             let method = obj.methods[i];
             let index = this.getMethodIndexBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
             if (index == -1) {
-                throw ctx.parser.customError(`Method ${method.name} not found in interface`, method.location);
+                ctx.parser.customError(`Method ${method.name} not found in interface`, method.location);
             }
             swaps.push(index);
         }
@@ -304,39 +304,39 @@ export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[])
         // make sure __inc__, __dec__, __neg__, __not__, __invert__ have no arguments
         if(["__inc__", "__dec__", "__neg__", "__not__", "__invert__"].includes(method.name)){
             if(method.header.parameters.length != 0){
-                throw ctx.parser.customError(`Method ${method.name} cannot have arguments`, method.location);
+                ctx.parser.customError(`Method ${method.name} cannot have arguments`, method.location);
             }
             if(method.isStatic){
-                throw ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
+                ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
 
         // make sure __index__ has at least one argument
         if(method.name == "__index__"){
             if(method.header.parameters.length == 0){
-                throw ctx.parser.customError(`Method ${method.name} must have at least one argument`, method.location);
+                ctx.parser.customError(`Method ${method.name} must have at least one argument`, method.location);
             }
             if(method.isStatic){
-                throw ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
+                ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
 
         if(method.name == "__index_set__"){
             if(method.header.parameters.length < 2){
-                throw ctx.parser.customError(`Method ${method.name} must have at least two argument`, method.location);
+                ctx.parser.customError(`Method ${method.name} must have at least two argument`, method.location);
             }
             if(method.isStatic){
-                throw ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
+                ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
 
         // make sure __mul__, __div__, __mod__, __add__, __sub__, __lshift__, __rshift__, __lt__, __le__, __gt__, __ge__, __band__, __xor__, __bor__, __and__, __or__ have exactly one argument
         if(["__mul__", "__div__", "__mod__", "__add__", "__sub__", "__lshift__", "__rshift__", "__lt__", "__le__", "__gt__", "__ge__", "__band__", "__xor__", "__bor__", "__and__", "__or__"].includes(method.name)){
             if(method.header.parameters.length != 1){
-                throw ctx.parser.customError(`Method ${method.name} must have exactly one argument`, method.location);
+                ctx.parser.customError(`Method ${method.name} must have exactly one argument`, method.location);
             }
             if(method.isStatic){
-                throw ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
+                ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
     });

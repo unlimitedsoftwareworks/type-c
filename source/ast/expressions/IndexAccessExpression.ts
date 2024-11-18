@@ -45,7 +45,7 @@ export class IndexAccessExpression extends Expression {
         let lhsType = this.lhs.infer(ctx, null);
 
         if(lhsType.is(ctx, NullableType)) {
-            throw ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.shortname()}, please denull the expression first`, this.location);
+            ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.shortname()}, please denull the expression first`, this.location);
         }
             
 
@@ -53,12 +53,12 @@ export class IndexAccessExpression extends Expression {
         if(lhsType.is(ctx, InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isIndexable(ctx, lhsT)) {
-                throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
             }
 
             let m = getOperatorOverloadType(ctx, "__index__", lhsT, this.indexes.map((index) => index.infer(ctx, null)));
             if(m === null) {
-                throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -69,14 +69,14 @@ export class IndexAccessExpression extends Expression {
             
             // make sure we have exactly one index
             if(this.indexes.length != 1) {
-                throw ctx.parser.customError(`Array index access expects exactly one index, got ${this.indexes.length}`, this.location);
+                ctx.parser.customError(`Array index access expects exactly one index, got ${this.indexes.length}`, this.location);
             }
 
             this.indexes[0].infer(ctx, new BasicType(this.location, "u64"));
             this.inferredType = arrayType.arrayOf;
         }
         else {
-            throw ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+            ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
         }
 
         

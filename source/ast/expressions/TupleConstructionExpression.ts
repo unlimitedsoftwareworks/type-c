@@ -29,7 +29,7 @@ export class TupleConstructionExpression extends Expression {
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
-        throw ctx.parser.customError("Tuple construction is only allowed in function return types", this.location);
+        ctx.parser.customError("Tuple construction is only allowed in function return types", this.location);
     }
 
     /**
@@ -41,11 +41,11 @@ export class TupleConstructionExpression extends Expression {
         /// with addition to all elements must be variables!
         for(let i = 0; i < this.elements.length; i++) {
             if(!(this.elements[i] instanceof ElementExpression)) {
-                throw ctx.parser.customError("Tuple construction elements must be variables", this.location);
+                ctx.parser.customError("Tuple construction elements must be variables", this.location);
             }
             else {
                 if (!(this.elements[i] as ElementExpression).isVariable()) {
-                    throw ctx.parser.customError("Tuple construction elements must be variables", this.location);
+                    ctx.parser.customError("Tuple construction elements must be variables", this.location);
                 }
             }
         }
@@ -58,7 +58,7 @@ export class TupleConstructionExpression extends Expression {
         this.setHint(hint);
 
         if(this.elements.length <= 1) {
-            throw ctx.parser.customError("Tuple construction must have at least two elements", this.location);
+            ctx.parser.customError("Tuple construction must have at least two elements", this.location);
         }
 
         let baseHint = hint?hint.to(ctx, TupleType) as TupleType:null;
@@ -71,7 +71,7 @@ export class TupleConstructionExpression extends Expression {
         else {
             // check if the number of elements matches the number of fields
             if(this.elements.length !== baseHint.types.length) {
-                throw ctx.parser.customError("Tuple construction has more elements than the tuple has fields", this.location);
+                ctx.parser.customError("Tuple construction has more elements than the tuple has fields", this.location);
             }
 
             // check if the types of the elements match the types of the fields
@@ -84,7 +84,7 @@ export class TupleConstructionExpression extends Expression {
 
         for(let i = 0; i < this.elements.length; i++) {
             if(this.elements[i].inferredType!.is(ctx, TupleType)) {
-                throw ctx.parser.customError("Tuple construction cannot contain other tuples", this.location);
+                ctx.parser.customError("Tuple construction cannot contain other tuples", this.location);
             }
         }
 

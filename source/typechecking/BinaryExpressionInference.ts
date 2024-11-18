@@ -46,7 +46,7 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
             return new BasicType(expr.location, res);
         }
         else {
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
     }
 
@@ -68,7 +68,7 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    throw ctx.parser.customError(`Cannot operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 
 // subtraction(-), substraction assignment (-=) requires two numeric inputs and returns a numeric output
@@ -79,7 +79,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
             return new BasicType(expr.location, res);
         }
         else {
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
     }
 
@@ -92,7 +92,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
         }
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 
 // multiplication(*), multiplication assignment(*=) requires two numeric inputs and returns a numeric output
@@ -103,7 +103,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
             return new BasicType(expr.location, res);
         }
         else {
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
     }
 
@@ -116,7 +116,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
         }
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 
 // division(/), division assignment requires two numeric inputs and returns a numeric output
@@ -127,7 +127,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
             return new BasicType(expr.location, res);
         }
         else {
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
     }
 
@@ -140,7 +140,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 
 // modulo(%) requires two numeric inputs and returns a numeric output
@@ -151,7 +151,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
             return new BasicType(expr.location, res);
         }
         else {
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
     }
 
@@ -164,7 +164,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
         }
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 
 // less than(<), less or equal(<=), greater than(>), greater or tequal(>=) requires two numeric inputs and returns a bool
@@ -175,7 +175,7 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
             return new BooleanType(expr.location);
         }
         else {
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
     }
 
@@ -206,7 +206,7 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         }
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on lhs type ${lhs.shortname()}`, expr.location);
 }
 
 /**
@@ -243,7 +243,7 @@ function inferLogicalAndOr(ctx: Context, lhs: DataType, rhs: DataType, expr: Bin
         return new BooleanType(expr.location);
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
 }
 
 function inferCoalescing(ctx: Context, lhs: DataType, rhs:DataType, expr: BinaryExpression): DataType {
@@ -289,30 +289,30 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){ 
         // make sure it is not float 
         if(lhs.kind === "f32" || lhs.kind === "f64"){
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
 
         if (rhs.kind === "f32" || rhs.kind === "f64"){
-            throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
         }
 
         return new BasicType(expr.location, basicTypePromotionMap[lhs.kind][rhs.kind]);
     }
 
-    throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
+    ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);
 }
 
 // assignment(=) requires two compatible inputs and returns the lhs type
 function inferAssignment(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression) {
     let res = matchDataTypes(ctx, lhs, rhs);
     if (!res.success) {
-        throw ctx.parser.customError(`Cannot use = operator on types ${lhs.shortname()} and ${rhs.shortname()}: ${res.message}`, expr.location);
+        ctx.parser.customError(`Cannot use = operator on types ${lhs.shortname()} and ${rhs.shortname()}: ${res.message}`, expr.location);
     }
 
     /*
     TODO: handle const
     if(lhs.isConst && !lhs.isValueBasedType()){
-        throw ctx.parser.customError(`Cannot assign to const variable/attribute`, expr.location);
+        ctx.parser.customError(`Cannot assign to const variable/attribute`, expr.location);
     }
     */
 
@@ -323,7 +323,7 @@ function inferAssignment(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
 function inferEquality(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression) {
     let res = matchDataTypes(ctx, lhs, rhs);
     if (!res.success) {
-        throw ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}: ${res.message}`, expr.location);
+        ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}: ${res.message}`, expr.location);
     }
     return new BooleanType(expr.location);
 }

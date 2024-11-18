@@ -30,10 +30,10 @@ export class NullableType extends DataType {
 
     resolve(ctx: Context) {
         if(this.type.is(ctx,NullableType)) {
-            throw ctx.parser.customError("Cannot have nested nullable types", this.type.location);
+            ctx.parser.customError("Cannot have nested nullable types", this.type.location);
         }
         if(this.type.is(ctx, NullType)) {
-            throw ctx.parser.customError("Cannot have a nullable type that is null", this.type.location);
+            ctx.parser.customError("Cannot have a nullable type that is null", this.type.location);
         }
 
         this.type.resolve(ctx);
@@ -67,7 +67,7 @@ export class NullableType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a NullableType
         if(!originalType.is(ctx, NullableType)){
-            throw ctx.parser.customError(`Expected nullable type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected nullable type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let nullableType = originalType.to(ctx, NullableType) as NullableType;

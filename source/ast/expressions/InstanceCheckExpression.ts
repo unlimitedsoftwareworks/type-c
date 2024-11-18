@@ -77,31 +77,31 @@ export class InstanceCheckExpression extends Expression {
             lhsType.is(ctx, ClassType) ||
             lhsType.is(ctx, InterfaceType)
         )) {
-            throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
+            ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
         }
 
         if(lhsType.is(ctx, ClassType)) {
             if(!(this.type.is(ctx, InterfaceType))) {
-                throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
+                ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
 
         if(lhsType.is(ctx, InterfaceType)) {
             if(!(this.type.is(ctx, InterfaceType) || this.type.is(ctx, ClassType))) {
-                throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
+                ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
 
         if(lhsType.is(ctx, VariantConstructorType)) {
             if(!(this.type.is(ctx, VariantType))) {
-                throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
+                ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
 
         /* unsure about this
         if(lhsType.is(ctx, VariantType)) {
             if(!(this.type.is(ctx, VariantType))) {
-                throw ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
+                ctx.parser.customError(`Invalid instance check on type ${lhsType.shortname()} against ${this.type.shortname()}`, this.location);
             }
         }
         */

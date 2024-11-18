@@ -58,7 +58,7 @@ export class NewExpression extends Expression {
                 this._calledInitMethod = null;
             }
             else if(initMethod.length > 1) {
-                throw ctx.parser.customError(`Ambiguous init method found for class ${classType.shortname()} with arguments ${this.arguments.map(a => a.inferredType!.shortname()).join(", ")}`, this.location);
+                ctx.parser.customError(`Ambiguous init method found for class ${classType.shortname()} with arguments ${this.arguments.map(a => a.inferredType!.shortname()).join(", ")}`, this.location);
             }
             else {
                 this._hasInitMethod = true;
@@ -76,7 +76,7 @@ export class NewExpression extends Expression {
             return this.inferredType;
         }
         else {
-            throw ctx.parser.customError(`Cannot use new with type ${this.type.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot use new with type ${this.type.shortname()}`, this.location);
         }
     }
 

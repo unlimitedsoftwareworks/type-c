@@ -119,7 +119,7 @@ export class MatchExpression extends Expression {
         let res = findCompatibleTypes(ctx, matchExprsTypes);
 
         if(!res) {
-            throw ctx.parser.customError(`No common type found for match expression`, this.location);
+            ctx.parser.customError(`No common type found for match expression`, this.location);
         }
 
         this.isConstant = false;

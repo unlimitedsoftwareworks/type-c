@@ -67,7 +67,7 @@ export class FunctionCallExpression extends Expression {
             if (header.parameters[i].isMutable) {
                 // we also make  sure that we respect the constraints of the parameter, i.e mutability
                 if (!checkExpressionArgConst(this.args[i], this.args[i].inferredType!, header.parameters[i], header)) {
-                    throw ctx.parser.customError(`Argument ${this.args[i].isConstant ? "const" : ""} ${i} is not assignable to parameter ${header.parameters[i].isMutable ? "mut " : ""}${header.parameters[i].name}, mutability missmatch`, this.args[i].location);
+                    ctx.parser.customError(`Argument ${this.args[i].isConstant ? "const" : ""} ${i} is not assignable to parameter ${header.parameters[i].isMutable ? "mut " : ""}${header.parameters[i].name}, mutability missmatch`, this.args[i].location);
                 }
             }
         }
@@ -144,7 +144,7 @@ export class FunctionCallExpression extends Expression {
 
         let lhsType = this.lhs.infer(ctx, null);
         if (lhsType.is(ctx, NullableType)) {
-            throw ctx.parser.customError("Cannot call a possibly null value", this.location);
+            ctx.parser.customError("Cannot call a possibly null value", this.location);
         }
 
         /**
@@ -176,7 +176,7 @@ export class FunctionCallExpression extends Expression {
             return this.inferCoroutine(ctx, lhsType);
         }
 
-        throw ctx.parser.customError(`Invalid function call`, this.location);
+        ctx.parser.customError(`Invalid function call`, this.location);
     }
 
     private inferCallable(ctx: Context, lhsType: DataType) {
@@ -184,13 +184,13 @@ export class FunctionCallExpression extends Expression {
         let iscallable = isCallable(ctx, lhsT);
 
         if (!iscallable) {
-            throw ctx.parser.customError(`Type ${lhsT.shortname()} is not callable`, this.location);
+            ctx.parser.customError(`Type ${lhsT.shortname()} is not callable`, this.location);
         }
 
         let method = getOperatorOverloadType(ctx, "__call__", lhsT, this.args.map(e => e.infer(ctx, null)));
 
         if (!method) {
-            throw ctx.parser.customError(`Method __call__ not found in ${lhsT.shortname()}`, this.location);
+            ctx.parser.customError(`Method __call__ not found in ${lhsT.shortname()}`, this.location);
         }
 
         // setup the hint for call arguments 
@@ -213,7 +213,7 @@ export class FunctionCallExpression extends Expression {
 
         // check if the number of arguments is correct
         if (this.args.length !== interfaceMethod.header.parameters.length) {
-            throw ctx.parser.customError(`Expected ${interfaceMethod.header.parameters.length} arguments, got ${this.args.length}`, this.location);
+            ctx.parser.customError(`Expected ${interfaceMethod.header.parameters.length} arguments, got ${this.args.length}`, this.location);
         }
 
         for (let i = 0; i < this.args.length; i++) {
@@ -222,12 +222,12 @@ export class FunctionCallExpression extends Expression {
 
             let res = matchDataTypes(ctx, paramType, argType);
             if (!res.success) {
-                throw ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
+                ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
             }
 
             // we also make sure that we respect the constraints of the parameter, i.e mutability
             if (!checkExpressionArgConst(this.args[i], argType, interfaceMethod.header.parameters[i], lhsType)) {
-                throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
+                ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
             }
 
         }
@@ -262,10 +262,10 @@ export class FunctionCallExpression extends Expression {
             let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
-                throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${baseExprType.shortname()}`, this.location);
+                ctx.parser.customError(`Method ${memberExpr.name} not found in class ${baseExprType.shortname()}`, this.location);
             }
             if (candidateMethods.length > 1) {
-                throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseExprType.shortname()}`, this.location);
+                ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseExprType.shortname()}`, this.location);
             }
 
             let method = candidateMethods[0];
@@ -275,7 +275,7 @@ export class FunctionCallExpression extends Expression {
             for (let i = 0; i < this.args.length; i++) {
                 this.args[i].infer(ctx, method.header.parameters[i].type);
                 if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
-                    throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
+                    ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
             }
 
@@ -302,13 +302,13 @@ export class FunctionCallExpression extends Expression {
         let lhsT = lhsType as FunctionType;
 
         if (lhsT.isCoroutine) {
-            throw ctx.parser.customError(`Cannot call coroutine directly`, this.location);
+            ctx.parser.customError(`Cannot call coroutine directly`, this.location);
         }
 
         // regular function call
         // check if the number of arguments is correct
         if (this.args.length !== lhsT.parameters.length) {
-            throw ctx.parser.customError(`Expected ${lhsT.parameters.length} arguments, got ${this.args.length}`, this.location);
+            ctx.parser.customError(`Expected ${lhsT.parameters.length} arguments, got ${this.args.length}`, this.location);
         }
 
         for (let i = 0; i < this.args.length; i++) {
@@ -317,7 +317,7 @@ export class FunctionCallExpression extends Expression {
 
             let res = matchDataTypes(ctx, paramType, argType);
             if (!res.success) {
-                throw ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
+                ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
             }
         }
 
@@ -341,17 +341,17 @@ export class FunctionCallExpression extends Expression {
 
         let candidateMethods = baseInterface.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
         if (candidateMethods.length === 0) {
-            throw ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseInterface.shortname()}`, this.location);
+            ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseInterface.shortname()}`, this.location);
         }
         if (candidateMethods.length > 1) {
-            throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseInterface.shortname()}`, this.location);
+            ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseInterface.shortname()}`, this.location);
         }
 
         let method = candidateMethods[0];
         for (let i = 0; i < this.args.length; i++) {
             this.args[i].infer(ctx, method.header.parameters[i].type);
             if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
-                throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
+                ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
             }
         }
 
@@ -387,18 +387,18 @@ export class FunctionCallExpression extends Expression {
             let candidateMethods = classType.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
 
             if (candidateMethods.length === 0) {
-                throw ctx.parser.customError(`Method ${memberExpr.name} not found in class ${classType.shortname()}`, this.location);
+                ctx.parser.customError(`Method ${memberExpr.name} not found in class ${classType.shortname()}`, this.location);
             }
 
             if (candidateMethods.length > 1) {
-                throw ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${classType.shortname()}`, this.location);
+                ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${classType.shortname()}`, this.location);
             }
 
             let method = candidateMethods[0];
             for (let i = 0; i < this.args.length; i++) {
                 this.args[i].infer(ctx, method.header.parameters[i].type);
                 if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
-                    throw ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
+                    ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
             }
 
@@ -428,7 +428,7 @@ export class FunctionCallExpression extends Expression {
             let variantType = metaVariant.variantType.to(ctx, VariantType) as VariantType;
 
             if (metaVariantConstructor.typeArguments.length !== memberExpr.typeArguments.length) {
-                throw ctx.parser.customError(`Expected ${metaVariantConstructor.typeArguments.length} type arguments, got ${memberExpr.typeArguments.length}`, this.location);
+                ctx.parser.customError(`Expected ${metaVariantConstructor.typeArguments.length} type arguments, got ${memberExpr.typeArguments.length}`, this.location);
             }
 
             if (metaVariantConstructor.typeArguments.length > 0) {
@@ -441,7 +441,7 @@ export class FunctionCallExpression extends Expression {
             let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
 
             if (variantConstructor === undefined) {
-                throw ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
+                ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
             }
 
             // if we have generics, we need to clone the variant type
@@ -450,7 +450,7 @@ export class FunctionCallExpression extends Expression {
 
             // make sure we have the right number of arguments
             if (this.args.length !== variantConstructor.parameters.length) {
-                throw ctx.parser.customError(`Expected ${variantConstructor.parameters.length} arguments, got ${this.args.length}`, this.location);
+                ctx.parser.customError(`Expected ${variantConstructor.parameters.length} arguments, got ${this.args.length}`, this.location);
             }
 
             // infer the arguments
@@ -475,7 +475,7 @@ export class FunctionCallExpression extends Expression {
 
         // make sure we have all required arguments
         if (this.args.length !== coroutineType.fnType.parameters.length) {
-            throw ctx.parser.customError(`Expected ${coroutineType.fnType.parameters.length} arguments, got ${this.args.length}`, this.location);
+            ctx.parser.customError(`Expected ${coroutineType.fnType.parameters.length} arguments, got ${this.args.length}`, this.location);
         }
 
         // infer the arguments

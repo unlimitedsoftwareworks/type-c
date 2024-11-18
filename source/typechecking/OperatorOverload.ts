@@ -33,7 +33,7 @@ export function isIndexable(ctx: Context, dt: OverridableMethodType) {
 
 export function setIndexesHint(ctx: Context, method: InterfaceMethod, exprList: Expression[]){
     if(method.header.parameters.length != exprList.length){
-        throw ctx.parser.customError(`Type mismatch in __index__: expected ${method.header.parameters.length} arguments, got ${exprList.length}`, exprList[0].location);
+        ctx.parser.customError(`Type mismatch in __index__: expected ${method.header.parameters.length} arguments, got ${exprList.length}`, exprList[0].location);
     }
 
     for(let i = 0; i < method.header.parameters.length; i++){
@@ -74,7 +74,7 @@ export function isCallable(ctx: Context, dt: OverridableMethodType){
 
 export function matchCall(ctx: Context, method: InterfaceMethod, exprList: Expression[]){
     if(method.header.parameters.length != exprList.length){
-        throw ctx.parser.customError(`Type mismatch in __call__: expected ${method.header.parameters.length} arguments, got ${exprList.length}`, exprList[0].location);
+        ctx.parser.customError(`Type mismatch in __call__: expected ${method.header.parameters.length} arguments, got ${exprList.length}`, exprList[0].location);
     }
 
     for(let i = 0; i < method.header.parameters.length; i++){
@@ -83,7 +83,7 @@ export function matchCall(ctx: Context, method: InterfaceMethod, exprList: Expre
 
         let res = matchDataTypes(ctx, param.type, expr.infer(ctx, param.type));
         if(!res.success){
-            throw ctx.parser.customError(`Type mismatch in __call__, parameter #${i} "${param.name}": cannot assign type '${expr.infer(ctx).shortname()}' to parameter of type '${param.type.shortname()}': ${res.message}`, expr.location);
+            ctx.parser.customError(`Type mismatch in __call__, parameter #${i} "${param.name}": cannot assign type '${expr.infer(ctx).shortname()}' to parameter of type '${param.type.shortname()}': ${res.message}`, expr.location);
         }
     }
 
@@ -142,7 +142,7 @@ export function getOperatorOverloadType(ctx: Context, __op__: string, dt: Overri
             return method[0];
         }
         else {
-            throw ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
+            ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
         }
 
     }
@@ -157,7 +157,7 @@ export function getOperatorOverloadType(ctx: Context, __op__: string, dt: Overri
             return method[0];
         }
         else {
-            throw ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
+            ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
         }
 
     }

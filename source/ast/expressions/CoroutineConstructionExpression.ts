@@ -34,13 +34,13 @@ export class CoroutineConstructionExpression extends Expression {
 
         // make sure baseFn is a function
         if(!this.baseFn.inferredType!.is(ctx, FunctionType)) {
-            throw ctx.parser.customError(`Cannot construct coroutine from non-function expression`, this.location);
+            ctx.parser.customError(`Cannot construct coroutine from non-function expression`, this.location);
         }
 
         let fnType = this.baseFn.inferredType!.to(ctx, FunctionType) as FunctionType;
         // make sure the function is coroutine compatible
         if(!fnType.isCoroutine) {
-            throw ctx.parser.customError(`Function is not coroutine compatible`, this.baseFn.location);
+            ctx.parser.customError(`Function is not coroutine compatible`, this.baseFn.location);
         }
 
         this.inferredType = new CoroutineType(this.location, fnType);

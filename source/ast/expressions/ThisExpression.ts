@@ -38,7 +38,7 @@ export class ThisExpression extends Expression {
 
             // we cannot use 'this' in a static method
             if(method?.imethod.isStatic) {
-                throw ctx.parser.customError(`Cannot use 'this' in a static method`, this.location);
+                ctx.parser.customError(`Cannot use 'this' in a static method`, this.location);
             }
 
             let activeMethod = ctx.getActiveMethod();
@@ -50,7 +50,7 @@ export class ThisExpression extends Expression {
 
             }
             else {
-                throw ctx.parser.customError(`'this' can only be used within a class method`, this.location);
+                ctx.parser.customError(`'this' can only be used within a class method`, this.location);
             }
 
             this.inferredType = cls;
@@ -58,7 +58,7 @@ export class ThisExpression extends Expression {
             return this.inferredType;
         }
         else {
-            throw ctx.parser.customError(`'this' can only be used within a class or thread`, this.location);
+            ctx.parser.customError(`'this' can only be used within a class or thread`, this.location);
         }
     }
 

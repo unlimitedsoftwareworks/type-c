@@ -256,6 +256,7 @@ export class Parser {
         }
         msg += "\n";
 
+
         console.log(
             colors.FgRed + colors.Underscore + colors.Bright,
             `Compiler Error: ${message}`,
@@ -265,7 +266,10 @@ export class Parser {
             `${this.lexer.filepath || "<stdin>"}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`,
         );
 
-        return new Error(message);
+
+        if(this.mode == "compiler") {
+            throw new Error(message);
+        }
     }
 
 
