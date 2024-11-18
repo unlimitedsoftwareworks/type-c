@@ -39,6 +39,8 @@ Usage: type-c <command> [options]
         stdlib where            Prints the path to the standard library
 ```
 
+`stdlib` will be installed in your `~/.type-c/stdlib` and used as the default search path for the standard library.
+
 ## Project Status
 Still under **heavy** development. The compiler frontend is almost complete and the compiler will need to be heavily tested.
 
