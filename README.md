@@ -20,9 +20,27 @@ Setting up Type-C requires the following steps:
 
 To get started, please have a look at the documentation: [https://typec.praisethemoon.org/docs/getting-started](https://typec.praisethemoon.org/docs/getting-started)
 
+## CLI Usage:
+After installing type-c either via npm `npm install -g @unlimitedsoftwareworks/type-c` or by cloning this repo, you can use the `type-c` command to compile your code.
+
+```bash
+Type-c compiler, version ${compilerVersion}.
+Usage: type-c <command> [options]
+        --run-tests             Run all unit test
+        --compile <dir>         Compile a directory
+        --no-generate-binaries  Do not generate binaries
+        --output <dir>          Output folder
+        --run                   Run the generated output
+        --generate-ir           Generate IR and DOT files
+        --no-warnings           Do not show warnings
+        init <folder>           Initialize a new project at the given folder
+        stdlib install          Install the standard library from git
+        stdlib update           Updates the standard library from git
+        stdlib where            Prints the path to the standard library
+```
+
 ## Project Status
 Still under **heavy** development. The compiler frontend is almost complete and the compiler will need to be heavily tested.
-VM is being redesigned to support new form of concurrency.
 
 Keep an eye on https://typec.praisethemoon.org/posts for updates
 
