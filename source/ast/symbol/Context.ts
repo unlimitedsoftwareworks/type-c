@@ -117,6 +117,11 @@ export class Context {
      */
     location: SymbolLocation;
 
+    /**
+     * End location of this context, used for intellisense
+     */
+    endLocation: SymbolLocation | null = null;
+
     constructor(
         location: SymbolLocation,
         parser: Parser,
@@ -449,6 +454,8 @@ export class Context {
         newContext.owner = this.owner;
         newContext.pkg = this.pkg;
 
+        newContext.endLocation = this.endLocation;
+
         return newContext;
     }
 
@@ -534,5 +541,12 @@ export class Context {
 
     getChildContexts(): Context[] {
         return this._children;
+    }
+
+    getEndLocation(): SymbolLocation | null {
+        if (!this.endLocation && this.parent) {
+            return this.parent.getEndLocation();
+        }
+        return this.endLocation;
     }
 }

@@ -1050,6 +1050,8 @@ function parseClassMethod(parser: Parser, ctx: Context, classOrProcessMethod = "
 
     fn.expression = expression;
     fn.body = body;
+
+    methodScope.endLocation = parser.loc();
     return fn;
 }
 
@@ -1073,6 +1075,7 @@ function parseExpressionLet(parser: Parser, ctx: Context): Expression {
         let variables = parseVariableDeclarationList(parser, newScope);
         parser.expect("in");
         let body = parseExpression(parser, newScope);
+        newScope.endLocation = parser.loc();
         return new LetInExpression(loc, newScope, variables, body);
     }
     else {
@@ -1570,6 +1573,7 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
             parser.reject();
             let body = parseStatementBlock(parser, newScope);
             fn.body = body;
+            newScope.endLocation = parser.loc();
             return fn
         }
         else {
@@ -1577,6 +1581,7 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
             parser.expect("=");
             let fnBody = parseExpression(parser, newScope);
             fn.expression = fnBody;
+            newScope.endLocation = parser.loc();
             return fn;
         }
     }
@@ -1609,6 +1614,7 @@ function parseExpressionPrimary(parser: Parser, ctx: Context): Expression {
         newCtx.setOwner(doExpr);
         let block = parseStatementBlock(parser, newCtx);
         doExpr.block = block;
+        newCtx.endLocation = parser.loc();
 
         return doExpr;
     }
@@ -2136,6 +2142,7 @@ function parseMatchCases(parser: Parser, ctx: Context, form: "expr" | "stmt" = "
             }
             parser.reject();
         }
+        newScope.endLocation = parser.loc();
     }
     return cases;
 }
@@ -2468,6 +2475,7 @@ function parseStatementFor(parser: Parser, ctx: Context): ForStatement {
     }
 
     let body = parseStatementBlock(parser, newScope);
+    newScope.endLocation = parser.loc();
     // mark the statement block as a loop context
     return new ForStatement(loc, newScope, initializers, condition, incrementors, body);
 }
@@ -2524,6 +2532,7 @@ function parseStatementBlock(parser: Parser, ctx: Context, isLoop: boolean = fal
         canLoop = token.type !== "}";
         parser.reject();
     }
+    newScope.endLocation = parser.loc();
 
     parser.expect("}");
     return new BlockStatement(loc, newScope, statements);
@@ -2577,6 +2586,7 @@ function parseStatementFn(parser: Parser, ctx: Context): FunctionDeclarationStat
     let fnStatement = new FunctionDeclarationStatement(loc, fn);
     fn.declStatement = fnStatement;
     ctx.addSymbol(fn);
+    newScope.endLocation = parser.loc();
 
     //ctx.overrideSymbol(proto.name, fn.astNode);
     return fnStatement;
