@@ -30,7 +30,6 @@ function initProject(folder: string) {
         // Create the folder recursively if it does not exist
         fs.mkdirSync(folderPath, { recursive: true });
     }
-    fs.mkdirSync(path.join(folderPath, "lib"), { recursive: true });
 
     // Folder is either newly created or empty, proceed with initialization
     let folderName = path.basename(folderPath);
