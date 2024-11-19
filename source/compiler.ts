@@ -138,25 +138,16 @@ export module TypeC {
         }
 
         resolveImport(imp: ImportNode) {
-            let filepath = this.dir;
+            let filepath: string | null = "";
             for (let base of imp.basePath) {
                 filepath = path.join(filepath, base);
             }
             filepath += ".tc";
 
-            // first we check if the file exists relative to the current folder
-            // otherwise we check if it exists in the stdlib
+            filepath = this.searchPackage(filepath);
 
-            if (!fs.existsSync(filepath)) {
-                filepath = TCCompiler.stdlibDir;
-                for (let base of imp.basePath) {
-                    filepath = path.join(filepath, base);
-                }
-                filepath += ".tc";
-
-                if (!fs.existsSync(filepath)) {
-                    throw new Error(`Could not find module '${filepath}'`);
-                }
+            if (filepath == null) {
+                throw new Error(`Could not find module '${filepath}'`);
             }
 
             let key = normalizePath(filepath);
@@ -198,6 +189,29 @@ export module TypeC {
 
             basePackage.infer();
             return basePackage;
+        }
+
+        searchPackage(filepath: string): string | null {
+            // first we check if the file exists relative to the current folder
+            // if all fails, we look into deps folder
+            // otherwise we check if it exists in the stdlib
+
+            let pathInModule = path.join(this.dir, filepath);
+            if (fs.existsSync(pathInModule)) {
+                return pathInModule;
+            }
+
+            let pathInDeps = path.join(this.dir, "deps", filepath);
+            if (fs.existsSync(pathInDeps)) {
+                return pathInDeps;
+            }
+
+            let pathInStdlib = path.join(TCCompiler.stdlibDir, filepath);
+            if (fs.existsSync(pathInStdlib)) {
+                return pathInStdlib;
+            }
+
+            return null;
         }
 
         generateBytecode() {
