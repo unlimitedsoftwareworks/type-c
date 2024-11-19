@@ -46,7 +46,7 @@ export class InterfaceType extends DataType {
         return `@interface{${superType}:${methods}}`
     }
 
-   
+
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
         if(targetType === InterfaceType) return this;
         throw new Error(`Cannot cast interface to ${targetType.name}`);
@@ -58,7 +58,7 @@ export class InterfaceType extends DataType {
             return;
         }
         globalTypeCache.startChecking(this);
-        
+
         // make sure all supertypes are resolved
         let superInterfaces: InterfaceType[] = [];
         this.superTypes.forEach((superType) => {
@@ -125,9 +125,9 @@ export class InterfaceType extends DataType {
 
     /**
      * Returns true if a method with the given name exists
-     * @param ctx 
-     * @param name 
-     * @returns 
+     * @param ctx
+     * @param name
+     * @returns
      */
     methodExists(ctx: Context, name: string): boolean {
         return this._allMethods.some((method) => method.name == name);
@@ -135,18 +135,18 @@ export class InterfaceType extends DataType {
 
      /**
      * Returns the methods which matches the given signature.
-     * The return type is optional as it is not part of the signature, but if present 
+     * The return type is optional as it is not part of the signature, but if present
      * in this function call, a check will be performed to make sure it matches.
-     * 
+     *
      * This function will first look for a method matching the exact signature, meaning strict checking,
      * if none found, strictness is set to false, and it searches again.
-     * 
-     * This function will also look into instanciated generic functions, 
-     * 
-     * @param ctx 
-     * @param name 
-     * @param parameters 
-     * @param returnType 
+     *
+     * This function will also look into instanciated generic functions,
+     *
+     * @param ctx
+     * @param name
+     * @param parameters
+     * @param returnType
      */
      getMethodBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): InterfaceMethod[] {
         let findMethod = (strict: boolean): InterfaceMethod[] => {
@@ -197,7 +197,7 @@ export class InterfaceType extends DataType {
 
     getMethodIndexBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): number {
         let candidates = this.getMethodBySignature(ctx, name, parameters, returnType);
-        
+
         if (candidates.length === 0) {
             return -1;
         }
@@ -218,6 +218,10 @@ export class InterfaceType extends DataType {
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is an InterfaceType
         if(!originalType.is(ctx, InterfaceType)){
             ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -238,13 +242,15 @@ export class InterfaceType extends DataType {
             // get generics for the method
             this._allMethods[i].header.getGenericParametersRecursive(ctx, interfaceType._allMethods[i].header, declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion();
     }
 
     /**
      * checks whether the given interfaces matches the exact same method order
      * (number can be less but not more)
-     * checking by name is enough because this is used in codegen phase 
-     * @param interface 
+     * checking by name is enough because this is used in codegen phase
+     * @param interface
      */
     interfacesAlign(obj: InterfaceType): boolean {
         if(obj._allMethods.length > this._allMethods.length){
@@ -273,7 +279,7 @@ export class InterfaceType extends DataType {
 
     /**
      * Returns the number of methods in the interface
-     * @returns 
+     * @returns
      */
     getMethodsLength(): number {
         return this._allMethods.length;
@@ -282,7 +288,7 @@ export class InterfaceType extends DataType {
     /**
      * called when the obj doesn't align with this interface
      * hence we need to generate offset swaps
-     * @param obj 
+     * @param obj
      */
     generateOffsetSwaps(ctx: Context, obj: InterfaceType) {
         let swaps: number[] = [];

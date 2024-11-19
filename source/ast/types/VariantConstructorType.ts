@@ -89,6 +89,10 @@ export class VariantConstructorType  extends DataType{
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is a VariantConstructorType
         if(!originalType.is(ctx, VariantConstructorType)){
             ctx.parser.customError(`Expected variant constructor type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -103,6 +107,8 @@ export class VariantConstructorType  extends DataType{
 
             this.parameters[i].type.getGenericParametersRecursive(ctx, variantConstructorType.parameters[i].type, declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion();
     }
 
     setId(id: number) {
@@ -140,6 +146,6 @@ export class VariantConstructorType  extends DataType{
         let offset = 0;
         let alignment = this.getAlignment();
 
-        return fieldNum*alignment;        
+        return fieldNum*alignment;
     }
 }

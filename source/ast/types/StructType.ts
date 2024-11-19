@@ -85,7 +85,7 @@ export class StructType extends DataType {
         }
         return null;
     }
-    
+
     getFieldIndex(fieldName: string){
         // find the index of the field
         let index = 0;
@@ -108,6 +108,10 @@ export class StructType extends DataType {
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is a StructType
         if(!originalType.is(ctx, StructType)){
             ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -122,6 +126,8 @@ export class StructType extends DataType {
 
             this.fields[i].type.getGenericParametersRecursive(ctx, structType.fields[i].type, declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion()
     }
 
     // CODE GEN API
@@ -138,7 +144,7 @@ export class StructType extends DataType {
         let offset = 0;
         let alignment = this.getAlignment();
 
-        return fieldNum*alignment;        
+        return fieldNum*alignment;
     }
 
     toSortedStruct(){

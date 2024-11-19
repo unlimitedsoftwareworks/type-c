@@ -607,6 +607,10 @@ export class ClassType extends DataType {
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: { [key: string]: GenericType }, typeMap: { [key: string]: DataType }) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure we have a class type
         if (!originalType.is(ctx, ClassType)) {
             ctx.parser.customError(`Expected class type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -630,6 +634,8 @@ export class ClassType extends DataType {
             }
             this.methods[i].imethod.header.getGenericParametersRecursive(ctx, classType.methods[i].imethod.header, declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion();
     }
 
     /**

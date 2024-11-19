@@ -2,10 +2,10 @@
  * Filename: CoroutineType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models a coroutine datatype
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -45,6 +45,10 @@ export class CoroutineType extends DataType {
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is a CoroutineType
         if(!originalType.is(ctx, CoroutineType)){
             ctx.parser.customError(`Expected coroutine type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -54,5 +58,7 @@ export class CoroutineType extends DataType {
 
         // get the generic parameters of the function type
         coroutineType.fnType.getGenericParametersRecursive(ctx, coroutineType.fnType, declaredGenerics, typeMap);
+
+        this.postGenericExtractionRecursion()
     }
 }

@@ -65,6 +65,10 @@ export class NullableType extends DataType {
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is a NullableType
         if(!originalType.is(ctx, NullableType)){
             ctx.parser.customError(`Expected nullable type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -72,6 +76,8 @@ export class NullableType extends DataType {
 
         let nullableType = originalType.to(ctx, NullableType) as NullableType;
         this.type.getGenericParametersRecursive(ctx, nullableType.type, declaredGenerics, typeMap);
+
+        this.postGenericExtractionRecursion();
     }
 
     allowedNullable(ctx: Context): boolean {

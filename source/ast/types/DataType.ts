@@ -2,10 +2,10 @@
  * Filename: DataType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models an abstract data type
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -50,11 +50,11 @@ export type DataTypeKind =
     "ffi_namespace_type" |
     "unset" | // UnsetType
     "literal" | // LiteralType
-    "meta_class" | // MetaClassType, used for meta classes, 
+    "meta_class" | // MetaClassType, used for meta classes,
     "meta_interface" | // MetaInterfaceType, used for meta interfaces
     "meta_variant" | // MetaVariantType, used for constructing variants
     "meta_variant_constructor" | // MetaVariantConstructorType, used for constructing variant constructors
-    "meta_enum" | // MetaStructType, used for meta structs 
+    "meta_enum" | // MetaStructType, used for meta structs
     "tuple" | // TupleType
     "coroutine"| // CoroutineType, representing a coroutine instance
     "cofn"; // CoFunctionType, representing a coroutine function
@@ -63,12 +63,14 @@ export type DataTypeKind =
 export class DataType {
     kind: DataTypeKind;
     location: SymbolLocation;
-    
+
     // if this is true, the type is strict, meaning it is only compatible with types of exact same structure.
     private _isStrict: boolean = false;
     private _hash: string | null = null;
-    
+
     protected _declContext: Context | null = null;
+
+    private static _recursiveGenericRecursion: string[] = [];
 
     constructor(location: SymbolLocation, kind: DataTypeKind){
         this.kind = kind;
@@ -82,9 +84,9 @@ export class DataType {
     /**
      * Perform type checking on the type, making sure it is valid
      * Resolving a type is a recursive process, and may involve resolving other types
-     * 
-     * @param ctx 
-     * @param hint 
+     *
+     * @param ctx
+     * @param hint
      */
     resolve(ctx: Context): void {
         throw new Error("Method not implemented.");
@@ -108,7 +110,7 @@ export class DataType {
 
     /**
      * Returns the non-nullable, non-reference type of this type
-     * @returns 
+     * @returns
      */
     denullReference(): DataType {
         return this;
@@ -153,7 +155,7 @@ export class DataType {
 
     /**
      * used by reference types to resolve the type they reference
-     * @param ctx 
+     * @param ctx
      */
     resolveIfNeeded(ctx: Context){
     }
@@ -165,11 +167,11 @@ export class DataType {
     /**
      * Checks if a DataType is of a certain type
      * While this method uses instanceof, it not used to check the actual instance, but rather the semantic,
-     * for example: let t: DataType = new JoinType(...), t.is(InterfaceType) will return true, to get the 
+     * for example: let t: DataType = new JoinType(...), t.is(InterfaceType) will return true, to get the
      * interface type, use t.toInterfaceType().
      * This method is overloaded in JoinType to return true for InterfaceType and JoinType
-     * @param targetType 
-     * @returns 
+     * @param targetType
+     * @returns
      */
     is(ctx: Context, targetType: new (...args: any[]) => DataType): boolean {
         this.resolveIfNeeded(ctx);
@@ -194,9 +196,9 @@ export class DataType {
     }
 
     /**
-     * Same logic as is, but performs the casting, by resolving the reference type and returning 
+     * Same logic as is, but performs the casting, by resolving the reference type and returning
      * the appropriate type.
-     * 
+     *
      * Casting is need after call, since it returns a generic type, but is guarentees that the returned type is of the given
      * instance
      */
@@ -227,35 +229,56 @@ export class DataType {
     /**
      * Given a type that potentially has generic parameters, returns the mapping of which generic
      * parameters are used in the type, and the type they are used with
-     * for example: 
-     * 
-     * 
+     * for example:
+     *
+     *
      * getGenericParameters(ctx, struct {x: u32, y: T}, stricy{x: u32, y: i64}) would fill typeMap with {x: [i64]}
-     * 
+     *
      * This variant is used to recursively fill the typeMap
-     * 
-     * @param ctx 
-     * @param originalType 
-     * @param typeMap 
-     * @returns 
+     *
+     * @param ctx
+     * @param originalType
+     * @param typeMap
+     * @returns
      */
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         throw new Error("Method not implemented.");
     }
 
     /**
+     * To avoid infinite recursion, we keep track of the types we are currently processing
+     * within `getGenericParametersRecursive`
+     */
+    preGenericExtractionRecursion(){
+        let key = this.hash();
+        if(DataType._recursiveGenericRecursion.includes(key)){
+            return true;
+        }
+
+        DataType._recursiveGenericRecursion.push(key);
+        return false;
+    }
+
+    postGenericExtractionRecursion(){
+        // just pop
+        DataType._recursiveGenericRecursion.pop();
+    }
+
+
+
+    /**
      * Given a type that potentially has generic parameters, returns the mapping of which generic
      * parameters are used in the type, and the type they are used with
-     * for example: 
-     * 
-     * 
+     * for example:
+     *
+     *
      * getGenericParameters(ctx, struct {x: u32, y: T}, stricy{x: u32, y: i64}) would fill typeMap with {x: [i64]}
-     * 
-     * @param ctx 
-     * @param originalType 
+     *
+     * @param ctx
+     * @param originalType
      * @param genericNames List of generic names to fill, in case we find a reference type matching the generic name
-     * 
-     * @returns 
+     *
+     * @returns
      */
     getGenericParameters(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}):  {[key: string]: DataType} {
         let typeMap: {[key: string]: DataType} = {}

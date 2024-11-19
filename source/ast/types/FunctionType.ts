@@ -2,10 +2,10 @@
  * Filename: FunctionType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models function data type
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -29,7 +29,7 @@ export class FunctionType extends DataType {
     }
 
     resolve(ctx: Context) {
-        // resolve the types of the parameters 
+        // resolve the types of the parameters
         this.parameters.forEach((param) => {
             param.type.resolve(ctx);
         });
@@ -56,13 +56,17 @@ export class FunctionType extends DataType {
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is a FunctionType
         if(!originalType.is(ctx, FunctionType)){
             ctx.parser.customError(`Expected ${this.isCoroutine?"coroutine ":""} function type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
         }
 
         let functionType = originalType.to(ctx, FunctionType) as FunctionType;
-        
+
         // make sure the number of parameters is the same
         if(this.parameters.length != functionType.parameters.length){
             ctx.parser.customError(`Expected ${functionType.parameters.length} parameters, got ${this.parameters.length} instead.`, this.location);
@@ -80,5 +84,7 @@ export class FunctionType extends DataType {
 
         // get generics for the return type
         this.returnType.getGenericParametersRecursive(ctx, functionType.returnType, declaredGenerics, typeMap);
+
+        this.postGenericExtractionRecursion();
     }
 }

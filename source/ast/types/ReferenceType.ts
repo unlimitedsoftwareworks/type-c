@@ -2,10 +2,10 @@
  * Filename: ReferenceType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models a reference type
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -84,7 +84,7 @@ export class ReferenceType extends DataType{
                 type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
             }
         }
-        
+
         if(type == null){
             ctx.parser.customError(`Type ${fullPkg} not found`, this.location);
         }
@@ -110,7 +110,7 @@ export class ReferenceType extends DataType{
             let signature = signatureFromGenerics(this.typeArgs);
 
             if(type.concreteTypes.has(signature)){
-                // TODO: if we clone, the methods are cloned their resulting context is different form 
+                // TODO: if we clone, the methods are cloned their resulting context is different form
                 // the original one. Why do we clone?
                 this.baseType = type.concreteTypes.get(signature)!//.clone(map);
                 this.baseDecl = type;
@@ -144,7 +144,7 @@ export class ReferenceType extends DataType{
         if(this.baseType == null){
             throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
         }
-        
+
         // in case of a reference to a reference
         return this.baseType.dereference();
     }
@@ -160,10 +160,10 @@ export class ReferenceType extends DataType{
         if(this.baseType == null){
             throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
         }
-        
+
         // in case of a reference to a reference
         return this.baseType.denullReference();
-    
+
     }
 
     shortname(){
@@ -178,7 +178,7 @@ export class ReferenceType extends DataType{
             return `@reference{pkg:${this.pkg.join(".")},typeArgs:${this.typeArgs.map(t => t.serialize()).join(",")}}`
         }
     }
-    
+
     /**
      * Returns true if the reference type has a method with the given name
      * given that the reference is either a class or an interface, otherwise false
@@ -219,13 +219,18 @@ export class ReferenceType extends DataType{
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
+
         // there are two cases:
         // the reference itself is a generic type, in which case we add it to the list i.e T
 
         // or the refrence holds a generic type, in which case we add the generic type to the list. X<T>
 
         // or both duh!
-        
+
         // we do not get the generic parameters of the base type, because that is specific to the reference
         // instead we only get the generic parameters of concrete typed given to this reference
         if(declaredGenerics[this.pkg[0]]){
@@ -236,5 +241,7 @@ export class ReferenceType extends DataType{
             this.resolveIfNeeded(ctx);
             this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion();
     }
 }

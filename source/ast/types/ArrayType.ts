@@ -2,10 +2,10 @@
  * Filename: ArrayType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models an array type in the type-c language, such as u8[], u16[], Xyz[],
- * 
+ *
  * Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -46,6 +46,10 @@ export class ArrayType extends DataType {
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is an Array
         if(!originalType.is(ctx, ArrayType)){
             ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -53,5 +57,7 @@ export class ArrayType extends DataType {
 
         let arrayType = originalType.to(ctx, ArrayType) as ArrayType;
         this.arrayOf.getGenericParametersRecursive(ctx, arrayType.arrayOf, declaredGenerics, typeMap);
+
+        this.postGenericExtractionRecursion();
     }
 }

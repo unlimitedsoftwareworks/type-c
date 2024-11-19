@@ -2,10 +2,10 @@
  * Filename: TupleType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models a tuple datatype, which is simpty a list of types (u8, u16, Xyz, etc.)
- * 
+ *
  * Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -52,6 +52,10 @@ export class TupleType extends DataType {
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is an Array
         if(!originalType.is(ctx, TupleType)){
             ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -61,5 +65,7 @@ export class TupleType extends DataType {
         for(let i = 0; i < this.types.length; i++){
             this.types[i].getGenericParametersRecursive(ctx, tupleType.types[i], declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion();
     }
 }

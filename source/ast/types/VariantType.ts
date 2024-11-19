@@ -2,13 +2,13 @@
  * Filename: VariantType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  * Models a variant type
  * A variant type is a type that can be one of many algebraic subtypes.
  * for example: Tree = Leaf | Node, Leaf and Node are algebraic subtypes of Tree (Variant Constructors).
  * Tree is a variant type.
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -62,6 +62,10 @@ export class VariantType extends DataType {
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
         // make sure originalType is a VariantType
         if(!originalType.is(ctx, VariantType)){
             ctx.parser.customError(`Expected variant type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
@@ -82,6 +86,8 @@ export class VariantType extends DataType {
 
             this.constructors[i].getGenericParametersRecursive(ctx, variantType.constructors[i], declaredGenerics, typeMap);
         }
+
+        this.postGenericExtractionRecursion();
     }
 
     getConstructor(name: string): VariantConstructorType | null {
