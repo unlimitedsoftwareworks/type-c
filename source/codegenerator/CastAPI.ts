@@ -41,7 +41,7 @@ export function generateCastInstruction(from: CastType, to: CastType, reg: strin
             currentType = `u${typeInfo[to].size * 8}` as CastType;
         }
         // Convert to the corresponding signed type
-        instructions.push([`cast_${currentType}_I${typeInfo[to].size * 8}`, reg]);
+        instructions.push([`cast_${currentType}_i${typeInfo[to].size * 8}`, reg]);
         // Convert to the target floating point
         instructions.push([`cast_i${typeInfo[to].size * 8}_${to}`, reg]);
         return instructions;
