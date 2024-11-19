@@ -53,4 +53,4 @@ Official docs: https://typec.praisethemoon.org/docs/introduction
 Open an issue
 
 ## I want to help
-If you want to get aquinted with the codebase, please reach out to me directly via my email at my profile. I will be happy to help you get started.
+If you want to get acquainted with the codebase, please reach out to me directly via my email at my profile. I will be happy to help you get started.
