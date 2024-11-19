@@ -223,6 +223,14 @@ export class Context {
     // i.e does not take ownership of the symbol
     addExternalSymbol(symbol: Symbol, name: string) {
         symbol.external = true;
+        let old = this.lookup(name);
+        if (old !== null) {
+            throw this.parser.customError(
+                `Symbol ${name} already declared/imported in this scope`,
+                old.location,
+            );
+        }
+
         this.symbols.set(name, symbol);
     }
 
