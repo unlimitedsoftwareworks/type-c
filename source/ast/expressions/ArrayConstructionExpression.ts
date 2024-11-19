@@ -16,6 +16,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ArrayType } from "../types/ArrayType";
 import { DataType } from "../types/DataType";
+import { UnreachableType } from "../types/UnreachableType";
 import { isRHSConstSafe } from "./BinaryExpression";
 import { Expression } from "./Expression";
 
@@ -59,7 +60,10 @@ export class ArrayConstructionExpression extends Expression {
         this.setHint(hint);
 
         if((this.elements.length == 0) && (hint == null)){
-            ctx.parser.customError("Cannot infer an empty array without hint", this.location);
+            //ctx.parser.customError("Cannot infer an empty array without hint", this.location);
+            this.inferredType = new ArrayType(this.location, new UnreachableType(this.location));
+            this.checkHint(ctx);
+            return this.inferredType;
         }
 
         if(hint && !hint.is(ctx, ArrayType)){ 
