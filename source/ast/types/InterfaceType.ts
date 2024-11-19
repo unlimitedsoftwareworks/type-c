@@ -1,3 +1,15 @@
+/**
+ * Filename: ClassType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     Models an interface datatype
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import {DataType} from "./DataType";
 import {InterfaceMethod} from "../other/InterfaceMethod";
 import {ReferenceType} from "./ReferenceType";

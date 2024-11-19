@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import { Lexer } from "./lexer/Lexer";
-import { promisify } from "util";
 
 import * as path from "path";
 import { BasePackage } from "./ast/BasePackage";

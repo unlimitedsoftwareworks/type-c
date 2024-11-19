@@ -1,3 +1,16 @@
+/**
+ * Filename: UnsetType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     Models an unset type. An unset type is a type that is not yet known. (such as function return type when
+       it needs to be infered)
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";

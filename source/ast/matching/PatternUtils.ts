@@ -1,3 +1,15 @@
+/**
+ * Filename: PatternUtils.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     provides helpers for pattern matching and converting patterns to expressions
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { BinaryExpression } from "../expressions/BinaryExpression";
 import { ElementExpression } from "../expressions/ElementExpression";
 import { Expression } from "../expressions/Expression";
@@ -22,12 +34,12 @@ export type PatternToExpression = {
 
 export function buildLengthCheckExpression(location: SymbolLocation, baseExpression: Expression, minOrExactLength: "min" | "exact", length: number): Expression {
     return new BinaryExpression(
-        location, 
+        location,
         new MemberAccessExpression(
-            location, 
-            baseExpression, 
+            location,
+            baseExpression,
             new ElementExpression(location, "length")
-        ), 
+        ),
         IntLiteralExpression.makeLiteral(location, length, "u64"),
         minOrExactLength === "min" ? ">=" : "=="
     );
@@ -35,8 +47,8 @@ export function buildLengthCheckExpression(location: SymbolLocation, baseExpress
 
 export function buildVariableAssignment(location: SymbolLocation, baseExpression: Expression, pattern: VariablePatternExpression): BinaryExpression {
     return new BinaryExpression(
-        location, 
-        new ElementExpression(location, pattern.name), 
+        location,
+        new ElementExpression(location, pattern.name),
         baseExpression,
         "="
     );
@@ -52,11 +64,11 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
         return {condition: null, variableAssignments: [variable]};
     }
     else if (pattern instanceof ArrayVariablePatternExpression) {
-        // we generate as follows: base.slice(<pos>, <length>) 
+        // we generate as follows: base.slice(<pos>, <length>)
         let pos = pattern.position;
         let lengthExpr = new MemberAccessExpression(pattern.location, base, new ElementExpression(pattern.location, "length"));
         let posExpr = IntLiteralExpression.makeLiteral(pattern.location, pos, "u64");
-        
+
         let slice = new MemberAccessExpression(pattern.location, base, new ElementExpression(pattern.location, "slice"));
         let callExpr = new FunctionCallExpression(pattern.location, slice, [posExpr, lengthExpr]);
 
@@ -80,7 +92,7 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
 
         let remainingFields = allfields.filter(e => !extractedFields.includes(e));
 
-        let fieldAssignments: StructKeyValueExpressionPair[] = remainingFields.map(e => 
+        let fieldAssignments: StructKeyValueExpressionPair[] = remainingFields.map(e =>
             new StructKeyValueExpressionPair(pattern.location, e, new MemberAccessExpression(pattern.location, base, new ElementExpression(pattern.location, e)))
         );
 
@@ -107,7 +119,7 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
         let patternResult = pattern.generateExpression(ctx, base);
         // return ==
         return {
-            condition: new BinaryExpression(pattern.location, base, patternResult.condition!, "=="), 
+            condition: new BinaryExpression(pattern.location, base, patternResult.condition!, "=="),
             variableAssignments: patternResult.variableAssignments
         };
     }
@@ -115,4 +127,3 @@ export function checkSubPattern(ctx: Context, base: Expression, pattern: Pattern
     return pattern.generateExpression(ctx, base);
 
 }
-

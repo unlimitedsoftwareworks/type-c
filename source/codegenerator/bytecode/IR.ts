@@ -1,11 +1,11 @@
 /**
- * Filename: ArrayConstructionExpression.ts
+ * Filename: IR.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
- *     Compiler's intermediate representation (IR) instructions
- * 
+ *     Type-C Intermediate Representation (IR) instructions
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -27,7 +27,7 @@ export class IRInstruction {
     }
 }
 
-export type IRInstructionType = 
+export type IRInstructionType =
     "const_i8" |   // OK
     "const_u8" |   // OK
     "const_i16" |  // OK
@@ -152,7 +152,7 @@ export type IRInstructionType =
      /// used with safe casting since it requires a fail jump label
     "i_is_c" | // interface vs class instanceof checking
     "i_has_m" | // interface vs interface instanceof checking
-    
+
     "a_alloc" |
     "a_extend" |
     "a_len" | // array length
@@ -212,22 +212,22 @@ export type IRInstructionType =
      * Function returns are done through the registers, hence we need to keep track of which registers we will push
      * the IR for function call is as follows
      * call jump_id ret_1, ret_2, ret_3
-     * 
+     *
      * for example:
      * fn f(mut x: u32, y: u32) -> (a:u32, b:u32)  // returns a tuple byt also has a mut arg
      * -> call f a_reg (255), b_reg (254), x_reg (0)
      * -> mut arguments are ready from whichever register they were passed in
      * -> the return values are read from register 255 downwards
-     * 
+     *
      * calling f will generate the following IR:
      * call f 1, 2
-     * 
-     * 
+     *
+     *
      */
     "call" |      // direct call based on offset
     "call_ptr" |  // call based on address stored in a pointer
     "label" |
-    
+
     "ret_i8" |
     "ret_u8" |
     "ret_i16" |
@@ -241,7 +241,7 @@ export type IRInstructionType =
     "ret_ptr" |
     "ret_void" |
     "exit_fn" | // since we can now return tuples, we can have multiple returns. Also return values are stored in registers. this logic is used for IR and analysis.
-    
+
     "push_i8" |
     "push_u8" |
     "push_i16" |
@@ -345,7 +345,7 @@ export type IRInstructionType =
     "mod_u32" |
     "mod_i64" |
     "mod_u64" |
-    
+
     "lshift_i8" |
     "lshift_u8" |
     "lshift_i16" |
@@ -385,7 +385,7 @@ export type IRInstructionType =
     "band_u32" |
     "band_i64" |
     "band_u64" |
-    
+
     "bor_i8" |
     "bor_u8" |
     "bor_i16" |
@@ -432,7 +432,7 @@ export type IRInstructionType =
     "src_map_push" |  // sets the subsequent instruction's location to the given location
                          // fmt: file, col, row
     "src_map_pop" |     // pops the last trace location from the stack
-    
+
     "closure_alloc" |
     "closure_push_env_i8" |
     "closure_push_env_u8" |
@@ -456,7 +456,7 @@ export type IRInstructionType =
     "coroutine_ret" |
 
     "throw_rt" |
-    
+
     // source map instructions
     "srcmap_push_loc" |
     "srcmap_pop_loc"

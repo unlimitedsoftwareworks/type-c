@@ -1,10 +1,19 @@
 /**
- * This class is used to represent a variant constructor type.
- * A variant constructor, is an instance of an algebraic data type.
- * For example:
- * tree = leaf | node, leaf and node are variant constructors.
- * tree is the variant type.
+ * Filename: VariantConstructorType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     This class is used to represent a variant constructor type.
+ *     A variant constructor, is an instance of an algebraic data type.
+ *     For example:
+ *     tree = leaf | node, leaf and node are variant constructors.
+ *     tree is the variant type.
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
  */
+
 import { getDataTypeByteSize } from "../../codegenerator/utils";
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";

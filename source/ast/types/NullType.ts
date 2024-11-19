@@ -1,14 +1,20 @@
+/**
+ * Filename: NullType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     Models the type of `null`, not to be confused with the nullable type. The null type is a type that can only be null
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
 import { GenericType } from "./GenericType";
 
-
-/**
- * Represents the null type.
- * Not to be confused with the nullable type. The null type is a type that can only be null.
- * A Nullable can be assigned to null.
- */
 export class NullType extends DataType {
     constructor(location: SymbolLocation) {
         super(location, "null");

@@ -1,3 +1,16 @@
+/**
+ * Filename: init.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     API for typec init command
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
+
 import fs from "fs";
 import path from "path";
 import {

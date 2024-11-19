@@ -1,3 +1,15 @@
+/**
+ * Filename: SymbolType.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     A helper for the code generator to get the type of a symbol
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { LambdaExpression } from "../expressions/LambdaExpression";
 import { ClassAttribute } from "../other/ClassAttribute";
 import { ClassMethod } from "../other/ClassMethod";

@@ -1,3 +1,15 @@
+/**
+ * Filename: ControlFlowGraph.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ *
+ * Description:
+ *     Model the CFG of type-c IR
+ *
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { digraph, attribute as _, toDot, Node, Edge, Subgraph, EdgeAttributesObject, RootGraphModel } from 'ts-graphviz';
 import { FunctionGenerator, FunctionGenType } from '../FunctionGenerator';
 import { IRInstruction, IRInstructionType } from '../bytecode/IR';
@@ -28,7 +40,7 @@ class IRNode {
 
     addInstruction(instr: IRInstruction) {
         if(instr.type === "srcmap_push_loc" || instr.type === "srcmap_pop_loc") return;
-        
+
         //if (instr.type !== "debug") {
             this.instructions.push(instr);
             if (this.isJumpInstruction(instr.type)) {
@@ -79,10 +91,10 @@ export class ControlFlowGraph {
         this.functions.forEach((func, funcIndex) => {
             let blocks: Map<string, IRNode> = new Map(); // Change this line
             let blockIds: string[] = [];
-            
+
             let currentBlock = new IRNode(`node_${funcIndex}_0`);
             let blockIndex = 1;
-    
+
             func.instructions.forEach((instr, index) => {
                 currentBlock.maxArgs = Math.max(currentBlock.maxArgs, instr.args.length);
                 if (instr.type === 'label' || currentBlock.isJumpInstruction(instr.type)) {
@@ -101,12 +113,12 @@ export class ControlFlowGraph {
                 currentBlock.addInstruction(instr);
 
             });
-    
+
             if (!currentBlock.isEmpty()) {
                 blocks.set(currentBlock.id, currentBlock); // Change this line
                 blockIds.push(currentBlock.id);
             }
-            
+
             this.cfg.set(func.fn.context.uuid, blocks);
             this.blockIds.set(func.fn.context.uuid, blockIds);
             this.funcHeaders.set(func.fn.context.uuid, func.fn);
@@ -115,7 +127,7 @@ export class ControlFlowGraph {
 
     generateDotGraph() {
         let graphs: {name: string, graph: RootGraphModel}[] = [];
-        
+
         this.cfg.forEach((blocks, funcName) => {
             let header = this.funcHeaders.get(funcName);
             const G = digraph(funcName, {[_.rankdir]: 'LR', [_.splines]: "curved", [_.ranksep]: 1, [_.nodesep]: 1, [_.concentrate]: false,});
@@ -159,7 +171,7 @@ export class ControlFlowGraph {
                                 <TD BGCOLOR="turquoise" PORT="${block.instructions[0]}_${jmp_counter}"><B>${instr.type}</B></TD>
 
                                 <TD COLSPAN="${block.maxArgs}" PORT="${block.instructions[0]}_${jmp_counter}_UP">${instr.args[0]}</TD>
-                                
+
                             </TR>`;
                             jmp_counter++;
                             return data;
@@ -208,12 +220,12 @@ export class ControlFlowGraph {
                             subgraph.addEdge(
                                     new Edge([
                                         {
-                                            id: `${node.id}`, 
+                                            id: `${node.id}`,
                                             port: `${block.instructions[0]}_${i}${goingDown?"_UP":""}`,
                                             compass: goingDown ? 'e' : 'w'
-                                        }, 
+                                        },
                                         {
-                                            id: `${targetBlock.id}`, 
+                                            id: `${targetBlock.id}`,
                                             port: `header_${targetBlock.instructions[0].type}_${targetBlock.instructions[0].args[0]}${goingDown?"":"UP"}`,
                                             compass: goingDown ? 'w' : 'e'
                                         }

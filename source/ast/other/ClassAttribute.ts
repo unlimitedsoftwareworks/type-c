@@ -2,10 +2,10 @@
  * Filename: ClassAttribute.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
- * Models a class attribute
- * 
+ *     Models a class attribute
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
