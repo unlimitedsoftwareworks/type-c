@@ -149,7 +149,7 @@ export class InterfaceType extends DataType {
      * @param returnType 
      */
      getMethodBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): InterfaceMethod[] {
-        let findMethod = (ctx: Context, name: string, parameters: DataType[], returnType: DataType | null, strict: boolean): InterfaceMethod[] => {
+        let findMethod = (strict: boolean): InterfaceMethod[] => {
             let candidates: InterfaceMethod[] = [];
             let allMethods = this._allMethods;
 
@@ -187,9 +187,9 @@ export class InterfaceType extends DataType {
             return candidates;
         }
 
-        let candidates = findMethod(ctx, name, parameters, returnType, true);
+        let candidates = findMethod(true);
         if(candidates.length === 0) {
-            candidates = findMethod(ctx, name, parameters, returnType, false);
+            candidates = findMethod(false);
         }
 
         return candidates;
