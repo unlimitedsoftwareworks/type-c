@@ -104,14 +104,7 @@ export module TypeC {
             let entryKey = normalizePath(entry);
             this.packageBaseContextMap.set(entryKey, this.basePackage);
 
-            //et sym = BuiltinModules.getStringClass(this);
-            //BuiltinModules.getRunnableInterface(this);
-            //BuiltinModules.getArrayInterface(this);
-
-            // add built-in symbols
-
-            let importString = BuiltinModules.getStringClass(this);
-            this.basePackage.imports.push(BuiltinModules.stringImport);
+            this.importStringIfNeeded(this.basePackage)
 
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
@@ -165,6 +158,15 @@ export module TypeC {
             key = normalizePath(filepath);
             this.packageBaseContextMap.set(key, basePackage);
 
+            /*
+             * The base String class is injected into the base package
+             * as long as the package is not string.tc file itself!
+             */
+            let searchString="std/string.tc"
+            if(!filepath.includes(searchString)){
+                this.importStringIfNeeded(basePackage)
+            }
+
             // resolve imports
             for (let imp of basePackage.imports) {
                 let base = this.resolveImport(imp);
@@ -212,6 +214,21 @@ export module TypeC {
             }
 
             return null;
+        }
+
+        importStringIfNeeded(basePackage: BasePackage) {
+            // check if std.string.String is imported:
+            for (let i = 0; i < basePackage.imports.length; i++) {
+                let imp = basePackage.imports[i];
+                if ((imp.basePath.join("/") == "std/string") && (imp.actualName == "String") && (imp.alias == "String")) {
+                    return;
+                }
+            }
+
+            // if not, add it
+
+            BuiltinModules.getStringClass(this);
+            basePackage.imports.push(BuiltinModules.stringImport);
         }
 
         generateBytecode() {
