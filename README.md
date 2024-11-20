@@ -14,16 +14,17 @@ For the Virtual Machine, please refer to the [Type-V Project](https://github.com
 ## Getting started:
 
 Setting up Type-C requires the following steps:
-1. Installing Type-C source/npm
+1. Installing Type-C source through source or npm
 2. Installing the Type-V VM & building it from source
 3. Optional: VSCode Syntax Highlighting: in [https://marketplace.visualstudio.com/items?itemName=unlimitedsoftwareworks.type-c-language-support](https://marketplace.visualstudio.com/items?itemName=unlimitedsoftwareworks.type-c-language-support)
 
 To get started, please have a look at the documentation: [https://typec.praisethemoon.org/docs/getting-started](https://typec.praisethemoon.org/docs/getting-started)
 
 ## CLI Usage:
-After installing type-c either via npm `npm install -g @unlimitedsoftwareworks/type-c` or by cloning this repo, you can use the `type-c` command to compile your code.
+After installing type-c either via npm `npm install -g @unlimitedsoftwareworks/type-c` or by cloning this repo, you can use the `typec` command to compile your code.
 
 ```bash
+$ typec --help
 Type-c compiler, version ${compilerVersion}.
 Usage: type-c <command> [options]
         --run-tests             Run all unit test
