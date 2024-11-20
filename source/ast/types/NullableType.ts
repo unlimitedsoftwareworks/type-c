@@ -15,6 +15,7 @@ import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
 import { GenericType } from "./GenericType";
 import { NullType } from "./NullType";
+import { TupleType } from "./TupleType";
 
 /**
  * Represents a nullable type.
@@ -38,6 +39,9 @@ export class NullableType extends DataType {
         }
         if(this.type.is(ctx, NullType)) {
             ctx.parser.customError("Cannot have a nullable type that is null", this.type.location);
+        }
+        if (this.type.is(ctx, TupleType)){
+            ctx.parser.customError("Tuples cannot be nullable", this.type.location);
         }
 
         this.type.resolve(ctx);
