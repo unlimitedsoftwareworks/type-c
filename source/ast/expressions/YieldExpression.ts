@@ -43,14 +43,14 @@ export class YieldExpression extends Expression {
         }
 
         let parentFunction = ctx.findParentFunction();
-        if(parentFunction && (parentFunction instanceof DeclaredFunction) || (parentFunction instanceof LambdaDefinition)) {
+        if(parentFunction && (parentFunction instanceof DeclaredFunction) || (parentFunction instanceof LambdaExpression)) {
             parentFunction.isCoroutineCallable = true;
         }
         else {
             ctx.parser.customError("Cannot use yield expression outside of a function/lambda expression", this.location);
         }
 
-        let header = (parentFunction instanceof DeclaredFunction) ? parentFunction.prototype.header : (parentFunction as LambdaDefinition).header;
+        let header = (parentFunction instanceof DeclaredFunction) ? parentFunction.prototype.header : (parentFunction as LambdaExpression).header;
 
         /**
          * yield returns the new arguments when the coroutine is resumed
@@ -97,7 +97,7 @@ export class YieldExpression extends Expression {
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): YieldExpression {
         let newExpression = this.yieldExpression ? this.yieldExpression.clone(typeMap, ctx) : null;
         let newYield = new YieldExpression(this.location, newExpression!, this.isFinal);
-        (ctx.findParentFunction() as (DeclaredFunction | LambdaExpression))?.yieldExpressions.push({ctx: ctx, yield: newYield});
+        (ctx.findParentFunction() as (DeclaredFunction | LambdaExpression))!.yieldExpressions.push({ctx: ctx, yield: newYield});
         return newYield;
     }
 }
