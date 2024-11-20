@@ -29,6 +29,10 @@ export class FunctionType extends DataType {
     }
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         // resolve the types of the parameters
         this.parameters.forEach((param) => {
             param.type.resolve(ctx);
@@ -36,6 +40,8 @@ export class FunctionType extends DataType {
 
         // resolve the return type
         this.returnType.resolve(ctx);
+
+        this.postResolveRecursion()
     }
 
     shortname(): string {

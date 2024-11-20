@@ -27,7 +27,7 @@ export class JoinType extends DataType {
     interfaceType: InterfaceType | null = null;
 
     private _resolved: boolean = false;
-    
+
     constructor(location: SymbolLocation, left: DataType, right: DataType) {
         super(location, "join");
 
@@ -36,6 +36,10 @@ export class JoinType extends DataType {
     }
 
     resolve(ctx: Context){
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         if(!this.left.is(ctx, InterfaceType) && !this.left.is(ctx, JoinType)){
             throw new Error("Left side of join must be either interface or join");
         }
@@ -43,7 +47,7 @@ export class JoinType extends DataType {
         if(!this.right.is(ctx, InterfaceType) && !this.right.is(ctx, JoinType)){
             throw new Error("Right side of join must be either interface or join");
         }
-        
+
         this.left.resolve(ctx);
         this.right.resolve(ctx);
 
@@ -54,6 +58,8 @@ export class JoinType extends DataType {
         this.interfaceType.resolve(ctx);
 
         this._resolved = true;
+
+        this.postResolveRecursion()
     }
 
     resolveIfNeeded(ctx: Context){
@@ -63,7 +69,7 @@ export class JoinType extends DataType {
     }
 
     flatten(ctx: Context): InterfaceMethod[] {
-        
+
         let leftInterface = this.left.to(ctx, InterfaceType) as InterfaceType;
         let rightInterface = this.right.to(ctx, InterfaceType) as InterfaceType;
 
@@ -108,7 +114,7 @@ export class JoinType extends DataType {
     allowedNullable(ctx: Context): boolean {
         return true;
     }
-    
+
     /**
      * Returns true if the reference type has a method with the given name
      * given that the reference is either a class or an interface, otherwise false

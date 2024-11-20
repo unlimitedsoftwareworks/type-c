@@ -70,7 +70,11 @@ export class DataType {
 
     protected _declContext: Context | null = null;
 
+    // when extracting generics .getGenericParametersRecursive
     private static _recursiveGenericRecursion: string[] = [];
+
+    // when resolving types .resolve()
+    private static _recursiveTypeResolution: string[] = [];
 
     constructor(location: SymbolLocation, kind: DataTypeKind){
         this.kind = kind;
@@ -264,7 +268,20 @@ export class DataType {
         DataType._recursiveGenericRecursion.pop();
     }
 
+    preResolveRecursion(){
+        let key = this.hash();
+        if(DataType._recursiveTypeResolution.includes(key)){
+            return true;
+        }
 
+        DataType._recursiveTypeResolution.push(key);
+        return false;
+    }
+
+    postResolveRecursion(){
+        // just pop
+        DataType._recursiveTypeResolution.pop();
+    }
 
     /**
      * Given a type that potentially has generic parameters, returns the mapping of which generic

@@ -30,9 +30,15 @@ export class TupleType extends DataType {
     }
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         for(let type of this.types){
             type.resolve(ctx);
         }
+
+        this.postResolveRecursion()
     }
 
     shortname(): string {

@@ -71,10 +71,16 @@ export class VariantConstructorType  extends DataType{
     }
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         // make sure all fields are valid, duplicate are already checked by the parser
         for(let field of this.parameters) {
             field.type.resolve(ctx);
         }
+
+        this.postResolveRecursion()
     }
 
     setParent(parent: VariantType) {

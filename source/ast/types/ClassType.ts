@@ -67,18 +67,12 @@ export class ClassType extends DataType {
     }
 
     resolve(ctx: Context, hint: DataType | null = null) {
-        //if (this._resolved) return;
+        if (this._resolved) return;
 
-        if (globalTypeCache.get(this)) {
+
+        if(this.preResolveRecursion()){
             return;
         }
-
-        globalTypeCache.set(this);
-
-        if (globalTypeCache.isChecking(this)) {
-            return;
-        }
-        globalTypeCache.startChecking(this);
 
         /**
          * 1. Make sure all super types are interfaces
@@ -154,10 +148,8 @@ export class ClassType extends DataType {
          */
         checkOverloadedMethods(ctx, this.methods.map(e => e.imethod));
 
-
         this._resolved = true;
-        globalTypeCache.stopChecking(this);
-        globalTypeCache.set(this);
+        this.postResolveRecursion()
     }
 
     getClassID(){

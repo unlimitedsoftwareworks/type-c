@@ -29,6 +29,10 @@ export class NullableType extends DataType {
     }
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         if(this.type.is(ctx,NullableType)) {
             ctx.parser.customError("Cannot have nested nullable types", this.type.location);
         }
@@ -37,6 +41,8 @@ export class NullableType extends DataType {
         }
 
         this.type.resolve(ctx);
+
+        this.postResolveRecursion()
     }
 
     shortname(): string {

@@ -53,11 +53,10 @@ export class ReferenceType extends DataType{
     }
 
     resolve(ctx: Context) {
-        if(globalTypeCache.isChecking(this)) {
-            // TODO:double check this
-            return this;
+        if(this.preResolveRecursion()){
+            return;
         }
-        globalTypeCache.startChecking(this);
+
 
         let initialPkg = this.pkg[0];
         let fullPkg = this.pkg.join(".");
@@ -135,9 +134,7 @@ export class ReferenceType extends DataType{
             }
         }
 
-        //
-        globalTypeCache.stopChecking(this);
-        //this.baseType.resolve(ctx);
+        this.postResolveRecursion();
     }
 
     dereference(): DataType {

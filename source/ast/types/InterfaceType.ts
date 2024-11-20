@@ -66,10 +66,10 @@ export class InterfaceType extends DataType {
 
     resolve(ctx: Context) {
         if(this._resolved) return;
-        if(globalTypeCache.isChecking(this)){
+
+        if(this.preResolveRecursion()){
             return;
         }
-        globalTypeCache.startChecking(this);
 
         // make sure all supertypes are resolved
         let superInterfaces: InterfaceType[] = [];
@@ -132,7 +132,8 @@ export class InterfaceType extends DataType {
         checkOverloadedMethods(ctx, allMethods);
 
         this._resolved = true;
-        globalTypeCache.stopChecking(this);
+
+        this.postResolveRecursion()
     }
 
     /**

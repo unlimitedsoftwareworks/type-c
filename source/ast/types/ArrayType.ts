@@ -26,7 +26,13 @@ export class ArrayType extends DataType {
     }
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         this.arrayOf.resolve(ctx);
+
+        this.postResolveRecursion();
     }
 
     shortname(): string {

@@ -25,7 +25,13 @@ export class CoroutineType extends DataType {
     }
 
     resolve(ctx: Context){
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         this.fnType.resolve(ctx);
+
+        this.postResolveRecursion();
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}): CoroutineType{

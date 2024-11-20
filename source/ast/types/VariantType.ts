@@ -32,11 +32,17 @@ export class VariantType extends DataType {
 
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         // resolve constructors
         for (let constructor of this.constructors) {
             constructor.resolve(ctx);
             constructor.setParent(this);
         }
+
+        this.postResolveRecursion()
     }
 
     serialize(unpack: boolean = false): string {

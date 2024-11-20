@@ -64,10 +64,16 @@ export class StructType extends DataType {
 
 
     resolve(ctx: Context) {
+        if(this.preResolveRecursion()){
+            return;
+        }
+
         // make sure all fields are valid, duplicates are already checked by the parser
         for(let field of this.fields) {
             field.type.resolve(ctx);
         }
+
+        this.postResolveRecursion()
     }
 
     shortname(): string {
