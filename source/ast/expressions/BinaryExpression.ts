@@ -24,11 +24,11 @@ import { MemberAccessExpression } from "./MemberAccessExpression";
 import { binaryTypeCheckers } from "../../typechecking/BinaryExpressionInference";
 import { BasicType } from "../types/BasicType";
 import { NullableType } from "../types/NullableType";
-import { TupleDeconstructionExpression } from "./TupleDeconstructionExpression";
 import { TupleConstructionExpression } from "./TupleConstructionExpression";
 import { VoidType } from "../types/VoidType";
 import { EnumType } from "../types/EnumType";
 import { CoroutineType } from "../types/CoroutineType";
+import { UnaryExpression } from "./UnaryExpression";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -278,6 +278,12 @@ export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
             return isLHSAssignable(ctx, (lhs as IndexAccessExpression).lhs);
         }
         case "unary_op":{
+            if((lhs as UnaryExpression).operator == "!!"){
+                return Ok()
+            }
+            else {
+                Err("Cannot assign to denull expression");
+            }
             return Err("Cannot assign to unary expression");
         }
         case "binary_op":{
