@@ -972,6 +972,13 @@ export class FunctionGenerator {
         this.i("debug", "lhs of binary expression " + expr.operator);
         let left = this.visitExpression(expr.left, ctx);
 
+        /* TODO: speed up the case where we are comparing to null
+        if((expr.right instanceof NullLiteralExpression) && (expr.operator == "==")){
+            // special case for null comparison
+
+        }
+        */
+
         // generate the right expression
         this.i("debug", "rhs of binary expression " + expr.operator);
         let right = this.visitExpression(expr.right, ctx);
@@ -2290,12 +2297,10 @@ export class FunctionGenerator {
                 // usually this happens when an interface is declared nullable and we want to assign a class to it
                 // the type checker already checked that the class implements the interface, so we just
                 // check if the class is null, else we change this cast to a regular one
-                let tmp = this.generateTmp();
-                this.i("const_ptr", tmp, 0);
+
                 let failLabel = this.generateLabel();
                 let endLabel = this.generateLabel();
-                this.i("j_cmp_ptr", castReg, tmp, 0, failLabel);
-                this.destroyTmp(tmp);
+                this.i("j_eq_null_ptr", castReg, failLabel);
                 // if everything alright we cast normally
                 let newCast = new CastExpression(
                     expr.location,
@@ -2317,12 +2322,11 @@ export class FunctionGenerator {
             ) {
                 // called when we want to assign a nullable interface to a nullable interface
                 // same as class, we check if the interface is null, else we change this cast to a regular one
-                let tmp = this.generateTmp();
-                this.i("const_ptr", tmp, 0);
+
                 let failLabel = this.generateLabel();
                 let endLabel = this.generateLabel();
-                this.i("j_cmp_ptr", castReg, tmp, 0, failLabel);
-                this.destroyTmp(tmp);
+                this.i("j_eq_null_ptr", castReg,failLabel);
+
                 // if everything alright we cast normally
                 let newCast = new CastExpression(
                     expr.location,
@@ -2401,10 +2405,9 @@ export class FunctionGenerator {
 
                 let failureLabel = this.generateLabel();
                 let endLabel = this.generateLabel();
-                let tmp = this.generateTmp();
-                this.i("const_ptr", tmp, 0);
-                this.i("j_cmp_ptr", castReg, tmp, 0, failureLabel);
-                this.destroyTmp(tmp);
+
+                this.i("j_eq_null_ptr", castReg, failureLabel);
+
                 // if everything alright we cast normally
                 let casted = this.visitCastExpression(
                     new CastExpression(
