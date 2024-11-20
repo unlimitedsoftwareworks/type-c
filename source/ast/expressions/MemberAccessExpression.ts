@@ -392,7 +392,9 @@ export class MemberAccessExpression extends Expression {
                 ctx.parser.customError(`Nullable member access only usuable when the access result is nullable`, this.location)
             }
 
-            this.inferredType = new NullableType(this.location, this.inferredType!);
+            if(!this.inferredType?.is(ctx, NullableType)){
+                this.inferredType = new NullableType(this.location, this.inferredType!);
+            }
         }
 
         return this.inferredType!;
@@ -406,6 +408,7 @@ export class MemberAccessExpression extends Expression {
             this.location,
             this.left.clone(typeMap, ctx),
             this.right.clone(typeMap, ctx),
+            this.isNullable,
         );
     }
 }

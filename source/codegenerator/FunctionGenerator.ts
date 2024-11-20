@@ -1134,25 +1134,33 @@ export class FunctionGenerator {
             let left = expr.left as MemberAccessExpression;
             let element = left.right as ElementExpression;
 
-            let baseType = left.left.inferredType?.dereference();
+            let baseType = left.left.inferredType!;
 
-            if (baseType instanceof StructType) {
+            let nullableAccess = left.isNullable;
+            // we might have a nullable type here
+            if(left.isNullable){
+                baseType = baseType.denull();
+            }
+
+            if (baseType.is(ctx, StructType)) {
                 return this.ir_generate_struct_field_assignment(
                     expr,
                     ctx,
                     left,
                     right,
-                    baseType,
+                    baseType.to(ctx, StructType) as StructType,
                     element,
+                    nullableAccess,
                 );
-            } else if (baseType instanceof ClassType) {
+            } else if (baseType.is(ctx, ClassType)) {
                 return this.ir_generate_class_field_assignment(
                     expr,
                     ctx,
                     left,
                     right,
-                    baseType,
+                    baseType.to(ctx, ClassType) as ClassType,
                     element,
+                    nullableAccess,
                 );
             }
         }
@@ -1171,6 +1179,7 @@ export class FunctionGenerator {
         right: string,
         baseType: ClassType,
         element: ElementExpression,
+        nullableAccess: boolean,
     ) {
         let classType = baseType as ClassType;
         // we will assign the value to the class's field
@@ -1178,6 +1187,15 @@ export class FunctionGenerator {
         let classExpr = this.visitExpression(left.left, ctx);
         this.i("debug", "class field assignment, class member " + element.name);
         let attr = classType.getAttribute(element.name);
+
+
+        let endLabel = ""
+        // check if the field is null
+        if(nullableAccess){
+            endLabel = this.generateLabel();
+            this.i("j_eq_null_ptr", classExpr, endLabel);
+        }
+
 
         if (attr == null) {
             ctx.parser.customError(
@@ -1193,6 +1211,9 @@ export class FunctionGenerator {
         this.i(instr, classExpr, fieldIndex, right);
         this.destroyTmp(classExpr);
 
+        if(nullableAccess){
+            this.i("label", endLabel);
+        }
         return right;
     }
 
@@ -1203,6 +1224,7 @@ export class FunctionGenerator {
         right: string,
         baseType: StructType,
         element: ElementExpression,
+        nullableAccess: boolean,
     ) {
         let structType = baseType as StructType;
         // we will assign the value to the struct's field
@@ -1213,6 +1235,15 @@ export class FunctionGenerator {
             "struct field assignment, struct member " + element.name,
         );
 
+        let endLabel = ""
+        // check if the field is null
+        if(nullableAccess){
+            endLabel = this.generateLabel();
+            this.i("j_eq_null_ptr", structExpr, endLabel);
+        }
+
+
+
         let fieldType = structType.getFieldTypeByName(element.name)!;
         let field = structType.getField(element.name);
 
@@ -1220,6 +1251,10 @@ export class FunctionGenerator {
         this.i(instr, structExpr, field!.getFieldID(), right);
         this.destroyTmp(structExpr);
         //this.i("s_set_field_f32", "struct field assignment, struct member");
+
+        if(nullableAccess){
+            this.i("label", endLabel);
+        }
         return right;
     }
 
