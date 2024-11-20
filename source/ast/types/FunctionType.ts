@@ -39,11 +39,11 @@ export class FunctionType extends DataType {
     }
 
     shortname(): string {
-        return (this.isCoroutine?"c ":"")+"fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
+        return (this.isCoroutine?"c":"")+"fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
     }
 
     serialize(unpack: boolean = false): string {
-        return `@${this.isCoroutine?"c ":""}fn{@parameters[${this.parameters.map(e => e.serialize(unpack))}],@returnType[${this.returnType.serialize(unpack)}]}`
+        return `@${this.isCoroutine?"c":""}fn{@parameters[${this.parameters.map(e => e.serialize(unpack))}],@returnType[${this.returnType.serialize(unpack)}]}`
     }
 
     clone(typeMap: {[key: string]: DataType}): FunctionType {
