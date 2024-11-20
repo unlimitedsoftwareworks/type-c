@@ -17,8 +17,6 @@ import { DeclaredType } from "../symbol/DeclaredType";
 import { ClassType } from "./ClassType";
 import { InterfaceType } from "./InterfaceType";
 import { buildGenericsMaps, signatureFromGenerics } from "../../typechecking/TypeInference";
-import { globalTypeCache } from "../../typechecking/TypeCache";
-import { EnumType } from "./EnumType";
 import { VariantType } from "./VariantType";
 import { GenericType } from "./GenericType";
 

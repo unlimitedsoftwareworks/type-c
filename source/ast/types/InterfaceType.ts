@@ -12,12 +12,9 @@
 
 import {DataType} from "./DataType";
 import {InterfaceMethod} from "../other/InterfaceMethod";
-import {ReferenceType} from "./ReferenceType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
-import { FunctionType } from "./FunctionType";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
-import { globalTypeCache } from "../../typechecking/TypeCache";
 import { GenericType } from "./GenericType";
 
 

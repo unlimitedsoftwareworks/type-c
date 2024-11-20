@@ -11,7 +11,6 @@
  */
 
 import { getDataTypeByteSize } from "../../codegenerator/utils";
-import { globalTypeCache } from "../../typechecking/TypeCache";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
 import { ClassAttribute } from "../other/ClassAttribute";
 import { ClassMethod } from "../other/ClassMethod";
