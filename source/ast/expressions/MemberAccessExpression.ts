@@ -52,10 +52,11 @@ export class MemberAccessExpression extends Expression {
         super(location, "member_access");
         this.left = left;
         this.right = right;
+        this.isNullable = isNullable;
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {
-        //if(this.inferredType) return this.inferredType;
+        //if(this.inferredType) return this.checkNullableAndReturn(ctx)
         this.setHint(hint);
 
         /**
@@ -75,7 +76,21 @@ export class MemberAccessExpression extends Expression {
         // lhs has nothing to do with hint, hence we do not use it
         let lhsType = this.left.infer(ctx, null);
 
-        if (lhsType.is(ctx, NullableType)) {
+        if(this.isNullable){
+            /**
+             * ?. only allowed if (both must be true)
+             * 1. LHS is nullable <- test performed here
+             * 2. the outcome of LHS ?. RHS is nullable <- test performed at checkNullableAndReturn
+             */
+            if(!lhsType.is(ctx, NullableType)){
+                ctx.parser.customError(
+                    `Cannot use ?. on non-nullable type`,
+                    this.location,
+                );
+            }
+        }
+
+        if (lhsType.is(ctx, NullableType) && !this.isNullable) {
             ctx.parser.customError(
                 `Cannot access member ${this.right.name} on nullable type`,
                 this.location,
@@ -92,7 +107,7 @@ export class MemberAccessExpression extends Expression {
                 this.inferredType = new BasicType(this.location, "u64");
                 this.isConstant = false;
                 this.checkHint(ctx);
-                return this.inferredType;
+                return this.checkNullableAndReturn(ctx)
             }
 
             /**
@@ -114,7 +129,7 @@ export class MemberAccessExpression extends Expression {
                 // inherit constness from lhs
                 this.isConstant = this.left.isConstant;
                 this.checkHint(ctx);
-                return this.inferredType;
+                return this.checkNullableAndReturn(ctx)
             }
 
             if (this.right.name === "slice") {
@@ -137,7 +152,7 @@ export class MemberAccessExpression extends Expression {
                 // a new array is not constant
                 this.isConstant = false;
                 this.checkHint(ctx);
-                return this.inferredType;
+                return this.checkNullableAndReturn(ctx)
             }
 
             ctx.parser.customError(
@@ -166,7 +181,7 @@ export class MemberAccessExpression extends Expression {
             // inherit constness from lhs
             this.isConstant = this.left.isConstant;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
         // case 3: class field
         if (lhsType.is(ctx, ClassType)) {
@@ -183,7 +198,7 @@ export class MemberAccessExpression extends Expression {
             }
 
             this.inferredType = field.type;
-            
+
             /**
              * The constness of a member access of a class fiel generally is OR(class is final, attribute is final)
              * But in the case where we are within a constructor and we are accessing `this` expression,
@@ -192,7 +207,7 @@ export class MemberAccessExpression extends Expression {
             let withinConstructor = ctx.env.withinClass && ctx.getActiveMethod()?.isConstructor();
             this.isConstant = ((this.left instanceof ThisExpression) && field.isConst && withinConstructor)?0:this.right.isConstant||field.isConst;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
 
         // case 4: FFI method
@@ -211,7 +226,7 @@ export class MemberAccessExpression extends Expression {
             // ffi methods are not constant
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
 
         // case 5: VariantConstructor parameter
@@ -232,11 +247,11 @@ export class MemberAccessExpression extends Expression {
             }
 
             this.inferredType = parameter.type;
-            
+
             // inherit constness from lhs
             this.isConstant = this.left.isConstant;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
 
         // the rest of the cases are under MetaType
@@ -268,7 +283,7 @@ export class MemberAccessExpression extends Expression {
             // TODO: allow constant fields within class
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
 
         if (lhsType.is(ctx, MetaVariantType)) {
@@ -325,7 +340,7 @@ export class MemberAccessExpression extends Expression {
             );
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
 
         if (lhsType.is(ctx, MetaEnumType)) {
@@ -350,7 +365,7 @@ export class MemberAccessExpression extends Expression {
             this.inferredType = enumType;
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.inferredType;
+            return this.checkNullableAndReturn(ctx)
         }
         if(lhsType.is(ctx, CoroutineType)) {
              /**
@@ -360,7 +375,7 @@ export class MemberAccessExpression extends Expression {
                 this.inferredType = new BasicType(this.location, "u8");
                 this.isConstant = false;
                 this.checkHint(ctx);
-                return this.inferredType;
+                return this.checkNullableAndReturn(ctx)
             }
         }
 
@@ -368,6 +383,19 @@ export class MemberAccessExpression extends Expression {
             `Invalid member access of field ${this.right.name} on type ${lhsType.shortname()}`,
             this.location,
         );
+    }
+
+    checkNullableAndReturn(ctx: Context){
+        if(this.isNullable) {
+            // we need to make sure that the type is nullable
+            if(!this.inferredType?.allowedNullable(ctx)){
+                ctx.parser.customError(`Nullable member access only usuable when the access result is nullable`, this.location)
+            }
+
+            this.inferredType = new NullableType(this.location, this.inferredType!);
+        }
+
+        return this.inferredType!;
     }
 
     clone(

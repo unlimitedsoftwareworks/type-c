@@ -2,11 +2,11 @@
  * Filename: FunctionCallExpression.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Models a function call
  *      f(x, y, z)
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -36,6 +36,7 @@ import { DeclaredFunction } from "../symbol/DeclaredFunction";
 import { UnaryExpression } from "./UnaryExpression";
 import { NullableType } from "../types/NullableType";
 import { MutateExpression } from "./MutateExpression";
+import { VoidType } from "../types/VoidType";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -54,6 +55,9 @@ export class FunctionCallExpression extends Expression {
     _calledFunction: DeclaredFunction | null = null;
 
     _isCoroutineCall: boolean = false;
+
+    // set when we have a?.b()
+    _isNullableCall: boolean = false;
 
     constructor(location: SymbolLocation, lhs: Expression, args: Expression[]) {
         super(location, "function_call");
@@ -80,7 +84,7 @@ export class FunctionCallExpression extends Expression {
          * Prior to inferring the LHS, we need to check if the LHS is a class method,
          * since direct method access is not allowed,
          * meaning we check if we have FnCall(MemberAccess(...), [...])
-         * 
+         *
          * The same principle applies to:
          *  lock.request()
          *  lock.release()
@@ -113,7 +117,24 @@ export class FunctionCallExpression extends Expression {
 
         if (left instanceof MemberAccessExpression) {
             let baseExpr = left.left;
+            this._isNullableCall = left.isNullable;
+
             let baseExprType = baseExpr.infer(ctx, null);
+
+            if(this._isNullableCall){
+                /**
+                 * We make sure the LHS of a?.b is of a nullable type
+                 */
+
+                if(!baseExprType.allowedNullable(ctx)){
+                    ctx.parser.customError(`Cannot perform \`?.\` on non-nullable type ${baseExprType.shortname()}.`, this.location);
+                }
+            }
+            else {
+                if(baseExprType.is(ctx, NullableType)){
+                    ctx.parser.customError(`Cannot perform \`.\` on nullable type ${baseExprType.shortname()}, maybe you want to use \`?.\` instead.`, this.location);
+                }
+            }
 
             let memberExpr = left.right;
 
@@ -132,6 +153,7 @@ export class FunctionCallExpression extends Expression {
                     return returnType;
                 }
             }
+
         }
 
         if ((left instanceof ElementExpression) && (left.typeArguments.length === 0) && (left.isGenericFunction(ctx))) {
@@ -151,7 +173,7 @@ export class FunctionCallExpression extends Expression {
          * Check if LHS is:
          * 1. A function
          * 2. Class or interface instance which is callable
-         * 3. FFI Method 
+         * 3. FFI Method
          * 4. Variant Constructor
          */
 
@@ -170,7 +192,7 @@ export class FunctionCallExpression extends Expression {
         // Variant Constructor
         else if (lhsType.is(ctx, VariantConstructorType)) {
             // We should not reach this point since this should be already caught
-            throw new Error("Unreachable");
+            ctx.parser.error("Unreachable");
         }
         else if (lhsType.is(ctx, CoroutineType)) {
             return this.inferCoroutine(ctx, lhsType);
@@ -193,7 +215,7 @@ export class FunctionCallExpression extends Expression {
             ctx.parser.customError(`Method __call__ not found in ${lhsT.shortname()}`, this.location);
         }
 
-        // setup the hint for call arguments 
+        // setup the hint for call arguments
         for (let i = 0; i < this.args.length; i++) {
             this.args[i].setHint(method.header.parameters[i].type);
         }
@@ -207,6 +229,9 @@ export class FunctionCallExpression extends Expression {
     }
 
     private inferFFIMethod(ctx: Context, lhsType: DataType) {
+        if(this._isNullableCall){
+            ctx.parser.customError("Cannot call a FFI method with a nullable member access ?.", this.location)
+        }
 
         let lhsT = lhsType.dereference() as FFIMethodType
         let interfaceMethod = lhsT.imethod;
@@ -284,7 +309,7 @@ export class FunctionCallExpression extends Expression {
             this._calledClassMethod = method._sourceMethod;
             this.checkMutability(ctx, method.header);
 
-            // manually set the inferred type of the lhs, since 
+            // manually set the inferred type of the lhs, since
             // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
             // this is because we do not allow class methods to be used except in a function call context
             // meaning if only have x.print without (), it results in a property access, hence, failing
@@ -293,7 +318,13 @@ export class FunctionCallExpression extends Expression {
 
             this.inferredType = method.header.returnType;
             this.checkHint(ctx);
+            this.checkNullability(ctx);
             return this.inferredType;
+        }
+        else {
+            if(!isAttribute.type.allowedNullable(ctx) && this._isNullableCall){
+                ctx.parser.customError(`The result of an expression following a nullable access ?. should always be a type that can be null or void.`, this.location)
+            }
         }
     }
 
@@ -323,6 +354,7 @@ export class FunctionCallExpression extends Expression {
 
         this.inferredType = lhsT.returnType;
         this.checkMutability(ctx, lhsT);
+        this.checkNullability(ctx)
         this.checkHint(ctx);
         return this.inferredType;
     }
@@ -359,7 +391,7 @@ export class FunctionCallExpression extends Expression {
         this._calledInterfaceMethod = method;
         this.checkMutability(ctx, method.header);
 
-        // manually set the inferred type of the lhs, since 
+        // manually set the inferred type of the lhs, since
         // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
         // this is because we do not allow class methods to be used except in a function call context
         // meaning if only have x.print without (), it results in a property access, hence, failing
@@ -367,6 +399,7 @@ export class FunctionCallExpression extends Expression {
 
         this.inferredType = method.header.returnType;
         this.checkHint(ctx);
+        this.checkNullability(ctx);
         return this.inferredType;
     }
 
@@ -379,6 +412,10 @@ export class FunctionCallExpression extends Expression {
 
         // case 1: static method call
         if (baseExprType.is(ctx, MetaClassType)) {
+            if(this._isNullableCall){
+                ctx.parser.customError("Cannot call a static method with a nullable member access ?.", this.location)
+            }
+
             let metaClass = baseExprType.to(ctx, MetaClassType) as MetaClassType;
             let classType = metaClass.classType.to(ctx, ClassType) as ClassType;
 
@@ -405,7 +442,7 @@ export class FunctionCallExpression extends Expression {
             // save the reference to the source method to be used in the code generator
             this._calledClassMethod = method._sourceMethod;
 
-            // manually set the inferred type of the lhs, since 
+            // manually set the inferred type of the lhs, since
             // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;
             // this is because we do not allow class methods to be used except in a function call context
             // meaning if only have x.print without (), it results in a property access, hence, failing
@@ -413,11 +450,16 @@ export class FunctionCallExpression extends Expression {
 
             this.inferredType = method.header.returnType;
             this.checkHint(ctx);
+            this.checkNullability(ctx);
             return this.inferredType;
         }
 
         // case 2: variant constructor
         else if (baseExprType.is(ctx, MetaVariantType)) {
+            if(this._isNullableCall){
+                ctx.parser.customError("Cannot call a variant constructor with a nullable member access ?.", this.location)
+            }
+
             let variantConstructorMeta = this.lhs.infer(ctx, null);
             if (!variantConstructorMeta.is(ctx, MetaVariantConstructorType)) {
                 throw "Unreachable";
@@ -461,6 +503,7 @@ export class FunctionCallExpression extends Expression {
             // set the inferred type
             this.inferredType = variantConstructor;
             this.checkHint(ctx);
+            this.checkNullability(ctx);
             return this.inferredType;
         }
         else {
@@ -487,7 +530,17 @@ export class FunctionCallExpression extends Expression {
         this.inferredType = coroutineType.fnType.returnType;
         this.checkMutability(ctx, coroutineType.fnType);
         this.checkHint(ctx);
+        this.checkNullability(ctx);
         return this.inferredType;
+    }
+
+    checkNullability(ctx: Context){
+        if(this._isNullableCall){
+            if(!this.inferredType?.allowedNullable(ctx) && !this.inferredType?.is(ctx, VoidType)) {
+                ctx.parser.customError(`The result of an expression following a nullable access ?. should always be a type that can be null or void.`, this.location)
+            }
+        }
+
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): FunctionCallExpression {

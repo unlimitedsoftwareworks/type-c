@@ -1670,6 +1670,35 @@ export class BytecodeGenerator {
                 this.addUnresolvedOffset(instruction.args[3] as string, label);
             }
 
+            else if (instruction.type == "j_eq_null_i8" || instruction.type == "j_eq_null_u8") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let label = this.emit(BytecodeInstructionType.j_eq_null_8, reg, 0);
+                this.addUnresolvedOffset(instruction.args[1] as string, label);
+            }
+
+            else if (instruction.type == "j_eq_null_i16" || instruction.type == "j_eq_null_u16") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let label = this.emit(BytecodeInstructionType.j_eq_null_16, reg, 0);
+                this.addUnresolvedOffset(instruction.args[1] as string, label);
+            }
+
+            else if (instruction.type == "j_eq_null_i32" || instruction.type == "j_eq_null_u32" || instruction.type == "j_eq_null_f32") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let label = this.emit(BytecodeInstructionType.j_eq_null_32, reg, 0);
+                this.addUnresolvedOffset(instruction.args[1] as string, label);
+            }
+
+            else if (instruction.type == "j_eq_null_i64" || instruction.type == "j_eq_null_u64" || instruction.type == "j_eq_null_f64") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let label = this.emit(BytecodeInstructionType.j_eq_null_64, reg, 0);
+                this.addUnresolvedOffset(instruction.args[1] as string, label);
+            }
+
+            else if (instruction.type == "j_eq_null_ptr") {
+                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let label = this.emit(BytecodeInstructionType.j_eq_null_ptr, reg, 0);
+                this.addUnresolvedOffset(instruction.args[1] as string, label);
+            }
 
             /**
              * FFI

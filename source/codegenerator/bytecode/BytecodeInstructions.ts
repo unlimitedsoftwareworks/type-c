@@ -2,10 +2,10 @@
  * Filename: BytecodeInstructions.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Lists all VM bytecode instructions
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -19,7 +19,7 @@ export enum BytecodeInstructionType{
      * c: constant (offset)
      * s: byte-size, 1, 2, 4, 8 or 0 for pointer
      */
-    
+
     /**
      * move instruction,
      * format: mv_[dest]_[src]_[size]
@@ -120,7 +120,7 @@ export enum BytecodeInstructionType{
     s_storef_reg_ptr,
 
     /**
-     * c_alloc 
+     * c_alloc
      * OP_C_ALLOC dest: R num-methods: I, num-fields: I(1b), class-fields-size: I (2 bytes), classId-size: Z, classId: I
      * allocates new class of given total ﬁelds count (arg1) and total fields
      * size of (arg2 and arg3), stores the address of the new class into dest.
@@ -495,6 +495,15 @@ export enum BytecodeInstructionType{
     j_cmp_bool,
 
     /**
+     * j_eq_null[size] arg1: R, jump-address: I (4 bytes)
+     */
+    j_eq_null_8,
+    j_eq_null_16,
+    j_eq_null_32,
+    j_eq_null_64,
+    j_eq_null_ptr,
+
+    /**
      * loop arg1, dest_address: i (8 bytes)
      * jumps to the given address if the value in arg1 is not 0
      */
@@ -571,4 +580,3 @@ export enum BytecodeInstructionType{
      */
     throw_rt,
 }
-

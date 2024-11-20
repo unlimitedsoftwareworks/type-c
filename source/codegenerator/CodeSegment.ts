@@ -183,7 +183,7 @@ export class CodeSegment {
                 this.writer.push_16(args[2]);
                 this.writer.push_16(args[3]);
                 return this.writer.push_32(args[4]);
-            
+
             case BytecodeInstructionType.c_alloc_t:
                 assertArgs(args, 2);
                 this.writer.push_8(args[0]);
@@ -494,6 +494,15 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
                 return this.writer.push_32(args[3]);
+
+            case BytecodeInstructionType.j_eq_null_8:
+            case BytecodeInstructionType.j_eq_null_16:
+            case BytecodeInstructionType.j_eq_null_32:
+            case BytecodeInstructionType.j_eq_null_64:
+            case BytecodeInstructionType.j_eq_null_ptr:
+                this.writer.push_8(args[0]);
+                return this.writer.push_32(args[1]);
+
 
             case BytecodeInstructionType.reg_ffi:
                 this.writer.push_bytesNeeded(args[0]);

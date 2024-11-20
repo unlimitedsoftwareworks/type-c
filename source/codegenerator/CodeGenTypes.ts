@@ -83,8 +83,8 @@ export function globalType(v: DataType): IRInstructionType {
 
 /**
  * TMP: stores a local/arg into a tmp register
- * @param u 
- * @returns 
+ * @param u
+ * @returns
  */
 export function tmpType(v: DataType): IRInstructionType {
     let u = v.dereference();
@@ -456,6 +456,29 @@ export function getFnReturnType(v: DataType): IRInstructionType {
     return "fn_get_reg_ptr";
 }
 
+export function jCmpNullType(v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "j_eq_null_i8";
+        if (u.kind == "u8") return "j_eq_null_u8";
+        if (u.kind == "i16") return "j_eq_null_i16";
+        if (u.kind == "u16") return "j_eq_null_u16";
+        if (u.kind == "i32") return "j_eq_null_i32";
+        if (u.kind == "u32") return "j_eq_null_u32";
+        if (u.kind == "i64") return "j_eq_null_i64";
+        if (u.kind == "u64") return "j_eq_null_u64";
+        if (u.kind == "f32") return "j_eq_null_f32";
+        if (u.kind == "f64") return "j_eq_null_f64";
+        if (u.kind == "array") return "j_eq_null_ptr";
+        if (u.kind == "bool") return "j_eq_null_u8";
+    }
+    if (u instanceof BooleanType) return "j_eq_null_u8"
+    if (u instanceof EnumType) {
+        return ("j_eq_null_" + u.as) as IRInstructionType;
+    }
+    return "j_eq_null_ptr";
+}
+
 /**
  * Binary operators
  */
@@ -604,8 +627,8 @@ const orInstructions: { [key: string]: IRInstructionType } = {
 /**
  * TODO: support enums here?
  * @param dt
- * @param op 
- * @returns 
+ * @param op
+ * @returns
  */
 export function getBinaryInstruction(dt: BasicType, op: BinaryExpressionOperator): IRInstructionType {
     if (op == "+") {

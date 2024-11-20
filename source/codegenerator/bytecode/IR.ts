@@ -377,6 +377,20 @@ export type IRInstructionType =
     "j_cmp_ptr" |
     "j_cmp_bool" |
 
+    "j_eq_null_i8" |
+    "j_eq_null_u8" |
+    "j_eq_null_i16" |
+    "j_eq_null_u16" |
+    "j_eq_null_i32" |
+    "j_eq_null_u32" |
+    "j_eq_null_i64" |
+    "j_eq_null_u64" |
+    "j_eq_null_f32" |
+    "j_eq_null_f64" |
+    "j_eq_null_i16" |
+    "j_eq_null_ptr" |
+
+
     "band_i8" |
     "band_u8" |
     "band_i16" |

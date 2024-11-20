@@ -820,11 +820,33 @@ export class FunctionGenerator {
         }
 
         let lhsReg = this.visitExpression(expr.left, ctx);
+
+        // now we check if we have a nullable access. if so we compare the lhs with null
+        // if it is null we return null directly
+        //
+
+        let endLabel: string = ""; // empty for now
+        if(expr.isNullable){
+            endLabel = this.generateLabel();
+            this.i("j_eq_null_ptr", lhsReg, endLabel)
+        }
+
+        const emitLabelIfNeeded = () => {
+            if (expr.isNullable) {
+                this.i("label", endLabel)
+            }
+        }
+
+
+
         let rhs = expr.right as ElementExpression;
 
-        let baseType = expr.left.inferredType?.dereference();
+        let baseType = expr.left.inferredType!.dereference();
+        if(baseType.is(ctx, NullableType)){
+            baseType = baseType?.denull()
+        }
 
-        if (baseType instanceof ArrayType) {
+        if (baseType.is(ctx, ArrayType)) {
             // an array can have two types of members: length and extend
             if (rhs.name == "length") {
                 let tmp = this.generateTmp();
@@ -839,7 +861,7 @@ export class FunctionGenerator {
             }
         }
 
-        if (baseType instanceof CoroutineType) {
+        if (baseType.is(ctx, CoroutineType)) {
             if (rhs.name === "state") {
                 let tmp = this.generateTmp();
                 this.i("coroutine_get_state", tmp, lhsReg);
@@ -848,8 +870,8 @@ export class FunctionGenerator {
             }
         }
 
-        if (baseType instanceof StructType) {
-            let structType = baseType as StructType;
+        if (baseType.is(ctx, StructType)) {
+            let structType = baseType.to(ctx, StructType) as StructType;
             let fieldType = structType.getFieldTypeByName(rhs.name);
             let field = structType.getField(rhs.name);
 
@@ -858,11 +880,11 @@ export class FunctionGenerator {
 
             this.i(instr, tmp, lhsReg, field!.getFieldID());
             this.destroyTmp(lhsReg);
-
+            emitLabelIfNeeded()
             return tmp;
-        } else if (baseType instanceof ClassType) {
+        } else if (baseType.is(ctx, ClassType)) {
             // find if the field is an attribute or a method
-            let classType = baseType as ClassType;
+            let classType = baseType.to(ctx, ClassType) as ClassType;
             let attr = classType.getAttribute(rhs.name);
             if (attr != null) {
                 let instr = classGetFieldType(attr.type);
@@ -870,14 +892,15 @@ export class FunctionGenerator {
                 let fieldIndex = classType.getAttributeIndex(rhs.name)!;
                 this.i(instr, tmp, lhsReg, fieldIndex);
                 this.destroyTmp(lhsReg);
+                emitLabelIfNeeded()
                 return tmp;
             } else {
                 throw new Error("Unknown class member " + rhs.name);
             }
-        } else if (baseType instanceof VariantConstructorType) {
+        } else if (baseType.is(ctx, VariantConstructorType)) {
             // variant constructor
             this.i("debug", `variant constructor parameter access ${rhs.name}`);
-            let variantType = baseType as VariantConstructorType;
+            let variantType = baseType.to(ctx, VariantConstructorType) as VariantConstructorType;
             let parameterIndex = variantType.getParameterIndex(rhs.name);
             let param = variantType.parameters[parameterIndex];
             if (parameterIndex == -1) {
@@ -890,11 +913,12 @@ export class FunctionGenerator {
             let instr = structGetFieldType(parameterType);
             this.i(instr, tmp, lhsReg, param.getFieldID());
             this.destroyTmp(lhsReg);
+            emitLabelIfNeeded()
             return tmp;
         }
 
         throw new Error(
-            "Member access expressions for non-structs are not yet implemented",
+            "Unreachable, please report this bug",
         );
     }
 
@@ -1274,7 +1298,6 @@ export class FunctionGenerator {
     ): string {
         this.i("debug", "Function call expression");
         let lhsType = expr.lhs.inferredType!;
-
         // case 1: direct function call
         if (
             lhsType instanceof FunctionType &&
@@ -1290,12 +1313,21 @@ export class FunctionGenerator {
         ) {
             // make sure it is a class method
             let baseExpression = expr.lhs as MemberAccessExpression;
-            let baseType = baseExpression.left.inferredType?.dereference();
-            if (baseType instanceof ClassType) {
-                let classType = baseType as ClassType;
+            let baseType = baseExpression.left.inferredType!;
+
+            if(baseType.is(ctx, NullableType)){
+                if(expr._isNullableCall) {
+                    baseType = baseType.denull();
+                }
+                else {
+                    throw "Unreachable code";
+                }
+            }
+
+            if (baseType.is(ctx,ClassType)) {
+                let classType = (baseType.to(ctx, ClassType)) as ClassType;
                 classType.buildAllMethods();
 
-                let baseClass = baseExpression.left;
                 let accessElement = (baseExpression.right as ElementExpression)
                     .name;
 
@@ -1308,7 +1340,7 @@ export class FunctionGenerator {
                         expr,
                         ctx,
                         baseExpression,
-                        baseType,
+                        classType,
                         accessElement,
                     );
                 } else {
@@ -1687,13 +1719,24 @@ export class FunctionGenerator {
         }
 
         let method = expr._calledInterfaceMethod;
-        let methodIndex = expr._calledInterfaceMethod!._indexInInterface;
 
         let isStatic = method?.isStatic;
 
         this.i("debug", "interface expression");
         // now we need to get the interface pointer
         let interfacePointer = this.visitExpression(baseExpression.left, ctx);
+
+        let labelEnd = ""
+        if(expr._isNullableCall){
+            labelEnd = this.generateLabel();
+            this.i("j_eq_null_ptr", interfacePointer, labelEnd);
+        }
+
+        const emitLabelIfNeeded = () => {
+            if (expr._isNullableCall) {
+                this.i("label", labelEnd)
+            }
+        }
 
         this.i("debug", "method address of " + method.name);
         // now we need to get the method
@@ -1743,10 +1786,12 @@ export class FunctionGenerator {
             let tmp = this.generateTmp();
             this.i("call_ptr", tmp, methodReg);
             this.destroyTmp(methodReg);
+            emitLabelIfNeeded()
             return tmp;
         } else {
             this.i("call_ptr", methodReg);
             this.destroyTmp(methodReg);
+            emitLabelIfNeeded()
             return "";
         }
     }
@@ -1765,10 +1810,19 @@ export class FunctionGenerator {
             ctx.parser.customError("Invalid expression!", expr.location);
         }
 
-        let typeArgs = (expr.lhs.right as ElementExpression).typeArguments;
-        let methodIndex = 0;
-
         let class_pointer_reg = this.visitExpression(baseExpression.left, ctx);
+
+        let labelEnd = ""
+        if(expr._isNullableCall){
+            labelEnd = this.generateLabel();
+            this.i("j_eq_null_ptr", class_pointer_reg, labelEnd);
+        }
+
+        const emitLabelIfNeeded = () => {
+            if (expr._isNullableCall) {
+                this.i("label", labelEnd)
+            }
+        }
 
         // now generate the instruction to get the method
         let methodReg = this.generateTmp();
@@ -1781,7 +1835,6 @@ export class FunctionGenerator {
         }
         // if the method is generic, we need to use the concrete method
         method = expr._calledClassMethod!.imethod;
-        methodIndex = expr._calledClassMethod!.indexInClass!;
 
         let isStatic = method?.isStatic;
         if (method == null) {
@@ -1832,10 +1885,12 @@ export class FunctionGenerator {
             let tmp = this.generateTmp();
             this.i("call_ptr", tmp, methodReg);
             this.destroyTmp(methodReg);
+            emitLabelIfNeeded()
             return tmp;
         } else {
             this.i("call_ptr", methodReg);
             this.destroyTmp(methodReg);
+            emitLabelIfNeeded()
             return "";
         }
     }
@@ -1849,6 +1904,18 @@ export class FunctionGenerator {
     ): string {
         // it is an attribute, we get the proceed normally
         let reg = this.visitExpression(expr.lhs, ctx);
+
+        let labelEnd = ""
+        if(expr._isNullableCall){
+            labelEnd = this.generateLabel();
+            this.i("j_eq_null_ptr", reg, labelEnd);
+        }
+
+        const emitLabelIfNeeded = () => {
+            if (expr._isNullableCall) {
+                this.i("label", labelEnd)
+            }
+        }
 
         let instructions: IRInstructionType[] = [];
         let regs: string[] = [];
@@ -1887,10 +1954,12 @@ export class FunctionGenerator {
                 let tmp = this.generateTmp();
                 this.i("coroutine_call", tmp, reg);
                 this.destroyTmp(reg);
+                emitLabelIfNeeded()
                 return tmp;
             } else {
                 this.i("coroutine_call", reg);
                 this.destroyTmp(reg);
+                emitLabelIfNeeded()
                 return "";
             }
         } else {
@@ -1904,10 +1973,12 @@ export class FunctionGenerator {
                     getDataTypeByteSize(expr.inferredType!),
                 );
                 this.destroyTmp(reg);
+                emitLabelIfNeeded()
                 return tmp;
             } else {
                 this.i("closure_call", reg);
                 this.destroyTmp(reg);
+                emitLabelIfNeeded()
                 return "";
             }
         }
