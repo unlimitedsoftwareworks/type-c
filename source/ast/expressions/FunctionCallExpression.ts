@@ -37,6 +37,7 @@ import { UnaryExpression } from "./UnaryExpression";
 import { NullableType } from "../types/NullableType";
 import { MutateExpression } from "./MutateExpression";
 import { VoidType } from "../types/VoidType";
+import { GenericType } from "../types/GenericType";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -460,14 +461,19 @@ export class FunctionCallExpression extends Expression {
                 ctx.parser.customError("Cannot call a variant constructor with a nullable member access ?.", this.location)
             }
 
-            let variantConstructorMeta = this.lhs.infer(ctx, null);
-            if (!variantConstructorMeta.is(ctx, MetaVariantConstructorType)) {
+            let meta = this.lhs.infer(ctx, null);
+            if (!meta.is(ctx, MetaVariantConstructorType)) {
                 throw "Unreachable";
             }
+
+            let variantConstructorMeta: MetaVariantConstructorType = meta.to(ctx, MetaVariantConstructorType) as MetaVariantConstructorType;
+
 
             let metaVariantConstructor = variantConstructorMeta.to(ctx, MetaVariantConstructorType) as MetaVariantConstructorType;
             let metaVariant = baseExprType.to(ctx, MetaVariantType) as MetaVariantType;
             let variantType = metaVariant.variantType.to(ctx, VariantType) as VariantType;
+
+            let variantConstructor: VariantConstructorType | null = null;
 
             if (metaVariantConstructor.typeArguments.length !== memberExpr.typeArguments.length) {
                 ctx.parser.customError(`Expected ${metaVariantConstructor.typeArguments.length} type arguments, got ${memberExpr.typeArguments.length}`, this.location);
@@ -476,28 +482,59 @@ export class FunctionCallExpression extends Expression {
             if (metaVariantConstructor.typeArguments.length > 0) {
                 let map = buildGenericsMaps(ctx, metaVariantConstructor.genericParameters, memberExpr.typeArguments);
                 variantType = variantType.clone(map);
+                variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name)!;
+            }
+            else if (variantConstructorMeta.genericParameters.length > 0){
+                // we have to infer the arguments based on the constructor's parameters
+                // infer from usage
+                // but we cannot infer all generics present in the parent 
+
+                /**
+                 * We have VariantType<A, B> = variant { Ok(A), Err(B) }
+                 * 
+                 * Then we have VariantType.Err("Cool"), we can only infer the type of B, thus we return
+                 * only a variant constructor with the type VariantType.B<String> without reference to the parent
+                 * inherits Err(B) ID btw
+                 */
+
+                let genericParams: { [key: string]: GenericType } = {};
+                for (let i = 0; i < variantConstructorMeta.genericParameters.length; i++) {
+                    genericParams[variantConstructorMeta.genericParameters[i].name] = variantConstructorMeta.genericParameters[i];
+                }
+
+                variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name)!;
+                
+                let res: { [key: string]: DataType } = {};
+
+                for(let i = 0; i < this.args.length; i++){
+                    variantConstructor.parameters[i].type.getGenericParametersRecursive(ctx, this.args[i].infer(ctx, null), genericParams, res);
+                }
+
+                //variantConstructor.getGenericParametersRecursive(ctx, variantConstructorMeta.variantConstructorType, genericParams, res);
+                variantConstructor = variantConstructor.clone(res);
             }
 
-            variantType.resolve(ctx);
+            else {
+                variantType.resolve(ctx);
 
-            let variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name);
-
-            if (variantConstructor === undefined) {
-                ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
+                variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name)!;
+                if (variantConstructor == undefined) {
+                    ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
+                }
             }
-
             // if we have generics, we need to clone the variant type
             //let map = buildGenericsMaps(ctx, method.generics, memberExpr.typeArguments);
-
+            
+            variantConstructor.resolve(ctx);
 
             // make sure we have the right number of arguments
-            if (this.args.length !== variantConstructor.parameters.length) {
-                ctx.parser.customError(`Expected ${variantConstructor.parameters.length} arguments, got ${this.args.length}`, this.location);
+            if (this.args.length !== variantConstructor!.parameters.length) {
+                ctx.parser.customError(`Expected ${variantConstructor!.parameters.length} arguments, got ${this.args.length}`, this.location);
             }
 
             // infer the arguments
             for (let i = 0; i < this.args.length; i++) {
-                this.args[i].infer(ctx, variantConstructor.parameters[i].type);
+                this.args[i].infer(ctx, variantConstructor!.parameters[i].type);
             }
 
             // set the inferred type

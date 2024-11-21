@@ -78,7 +78,9 @@ export class ReferenceType extends DataType{
         // if variant, we look up its constructor if applicable
         if(this.pkg.length > 1){
             if(type.type.is(this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx: this._usageContext!, VariantType)){
-                type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
+                // doesnt work for external packages
+                //type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
+                type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(this.pkg[0]) : this._usageContext?.lookup(this.pkg[0]);
             }
         }
 
@@ -129,6 +131,16 @@ export class ReferenceType extends DataType{
                 }
                 //this.baseType.resolve(ctx);
                 type.concreteTypes.set(signature, this.baseType);
+            }
+        }
+
+        if(this.pkg.length > 1){
+            if(this.baseType.is(ctx, VariantType)){
+                // return the variant with the name matches the second part of the reference
+                this.baseType = (this.baseType.to(ctx,VariantType) as VariantType)?.constructors.find(c => c.name === this.pkg[1])!;
+                if(this.baseType == null){
+                    ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
+                }
             }
         }
 

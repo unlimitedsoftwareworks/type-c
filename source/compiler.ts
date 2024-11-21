@@ -246,7 +246,7 @@ export module TypeC {
         if (options.runOutput) {
             if (process.env.TYPE_V_PATH == undefined) {
                 throw new Error(
-                    "--run argument requires TYPE_V_PATH environment variable to be set, please set it to the path of the type_v binary",
+                    "--run argument requires TYPE_V_PATH environment variable to be set, please set it to the path of the type_v binary folder",
                 );
             }
         }
