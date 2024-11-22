@@ -1,0 +1,51 @@
+
+local namespace privateAPI {
+    let value: u32 = 1
+}
+
+namespace engine {
+    fn getVersion() {
+        return "1.0.0"
+    }
+    
+    namespace graphics {
+        fn getColorPreset() {
+            return "dark"
+        }
+
+        let const renderer = "OpenGL"
+    }
+
+    namespace audio {
+        fn getVolume() {
+            return 0.5f
+        }
+
+        let const audioEngine = "OpenAL"
+    }
+
+    namespace config {
+        let const MAX_FPS = 60
+        let const MAX_VOLUME = 1.0f
+
+        namespace window {
+            let const WIDTH: u32 = 800
+            let const HEIGHT: u32 = 600
+
+            fn getDims() -> (u32, u32) {
+                return (WIDTH, HEIGHT)
+            }
+
+            type FullScreenMode = enum {
+                Exclusive,
+                Borderless,
+                Windowed,
+            }
+
+            type WindowMode = variant {
+                Fullscreen(mode: FullScreenMode),
+                Borderless(scale: u32),
+            }
+        }
+    }
+}

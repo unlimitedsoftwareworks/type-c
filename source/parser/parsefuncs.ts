@@ -118,6 +118,8 @@ import { StructDeconstructionExpression } from "../ast/expressions/StructDeconst
 import { YieldExpression } from "../ast/expressions/YieldExpression";
 import { MutateExpression } from "../ast/expressions/MutateExpression";
 import { UnreachableExpression } from "../ast/expressions/UnreachableExpression";
+import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
+import { BasePackage } from "../ast/BasePackage";
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -565,7 +567,7 @@ function parseFrom(parser: Parser) {
 /**
  * FFI
  */
-function parseFFI(parser: Parser) {
+function parseFFI(parser: Parser, ctx: Context) {
     parser.expect("extern");
     let nameTok = parser.expect("identifier");
     parser.expect("from");
@@ -578,7 +580,7 @@ function parseFFI(parser: Parser) {
     let canLoop = tok.type != "}";
     let methods: FFIMethodType[] = [];
     while (canLoop) {
-        let method = parseMethodInterface(parser, parser.basePackage.ctx);
+        let method = parseMethodInterface(parser, ctx);
         // make sure no duplicate methods
         if (methods.find((m) => method.name == m.imethod.name)) {
             parser.customError(
@@ -594,14 +596,82 @@ function parseFFI(parser: Parser) {
     parser.expect("}");
 
     let ffi = new DeclaredFFI(nameTok.location, nameTok.value, string, methods);
-    parser.basePackage.addFFI(ffi);
+    return ffi;
+}
+
+
+function parseNamespace(parser: Parser, ctx: Context) {
+    let loc = parser.loc();
+    parser.expect("namespace");
+    let name = parser.expect("identifier").value;
+    let ns = new DeclaredNamespace(loc, ctx, name);
+    parser.expect("{");
+    let token = parser.peek();
+    let canLoop = token.type != "}";
+    parser.reject()
+    let isLocal = false;
+
+    while (canLoop) {
+        if (token.type === "local") {
+            isLocal = true;
+            parser.expect("local");
+            token = parser.peek();// does .peek and .accept 
+            parser.reject();
+
+            if (token.type == "let"){
+                // the syntax here is let local so we throw an error
+                ctx.parser.customError("Invalid syntax, local is used prior to a declaration of a function/type or within let", token.location)
+            }
+        }
+
+        switch(token.type) {
+            case "let": {
+                parser.expect("let");
+                let stmt = parseVariableDeclarationList(parser, ns.ctx);
+                ns.addStatement(new VariableDeclarationStatement(stmt[0].location, stmt));
+                break;
+            }
+            case "type": {
+                let dt = parseTypeDecl(parser, ns.ctx);
+                ns.addSymbol(dt)
+                dt.setLocal(isLocal);
+                isLocal = false;
+                break;
+            }
+            case "namespace": {
+                let ns2 = parseNamespace(parser, ns.ctx);
+                ns.addSymbol(ns2);
+                ns2.setLocal(isLocal);
+                isLocal = false;
+                break;
+            }
+            case "fn": {
+                let fn = parseStatementFn(parser, ns.ctx);
+                // the symbol is added within parseStatementFn
+                ns.addStatement(fn);
+                fn.symbolPointer.setLocal(isLocal);
+                isLocal = false;
+                break;
+            }
+            default: {
+                parser.customError(`Unexpected token ${token.type}`, token.location)
+            }
+        }
+
+        token = parser.peek();
+        canLoop = token.type != "}";
+        parser.reject();
+    }
+    parser.expect("}");
+
+    return ns;
 }
 
 /**
  * Data Types
  */
 // <type_decl> ::= "type" <identifier> <generic_arg_decl> "=" <type>
-function parseTypeDecl(parser: Parser) {
+function parseTypeDecl(parser: Parser, ctx: Context) {
     let loc = parser.loc();
     let typeToken = parser.expect("type");
 
@@ -611,13 +681,13 @@ function parseTypeDecl(parser: Parser) {
     let token = parser.peek();
     if (token.type === "<") {
         parser.reject();
-        generics = parseGenericArgDecl(parser, parser.basePackage.ctx);
+        generics = parseGenericArgDecl(parser, ctx);
     } else {
         parser.reject();
     }
 
     token = parser.expect("=");
-    const type = parseType(parser, parser.basePackage.ctx);
+    const type = parseType(parser, ctx);
 
     /**
      * if the type is not generic, we resolve it right away, otherwise,
@@ -626,11 +696,11 @@ function parseTypeDecl(parser: Parser) {
 
     let declaredType = new DeclaredType(
         loc,
-        parser.basePackage.ctx,
+        ctx,
         name,
         type,
         generics,
-        parser.basePackage.ctx.getCurrentPackage(),
+        ctx.getCurrentPackage(),
     );
 
     /*
@@ -640,7 +710,7 @@ function parseTypeDecl(parser: Parser) {
     }
     */
 
-    parser.basePackage.addType(declaredType);
+    return declaredType;
 }
 
 function parseType(parser: Parser, ctx: Context): DataType {
@@ -2140,13 +2210,31 @@ function parseVariableDeclaration(
 ): DeclaredVariable[] {
     let loc = parser.loc();
     let isConst = false;
+    let isLocal = false;
     let token = parser.peek();
-    if (token.type === "const") {
-        isConst = true;
-        parser.accept();
-    } else {
-        parser.reject();
+
+    // Loop to check for "local" and "const" in any order, but only once each
+    while (token.type === "local" || token.type === "const") {
+        if (token.type === "local") {
+            if (isLocal) {
+                parser.customError("Duplicate 'local' modifier found", token.location);
+            }
+            if (!(ctx.getOwner() instanceof BasePackage) && !(ctx.getOwner() instanceof DeclaredNamespace)) {
+                parser.customError("Namespaces are only allowed in the global context", token.location);
+            }
+            isLocal = true;
+            parser.accept();  // Consume the "local" token
+        } else if (token.type === "const") {
+            if (isConst) {
+                parser.customError("Duplicate 'const' modifier found", token.location);
+            }
+            isConst = true;
+            parser.accept();  // Consume the "const" token
+        }
+
+        token = parser.peek(); // Get the next token for the next iteration
     }
+    parser.reject();
 
     /*
         Here are the following ways a variable can be declared:
@@ -2211,7 +2299,7 @@ function parseVariableDeclaration(
         return d;
     }
 
-    return parseRegularVariableDeclaration(parser, ctx, isConst);
+    return parseRegularVariableDeclaration(parser, ctx, isConst, isLocal);
 }
 function parseTupleDeconstruction(
     parser: Parser,
@@ -2263,6 +2351,7 @@ function parseTupleDeconstruction(
                 null, // type will be inferred later
                 isConst,
                 false,
+                false
             );
 
             return d;
@@ -2299,6 +2388,7 @@ function parseObjectDeconstruction(
                     null,
                     isConst,
                     false,
+                    false
                 ),
                 field: null,
                 isRemaining: isRemaining,
@@ -2326,6 +2416,7 @@ function parseObjectDeconstruction(
                     null,
                     isConst,
                     false,
+                    false
                 ),
                 field: propertyName,
                 isRemaining: isRemaining,
@@ -2403,6 +2494,7 @@ function parseArrayDeconstruction(
                     null,
                     isConst,
                     false,
+                    false
                 ),
                 isIgnored: false,
                 isRemaining: isRemaining,
@@ -2448,6 +2540,7 @@ function parseRegularVariableDeclaration(
     parser: Parser,
     ctx: Context,
     isConst: boolean,
+    isLocal: boolean
 ): DeclaredVariable[] {
     var loc = parser.loc();
     var token = parser.expect("identifier");
@@ -2470,7 +2563,7 @@ function parseRegularVariableDeclaration(
     let initializer = parseExpression(parser, ctx, {
         allowNullable: false,
     });
-    let v = new DeclaredVariable(loc, name, initializer, type, isConst, false);
+    let v = new DeclaredVariable(loc, name, initializer, type, isConst, isLocal, false);
     return [v];
 }
 
@@ -3147,4 +3240,5 @@ export {
     parseExpression,
     parseStatement,
     parseFFI,
+    parseNamespace
 };

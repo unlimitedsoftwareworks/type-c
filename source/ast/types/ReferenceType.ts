@@ -19,6 +19,7 @@ import { InterfaceType } from "./InterfaceType";
 import { buildGenericsMaps, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { VariantType } from "./VariantType";
 import { GenericType } from "./GenericType";
+import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]
@@ -55,13 +56,31 @@ export class ReferenceType extends DataType{
             return;
         }
 
-
         let initialPkg = this.pkg[0];
+        let idCounter = 0;
         let fullPkg = this.pkg.join(".");
+
+        // actual reference without namespace
+        let actualReference = [...this.pkg]
+
+        /**
+         * A.B.C could resolve to A being namespace, B.C a variant for example
+         * or A.B being nested namespaces, C being a type in A.B
+         */
+
+
 
         // first we check at the first name, i.e Data.Processor
         // we first check what Data is, depending on that we check Processor
         let type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(initialPkg) : this._usageContext?.lookup(initialPkg);
+
+        while(type instanceof DeclaredNamespace){
+            actualReference.shift();
+            initialPkg = actualReference[0]
+
+            type = type.ctx.lookup(initialPkg);
+        }
+
         if(type == null){
             ctx.parser.customError(`Type ${initialPkg} not found`, this.location);
         }
@@ -76,11 +95,11 @@ export class ReferenceType extends DataType{
         let parentType = type.type;
 
         // if variant, we look up its constructor if applicable
-        if(this.pkg.length > 1){
+        if(actualReference.length > 1){
             if(type.type.is(this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx: this._usageContext!, VariantType)){
                 // doesnt work for external packages
                 //type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
-                type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(this.pkg[0]) : this._usageContext?.lookup(this.pkg[0]);
+                type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(actualReference[0]) : this._usageContext?.lookup(actualReference[0]);
             }
         }
 
@@ -117,10 +136,10 @@ export class ReferenceType extends DataType{
             else {
                 if(parentType !== type.type){
                     let parentVariant = parentType.clone(map).to(ctx, VariantType) as VariantType;
-                    // now get the constructor matching this.pkg[1]
-                    let constructor = parentVariant.constructors.find(c => c.name === this.pkg[1]);
+                    // now get the constructor matching actualReference[1]
+                    let constructor = parentVariant.constructors.find(c => c.name === actualReference[1]);
                     if(constructor == null){
-                        ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
+                        ctx.parser.customError(`Variant constructor ${actualReference[1]} not found`, this.location);
                     }
                     this.baseType = constructor;
                     this.baseDecl = type;
@@ -134,12 +153,12 @@ export class ReferenceType extends DataType{
             }
         }
 
-        if(this.pkg.length > 1){
+        if(actualReference.length > 1){
             if(this.baseType.is(ctx, VariantType)){
                 // return the variant with the name matches the second part of the reference
-                this.baseType = (this.baseType.to(ctx,VariantType) as VariantType)?.constructors.find(c => c.name === this.pkg[1])!;
+                this.baseType = (this.baseType.to(ctx,VariantType) as VariantType)?.constructors.find(c => c.name === actualReference[1])!;
                 if(this.baseType == null){
-                    ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
+                    ctx.parser.customError(`Variant constructor ${actualReference[1]} not found`, this.location);
                 }
             }
         }

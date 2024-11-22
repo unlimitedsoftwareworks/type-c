@@ -123,6 +123,10 @@ export module TypeC {
                     continue;
                 }
 
+                if(sym.isLocal){
+                    parser.customError(`Cannot import local symbol. Attempting to import local symbol ${imp.actualName}.`, imp.location)
+                }
+
                 this.basePackage.ctx.addExternalSymbol(sym, imp.alias);
             }
 
@@ -183,6 +187,10 @@ export module TypeC {
                         imp.location,
                     );
                     continue;
+                }
+
+                if(sym.isLocal){
+                    parser.customError(`Cannot import local symbol. Attempting to import local symbol ${imp.actualName}.`, imp.location)
                 }
 
                 basePackage.ctx.addExternalSymbol(sym, imp.alias);

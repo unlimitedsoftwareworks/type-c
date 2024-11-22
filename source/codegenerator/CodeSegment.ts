@@ -107,22 +107,22 @@ export class CodeSegment {
                 return this.writer.push_bytesNeeded(args[1]);
 
             case BytecodeInstructionType.mv_global_reg:
-                this.writer.push_bytesNeeded(args[0]);
+                this.writer.push_32(args[0]);
                 this.writer.push_8(args[1]);
                 return this.writer.push_8(args[2]);
 
             case BytecodeInstructionType.mv_global_reg_ptr:
-                this.writer.push_bytesNeeded(args[0]);
+                this.writer.push_32(args[0]);
                 return this.writer.push_8(args[1]);
 
             case BytecodeInstructionType.mv_reg_global:
                 this.writer.push_8(args[0]);
-                this.writer.push_bytesNeeded(args[1]);
+                this.writer.push_32(args[1]);
                 return this.writer.push_8(args[2]);
 
             case BytecodeInstructionType.mv_reg_global_ptr:
                 this.writer.push_8(args[0]);
-                return this.writer.push_bytesNeeded(args[1]);
+                return this.writer.push_32(args[1]);
 
             case BytecodeInstructionType.s_alloc:
                 assertArgs(args, 3);

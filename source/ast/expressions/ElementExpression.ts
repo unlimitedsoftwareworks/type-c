@@ -13,6 +13,7 @@
 import { Context, SymbolScope } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
 import { DeclaredFunction } from "../symbol/DeclaredFunction";
+import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
 import { DeclaredType } from "../symbol/DeclaredType";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { FunctionArgument } from "../symbol/FunctionArgument";
@@ -26,6 +27,7 @@ import { EnumType } from "../types/EnumType";
 import { FFINamespaceType } from "../types/FFINamespaceType";
 import { InterfaceType } from "../types/InterfaceType";
 import { MetaClassType, MetaEnumType, MetaInterfaceType, MetaVariantType } from "../types/MetaTypes";
+import { NamespaceType } from "../types/NamespaceType";
 import { VariantType } from "../types/VariantType";
 import { Expression } from "./Expression";
 
@@ -53,6 +55,7 @@ export class ElementExpression extends Expression {
      */
     _isVariable: boolean = false;
     _isFunction: boolean = false;
+    _isNamespace: boolean = false;
 
     _scopedVar: {sym: Symbol, scope: SymbolScope} | null    = null;
 
@@ -199,6 +202,14 @@ export class ElementExpression extends Expression {
             this.checkHint(ctx);
             return this.inferredType;
         }
+        else if (variable instanceof DeclaredNamespace) {
+            this.inferredType = new NamespaceType(this.location, variable);
+            this._isNamespace = true;
+            //this.inferredType.resolve(ctx);
+            this.isConstant = false;
+            this.checkHint(ctx);
+            return this.inferredType;
+        }
         else if (variable instanceof DeclaredType) {
             // we make sure we have no hint
             if(hint) {
@@ -258,7 +269,6 @@ export class ElementExpression extends Expression {
                 this.checkHint(ctx);
                 return this.inferredType;
             }
-
         }
 
         ctx.parser.customError(`Not implemented`, this.location);

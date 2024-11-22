@@ -1,16 +1,112 @@
-
-from std.io import println
 from std.string import String
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
 
-fn fib(x: u32) -> u32 = match x {
-	0 => 0,
-	1 => 1,
-	_ => fib(x-1) + fib(x-2),
+from folder.api import publicAPI /*, privateAPI << will crash (as it should) */
+from folder.api2 import engine
+
+type User = class {
+    fn init() {
+        println("User created")
+    }
 }
 
-fn main(x: String[]) {
-    println("fib(20) = " + fib(20))
+namespace Main {
+    type Data<T> = class {
+        let pos: {x: T, y: T}
+        fn init(x: T, y: T) {
+            this.pos = {x, y}
+        }
+    }
 
-    return z+1
+    fn clear<T>(x: T) {
+        println("Cleared ".cat(x).cat("!")).cat(Main.PI)
+    }
+
+    let local const PI: f32 = 3.14f
+    let local const J4: String = "haha"
+    let const F = Main.f()
+
+    fn f() -> String {
+        return "f".cat(J4) // i.e Main.J4
+    }
+
+    fn getPI(){
+        return PI
+    }
 }
 
+fn test_case_1(rn: TestUnit) {
+    let value = Main.f()
+    rn.assert_obj_eq(value, "fhaha")
+    rn.assert_f32_eq_pre(Main.getPI(), 3.14f, 0.00001f)
+    rn.assert_obj_eq(Main.F, "fhaha")
+
+    let d = new Main.Data<u32>(1, 0)
+    rn.assert_eq(d.pos.x, 1)
+    rn.assert_eq(d.pos.y, 0)
+}
+
+fn test_case_2(rn: TestUnit) {
+    let value = publicAPI.getValue()
+    rn.assert_eq(value, 1)
+
+    let v: publicAPI.ConcreteVector = new publicAPI.ConcreteVector(1, 2)
+    let pos = v.getPos()
+    rn.assert_eq(pos.x, 1)
+    rn.assert_eq(pos.y, 2)
+}
+
+
+fn test_case_3(rn: TestUnit) {
+    let version = engine.getVersion()
+    rn.assert_obj_eq(version, "1.0.0")
+
+    let color = engine.graphics.getColorPreset()
+    rn.assert_obj_eq(color, "dark")
+
+    let const renderer = engine.graphics.renderer
+    rn.assert_obj_eq(renderer, "OpenGL")
+
+    let volume = engine.audio.getVolume()
+    rn.assert_f32_eq_pre(volume, 0.5f, 0.00001f)
+
+    let const audioEngine = engine.audio.audioEngine
+    rn.assert_obj_eq(audioEngine, "OpenAL")
+
+    let maxFPS = engine.config.MAX_FPS
+    rn.assert_eq(maxFPS, 60)
+
+    let maxVolume = engine.config.MAX_VOLUME
+    rn.assert_f32_eq_pre(maxVolume, 1.0f, 0.00001f)
+
+    let (dim_1, dim_2) = engine.config.window.getDims()
+    rn.assert_eq(dim_1, 800)
+    rn.assert_eq(dim_2, 600)
+
+    let windowConfig = engine.config.window.WindowMode.Fullscreen(engine.config.window.FullScreenMode.Exclusive)
+
+    /*
+    match windowConfig {
+        engine.config.window.WindowMode.Fullscreen(mode) => {
+            rn.assert_eq(mode, engine.config.window.FullScreenMode.Exclusive)
+        }
+        engine.config.window.WindowMode.Borderless(scale) => {
+            rn.assert_eq(scale, 0)
+        }
+    }
+    */
+}
+
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test 1", "Tests local namespaces", test_case_1)
+    let test_2 = new TestUnit("test 2", "Tests external namespaces", test_case_2)
+    let test_3 = new TestUnit("test 3", "Tests nested namespaces", test_case_3)
+
+    let set = new UnitSet("Modules & Import Test", "Tests implementation of namespaces & local symbols & local import",
+        [test_1, test_2, test_3]
+    )
+
+    return set.run()
+}

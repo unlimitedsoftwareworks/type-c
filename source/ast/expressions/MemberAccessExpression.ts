@@ -11,9 +11,9 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { FunctionArgument } from "../symbol/FunctionArgument";
+import { Symbol } from "../symbol/Symbol";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ArrayType } from "../types/ArrayType";
 import { BasicType } from "../types/BasicType";
@@ -29,6 +29,7 @@ import {
     MetaVariantConstructorType,
     MetaVariantType,
 } from "../types/MetaTypes";
+import { NamespaceType } from "../types/NamespaceType";
 import { NullableType } from "../types/NullableType";
 import { StructType } from "../types/StructType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
@@ -42,6 +43,8 @@ export class MemberAccessExpression extends Expression {
     left: Expression;
     right: ElementExpression;
     isNullable: boolean = false;
+
+    _nsAccessedSymbol: Symbol | null = null;
 
     constructor(
         location: SymbolLocation,
@@ -377,6 +380,44 @@ export class MemberAccessExpression extends Expression {
                 this.checkHint(ctx);
                 return this.checkNullableAndReturn(ctx)
             }
+        }
+        if(lhsType.is(ctx, NamespaceType)){
+            if(this.isNullable){
+                ctx.parser.customError(
+                    `Nullable member access not allowed on namespace`,
+                    this.location,
+                );
+            }
+
+            let namespaceType = lhsType.to(ctx, NamespaceType) as NamespaceType;
+            // find the RHS element
+            let element = namespaceType.lookup(this.right.name);
+
+
+            if(!element){
+                ctx.parser.customError(
+                    `Field ${this.right.name} not found on namespace ${namespaceType.ns.name}`,
+                    this.location,
+                );
+            }
+
+            if(element.isLocal){
+                // check if we are allowed to access local variables
+                // if we are in the the same namespace or deeper, we are allowed to access it
+                if(!ctx.withinNamespace(namespaceType.ns.uid)){
+                    ctx.parser.customError(`Cannot access local variable ${this.right.name} from namespace ${namespaceType.ns.name}`, this.location);
+                }
+            }
+
+            this._nsAccessedSymbol = element;
+
+            let e_expr = new ElementExpression(this.location, this.right.name, this.right.typeArguments);
+            e_expr.infer(namespaceType.getContext(), hint);
+
+            this.inferredType = e_expr.inferredType;
+            this.isConstant = e_expr.isConstant;
+            this.checkHint(ctx);
+            return this.checkNullableAndReturn(ctx)
         }
 
         ctx.parser.customError(

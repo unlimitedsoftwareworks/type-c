@@ -2,10 +2,10 @@
  * Filename: TokenType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Hosts all kind of tokens that the lexer can produce
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -65,6 +65,8 @@ export enum TokenType {
     TOK_STATIC = "static",
     TOK_STRICT = "strict",
     TOK_STRUCT = "struct",
+    TOK_LOCAL = "local",
+    TOK_NAMESPACE = "namespace",
     TOK_MATCH = "match",
     TOK_TRUE = "true",
     TOK_TYPE = "type",

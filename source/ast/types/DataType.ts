@@ -48,6 +48,7 @@ export type DataTypeKind =
     "nullable" | // NullableType
     "ffi_method" | // FFI Method
     "ffi_namespace_type" |
+    "namespace_type" |
     "unset" | // UnsetType
     "literal" | // LiteralType
     "meta_class" | // MetaClassType, used for meta classes,

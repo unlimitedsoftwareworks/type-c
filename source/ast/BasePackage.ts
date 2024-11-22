@@ -2,10 +2,10 @@
  * Filename: BasePackage.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Provides the highest level of a package
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -17,18 +17,26 @@ import { SymbolLocation } from "./symbol/SymbolLocation";
 import { DeclaredFFI } from "./symbol/DeclaredFFI";
 import { DeclaredType } from "./symbol/DeclaredType";
 import { Statement } from "./statements/Statement";
-import { VariantType } from "./types/VariantType";
 import { FunctionCodegenProps } from "../codegenerator/FunctionCodegenProps";
 import { GlobalContext } from "../codegenerator/GlobalContext";
+import { DeclaredNamespace } from "./symbol/DeclaredNamespace";
 
 export class BasePackage {
     ctx: Context;
     imports: ImportNode[] = [];
     statements: Statement[] = [];
 
+    /**
+     * Namespace statements are stored within namespaceStatements field,
+     * so that they are taken part into global variables assignment.
+     * The reason why we do not store them into `statements` field is that
+     * we do not want them to be taken part in type inference, since they are
+     * only used for global variables assignment.
+     */
+    namespaceStatements: Statement[] = [];
 
     /**
-     * Code gen properties, in a base package and only in a base package, 
+     * Code gen properties, in a base package and only in a base package,
      * this represents global variables!
      */
     codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
@@ -53,6 +61,7 @@ export class BasePackage {
     addType(type: DeclaredType) {
         this.ctx.addSymbol(type);
 
+        /*
         if(type.type instanceof VariantType) {
             // we register its subtypes
             for(let constructor of type.type.constructors) {
@@ -60,16 +69,34 @@ export class BasePackage {
                 this.ctx.addSymbol(new DeclaredType(constructor.location, type.parentContext, name, constructor, type.genericParameters, type.parentPackage));
             }
         }
+         */
+    }
+
+    addNamespace(namespace: DeclaredNamespace){
+        this.ctx.addSymbol(namespace)
     }
 
     addStatement(stmt: Statement) {
         this.statements.push(stmt);
     }
 
+
+    addNamespaceStatement(stmt: Statement) {
+        this.namespaceStatements.push(stmt);
+    }
+
     infer(){
+        // infer namespace statements
+        for(const [_, sym] of this.globalCtx.globalSymbols){
+            if(sym instanceof DeclaredNamespace){
+                sym.infer();
+            }
+        }
+        
         for(const statement of this.statements){
             statement.infer(this.ctx);
         }
+
 
         //console.log("done infering base package "+this.ctx.location.toString())
     }

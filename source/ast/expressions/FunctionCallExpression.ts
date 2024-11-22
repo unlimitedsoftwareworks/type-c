@@ -60,6 +60,8 @@ export class FunctionCallExpression extends Expression {
     // set when we have a?.b()
     _isNullableCall: boolean = false;
 
+    _calledNamespaceSymbol: Symbol | null = null;
+
     constructor(location: SymbolLocation, lhs: Expression, args: Expression[]) {
         super(location, "function_call");
         this.lhs = lhs;

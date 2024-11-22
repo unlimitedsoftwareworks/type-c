@@ -59,6 +59,8 @@ export class Lexer {
         [TokenType.TOK_STATIC, /^static\b/],
         [TokenType.TOK_STRICT, /^strict\b/],
         [TokenType.TOK_STRUCT, /^struct\b/],
+        [TokenType.TOK_LOCAL, /^local\b/],
+        [TokenType.TOK_NAMESPACE, /^namespace\b/],
         [TokenType.TOK_MATCH, /^match\b/],
         [TokenType.TOK_TRUE, /^true\b/],
         [TokenType.TOK_TYPE, /^type\b/],

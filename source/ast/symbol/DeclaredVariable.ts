@@ -2,11 +2,11 @@
  * Filename: DeclaredVariable.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
- *     Models a variable declaration expression 
+ *     Models a variable declaration expression
  *          let x: u32 = 1
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -39,20 +39,21 @@ export class DeclaredVariable extends Symbol {
     // used to identify the field name of the variable in a deconstructed struct
     deconstructedFieldName: string | null = null;
 
-    constructor(location: SymbolLocation, name: string, initializer: Expression, annotation: DataType | null, isConst: boolean, isStrict: boolean){
+    constructor(location: SymbolLocation, name: string, initializer: Expression, annotation: DataType | null, isConst: boolean, isLocal: boolean, isStrict: boolean){
         super(location, "variable_declaration", name);
         this.name = name;
         this.initializer = initializer;
         this.annotation = annotation;
         this.isConst = isConst;
         this.isStrict = isStrict;
+        this.isLocal = isLocal;
     }
 
     infer(ctx: Context){
         if(this.annotation !== null){
             this.annotation.resolve(ctx);
         }
-        
+
         let inferredType = this.initializer.infer(ctx, this.annotation);
 
         // TODO: handle strictness
@@ -81,14 +82,11 @@ export class DeclaredVariable extends Symbol {
             isRHSConstSafe(ctx, this.initializer)
             ctx.parser.customError("Cannot assign a constant expression to a non-constant variable", this.initializer.location);
         }
-
-
     }
 
-
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): DeclaredVariable{
-        let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation?.clone(typeMap) || null, this.isConst, this.isStrict);
-        
+        let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation?.clone(typeMap) || null, this.isConst, this.isLocal, this.isStrict);
+
         let sym = ctx.lookup(this.name);
         /**
          * Variable declarations are not **inserted into the context** when cloned,

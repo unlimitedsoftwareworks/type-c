@@ -1,10 +1,10 @@
 /**
- * Filename: FFINamespaceType.ts
+ * Filename: NamespaceType.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
  *
  * Description:
- *     Models an FFI namespace type
+ *     Models a namespace type
  *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
@@ -12,31 +12,32 @@
 
 import { Context } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
+import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
+import { Symbol } from "../symbol/Symbol";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType";
 import { GenericType } from "./GenericType";
 
-export class FFINamespaceType extends DataType {
-    parentFFI: DeclaredFFI;
+export class NamespaceType extends DataType {
+    ns: DeclaredNamespace;
 
-    constructor(location: SymbolLocation, parentFFI: DeclaredFFI) {
-        super(location, "ffi_namespace_type");
-        this.parentFFI = parentFFI;
+    constructor(location: SymbolLocation, ns: DeclaredNamespace) {
+        super(location, "namespace_type");
+        this.ns = ns;
     }
 
     resolve(ctx: Context) {
         // nothing to do
+        this.ns.infer();
     }
 
     serialize(unpack: boolean = false): string {
-        return `@ffi_namespace_type{id:${this.parentFFI.ffiId}}`
+        return `@namespace_type{id:${this.ns.uid}}`
     }
-
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // nothing to do
     }
-
 
     /**
      * Returns true if the datatype can be wrapped by a nullable such as X?
@@ -53,5 +54,13 @@ export class FFINamespaceType extends DataType {
      */
     isAssignable(): boolean {
         return false;
+    }
+
+    lookup(name: string): Symbol | null {
+        return this.ns.ctx.lookup(name);
+    }
+
+    getContext(): Context {
+        return this.ns.ctx;
     }
 }
