@@ -33,6 +33,7 @@ export enum TokenType {
     TOK_CFN = "cfn",
     TOK_IF = "if",
     TOK_IMPORT = "import",
+    TOK_IMPL = "impl",
     TOK_IN = "in",
     TOK_IS = "is",
     TOK_INTERFACE = "interface",

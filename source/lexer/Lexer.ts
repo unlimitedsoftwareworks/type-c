@@ -46,6 +46,7 @@ export class Lexer {
         [TokenType.TOK_FN, /^fn\b/],
         [TokenType.TOK_IF, /^if\b/],
         [TokenType.TOK_IMPORT, /^import\b/],
+        [TokenType.TOK_IMPL, /^impl\b/],
         [TokenType.TOK_IN, /^in\b/],
         [TokenType.TOK_IS, /^is\b/],
         [TokenType.TOK_INTERFACE, /^interface\b/],
