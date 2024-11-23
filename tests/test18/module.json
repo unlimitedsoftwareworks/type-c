@@ -7,6 +7,5 @@
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"
-    },
-    "_compilerAssertions": []
+    }
 }
