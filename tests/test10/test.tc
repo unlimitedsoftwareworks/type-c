@@ -324,6 +324,16 @@ fn test_case_3(rn: TestUnit) {
         }
     }
 
+
+    fn add<T>(x: T, y: T) -> T {
+        return x + y
+    }
+
+    let c = add(1, 2)
+    rn.assert_eq(c, 3)
+    let d = add("hi", " there")
+    rn.assert_obj_eq(d, "hi there")
+
 }
 
 fn main() -> u32 {

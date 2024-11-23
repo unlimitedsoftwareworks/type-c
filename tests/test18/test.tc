@@ -13,6 +13,7 @@ type User = class {
 }
 
 namespace Main {
+    
     type Data<T> = class {
         let pos: {x: T, y: T}
         fn init(x: T, y: T) {
