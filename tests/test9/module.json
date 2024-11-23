@@ -3,19 +3,9 @@
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "Tests process creation and validation",
+    "description": "Tests pattern matching",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"
-    },
-    "_compilerAssertions": [
-        {
-            "variable": {
-                "name": "res",
-                "ast": {
-                    "decl":{"expressionType":"unary","uhs":{"expressionType":"function_call","lhs":{"expressionType":"member_access","lhs":{"expressionType":"element","element":"p","typeArguments":[]},"rhs":{"expressionType":"element","element":"emit","typeArguments":[]}},"arguments":[{"expressionType":"function_call","lhs":{"expressionType":"member_access","lhs":{"expressionType":"element","element":"ProcessInput","typeArguments":[]},"rhs":{"expressionType":"element","element":"Download","typeArguments":[]}},"arguments":[{"literalType":"string_literal","value":"/tmp/"}]}]},"operator":"await"},"type":{"kind":"reference","strict":false,"pkg":["EmitResult"],"typeArguments":[{"kind":"reference","strict":false,"pkg":["ProcessOutput"],"typeArguments":[]}]}
-                }
-            }
-        }
-    ]
+    }
 }
