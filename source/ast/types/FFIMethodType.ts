@@ -53,6 +53,23 @@ export class FFIMethodType extends DataType {
         return `@ffi_method{${this.imethod.serialize(unpack)}}`
     }
 
+    /**
+     * Returns true if the datatype can be wrapped by a nullable such as X?
+     * Otherwise false.
+     */
+    allowedNullable(ctx: Context): boolean {
+        // default behavior is to return false
+        return false;
+    }
+
+    /**
+     * Returns true if the type is assignable to the other type, false otherwise
+     * for example, constant types are not assignable to non-constant types
+     */
+    isAssignable(): boolean {
+        return false;
+    }
+
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // nothing to do

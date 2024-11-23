@@ -19,6 +19,7 @@ import { InterfaceType } from "./InterfaceType";
 import { buildGenericsMaps, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { VariantType } from "./VariantType";
 import { GenericType } from "./GenericType";
+import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
 
 export class ReferenceType extends DataType{
     // package, ["ServerResponse", "Ok"]
@@ -55,80 +56,102 @@ export class ReferenceType extends DataType{
             return;
         }
 
-
         let initialPkg = this.pkg[0];
+        let idCounter = 0;
         let fullPkg = this.pkg.join(".");
+
+        // actual reference without namespace
+        let actualReference = [...this.pkg]
+
+        /**
+         * A.B.C could resolve to A being namespace, B.C a variant for example
+         * or A.B being nested namespaces, C being a type in A.B
+         */
+
+
 
         // first we check at the first name, i.e Data.Processor
         // we first check what Data is, depending on that we check Processor
-        let type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(initialPkg) : this._usageContext?.lookup(initialPkg);
-        if(type == null){
+        let typeDecl = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(initialPkg) : this._usageContext?.lookup(initialPkg);
+
+        while(typeDecl instanceof DeclaredNamespace){
+            actualReference.shift();
+            initialPkg = actualReference[0]
+
+            typeDecl = typeDecl.ctx.lookup(initialPkg);
+        }
+
+        if(typeDecl == null){
             ctx.parser.customError(`Type ${initialPkg} not found`, this.location);
         }
 
-        if(!(type instanceof DeclaredType)){
+        if(!(typeDecl instanceof DeclaredType)){
             ctx.parser.customError(`Type ${initialPkg} is not a declared type`, this.location);
         }
 
         // in case of variant constructor, we need to keep reference to the parent type
         // so when we create a clone of a variant constructor, we clone the parent type
         // and not the variant constructor itself, then find the variant constructor
-        let parentType = type.type;
+        let parentType = typeDecl.type;
 
-        // if variant, we look up its constructor if applicable
-        if(this.pkg.length > 1){
-            if(type.type.is(this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx: this._usageContext!, VariantType)){
-                type = this._usageContext?.getCurrentPackage() === ctx.getCurrentPackage() ? ctx.lookup(fullPkg) : this._usageContext?.lookup(fullPkg);
-            }
-        }
 
-        if(type == null){
+        if(typeDecl == null){
             ctx.parser.customError(`Type ${fullPkg} not found`, this.location);
         }
 
-        if(!(type instanceof DeclaredType)){
+        if(!(typeDecl instanceof DeclaredType)){
             ctx.parser.customError(`Type ${fullPkg} is not a declared type`, this.location);
         }
 
         // check if we have the right number of type arguments
-        if(type.genericParameters.length != this.typeArgs.length){
-            ctx.parser.customError(`Type ${fullPkg} requires ${type.genericParameters.length} type arguments [${type.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
+        if(typeDecl.genericParameters.length != this.typeArgs.length){
+            ctx.parser.customError(`Type ${fullPkg} requires ${typeDecl.genericParameters.length} type arguments [${typeDecl.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
         }
 
 
-        if(type.genericParameters.length === 0){
-            this.baseType = type.type;
+        if(typeDecl.genericParameters.length === 0){
+            this.baseType = typeDecl.type;
             // causes infinite loop
-            this.baseDecl = type;
+            this.baseDecl = typeDecl;
         }
         else {
             // we have to clone the original type
-            let map = buildGenericsMaps(ctx, type.genericParameters, this.typeArgs);
+            let map = buildGenericsMaps(ctx, typeDecl.genericParameters, this.typeArgs);
             let signature = signatureFromGenerics(this.typeArgs);
 
-            if(type.concreteTypes.has(signature)){
+            if(typeDecl.concreteTypes.has(signature)){
                 // TODO: if we clone, the methods are cloned their resulting context is different form
                 // the original one. Why do we clone?
-                this.baseType = type.concreteTypes.get(signature)!//.clone(map);
-                this.baseDecl = type;
+                this.baseType = typeDecl.concreteTypes.get(signature)!//.clone(map);
+                this.baseDecl = typeDecl;
             }
             else {
-                if(parentType !== type.type){
+                if(parentType !== typeDecl.type){
                     let parentVariant = parentType.clone(map).to(ctx, VariantType) as VariantType;
-                    // now get the constructor matching this.pkg[1]
-                    let constructor = parentVariant.constructors.find(c => c.name === this.pkg[1]);
+                    // now get the constructor matching actualReference[1]
+                    let constructor = parentVariant.constructors.find(c => c.name === actualReference[1]);
                     if(constructor == null){
-                        ctx.parser.customError(`Variant constructor ${this.pkg[1]} not found`, this.location);
+                        ctx.parser.customError(`Variant constructor ${actualReference[1]} not found`, this.location);
                     }
                     this.baseType = constructor;
-                    this.baseDecl = type;
+                    this.baseDecl = typeDecl;
                 }
                 else {
-                    this.baseType = type.type.clone(map);
-                    this.baseDecl = type;
+                    this.baseType = typeDecl.type.clone(map);
+                    this.baseDecl = typeDecl;
                 }
                 //this.baseType.resolve(ctx);
-                type.concreteTypes.set(signature, this.baseType);
+                typeDecl.concreteTypes.set(signature, this.baseType);
+            }
+        }
+
+        if(actualReference.length > 1){
+            if(this.baseType.is(ctx, VariantType)){
+                // return the variant with the name matches the second part of the reference
+                this.baseType = (this.baseType.to(ctx,VariantType) as VariantType)?.constructors.find(c => c.name === actualReference[1])!;
+                if(this.baseType == null){
+                    ctx.parser.customError(`Variant constructor ${actualReference[1]} not found`, this.location);
+                }
             }
         }
 

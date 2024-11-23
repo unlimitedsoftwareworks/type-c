@@ -2,10 +2,10 @@
  * Filename: Parser.ts
  * Author: Soulaymen Chouri
  * Date: 2023-2024
- * 
+ *
  * Description:
  *     Parses the tokens through lexer and generates an AST
- * 
+ *
  * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
  * This file is licensed under the terms described in the LICENSE.md.
  */
@@ -16,6 +16,9 @@ import { Lexer } from "../lexer/Lexer";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { colors } from "../utils/termcolors";
 import * as parsefuncs from "./parsefuncs";
+import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarationStatement";
+import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarationStatement";
+import { Context } from "../ast/symbol/Context";
 
 /**
  * A parser mode is either "compiler" or "intellisense".
@@ -105,8 +108,8 @@ export class Parser {
     /**
      * Same as peek().type == type
      * Therefor must reject() if false
-     * @param type 
-     * @returns 
+     * @param type
+     * @returns
      */
     is(type: string) {
         return this.peek().type == type;
@@ -277,7 +280,7 @@ export class Parser {
         if(!this.warn) return;
         // get current active lexeme without changing the stack
         // get current active lexeme without changing the stack
-        
+
 
         let token: Token | { line: number, col: number, pos: number } | null = null;
         if (this.stackIndex > 0) {
@@ -286,7 +289,7 @@ export class Parser {
         else {
             token = this.peek();
         }
-        
+
         let coordinates = { line: token.location.line, col: token.location.col, pos: token.location.pos };
 
         if(coords) {
@@ -352,34 +355,76 @@ export class Parser {
     /**
      * Starts the parsing process
      */
-    parse() {
+    parse(ctx: Context | undefined = undefined) {
+        if(ctx == undefined) {
+            ctx = this.basePackage.ctx
+        }
+
+        let local = false;
         var token = this.peek();
         while (token.type != "EOF") {
+
+            if(token.type == "local"){
+                local = true;
+                this.accept();
+                token = this.peek();
+                if (token.type == "let" || token.type == "import" || token.type == "from"){
+                    // the syntax here is let local so we throw an error
+                    this.customError("Invalid syntax, local is used prior to a declaration of a function/type or within let", token.location)
+                }
+            }
             switch (token.type) {
                 case "import":
+                    // import only allowed in the global scope
+                    if(ctx != this.basePackage.ctx){
+                        this.customError("Imports are only allowed on global context", token.location)
+                    }
                     this.reject();
                     parsefuncs.parseImport(this);
                     break;
                 case "from":
+                    // from only allowed in the global scope
+                    if(ctx != this.basePackage.ctx){
+                        this.customError("Imports are only allowed on global context", token.location)
+                    }
                     this.reject();
                     parsefuncs.parseFrom(this);
                     break;
-                //case "strict":
+
+                case "namespace":
+                    this.reject();
+                    let ns = parsefuncs.parseNamespace(this, ctx);
+                    ns.setLocal(local)
+                    ctx.addSymbol(ns);
+                    local = false;
+                    break;
                 case "type":
                     this.reject();
-                    parsefuncs.parseTypeDecl(this);
+                    let dt = parsefuncs.parseTypeDecl(this, this.basePackage.ctx);
+                    dt.setLocal(local)
+                    ctx.addSymbol(dt)
+                    local = false;
                     break;
                 case "extern":
                     this.reject();
-                    parsefuncs.parseFFI(this);
+                    let ffi = parsefuncs.parseFFI(this, this.basePackage.ctx);
+                    ffi.setLocal(local)
+                    ctx.addSymbol(ffi)
+                    local = false;
                     break;
                 default:
-                    {
-                        this.reject();
-                        let e = parsefuncs.parseStatement(this, this.basePackage.ctx);
-                        //console.log(JSON.stringify(e.serialize()))
-                        this.basePackage.addStatement(e);
+                    this.reject();
+                    let e = parsefuncs.parseStatement(this, this.basePackage.ctx);
+                    if (!(e instanceof FunctionDeclarationStatement) && !(e instanceof VariableDeclarationStatement)) {
+                        this.customError("Invalid global statement, only function/variable declarations are allowed globally", e.location)
                     }
+
+                    if(e instanceof FunctionDeclarationStatement){
+                        e.symbolPointer.setLocal(local)
+                    }
+                    //console.log(JSON.stringify(e.serialize()))
+                    this.basePackage.addStatement(e);
+                    local = false;
             }
             token = this.peek();
         }

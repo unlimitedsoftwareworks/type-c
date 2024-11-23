@@ -12,6 +12,7 @@
  */
 
 import { Context } from "../symbol/Context";
+import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
@@ -30,6 +31,15 @@ export class VariableDeclarationStatement extends Statement {
     infer(ctx: Context){
         for(let variable of this.variables){
             ctx.addSymbol(variable);
+
+            /*
+             * if the parent context is a namespace,
+             * we need to register the variable to the global context (global variable)
+             */
+            if(ctx.getOwner() instanceof DeclaredNamespace){
+                ctx.registerToGlobalContext(variable);
+            }
+
             variable.infer(ctx);
         }
     }

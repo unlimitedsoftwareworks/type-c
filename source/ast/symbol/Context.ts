@@ -20,6 +20,8 @@ import { ClassMethod } from "../other/ClassMethod";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { DeclaredFunction } from "./DeclaredFunction";
+import { DeclaredNamespace } from "./DeclaredNamespace";
+import { DeclaredType } from "./DeclaredType";
 import { DeclaredVariable } from "./DeclaredVariable";
 import { FunctionArgument } from "./FunctionArgument";
 import { Symbol } from "./Symbol";
@@ -45,6 +47,7 @@ type ContextOwner =
     | ClassMethod
     | DeclaredFunction
     | DoExpression
+    | DeclaredNamespace
     | null;
 
 export class Context {
@@ -166,6 +169,10 @@ export class Context {
         this.owner = owner;
     }
 
+    getOwner(){
+        return this.owner;
+    }
+
     addSymbol(symbol: Symbol) {
         let v = this.lookupLocal(symbol.name);
         if (v !== null) {
@@ -199,11 +206,14 @@ export class Context {
          * using its global address.
          * TODO: figureout what to do with closures
          */
+        let registeredGlobal = false;
         if (
             symbol instanceof DeclaredFunction ||
-            symbol instanceof LambdaExpression
+            symbol instanceof LambdaExpression ||
+            symbol instanceof DeclaredType
         ) {
             this.registerToGlobalContext(symbol);
+            registeredGlobal = true;
         }
 
         // check if we are at root and need to register to global context
@@ -214,6 +224,7 @@ export class Context {
                 symbol instanceof DeclaredFunction ||
                 symbol instanceof LambdaExpression
             )
+            && !registeredGlobal
         ) {
             this.registerToGlobalContext(symbol);
         }
@@ -538,6 +549,27 @@ export class Context {
                 }
             }
         }
+    }
+
+    getBasePackage(): BasePackage {
+        if(this.owner instanceof BasePackage){
+            return this.owner;
+        }
+
+        if(this.parent === null){
+            throw new Error("Base package not found, this should be unreachable");
+        }
+        return this.parent!.getBasePackage();
+    }
+
+    withinNamespace(uid: string): boolean {
+        if(this.owner instanceof DeclaredNamespace){
+            return this.owner.uid === uid;
+        }
+        if(this.parent){
+            return this.parent.withinNamespace(uid);
+        }
+        return false;
     }
 
     /**

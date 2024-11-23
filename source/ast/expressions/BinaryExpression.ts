@@ -245,6 +245,9 @@ export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
         if(lhs.isVariable()){
             return Ok();
         }
+        if(lhs._isNamespace){
+            return Err("Cannot assign to a namespace");
+        }
     }
     else if (lhs instanceof TupleConstructionExpression){
         return Ok();
@@ -261,7 +264,7 @@ export function isLHSAssignable(ctx: Context, lhs: Expression): TypeMatchResult{
         case "true":
         case "false":
         case "null":{
-            return Err("Cannot assign to literal");
+            return Err("Cannot assign to a literal");
         }
         case "member_access":{
             let mem = lhs as MemberAccessExpression;

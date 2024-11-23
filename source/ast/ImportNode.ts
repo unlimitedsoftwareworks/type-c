@@ -35,12 +35,15 @@ export class ImportNode {
      */
     actualName: string;
 
+    subImports: string[];
+
     location: SymbolLocation;
 
-    constructor(location: SymbolLocation, basePath: string[], alias: string, actualName: string) {
+    constructor(location: SymbolLocation, basePath: string[], alias: string, actualName: string, subImports: string[]=[]) {
         this.location = location;
         this.basePath = basePath;
         this.alias = alias;
         this.actualName = actualName;
+        this.subImports = subImports;
     }
 }

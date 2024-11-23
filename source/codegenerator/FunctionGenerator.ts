@@ -99,6 +99,7 @@ import { FunctionType } from "../ast/types/FunctionType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import {
     MetaClassType,
+    MetaEnumType,
     MetaType,
     MetaVariantConstructorType,
 } from "../ast/types/MetaTypes";
@@ -141,6 +142,8 @@ import { CoroutineType } from "../ast/types/CoroutineType";
 import { MutateExpression } from "../ast/expressions/MutateExpression";
 import { TemplateSegment } from "./TemplateSegment";
 import { UnreachableExpression } from "../ast/expressions/UnreachableExpression";
+import { NamespaceType } from "../ast/types/NamespaceType";
+import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -506,13 +509,18 @@ export class FunctionGenerator {
             throw new Error("Undefined variable " + expr.name);
         }
 
+
         const sym = symScope.sym;
         ctx.lookupScope(expr.name);
         if (sym instanceof DeclaredVariable) {
             let tmp = this.generateTmp();
             let instruction = tmpType(sym.annotation!);
 
-            if (symScope.scope == "global") {
+            // there is an exception that is applied to namespaces here, a variable declared in a namespace is not a local variable
+            // so we check the global context for sym.id, if our content is a namespace we return the global value
+            if(ctx.getOwner() instanceof DeclaredNamespace || sym.parentContext?.getOwner() instanceof DeclaredNamespace){
+                this.i(instruction, tmp, "global", sym.uid);
+            } else if (symScope.scope == "global") {
                 this.i(instruction, tmp, "global", sym.uid);
             } else if (symScope.scope == "local") {
                 this.i(instruction, tmp, "local", sym.uid);
@@ -796,6 +804,12 @@ export class FunctionGenerator {
     ): string {
         // first check if it a datatype access
         // datatype access: expr.lhs is element expression
+
+        // a namespace access: interpreted as no access at all!
+        // since they are flattened in the global context
+
+
+        // check direct enum access Enum.Field
         if (expr.left instanceof ElementExpression) {
             let elementName = expr.left.name;
 
@@ -817,6 +831,17 @@ export class FunctionGenerator {
                 // case 3: Interface static method
                 // case 4: Class static method
             }
+        }
+
+        // check deep enum access Namespace.Enum.Field
+        if((expr.left instanceof MemberAccessExpression) && (expr.left.inferredType instanceof MetaEnumType)){
+            let sym = expr.left._nsAccessedSymbol as DeclaredType;
+            let enType = expr.left.inferredType.enumType.to(ctx, EnumType) as EnumType;
+            return this.ir_generate_enum_access(expr, ctx, expr.right.name, sym, enType);
+        }
+
+        if(expr.left.inferredType instanceof NamespaceType){
+            return this.visitElementExpression(expr.right, expr.left.inferredType.getContext());
         }
 
         let lhsReg = this.visitExpression(expr.left, ctx);

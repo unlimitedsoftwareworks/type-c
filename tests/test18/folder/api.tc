@@ -1,0 +1,23 @@
+
+local namespace privateAPI {
+    let value: u32 = 1
+}
+
+namespace publicAPI {
+    fn getValue() = privateAPI.value
+
+    local type AbstractVector = interface {
+        fn getPos() -> {x: u32, y: u32}
+    }
+
+    type ConcreteVector = class AbstractVector {
+        let pos: {x: u32, y: u32}
+        fn init(x: u32, y: u32) {
+            this.pos = {x, y}
+        }
+
+        fn getPos() {
+            return this.pos
+        }
+    }
+}

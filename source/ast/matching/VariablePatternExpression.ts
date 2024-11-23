@@ -13,7 +13,6 @@
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { VariablePattern } from "../symbol/VariablePattern";
-import { ArrayType } from "../types/ArrayType";
 import { DataType } from "../types/DataType";
 import { PatternExpression } from "./PatternExpression";
 
@@ -32,7 +31,6 @@ export class VariablePatternExpression extends PatternExpression {
         super(location, "variable");
         this.name = name;
     }
-
 
     infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         if(!this.symbolPointer) {

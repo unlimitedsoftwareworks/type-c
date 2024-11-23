@@ -10,6 +10,8 @@ import { generateCode } from "./codegenerator/CodeGenerator";
 import { spawnSync } from "child_process";
 import { colors } from "./utils/termcolors";
 import { getStdLibPath } from "./cli/stdlib";
+import { DeclaredNamespace } from "./ast/symbol/DeclaredNamespace";
+import { Symbol } from "./ast/symbol/Symbol";
 
 export function readFile(filename: string): string {
     return fs.readFileSync(filename, "utf-8");
@@ -107,23 +109,7 @@ export module TypeC {
 
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
-                if (!base) {
-                    parser.customError(
-                        `Could not resolve import ${imp.basePath.join("/")}`,
-                        imp.location,
-                    );
-                }
-
-                let sym = base.ctx.lookup(imp.actualName);
-                if (!sym) {
-                    parser.customError(
-                        `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
-                        imp.location,
-                    );
-                    continue;
-                }
-
-                this.basePackage.ctx.addExternalSymbol(sym, imp.alias);
+                TCCompiler.registerImport(base, imp, parser, this.basePackage);
             }
 
             this.basePackage.infer();
@@ -169,23 +155,7 @@ export module TypeC {
             // resolve imports
             for (let imp of basePackage.imports) {
                 let base = this.resolveImport(imp);
-                if (!base) {
-                    parser.customError(
-                        `Could not resolve import ${imp.basePath.join("/")}`,
-                        imp.location,
-                    );
-                }
-
-                let sym = base.ctx.lookup(imp.actualName);
-                if (!sym) {
-                    parser.customError(
-                        `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
-                        imp.location,
-                    );
-                    continue;
-                }
-
-                basePackage.ctx.addExternalSymbol(sym, imp.alias);
+                TCCompiler.registerImport(base, imp, parser, basePackage);
             }
 
             basePackage.infer();
@@ -233,6 +203,65 @@ export module TypeC {
         generateBytecode() {
             return generateCode(this);
         }
+
+        static registerImport(importBase: BasePackage, imp: ImportNode, parser: Parser, basePackage: BasePackage) {
+            if (!basePackage) {
+                parser.customError(
+                    `Could not resolve import ${imp.basePath.join("/")}`,
+                    imp.location,
+                );
+            }
+
+            let sym: Symbol | null = null;
+
+
+            if(imp.subImports.length > 0){
+                let initialPkg = imp.subImports.shift()!;
+                sym = importBase.ctx.lookup(initialPkg);
+                
+                const checkSym = () => {
+                    if(!sym){
+                        parser.customError(`Could not find symbol ${initialPkg} in ${imp.basePath.join("/")}`, imp.location);
+                    }
+                    if(!(sym instanceof DeclaredNamespace)){
+                        parser.customError(`Sub imports are only allowed from within a namespace. Attempting to import ${initialPkg} from ${imp.basePath.join("/")}`, imp.location);
+                    }
+                    if(sym!.isLocal){
+                        parser.customError(`Cannot import local symbol. Attempting to import local symbol ${initialPkg}.`, imp.location);
+                    }
+                }
+
+                checkSym();
+
+                for(let subImport of imp.subImports){
+                    sym = (sym as DeclaredNamespace).ctx.lookup(subImport);
+                    checkSym();
+                }
+
+                // finally we import the final symbol
+                sym = (sym as DeclaredNamespace).ctx.lookup(imp.actualName);
+                if(!sym){
+                    parser.customError(`Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`, imp.location);
+                }
+            }
+            else {
+                sym = importBase.ctx.lookup(imp.actualName);
+                if (!sym) {
+                    parser.customError(
+                        `Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`,
+                        imp.location,
+                    );
+                    return;
+                }
+            }
+
+
+            if(sym!.isLocal){
+                parser.customError(`Cannot import local symbol. Attempting to import local symbol ${imp.actualName}.`, imp.location)
+            }
+
+            basePackage.ctx.addExternalSymbol(sym!, imp.alias);
+        }
     }
 
     export const compile = (options: CompileOptions) => {
@@ -246,7 +275,7 @@ export module TypeC {
         if (options.runOutput) {
             if (process.env.TYPE_V_PATH == undefined) {
                 throw new Error(
-                    "--run argument requires TYPE_V_PATH environment variable to be set, please set it to the path of the type_v binary",
+                    "--run argument requires TYPE_V_PATH environment variable to be set, please set it to the path of the type_v binary folder",
                 );
             }
         }

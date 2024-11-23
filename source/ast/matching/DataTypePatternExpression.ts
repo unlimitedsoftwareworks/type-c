@@ -51,6 +51,11 @@ export class DataTypePatternExpression extends PatternExpression {
          * 4. expressionType is an interface or class:
          *   - We expect the type to be either an interface or class and without any type parameters
          */
+
+        /**
+         * TODO: do not resolve immediately, if we have a variant type
+         */
+        
         this.type.resolve(ctx);
 
         if(expressionType.is(ctx, VariantType)) {

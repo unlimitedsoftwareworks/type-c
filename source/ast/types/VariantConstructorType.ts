@@ -100,7 +100,9 @@ export class VariantConstructorType  extends DataType{
     }
 
     clone(typeMap: { [key: string]: DataType; }): VariantConstructorType {
-        return new VariantConstructorType(this.location, this.name, this.parameters.map(f => f.clone(typeMap)));
+        let newV = new VariantConstructorType(this.location, this.name, this.parameters.map(f => f.clone(typeMap)));
+        newV._id = this._id;
+        return newV;
     }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {

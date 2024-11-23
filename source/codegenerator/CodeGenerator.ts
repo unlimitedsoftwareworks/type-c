@@ -23,6 +23,8 @@ import { ArrayType } from "../ast/types/ArrayType";
 
 import * as path from "path";
 import * as fs from "fs";
+import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
+import { DataType } from "../ast/types/DataType";
 
 export class CodeGenerator {
     functions: Map<string, FunctionGenerator> = new Map();
@@ -104,9 +106,10 @@ export class CodeGenerator {
         };
         let block = new BlockStatement(emptyLoc, basePackage.ctx, []);
 
+        let typeMap: { [key: string]: DataType } = {};
         let fnGlobal = new DeclaredFunction(
             emptyLoc,
-            basePackage.ctx,
+            basePackage.ctx.clone(typeMap, basePackage.ctx), // we have to clone because DeclaredFunction needs to override owner
             new FunctionPrototype(
                 emptyLoc,
                 "",
@@ -123,7 +126,7 @@ export class CodeGenerator {
             true,
         );
         // we assign statements later to avoid local scope stack length analysis
-        block.statements = basePackage.statements;
+        block.statements = [...basePackage.statements, ...basePackage.namespaceStatements];
         globalScope.generate();
         this.bytecodeGenerator.generateBytecode(globalScope);
     }
@@ -136,6 +139,11 @@ export class CodeGenerator {
          *  - Class methods
          */
         for (const [key, sym] of basePackage.globalCtx.globalSymbols) {
+            if(sym instanceof DeclaredNamespace){
+                // namespace content is stored in the global context
+                // so are the assignments of variables declared in the namespace
+                continue;
+            }
             if (sym instanceof DeclaredFunction) {
                 // check if it is generic
                 if (!sym.isGeneric()) {
@@ -340,13 +348,23 @@ export class CodeGenerator {
 export function generateCode(compiler: TypeC.TCCompiler) {
     let generator = new CodeGenerator();
 
-    // iterate over all packages and register global variables
+    // it is import to perform the code generation in this order!
+
+    // 1. register global variables (will not generate any bytecode. Just collect information & allocated global variables)
+    // 2. generate FFI
+    // 3. generate global context
+    // 4. generate call main
+    // 5. generate functions
+
+    // iterate over all packages and register global variables & generate FFI
     for (let [key, value] of compiler.packageBaseContextMap) {
         generator.registerGlobalVariables(value);
         generator.generateFFI(value);
-        generator.generateGlobalContext(value);
+    }
 
-        // generator.generateGlobalScope(value)
+    // generate global context
+    for(let [key, value] of compiler.packageBaseContextMap){
+        generator.generateGlobalContext(value);
     }
 
     generator.generateCallMain(compiler.basePackage!);
