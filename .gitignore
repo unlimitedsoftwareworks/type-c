@@ -5,3 +5,4 @@ node_modules/
 assets/.DS_Store
 .DS_Store
 tests/template
+.vscode/launch.json
