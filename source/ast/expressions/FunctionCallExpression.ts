@@ -508,8 +508,40 @@ export class FunctionCallExpression extends Expression {
                 
                 let res: { [key: string]: DataType } = {};
 
+
+                /**
+                 * to handle cases like: 
+                 * let r: ServerResponse<u64, u64> = ServerResponse.Success(10)
+                 *                                                          ^^ will be inferred as u8, if we don't use the hint
+                 * 
+                 * if we do not have a hint, we infer the arguments normally (keep it as u8 for example)
+                 * 
+                 */
+                let hasHint = false;
+                let paramsHint: DataType[] = [];
+                if(hint != null){
+                    // we make sure that the hint is either a variant constructor or a variant type
+                    if(!hint.is(ctx, VariantType) && !hint.is(ctx, VariantConstructorType)){
+                        ctx.parser.customError(`Expected a variant constructor or a variant type, got ${hint.shortname()}`, this.location);
+                    }
+
+                    if(hint.is(ctx, VariantConstructorType)){
+                        let variantConstructor = hint.to(ctx, VariantConstructorType) as VariantConstructorType;
+                        paramsHint = variantConstructor.parameters.map(p => p.type);
+                        hasHint = true;
+                    }
+
+                    else if(hint.is(ctx, VariantType)){
+                        // find the constructor that matches the variant type
+                        let variantType = hint.to(ctx, VariantType) as VariantType;
+                        variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name)!;
+                        hasHint = true;
+                        paramsHint = variantConstructor.parameters.map(p => p.type);
+                    }
+                }
+
                 for(let i = 0; i < this.args.length; i++){
-                    variantConstructor.parameters[i].type.getGenericParametersRecursive(ctx, this.args[i].infer(ctx, null), genericParams, res);
+                    variantConstructor.parameters[i].type.getGenericParametersRecursive(ctx, this.args[i].infer(ctx, hasHint ? paramsHint[i] : null), genericParams, res);
                 }
 
                 //variantConstructor.getGenericParametersRecursive(ctx, variantConstructorMeta.variantConstructorType, genericParams, res);
