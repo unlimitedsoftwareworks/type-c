@@ -96,6 +96,9 @@ This checklist containts only major changes and updates, for minor changes and u
     - Fixed const/mut analysis
     - Added `mutate` expression, which is used to mutate a variable.
 
+- 23/11/2024:
+    - Added namespaces, local symbols and namespace imports
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.
