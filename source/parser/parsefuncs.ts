@@ -489,7 +489,7 @@ function parseImport(parser: Parser) {
     }
 
     parser.basePackage.addImport(
-        new ImportNode(loc, basePath, actualName, alias),
+        new ImportNode(loc, basePath, actualName, alias, []),
     );
 }
 
@@ -544,7 +544,7 @@ function parseFrom(parser: Parser) {
         }
 
         parser.basePackage.addImport(
-            new ImportNode(loc, basePath.concat(postPath), actualName, alias),
+            new ImportNode(loc, basePath, alias, actualName, postPath),
         );
 
         const tok2 = parser.peek();
@@ -2746,8 +2746,18 @@ function parseMatchPattern(
     } else if (lexeme.type === "_") {
         parser.accept();
         return new WildCardPatternExpression(loc);
-    } else if (lexeme.type === "identifier") {
-        const char = lexeme.value[0];
+} else if (lexeme.type === "identifier") {
+    const char = lexeme.value[0];
+
+    let nextToken = parser.peek();
+    // a type with a namespace, or just a type. A type either way!
+    if(nextToken.type === "."){
+        parser.reject();
+        return parseMatchPatternType(parser, ctx);
+    }
+    else {
+        // reject the lookahead past the identifier
+        parser.rejectOne();
         if (char == char.toUpperCase()) {
             parser.reject();
             return parseMatchPatternType(parser, ctx);
@@ -2755,7 +2765,9 @@ function parseMatchPattern(
             parser.accept();
             return new VariablePatternExpression(loc, lexeme.value);
         }
-    } else if (lexeme.type === "...") {
+    }
+    
+} else if (lexeme.type === "...") {
         parser.accept();
         let variable = parseMatchPattern(parser, ctx); //, parentType);
         if (!(variable instanceof VariablePatternExpression)) {
@@ -2775,10 +2787,9 @@ function parseMatchPattern(
 
         return variable;
     } else {
-        parser.rejectOne();
-        let dt = parseType(parser, ctx);
-        let dtPattern = new DataTypePatternExpression(loc, dt, []);
-        return dtPattern;
+        // assume data type
+        parser.reject();
+        return parseMatchPatternType(parser, ctx);
     }
 
     parser.reject();
