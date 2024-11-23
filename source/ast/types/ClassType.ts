@@ -745,6 +745,11 @@ export class ClassType extends DataType {
         return indexes;
     }
 
+    // used in NewExpression to show errors if class has fields but no init method
+    hasNonStatocAttributes() {
+        return this.attributes.some(e => !e.isStatic);
+    }
+
     getAlignment(): number {
         let sizes = this.attributes.map(f => getDataTypeByteSize(f.type));
         return sizes.reduce((a, b) => Math.max(a, b), 0);

@@ -54,11 +54,20 @@ export class NewExpression extends Expression {
             let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null)), null, []);
 
             if(initMethod.length === 0) {
+
+                if(classType.methodExists(ctx, "init")){
+                    ctx.parser.customError(`Class ${this.type.shortname()} has an init method, but it does not match the expected signature`, this.location);
+                }
+                else {
+                    if(classType.hasNonStatocAttributes()){
+                        ctx.parser.customWarning(`Class ${this.type.shortname()} has non-static attributes, but no init method. Consider adding an init method to initialize your class.`, this.location);
+                    }
+                }
                 this._hasInitMethod = false;
                 this._calledInitMethod = null;
             }
             else if(initMethod.length > 1) {
-                ctx.parser.customError(`Ambiguous init method found for class ${classType.shortname()} with arguments ${this.arguments.map(a => a.inferredType!.shortname()).join(", ")}`, this.location);
+                ctx.parser.customError(`Ambiguous init method found for class ${this.type.shortname()} with arguments ${this.arguments.map(a => a.inferredType!.shortname()).join(", ")}`, this.location);
             }
             else {
                 this._hasInitMethod = true;
