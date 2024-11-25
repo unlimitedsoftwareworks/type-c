@@ -144,6 +144,7 @@ import { TemplateSegment } from "./TemplateSegment";
 import { UnreachableExpression } from "../ast/expressions/UnreachableExpression";
 import { NamespaceType } from "../ast/types/NamespaceType";
 import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
+import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistributedAssignExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -466,6 +467,8 @@ export class FunctionGenerator {
             tmp = this.visitMutateExpression(expr, ctx);
         else if (expr instanceof UnreachableExpression)
             tmp = this.visitUnreachableExpression(expr, ctx);
+        else if (expr instanceof ThisDistributedAssignExpression)
+            tmp = this.visitThisDistributedAssignExpression(expr, ctx);
         else throw new Error("Invalid expression!" + expr.toString());
 
         if (tmp != "") {
@@ -3145,6 +3148,16 @@ export class FunctionGenerator {
         this.i("throw_rt", 0);
         let tmp = this.generateTmp();
         this.i("const_u8", tmp, 0);
+        return tmp;
+    }
+
+    visitThisDistributedAssignExpression(expr: ThisDistributedAssignExpression, ctx: Context): string {
+        let exprs = expr.buildExpressions(ctx);
+        for(let e of exprs) {
+            this.visitExpression(e, ctx);
+        }
+        let tmp = this.generateTmp();
+        tmp = this.visitExpression(expr.left, ctx);
         return tmp;
     }
 

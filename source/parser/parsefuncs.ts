@@ -123,6 +123,7 @@ import { BasePackage } from "../ast/BasePackage";
 import { ImplementationAttribute } from "../ast/other/ImplementationAttribute";
 import { ImplementationMethod } from "../ast/other/ImplementationMethod";
 import { ImplementationType } from "../ast/types/ImplementationType";
+import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistributedAssignExpression";
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -1583,6 +1584,10 @@ function parseExpressionOpAssign(
     ) {
         parser.accept();
         let right = parseExpressionOpAssign(parser, ctx, opts);
+
+        if(lexeme.type === "+=" && left instanceof ThisExpression && (right instanceof UnnamedStructConstructionExpression || right instanceof NamedStructConstructionExpression)) {
+            return new ThisDistributedAssignExpression(loc, left, right);
+        }
 
         if (lexeme.type === "=") {
             if (left.kind === "index_access") {

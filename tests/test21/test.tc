@@ -1,0 +1,76 @@
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+
+// Vec3 class implementation
+type Vec3 = class {
+    let x: f32, y: f32, z: f32
+
+    fn init(x: f32, y: f32, z: f32) {
+        this += {x, y, z}
+    }
+
+    fn init(v: Vec3) {
+        this += {x: v.x, y: v.y, z: v.z}
+    }
+
+    fn init() {
+        this.x = this.y = this.z = 0.0f
+    }
+
+    fn print() {
+        println("Vec3: x: " + this.x + ", y: " + this.y + ", z: " + this.z)
+    }
+
+    fn __add__(v: Vec3) -> Vec3 {
+        return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z)
+    }
+}
+
+// Unit Tests for Vec3 class
+fn test_vec3_initialization_with_values(rn: TestUnit) {
+    let v = new Vec3(1.0f, 2.0f, 3.0f)
+    rn.assert_f32_eq_pre(v.x, 1.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v.y, 2.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v.z, 3.0f, 0.00001f)
+}
+
+fn test_vec3_default_initialization(rn: TestUnit) {
+    let v = new Vec3()
+    rn.assert_f32_eq_pre(v.x, 0.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v.y, 0.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v.z, 0.0f, 0.00001f)
+}
+
+fn test_vec3_copy_initialization(rn: TestUnit) {
+    let original = new Vec3(4.0f, 5.0f, 6.0f)
+    let copy = new Vec3(original)
+    rn.assert_f32_eq_pre(copy.x, 4.0f, 0.00001f)
+    rn.assert_f32_eq_pre(copy.y, 5.0f, 0.00001f)
+    rn.assert_f32_eq_pre(copy.z, 6.0f, 0.00001f)
+}
+
+fn test_vec3_addition(rn: TestUnit) {
+    let v1 = new Vec3(1.0f, 2.0f, 3.0f)
+    let v2 = new Vec3(4.0f, 5.0f, 6.0f)
+    let result = v1 + v2
+    
+    rn.assert_f32_eq_pre(result.x, 5.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.y, 7.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.z, 9.0f, 0.00001f)
+    
+    let v3 = new Vec3(result)
+    rn.assert_f32_eq_pre(v3.x, 5.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v3.y, 7.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v3.z, 9.0f, 0.00001f)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test vec3 initialization with values", "Tests Vec3 initialization with explicit values", test_vec3_initialization_with_values)
+    let test_2 = new TestUnit("test vec3 default initialization", "Tests Vec3 default initialization with zero values", test_vec3_default_initialization)
+    let test_3 = new TestUnit("test vec3 copy initialization", "Tests Vec3 initialization by copying another Vec3 instance", test_vec3_copy_initialization)
+    let test_4 = new TestUnit("test vec3 addition", "Tests addition of two Vec3 instances", test_vec3_addition)
+
+    let set = new UnitSet("Vec3 Class Test Suite", "Tests for Vec3 class functionality", [test_1, test_2, test_3, test_4])
+
+    return set.run()
+}

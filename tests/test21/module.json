@@ -3,10 +3,9 @@
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "Tests tuples",
+    "description": "Tests `this` distributed assignment",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"
-    },
-    "_compilerAssertions": []
+    }
 }

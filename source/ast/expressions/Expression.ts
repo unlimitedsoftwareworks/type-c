@@ -70,7 +70,8 @@ export type ExpressionKind =
     "do_expression" | // do { ... }
     "yield"  | // yield x
     "mutate" | // mutate x
-    "unreachable" // unreachable
+    "unreachable" | // unreachable
+    "this_distributed_assign" // this += {x, y, z}
 ;
 
 export class Expression {
