@@ -43,7 +43,7 @@ Usage: type-c <command> [options]
 `stdlib` will be installed in your `~/.type-c/stdlib` and used as the default search path for the standard library.
 
 ## Project Status
-Still under **heavy** development. The compiler frontend is almost complete and the compiler will need to be heavily tested.
+Very immature. Cryptic error messages. Everything you can expect from a compiler that is not even in alpha.
 
 Keep an eye on https://typec.praisethemoon.org/posts for updates
 
@@ -51,7 +51,7 @@ Keep an eye on https://typec.praisethemoon.org/posts for updates
 Official docs: https://typec.praisethemoon.org/docs/introduction
 
 ## Need help
-Open an issue
+Head over to the discussion section, and start a discussion. **Please do not open an issue, start with a discussion and if the issue is verified (or a feature request is accepted), then we will create an issue.** Thank you!
 
 ## I want to help
-If you want to get acquainted with the codebase, please reach out to me directly via my email at my profile. I will be happy to help you get started.
+Right now the best way to help is the test the language and give feedback.
