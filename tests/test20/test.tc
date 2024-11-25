@@ -3,13 +3,14 @@ from std.unit.test import TestUnit, UnitSet
 
 namespace tesla {
     type SomeClass = class {
-        let static value: u32
+        let static value: u32, const static vsauce: i32
         let static const value2: u32
         
         static {
             SomeClass.value = 1
             println("Hello, Static Block!")
             SomeClass.value2 = 20 // immutabe
+            SomeClass.vsauce = 42
         }
 
         fn init() {
