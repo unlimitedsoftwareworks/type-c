@@ -1,17 +1,11 @@
 import { ClassAttribute } from "../ast/other/ClassAttribute";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
-import { Context } from "../ast/symbol/Context";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
-import { ClassType } from "../ast/types/ClassType";
-import { DataType } from "../ast/types/DataType";
-import { StructType } from "../ast/types/StructType";
 import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { CodeSegment } from "./CodeSegment";
-import { DataWriter } from "./DataWriter";
 import { FunctionGenerator } from "./FunctionGenerator";
 import { TemplateSegment } from "./TemplateSegment";
-import { getDataTypeByteSize } from "./utils";
 
 function parseCStyleNumber(cNumberString: string): number {
     // Check if the string ends with 'f' or 'F' and remove it
@@ -215,7 +209,8 @@ class GlobalSegment {
             throw "Redefined global variable " + variable.name;
         }
         this.variables.set(variable.uid, this.byteSize);
-        if (variable instanceof DeclaredVariable) {
+        if (variable instanceof DeclaredVariable || variable instanceof ClassAttribute) {
+            // we always use 8 bytes for global variables, to keep alignment
             this.byteSize += 8 ; //getDataTypeByteSize(variable.annotation!);
         }
         else {

@@ -42,6 +42,7 @@ export type ContextEnvironment = {
     withinLoop: boolean;
     loopContext: boolean;
     withinDoExpression: boolean;
+    withinClassStaticBlock: boolean;
 };
 
 type ContextOwner =
@@ -123,6 +124,7 @@ export class Context {
         // only set to true in the context that belongs to a loop and not the subsequent children contexts
         withinDoExpression: false,
         withinImplementation: false,
+        withinClassStaticBlock: false,
     };
 
     /**
@@ -156,6 +158,7 @@ export class Context {
             this.env.loopContext = parent.env.loopContext || false;
             this.env.withinDoExpression = parent.env.withinDoExpression || false;
             this.env.withinImplementation = parent.env.withinImplementation || false;
+            this.env.withinClassStaticBlock = parent.env.withinClassStaticBlock || false;
         }
 
         // override with new env
@@ -165,6 +168,7 @@ export class Context {
         this.env.loopContext = env.loopContext || this.env.loopContext;
         this.env.withinDoExpression = env.withinDoExpression || this.env.withinDoExpression;
         this.env.withinImplementation = env.withinImplementation || this.env.withinImplementation;
+        this.env.withinClassStaticBlock = env.withinClassStaticBlock || this.env.withinClassStaticBlock;
         //Context._contextMap.set(this.uuid, this);
 
         //if (parser.mode == "intellisense") {

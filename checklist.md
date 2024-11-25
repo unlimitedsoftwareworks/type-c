@@ -98,6 +98,17 @@ This checklist containts only major changes and updates, for minor changes and u
 
 - 23/11/2024:
     - Added namespaces, local symbols and namespace imports
+    - Namespaces variables are pushed in the base package, and generated in the bytecode same as global variables.
+
+- 24/11/2024:
+    - Added `impl` datatype, for reusability and more modular behavior of classes.
+
+- 25/11/2024:
+    - Fixed issues with static variables/methods and blocks
+    - Static variables are stored and read as global variables, also pushed in the base package global context.
+    - Static block are now properly generated just like global block. They are also pushed in the base package global context.
+    - Small fixes for class methods and attributes in the bytecode generator when nested under namespaces and invalid access of non-static method through the class name (instead of through an instance).
+
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.

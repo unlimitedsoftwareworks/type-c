@@ -20,6 +20,7 @@ import { Statement } from "./statements/Statement";
 import { FunctionCodegenProps } from "../codegenerator/FunctionCodegenProps";
 import { GlobalContext } from "../codegenerator/GlobalContext";
 import { DeclaredNamespace } from "./symbol/DeclaredNamespace";
+import { BlockStatement } from "./statements/BlockStatement";
 
 export class BasePackage {
     ctx: Context;
@@ -42,6 +43,8 @@ export class BasePackage {
     codeGenProps: FunctionCodegenProps = new FunctionCodegenProps();
 
     globalCtx: GlobalContext = new GlobalContext();
+
+    staticClassBlocks: BlockStatement[] = [];
 
     constructor(parser: Parser) {
         this.ctx = new Context(new SymbolLocation(parser.lexer.filepath, 0, 0, 0), parser);
@@ -83,6 +86,10 @@ export class BasePackage {
 
     addNamespaceStatement(stmt: Statement) {
         this.namespaceStatements.push(stmt);
+    }
+
+    addStaticClassBlocks(block: BlockStatement) {
+        this.staticClassBlocks.push(block);
     }
 
     infer(){

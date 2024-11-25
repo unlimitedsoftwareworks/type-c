@@ -442,6 +442,11 @@ export class FunctionCallExpression extends Expression {
                 }
             }
 
+            // make sure the method is static
+            if(!method.isStatic){
+                ctx.parser.customError(`Method ${memberExpr.name} is not static`, this.location);
+            }
+
             // save the reference to the source method to be used in the code generator
             this._calledClassMethod = method._sourceMethod;
 

@@ -219,6 +219,11 @@ export class ClassType extends DataType {
          */
         checkOverloadedMethods(ctx, this.methods.map(e => e.imethod));
 
+        if(this.staticBlock !== null) {
+            this.resolveStaticBlock(ctx);
+            ctx.getBasePackage().addStaticClassBlocks(this.staticBlock);
+        }
+
         this._resolved = true;
         this.postResolveRecursion()
     }
@@ -280,14 +285,18 @@ export class ClassType extends DataType {
             //if (attribute.isStatic) {
                 // resolving a generic results in an error, and since it could be an array of array of generics,
                 // manually looking for generics makes no sense
-                attribute.type.resolve(ctx);
+            attribute.type.resolve(ctx);
             //}
         }
     }
 
     // TODO: implement
     resolveStaticBlock(ctx: Context) {
-        throw new Error("Method not implemented.");
+        this.staticBlock?.infer(ctx);
+    }
+
+    setStaticBlock(block: BlockStatement | null) {
+        this.staticBlock = block;
     }
 
     findExactMethod(ctx: Context, method: InterfaceMethod): ClassMethod | null {
@@ -633,7 +642,7 @@ export class ClassType extends DataType {
         let clone = new ClassType(
             this.location,
             this.superTypes.map(e => e.clone(genericsTypeMap)),
-            this.attributes.map(e => e.clone(genericsTypeMap)),
+            this.attributes.filter(e => !e.isStatic).map(e => e.clone(genericsTypeMap)),
             this.methods.filter(e => !e.imethod.isStatic).map(e => e.clone(genericsTypeMap)),
             this.impls.map(e => e.clone(genericsTypeMap))
         );

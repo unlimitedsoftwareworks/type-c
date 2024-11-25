@@ -125,8 +125,9 @@ export class CodeGenerator {
             this.bytecodeGenerator.templateSegment,
             true,
         );
+        
         // we assign statements later to avoid local scope stack length analysis
-        block.statements = [...basePackage.statements, ...basePackage.namespaceStatements];
+        block.statements = [...basePackage.statements, ...basePackage.namespaceStatements, ...basePackage.staticClassBlocks];
         globalScope.generate();
         this.bytecodeGenerator.generateBytecode(globalScope);
     }

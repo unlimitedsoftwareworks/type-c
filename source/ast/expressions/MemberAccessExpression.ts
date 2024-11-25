@@ -200,6 +200,10 @@ export class MemberAccessExpression extends Expression {
                 );
             }
 
+            if(field.isStatic){
+                ctx.parser.customError(`Cannot access static field ${this.right.name} on instance, Use Class name instead`, this.location);
+            }
+
             this.inferredType = field.type;
 
             /**
@@ -282,9 +286,19 @@ export class MemberAccessExpression extends Expression {
                 );
             }
 
+            this.isConstant = field.isConst;
+            // check if we are within the same class 
+            if(ctx.env.withinClass && ctx.getActiveClass()?.classId === classType.classId){
+                // we need to make sure that we are not in the static block
+                if(ctx.env.withinClassStaticBlock){
+                    // we allow the constant to be mutable within the static block
+                    // as part of the static initializer
+                    this.isConstant = 0;
+                }
+            }
             this.inferredType = field.type;
             // TODO: allow constant fields within class
-            this.isConstant = false;
+            
             this.checkHint(ctx);
             return this.checkNullableAndReturn(ctx)
         }

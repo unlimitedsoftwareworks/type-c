@@ -1,76 +1,74 @@
-
-/*
-from std.string import String
 from std.io import println
 from std.unit.test import TestUnit, UnitSet
-*/
 
-fn closureTest<T2>(y: T2) -> fn(y:T2) -> T2{
-    let z: T2 = 10
-    
-    fn f2(x: T2) {
-        return z + x
+namespace tesla {
+    type SomeClass = class {
+        let static value: u32
+        let static const value2: u32
+        
+        static {
+            SomeClass.value = 1
+            println("Hello, Static Block!")
+            SomeClass.value2 = 20 // immutabe
+        }
+
+        fn init() {
+            println("Hello, Class Instance!".cat(SomeClass.value))
+            SomeClass.value += 1
+        }
+
+        fn getStaticValue() -> u32 {
+            return SomeClass.value
+        }
+
+        static fn printr<T>(value: T) {
+            println(""+value)
+        }
     }
 
-    if y == 0 {
-        return f2
-    }
-    else {
-        return closureTest<T2>(y-1)
-    }
-}
+    type SomeOtherClass<T> = class {
+        let v: T
+        let static const value: T
 
-type T = class {
-    fn init(x: u32) {
-    }
-}
+        static {
+            SomeOtherClass.value = 10
+        }
 
-let y = closureTest(20)(10)
-
-
-
-/*
-from std.string import String
-from std.io import println
-from std.unit.test import TestUnit, UnitSet
-*/
-
-fn closureTest2<T2>(y: T2) -> fn(y: T2) -> T2{
-    let z: T2 = [1, 2]
-     fn f2(x: T2) {
-        return x
-    }
-
-    if y == [0] {
-        return f2
-    }
-    else {
-        return closureTest2<T2>(y)
+        fn init(v: T) {
+            this.v = v
+        }
     }
 }
 
-let y2 = closureTest2([1, 2])([10])
-
-
-
-fn closureTest3<T2>(y: T2) -> fn(y: T2) -> T2{
-    let z: T2 = {name: 1, age: 2}
-     fn f2(x: T2) {
-        return x
-    }
-
-    if y.age == 0 {
-        return f2
-    }
-    else {
-        return closureTest3<T2>(y)
-    }
+fn test_static_initialization(rn: TestUnit) {
+    // Ensure static block is executed and initializes correctly
+    rn.assert_eq(tesla.SomeClass.value, 1)
 }
 
-let y3 = closureTest3<{name: u32, age: i32}>({1, 2})({3, 4})
+fn test_static_increment(rn: TestUnit) {
+    // Create instances of SomeClass and test static value increment
+    let instance_a = new tesla.SomeClass()
+    rn.assert_eq(tesla.SomeClass.value, 2)
 
-fn randomF(x: {name: u32, age: i32}) {
-    return x
+    let instance_b = new tesla.SomeClass()
+    rn.assert_eq(tesla.SomeClass.value, 3)
+
+    let instance_c = new tesla.SomeClass()
+    rn.assert_eq(tesla.SomeClass.value, 4)
 }
 
-randomF({1, 2})
+fn test_static_consistency(rn: TestUnit) {
+    // Create an instance and check if static value remains consistent
+    let instance = new tesla.SomeClass()
+    rn.assert_eq(instance.getStaticValue(), tesla.SomeClass.value)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test static initialization", "Tests static block initialization", test_static_initialization)
+    let test_2 = new TestUnit("test static increment", "Tests increment behavior of static attribute", test_static_increment)
+    let test_3 = new TestUnit("test static consistency", "Tests consistency of static value access from instance", test_static_consistency)
+
+    let set = new UnitSet("Static Class Feature Test Suite", "Tests for static class attributes and methods", [test_1, test_2, test_3])
+
+    return set.run()
+}

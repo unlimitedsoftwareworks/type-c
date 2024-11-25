@@ -1151,6 +1151,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     let attributes: ClassAttribute[] = [];
     let methods: ClassMethod[] = [];
     let staticBlock: BlockStatement | null = null;
+    let staticBlockCtx: Context | null = null;
     let impls: ClassImplementation[] = [];
 
     while (canLoop) {
@@ -1201,7 +1202,8 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
                 }
                 parser.rejectOne();
                 parser.accept();
-                staticBlock = parseStatementBlock(parser, ctx);
+                staticBlockCtx = new Context(tok.location, parser, ctx, { withinClassStaticBlock: true, withinClass: true });
+                staticBlock = parseStatementBlock(parser, staticBlockCtx);
             } else if (tok2.type === "fn") {
                 parser.reject();
                 let method = parseClassMethod(parser, ctx);
@@ -1214,6 +1216,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
                         method.location,
                     );
                 }
+                
                 methods.push(method);
             }
         } else if (tok.type === "fn") {
@@ -1239,13 +1242,19 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
 
     parser.expect("}");
 
-    return new ClassType(
+    let c = new ClassType(
         loc,
         superTypes as ReferenceType[],
         attributes,
         methods,
         impls,
     );
+    if(staticBlockCtx) {
+        staticBlockCtx.setActiveClass(c);
+    }
+    c.setStaticBlock(staticBlock);
+
+    return c;
 }
 
 function parseTypeImplementation(parser: Parser, ctx: Context): DataType {

@@ -1,9 +1,9 @@
 {
-    "name": "Type-C Sample",
+    "name": "Static Class Feature Test",
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "Tests Nullish coalescing operator",
+    "description": "Tests static class attributes and methods",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"

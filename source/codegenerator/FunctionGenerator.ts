@@ -817,14 +817,32 @@ export class FunctionGenerator {
 
             if (sym instanceof DeclaredType) {
                 // case 1: Enum
-                if (sym.type instanceof EnumType) {
+                if (sym.type.is(ctx, EnumType)) {
+                    let enumType = sym.type.to(ctx, EnumType) as EnumType;
                     return this.ir_generate_enum_access(
                         expr,
                         ctx,
                         elementName,
                         sym,
-                        sym.type,
+                        enumType,
                     );
+                }
+
+                if (sym.type.is(ctx, ClassType)) {
+                    let classType = sym.type.to(ctx, ClassType) as ClassType;
+                    // case 2: Class static field access
+                    // class static field access
+                    // we treat as a global variable
+                    let attr = classType.getAttribute(expr.right.name);
+
+                    if(!attr || !attr?.isStatic){
+                        throw "Unreachable code";
+                    }
+                    
+                    let tmp = this.generateTmp();
+                    let inst = tmpType(expr.left.inferredType!);
+                    this.i(inst, tmp, "global", attr.uid);
+                    return tmp;
                 }
 
                 // case 2: Variant
@@ -833,12 +851,26 @@ export class FunctionGenerator {
             }
         }
 
-        // check deep enum access Namespace.Enum.Field
+        // with introduction of namespaces, we need to check for deep enum access
         if((expr.left instanceof MemberAccessExpression) && (expr.left.inferredType instanceof MetaEnumType)){
             let sym = expr.left._nsAccessedSymbol as DeclaredType;
             let enType = expr.left.inferredType.enumType.to(ctx, EnumType) as EnumType;
             return this.ir_generate_enum_access(expr, ctx, expr.right.name, sym, enType);
         }
+
+        // check for deep class static field access
+        if((expr.left instanceof MemberAccessExpression) && (expr.left.inferredType instanceof MetaClassType)){
+            let classType = expr.left.inferredType.classType.to(ctx, ClassType) as ClassType;
+            let attr = classType.getAttribute(expr.right.name);
+            if(!attr || !attr?.isStatic){
+                throw "Unreachable code";
+            }
+            let tmp = this.generateTmp();
+            let inst = tmpType(expr.left.inferredType!);
+            this.i(inst, tmp, "global", attr.uid);
+            return tmp;
+        }
+
 
         if(expr.left.inferredType instanceof NamespaceType){
             return this.visitElementExpression(expr.right, expr.left.inferredType.getContext());
@@ -1189,6 +1221,24 @@ export class FunctionGenerator {
                     element,
                     nullableAccess,
                 );
+            }
+            else if (baseType.is(ctx, MetaClassType)) {
+                // class static field access
+                // we treat as a global variable
+                let metaClass = baseType.to(ctx, MetaClassType) as MetaClassType;
+                let attr = metaClass.classType.getAttribute(element.name);
+
+                if(!attr || !attr?.isStatic){
+                    throw "Unreachable code";
+                }
+                
+                    // global variable
+                let inst = globalType(expr.left.inferredType!);
+                this.i(inst, attr!.uid, right);
+                return right;
+            }
+            else {
+                console.log(baseType.shortname());
             }
         }
         {
