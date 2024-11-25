@@ -1156,22 +1156,38 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     while (canLoop) {
         let tok = parser.peek();
         if (tok.type === "let") {
-            parser.reject();
-            let attribute = parseClassAttribute(parser, ctx);
-            if (methods.find((m) => m.imethod.name == attribute.name)) {
-                parser.customError(
-                    `Duplicate attribute "${attribute.name}" in class`,
-                    attribute.location,
-                );
+            parser.accept();
+
+            let loop = true;
+            while (loop) {
+                parser.reject();
+                let attribute = parseClassAttribute(parser, ctx);
+                if (methods.find((m) => m.imethod.name == attribute.name)) {
+                    parser.customError(
+                        `Duplicate attribute "${attribute.name}" in class`,
+                        attribute.location,
+                    );
+                }
+                // also comapre it with attributes
+                if (attributes.find((a) => a.name == attribute.name)) {
+                    parser.customError(
+                        `Duplicate name attributes "${attribute.name}" is already reserved by a method, in class`,
+                        attribute.location,
+                    );
+                }
+                attributes.push(attribute);
+
+                tok = parser.peek();
+                loop = tok.type === ",";
+
+                if(loop) {
+                    parser.accept();
+                }
+                else {
+                    parser.reject();
+                }
             }
-            // also comapre it with attributes
-            if (attributes.find((a) => a.name == attribute.name)) {
-                parser.customError(
-                    `Duplicate name attributes "${attribute.name}" is already reserved by a method, in class`,
-                    attribute.location,
-                );
-            }
-            attributes.push(attribute);
+
         } else if (tok.type === "static") {
             let tok2 = parser.peek();
             if (tok2.type === "{") {
@@ -1273,7 +1289,6 @@ function parseTypeFunction(parser: Parser, ctx: Context): DataType {
 
 function parseClassAttribute(parser: Parser, ctx: Context): ClassAttribute {
     let loc = parser.loc();
-    parser.expect("let");
 
     let tok = parser.peek();
 
