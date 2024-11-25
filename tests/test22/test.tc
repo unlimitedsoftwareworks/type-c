@@ -1,0 +1,209 @@
+from std.io import println
+from std.unit.test import TestUnit, UnitSet
+
+// Addable interface and DefaultAddition implementation
+type Addable = interface {
+    fn + | add(v: Addable) -> Addable
+    fn - | sub(v: Addable) -> Addable
+    fn * | mul(v: Addable) -> Addable
+    fn / | div(v: Addable) -> Addable
+    fn % | mod(v: Addable) -> Addable
+    fn < | lt(v: Addable) -> bool
+    fn > | gt(v: Addable) -> bool
+    fn <= | le(v: Addable) -> bool
+    fn >= | ge(v: Addable) -> bool
+
+    fn getCoords() -> {x: f32, y: f32, z: f32}
+
+    fn get | [](i: u64) -> f32
+    fn set | []=(v: f32, i: u64) -> void
+    fn rget | [-](i: u64) -> f32 // reverse get
+    fn rset | [-]=(v: f32, i: u64) -> void // reverse set
+}
+
+type DefaultAddition = impl (x: f32, y: f32, z: f32) {
+    fn add | + (v: Addable) -> Vec3 {
+        let {x, y, z} = v.getCoords()
+        this += {x: this.x + x, y: this.y + y, z: this.z + z}
+        return this
+    }
+
+    fn sub | - (v: Addable) -> Vec3 {
+        let {x, y, z} = v.getCoords()
+        this += {x: this.x - x, y: this.y - y, z: this.z - z}
+        return this
+    }
+
+    fn mul | * (v: Addable) -> Vec3 {
+        let {x, y, z} = v.getCoords()
+        this += {x: this.x * x, y: this.y * y, z: this.z * z}
+        return this
+    }
+
+    fn div | / (v: Addable) -> Vec3 {
+        let {x, y, z} = v.getCoords()
+        this += {x: this.x / x, y: this.y / y, z: this.z / z}
+        return this
+    }
+
+    fn mod | % (v: Addable) -> Vec3 {
+        let {x, y, z} = v.getCoords()
+        this += {x: this.x % x, y: this.y % y, z: this.z % z}
+        return this
+    }
+
+    fn lt | < (v: Addable) -> bool {
+        let {x, y, z} = v.getCoords()
+        return this.x < x && this.y < y && this.z < z
+    }
+
+    fn gt | > (v: Addable) -> bool {
+        let {x, y, z} = v.getCoords()
+        return this.x > x && this.y > y && this.z > z
+    }
+
+    fn le | <= (v: Addable) -> bool {
+        let {x, y, z} = v.getCoords()
+        return this.x <= x && this.y <= y && this.z <= z
+    }
+
+    fn ge | >= (v: Addable) -> bool {
+        let {x, y, z} = v.getCoords()
+        return this.x >= x && this.y >= y && this.z >= z
+    }
+
+    fn get | [](i: u64) -> f32 {
+        let data = [this.x, this.y, this.z]
+        return data[i]
+    }
+
+    fn set | []=(v: f32, i: u64) -> void {
+        let data = [this.x, this.y, this.z]
+        data[i] = v
+        this += {x: data[0], y: data[1], z: data[2]}
+    }
+
+    fn rget | [-](i: u64) -> f32 {
+        let data = [this.x, this.y, this.z]
+        return data[-i]
+    }
+
+    fn rset | [-]=(v: f32, i: u64) -> void {
+        let data = [this.x, this.y, this.z]
+        data[-i] = v
+        this += {x: data[0], y: data[1], z: data[2]}
+    }
+}
+
+// Vec3 class implementation
+type Vec3 = class Addable {
+    let x: f32, y: f32, z: f32
+
+    fn init(x: f32, y: f32, z: f32) {
+        this += {x, y, z}
+    }
+
+    impl DefaultAddition(x, y, z)
+
+    fn print() {
+        println("<Vec3: x: " + this.x + ", y: " + this.y + ", z: " + this.z + ">")
+    }
+
+    fn getCoords() = {x: this.x, y: this.y, z: this.z}
+
+    override fn rset | [-]=(v: f32, i: u64) -> void {
+        println("Setting reverse index: " + i + " to " + v)
+        let data = [this.x, this.y, this.z]
+        data[-i] = v
+        this += {x: data[0], y: data[1], z: data[2]}
+    }
+}
+
+// Unit Tests for Addable, Vec3
+fn test_vec3_addition_operator(rn: TestUnit) {
+    let v1 = new Vec3(1.0f, 2.0f, 3.0f)
+    let v2 = new Vec3(4.0f, 5.0f, 6.0f)
+    let result = v1 + v2
+    rn.assert_f32_eq_pre(result.x, 5.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.y, 7.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.z, 9.0f, 0.00001f)
+}
+
+fn test_vec3_subtraction_operator(rn: TestUnit) {
+    let v1 = new Vec3(4.0f, 5.0f, 6.0f)
+    let v2 = new Vec3(1.0f, 2.0f, 3.0f)
+    println("Before subtraction")
+    let result = v1 - v2
+    result.print()
+    rn.assert_f32_eq_pre(result.x, 3.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.y, 3.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.z, 3.0f, 0.00001f)
+}
+
+fn test_vec3_multiplication_operator(rn: TestUnit) {
+    let v1 = new Vec3(1.0f, 2.0f, 3.0f)
+    let v2 = new Vec3(4.0f, 5.0f, 6.0f)
+    let result = v1 * v2
+    rn.assert_f32_eq_pre(result.x, 4.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.y, 10.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.z, 18.0f, 0.00001f)
+}
+
+fn test_vec3_division_operator(rn: TestUnit) {
+    let v1 = new Vec3(4.0f, 10.0f, 18.0f)
+    let v2 = new Vec3(2.0f, 5.0f, 3.0f)
+    let result = v1 / v2
+    rn.assert_f32_eq_pre(result.x, 2.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.y, 2.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.z, 6.0f, 0.00001f)
+}
+
+fn test_vec3_modulus_operator(rn: TestUnit) {
+    let v1 = new Vec3(5.0f, 7.0f, 9.0f)
+    let v2 = new Vec3(2.0f, 3.0f, 4.0f)
+    let result = v1 % v2
+    rn.assert_f32_eq_pre(result.x, 1.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.y, 1.0f, 0.00001f)
+    rn.assert_f32_eq_pre(result.z, 1.0f, 0.00001f)
+}
+
+fn test_vec3_comparison_operators(rn: TestUnit) {
+    let v1 = new Vec3(1.0f, 2.0f, 3.0f)
+    let v2 = new Vec3(4.0f, 5.0f, 6.0f)
+    rn.assert_eq(v1 < v2, true)
+    rn.assert_eq(v1 > v2, false)
+    rn.assert_eq(v1 <= v2, true)
+    rn.assert_eq(v1 >= v2, false)
+}
+
+fn test_vec3_reverse_indexing(rn: TestUnit) {
+    let v = new Vec3(1.0f, 2.0f, 3.0f)
+    rn.assert_f32_eq_pre(v[-(1 as u64)], 3.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v[-(2 as u64)], 2.0f, 0.00001f)
+    rn.assert_f32_eq_pre(v[-(3 as u64)], 1.0f, 0.00001f)
+}
+
+fn test_vec3_reverse_setting(rn: TestUnit) {
+    let v = new Vec3(1.0f, 2.0f, 3.0f)
+    v[-(1 as u64)] = 10.0f
+    rn.assert_f32_eq_pre(v.z, 10.0f, 0.00001f)
+    v[-(2 as u64)] = 20.0f
+    rn.assert_f32_eq_pre(v.y, 20.0f, 0.00001f)
+    v[-(3 as u64)] = 30.0f
+    rn.assert_f32_eq_pre(v.x, 30.0f, 0.00001f)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test vec3 addition operator", "Tests addition operator for Vec3 class", test_vec3_addition_operator)
+    let test_2 = new TestUnit("test vec3 subtraction operator", "Tests subtraction operator for Vec3 class", test_vec3_subtraction_operator)
+    let test_3 = new TestUnit("test vec3 multiplication operator", "Tests multiplication operator for Vec3 class", test_vec3_multiplication_operator)
+    let test_4 = new TestUnit("test vec3 division operator", "Tests division operator for Vec3 class", test_vec3_division_operator)
+    let test_5 = new TestUnit("test vec3 modulus operator", "Tests modulus operator for Vec3 class", test_vec3_modulus_operator)
+    let test_6 = new TestUnit("test vec3 comparison operators", "Tests comparison operators for Vec3 class", test_vec3_comparison_operators)
+    let test_7 = new TestUnit("test vec3 reverse indexing", "Tests reverse indexing feature for Vec3 class", test_vec3_reverse_indexing)
+    let test_8 = new TestUnit("test vec3 reverse setting", "Tests reverse setting feature for Vec3 class", test_vec3_reverse_setting)
+
+    let set = new UnitSet("Addable and Vec3 Test Suite", "Tests for Addable interface and Vec3 class functionality", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
+
+    return set.run()
+}

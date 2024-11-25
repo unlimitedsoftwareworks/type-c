@@ -376,16 +376,18 @@ export class FunctionCallExpression extends Expression {
 
         let candidateMethods = baseInterface.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
         if (candidateMethods.length === 0) {
-            ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseInterface.shortname()}`, this.location);
+            ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseExprType.shortname()}`, this.location);
         }
         if (candidateMethods.length > 1) {
-            ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseInterface.shortname()}`, this.location);
+            ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseExprType.shortname()}`, this.location);
         }
 
         let method = candidateMethods[0];
         for (let i = 0; i < this.args.length; i++) {
-            this.args[i].infer(ctx, method.header.parameters[i].type);
-            if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
+            let type = method.header.parameters[i].type;
+            type.resolve(ctx);
+            this.args[i].infer(ctx, type);
+            if (!checkExpressionArgConst(this.args[i], type, method.header.parameters[i], method.header)) {
                 ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
             }
         }

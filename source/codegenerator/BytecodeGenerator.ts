@@ -978,7 +978,66 @@ export class BytecodeGenerator {
                 let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
                 this.emit(BytecodeInstructionType.a_loadf_ptr, dest, idx, src);
             }
-
+            else if (instruction.type == "a_set_reverse_index_i8" || instruction.type == "a_set_reverse_index_u8") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rstoref_reg, dest, idx, src, 1);
+            }
+            else if (instruction.type == "a_set_reverse_index_i16" || instruction.type == "a_set_reverse_index_u16") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rstoref_reg, dest, idx, src, 2);
+            }
+            else if (instruction.type == "a_set_reverse_index_i32" || instruction.type == "a_set_reverse_index_u32" || instruction.type == "a_set_reverse_index_f32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rstoref_reg, dest, idx, src, 4);
+            }
+            else if (instruction.type == "a_set_reverse_index_i64" || instruction.type == "a_set_reverse_index_u64" || instruction.type == "a_set_reverse_index_f64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rstoref_reg, dest, idx, src, 8);
+            }
+            else if (instruction.type == "a_set_reverse_index_ptr") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rstoref_reg_ptr, dest, idx, src);
+            }
+            else if (instruction.type == "a_get_reverse_index_i8" || instruction.type == "a_get_reverse_index_u8") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rloadf, dest, idx, src, 1);
+            }
+            else if (instruction.type == "a_get_reverse_index_i16" || instruction.type == "a_get_reverse_index_u16") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rloadf, dest, idx, src, 2);
+            }
+            else if (instruction.type == "a_get_reverse_index_i32" || instruction.type == "a_get_reverse_index_u32" || instruction.type == "a_get_reverse_index_f32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rloadf, dest, idx, src, 4);
+            }
+            else if (instruction.type == "a_get_reverse_index_i64" || instruction.type == "a_get_reverse_index_u64" || instruction.type == "a_get_reverse_index_f64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rloadf, dest, idx, src, 8);
+            }
+            else if (instruction.type == "a_get_reverse_index_ptr") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string)
+                let idx = this.getRegisterForVariable(fn, instruction.args[1] as string)
+                let src = this.getRegisterForVariable(fn, instruction.args[2] as string)
+                this.emit(BytecodeInstructionType.a_rloadf_ptr, dest, idx, src);
+            }
             /**
              * Functions
              */
@@ -1418,6 +1477,12 @@ export class BytecodeGenerator {
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.mod_u32, dest, src1, src2);
             }
+            else if (instruction.type == "mod_f32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.mod_f32, dest, src1, src2);
+            }
             else if (instruction.type == "mod_i64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
@@ -1429,6 +1494,12 @@ export class BytecodeGenerator {
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.mod_u64, dest, src1, src2);
+            }
+            else if (instruction.type == "mod_f64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.mod_f64, dest, src1, src2);
             }
             else if (instruction.type == "and") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);

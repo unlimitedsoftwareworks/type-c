@@ -90,7 +90,7 @@ export class ClassType extends DataType {
         if (this._resolved) return;
 
 
-        if(this.preResolveRecursion()){
+        if (this.preResolveRecursion()) {
             return;
         }
 
@@ -105,7 +105,6 @@ export class ClassType extends DataType {
                 ctx.parser.customError(`A class can only implement interfaces, ${superType.shortname()} is not an interface`, superType.location);
             }
 
-
             let interfaceSuper = superType.to(ctx, InterfaceType) as InterfaceType;
             superInterfaces.push(interfaceSuper);
         }
@@ -116,55 +115,63 @@ export class ClassType extends DataType {
          */
         this.checkAttributes(ctx);
 
-
         /**
          * Resolve implementations
          */
-        if(!this.implsResolved) {
+        let externalMethods: ClassMethod[] = [];
+        if (!this.implsResolved) {
             for (const impl of this.impls) {
                 impl.type.resolve(ctx);
-            if(impl.type.is(ctx, ImplementationType)) {
-                let implType = impl.type.to(ctx, ImplementationType) as ImplementationType;
-                
-                // make sure all required attributes are present
-                if(implType.requiredAttributes.length !== impl.attributes.length) {
-                    ctx.parser.customError(`Expected ${implType.requiredAttributes.length} attributes, got ${impl.attributes.length}`, impl.type.location);
-                }
+                if (impl.type.is(ctx, ImplementationType)) {
+                    let implType = impl.type.to(ctx, ImplementationType) as ImplementationType;
 
-                let classAttrMap: { [key: string]: ClassAttribute } = {};
-                for (let i = 0; i < implType.requiredAttributes.length; i++) {
-                    let classAttr = this.attributes.find(e => e.name === impl.attributes[i]);
-                    let implAttr = implType.requiredAttributes[i];
-
-                    if(classAttr === undefined) {
-                        ctx.parser.customError(`Attribute ${impl.attributes[i]} is required by the implementation but not defined in the class`, impl.type.location);
-                    }
-                    // make sure they match
-                    let res = matchDataTypes(ctx, classAttr.type, implAttr.type, true);
-                    if(!res.success) {
-                        ctx.parser.customError(`Attribute ${impl.attributes[i]} types do not match: ${res.message}`, impl.type.location);
+                    // make sure all required attributes are present
+                    if (implType.requiredAttributes.length !== impl.attributes.length) {
+                        ctx.parser.customError(`Expected ${implType.requiredAttributes.length} attributes, got ${impl.attributes.length}`, impl.type.location);
                     }
 
-                    classAttrMap[implAttr.name] = classAttr;
-                }
+                    let classAttrMap: { [key: string]: ClassAttribute } = {};
+                    for (let i = 0; i < implType.requiredAttributes.length; i++) {
+                        let classAttr = this.attributes.find(e => e.name === impl.attributes[i]);
+                        let implAttr = implType.requiredAttributes[i];
 
-                // now for the methods
-                for (const method of implType.implementedMethods) {
-                    let classMethod = method.toClassMethod(classAttrMap);
-                    classMethod.context.setActiveClass(this);
-                    if (classMethod.body) {
-                        classMethod.body.context.overrideParent(classMethod.context);
+                        if (classAttr === undefined) {
+                            ctx.parser.customError(`Attribute ${impl.attributes[i]} is required by the implementation but not defined in the class`, impl.type.location);
+                        }
+                        // make sure they match
+                        let res = matchDataTypes(ctx, classAttr.type, implAttr.type, true);
+                        if (!res.success) {
+                            ctx.parser.customError(`Attribute ${impl.attributes[i]} types do not match: ${res.message}`, impl.type.location);
+                        }
+
+                        classAttrMap[implAttr.name] = classAttr;
                     }
-                    this.methods.push(classMethod);
-                }
 
-            }
-            else {
-                ctx.parser.customError(`Expected implementation type, got ${impl.type.shortname()}`, impl.type.location);
+                    // now for the methods
+                    for (const method of implType.implementedMethods) {
+                        let classMethod = method.toClassMethod(classAttrMap);
+                        classMethod.context.setActiveClass(this);
+                        if (classMethod.body) {
+                            classMethod.body.context.overrideParent(classMethod.context);
+                        }
+                        classMethod.isExternal = true;
+                        externalMethods.push(classMethod);
+                    }
+
+                }
+                else {
+                    ctx.parser.customError(`Expected implementation type, got ${impl.type.shortname()}`, impl.type.location);
                 }
             }
         }
 
+
+        for (const method of externalMethods) {
+            method.context.setActiveClass(this);
+            if (method.body) {
+                method.body.context.overrideParent(method.context);
+            }
+        }
 
         this.checkInitMethods(ctx);
 
@@ -182,10 +189,40 @@ export class ClassType extends DataType {
          * 4. Infer each method to compute the method's signature (in case return type is not specified)
          */
         for (const method of this.methods) {
-            if(!method.imethod.isStatic){
+            if (!method.imethod.isStatic) {
                 method.infer(ctx);
                 method.codeGenProps.assignThis(this, this.location, ctx);
             }
+        }
+
+        // we make sure that every overridden method overrides an external method
+        
+        for (let i = 0; i < this.methods.length; i++) {
+            if (this.methods[i].isOverride) {
+                let matchFound = false;
+                for (let j = 0; j < externalMethods.length; j++) {
+                    if (this.methods[i].imethod.name === externalMethods[j].imethod.name) {
+                        if (areSignaturesIdentical(ctx, this.methods[i].imethod, externalMethods[j].imethod)) {
+                            matchFound = true;
+                            // remove the external method from the list
+                            externalMethods.splice(j, 1);
+                            // move j back
+                            j--;
+                        }
+                    }
+                }
+                if (!matchFound) {
+                    ctx.parser.customError(`Method ${this.methods[i].imethod.name} is overridden but no external method with the same signature is found`, this.methods[i].location);
+                }
+            }
+        }
+
+
+        this.methods = this.methods.concat(externalMethods);
+
+        for (const method of externalMethods) {
+            method.infer(ctx);
+            method.codeGenProps.assignThis(this, this.location, ctx);
         }
 
 
@@ -219,7 +256,7 @@ export class ClassType extends DataType {
          */
         checkOverloadedMethods(ctx, this.methods.map(e => e.imethod));
 
-        if(this.staticBlock !== null) {
+        if (this.staticBlock !== null) {
             this.resolveStaticBlock(ctx);
             ctx.getBasePackage().addStaticClassBlocks(this.staticBlock);
         }
@@ -228,7 +265,7 @@ export class ClassType extends DataType {
         this.postResolveRecursion()
     }
 
-    getClassID(){
+    getClassID() {
         return this.classId;
     }
 
@@ -283,8 +320,8 @@ export class ClassType extends DataType {
             }
 
             //if (attribute.isStatic) {
-                // resolving a generic results in an error, and since it could be an array of array of generics,
-                // manually looking for generics makes no sense
+            // resolving a generic results in an error, and since it could be an array of array of generics,
+            // manually looking for generics makes no sense
             attribute.type.resolve(ctx);
             //}
         }
@@ -303,9 +340,12 @@ export class ClassType extends DataType {
         let foundMethod: ClassMethod | null = null;
         for (const classMethod of this.methods) {
             if (classMethod.imethod.name === method.name) {
-                if (matchDataTypes(ctx, method.header, classMethod.imethod.header, true).success) {
+                let res = matchDataTypes(ctx, method.header, classMethod.imethod.header, true);
+                if (res.success) {
                     foundMethod = classMethod;
                     break;
+                } else {
+                    console.log(res.message);
                 }
             }
         }
@@ -337,7 +377,7 @@ export class ClassType extends DataType {
                 for (const [i, m] of genericImpl) {
                     m.indexInClass = allMethods.length;
                     allMethods.push(m);
-                    if(!m.imethod.isStatic) {
+                    if (!m.imethod.isStatic) {
                         m.codeGenProps.assignThis(this, this.location, method.context);
                     }
                 }
@@ -355,7 +395,7 @@ export class ClassType extends DataType {
      * their implementation.
      */
     getAllMethods() {
-        if(this._allMethods.length === 0) {
+        if (this._allMethods.length === 0) {
             this.buildAllMethods();
         }
 
@@ -417,7 +457,7 @@ export class ClassType extends DataType {
 
                             let concreteMethod = method.generateConcreteMethod(ctx, typeMap, genericArguments);
 
-                            if(returnType !== null) {
+                            if (returnType !== null) {
                                 if (!concreteMethod.imethod.header.returnType.is(ctx, UnsetType) && !returnType.is(ctx, UnsetType)) {
                                     let res = matchDataTypes(ctx, concreteMethod.imethod.header.returnType, returnType, strict);
                                     if (!res.success) {
@@ -503,7 +543,7 @@ export class ClassType extends DataType {
                         }
                     }
                     else {
-                        if(genericArguments.length > 0) {
+                        if (genericArguments.length > 0) {
                             // function do not support generics
                             continue;
                         }
@@ -682,7 +722,7 @@ export class ClassType extends DataType {
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: { [key: string]: GenericType }, typeMap: { [key: string]: DataType }) {
-        if(this.preGenericExtractionRecursion()){
+        if (this.preGenericExtractionRecursion()) {
             return;
         }
 
@@ -716,13 +756,13 @@ export class ClassType extends DataType {
     /**
      * Methods used by the bytecode generator
      */
-    getAttributes(){
+    getAttributes() {
         return this.attributes;
     }
 
-    getAttribute(name: string){
-        for(const attr of this.attributes){
-            if(attr.name === name){
+    getAttribute(name: string) {
+        for (const attr of this.attributes) {
+            if (attr.name === name) {
                 return attr;
             }
         }
@@ -730,8 +770,8 @@ export class ClassType extends DataType {
     }
 
     getAttributeIndex(name: string): number {
-        for(let i = 0; i < this.attributes.length; i++){
-            if(this.attributes[i].name == name){
+        for (let i = 0; i < this.attributes.length; i++) {
+            if (this.attributes[i].name == name) {
                 return i;
             }
         }
@@ -798,17 +838,17 @@ export class ClassType extends DataType {
         return null;
     }
 
-    getAllStaticMethods(){
+    getAllStaticMethods() {
         let methods: ClassMethod[] = [];
-        for(const [key, method] of this.methods.entries()) {
-            if(method.imethod.isStatic){
-                if(method.imethod.generics.length > 0){
+        for (const [key, method] of this.methods.entries()) {
+            if (method.imethod.isStatic) {
+                if (method.imethod.generics.length > 0) {
                     let genericImpl = method.getConcreteGenerics()
                     for (const [i, m] of genericImpl) {
                         methods.push(m);
                     }
                 }
-                else{
+                else {
                     methods.push(method);
                 }
             }
@@ -818,10 +858,10 @@ export class ClassType extends DataType {
 
     getIndexesForInterfaceMethods(ctx: Context, interfaceType: InterfaceType): number[] {
         let indexes: number[] = [];
-        for(const [i, method] of interfaceType.getMethods().entries()){
+        for (const [i, method] of interfaceType.getMethods().entries()) {
 
             let res = this.findMethodByNameAndArguments(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
-            if(res){
+            if (res) {
                 indexes.push(res[0]);
             }
 
@@ -840,19 +880,19 @@ export class ClassType extends DataType {
     }
 
 
-    getStructSize(ctx: Context){
+    getStructSize(ctx: Context) {
         return this.getAlignment() * this.attributes.length;
     }
 
-    getAttributeOffset(i: number){
+    getAttributeOffset(i: number) {
         return i * this.getAlignment();
     }
 
-    getAttributesBlockSize(){
+    getAttributesBlockSize() {
         let size = 0;
-        for(let attr of this.attributes){
+        for (let attr of this.attributes) {
             // we do not consider static attributes
-            if(attr.isStatic) continue;
+            if (attr.isStatic) continue;
             size += getDataTypeByteSize(attr.type.dereference());
         }
         return size;

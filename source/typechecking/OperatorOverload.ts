@@ -19,6 +19,7 @@ import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { ReferenceType } from "../ast/types/ReferenceType";
+import { MethodOperatorName } from "../parser/parsefuncs";
 import { matchDataTypes } from "./TypeChecking";
 
 
@@ -63,6 +64,34 @@ export function setIndexesSetHint(ctx: Context, method: InterfaceMethod, indexes
 
     // return the method return type
     return method.header.returnType;
+}
+
+export function setReverseIndexesSetHint(ctx: Context, method: InterfaceMethod, index: Expression){
+
+    // param 1 is the index, same as index set
+    let paramType = method.header.parameters[1].type;
+    let res = matchDataTypes(ctx, paramType, index.infer(ctx, paramType));
+    if(!res.success){
+        ctx.parser.customError(`Type mismatch in __reverse_index_set__: ${res.message}`, index.location);
+    }
+
+    // return the method return type
+    return method.header.returnType;
+}
+
+
+/**
+ * __index__ x[i, j, ...]
+ */
+export function isReverseIndexable(ctx: Context, dt: OverridableMethodType) {
+    return dt.methodExists(ctx, "__reverse_index__");
+}
+
+/**
+ *  __index_set__ x[i, j, ...] = y
+ */
+export function isReverseIndexSettable(ctx: Context, dt: OverridableMethodType){
+    return dt.methodExists(ctx, "__reverse_index_set__");
 }
 
 /**
@@ -325,4 +354,37 @@ export function isInc(ctx: Context, dt: OverridableMethodType){
 
 export function isDec(ctx: Context, dt: OverridableMethodType){
     return dt.methodExists(ctx, "__dec__");
+}
+
+
+export function getOperatorOverloadName(ctx: Context, op: MethodOperatorName){
+    switch(op){
+        case "+": return "__add__";
+        case "-": return "__sub__";
+        case "*": return "__mul__";
+        case "/": return "__div__";
+        case "%": return "__mod__";
+        case "<": return "__lt__";
+        case ">": return "__gt__";
+        case "<=": return "__le__";
+        case ">=": return "__ge__";
+        case ">>": return "__rshift__";
+        case "<<": return "__lshift__";
+        case "&": return "__band__";
+        case "|": return "__bor__";
+        case "^": return "__xor__";
+        case "&&": return "__and__";
+        case "||": return "__or__";
+        case "!": return "__not__";
+        case "~": return "__bnot__";
+        case "[]": return "__index__";
+        case "[-]": return "__reverse_index__";
+        case "[]=": return "__index_set__";
+        case "[-]=": return "__reverse_index_set__";
+        case "()": return "__call__";
+        case "++": return "__inc__";
+        case "--": return "__dec__";
+        default: 
+            throw "Unreachable";
+    }
 }

@@ -62,7 +62,6 @@ This checklist containts only major changes and updates, for minor changes and u
 - 8/08/2024:
     - Added `DoExpression`
 
-
 - 10/08/2024:
     - Refactored bytecode for structs, a global id for every field is generated, covering all combinations, this global id is used to access the field in the struct, using an additional offset byte.
     - Refactored bytecode for classes and interfaces. VM now only supports classes. Class methods are processed the same way as structs now, each method has a global id.
@@ -108,8 +107,9 @@ This checklist containts only major changes and updates, for minor changes and u
     - Static variables are stored and read as global variables, also pushed in the base package global context.
     - Static block are now properly generated just like global block. They are also pushed in the base package global context.
     - Small fixes for class methods and attributes in the bytecode generator when nested under namespaces and invalid access of non-static method through the class name (instead of through an instance).
-
-
+    - Added special assignment for `ThisExpression` in the form of `ThisDistributedAssignExpression`, which allows for distributed assignment to the attributes of `this`, such as `this += {x, y, z}` or `this += {a: x, b: y, c: z}`. Only works with `this`. Does not translate to creating a new struct, it extract field names and values from the RHS and translates it to a series of assignments.
+    - Added special __index_rset__ which sets the value of an index of an array-like object, but in reverse order of __index_get__, such as `x[-3]`, Evaluates to `__index_rset__(x, 3, value)`. This is important because value is not evaluated as a negative number, the negative sign within an index `[]` translates to a reverse index access.
+    - Added `override` keyword to class methods, to indicate that the method is overriding an external method with the same signature.
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.
@@ -123,9 +123,9 @@ This checklist containts only major changes and updates, for minor changes and u
 
 ## Roadmap:
 
-- [ ] Pad constants segment 
-- [ ] Pad global segment for faster access
-- [ ] Add Short-circuiting logical operators and nullish coalescing operator (codegen)
+- [x] Pad constants segment 
+- [x] Pad global segment for faster access
+- [x] Add Short-circuiting logical operators and nullish coalescing operator (codegen)
 - [x] Implement Nullish coalescing operator as a binary operator, will require additional parameter to `expresion.infer` so when we encounter nullable member access we can accept it knowing that there is a fallback value: `a?.b ?? 0`.
 - [ ] ~~Add language level support for threads~~
 - [ ] ~~Add support Shadow Classes (requires VM integration too)~~

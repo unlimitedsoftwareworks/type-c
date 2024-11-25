@@ -115,7 +115,9 @@ import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
 import {
     arrayGetIndexType,
+    arrayGetReverseIndexType,
     arraySetIndexType,
+    arraySetReverseIndexType,
     classGetFieldType,
     classSetFieldType,
     closurePushEnvType,
@@ -145,6 +147,8 @@ import { UnreachableExpression } from "../ast/expressions/UnreachableExpression"
 import { NamespaceType } from "../ast/types/NamespaceType";
 import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
 import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistributedAssignExpression";
+import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAccessExpression";
+import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -423,6 +427,10 @@ export class FunctionGenerator {
             tmp = this.visitIndexAccessExpression(expr, ctx);
         else if (expr instanceof IndexSetExpression)
             tmp = this.visitIndexSetExpression(expr, ctx);
+        else if (expr instanceof ReverseIndexAccessExpression)
+            tmp = this.visitReverseIndexAccessExpression(expr, ctx);
+        else if (expr instanceof ReverseIndexSetExpression)
+            tmp = this.visitReverseIndexSetExpression(expr, ctx);
         else if (expr instanceof MatchExpression)
             tmp = this.visitMatchExpression(expr, ctx);
         else if (expr instanceof UnnamedStructConstructionExpression)
@@ -605,6 +613,44 @@ export class FunctionGenerator {
         return this.visitFunctionCallExpression(methodCall, ctx);
     }
 
+    visitReverseIndexAccessExpression(
+        expr: ReverseIndexAccessExpression,
+        ctx: Context,
+    ): string {
+        let inferredType = expr.lhs.inferredType!.dereference();
+        if (inferredType.is(ctx, ArrayType)) {
+            return this.ir_generate_reverse_array_access(expr, ctx);
+        }
+
+        // else check if it is a method call
+        if (!expr.operatorOverloadState.isMethodCall) {
+            throw new Error(
+                "Invalid reverse index access expression, expected array or callable got " +
+                    expr.inferredType?.toString(),
+            );
+        }
+
+        this.i("debug", "index access expression is an operator overload");
+
+        // we simulate the call
+        let methodCall = new FunctionCallExpression(
+            expr.location,
+            new MemberAccessExpression(
+                expr.location,
+                expr.lhs,
+                new ElementExpression(
+                    expr.location,
+                    expr.operatorOverloadState.methodRef!.name,
+                ),
+            ),
+            [expr.index],
+        );
+
+        methodCall.infer(ctx, expr.hintType);
+
+        return this.visitFunctionCallExpression(methodCall, ctx);
+    }
+
     visitIndexSetExpression(expr: IndexSetExpression, ctx: Context): string {
         let mainExprType = expr.lhs.inferredType!.dereference();
         if (mainExprType instanceof ArrayType) {
@@ -635,6 +681,43 @@ export class FunctionGenerator {
                 ),
             ),
             [expr.value, ...expr.indexes],
+        );
+
+        methodCall.infer(ctx, expr.hintType);
+
+        return this.visitFunctionCallExpression(methodCall, ctx);
+    }
+
+    visitReverseIndexSetExpression(expr: ReverseIndexSetExpression, ctx: Context): string {
+        let mainExprType = expr.lhs.inferredType!.dereference();
+        if (mainExprType instanceof ArrayType) {
+            return this.ir_generate_reverse_array_set(expr, ctx, mainExprType);
+        }
+
+        /**
+         * indexset expression on a class is a method call
+         */
+
+        this.i("debug", "replacing reverse index set expression with method call");
+
+        if (!expr.operatorOverloadState.isMethodCall) {
+            ctx.parser.customError(
+                "Invalid reverse index set expression, expected method call",
+                expr.location,
+            );
+        }
+
+        let methodCall = new FunctionCallExpression(
+            expr.location,
+            new MemberAccessExpression(
+                expr.location,
+                expr.lhs,
+                new ElementExpression(
+                    expr.location,
+                    expr.operatorOverloadState.methodRef!.name,
+                ),
+            ),
+            [expr.value, expr.index],
         );
 
         methodCall.infer(ctx, expr.hintType);
@@ -3950,6 +4033,49 @@ export class FunctionGenerator {
         return tmp;
     }
 
+    ir_generate_reverse_array_access(expr: ReverseIndexAccessExpression, ctx: Context) {
+        let inferredType = expr.lhs.inferredType!.dereference();
+        let arrayType = inferredType.to(ctx, ArrayType) as ArrayType;
+
+        // make sure the index is an integer
+        if (!expr.index.inferredType!.is(ctx, BasicType)) {
+            throw new Error(
+                "Invalid index access expression, expected integer index got " +
+                    expr.index.inferredType?.toString(),
+            );
+        } else {
+            let indexType = expr.index.inferredType!.to(
+                ctx,
+                BasicType,
+            ) as BasicType;
+            if (
+                indexType.kind != "u8" &&
+                indexType.kind != "u16" &&
+                indexType.kind != "u32" &&
+                indexType.kind != "u64"
+            ) {
+                throw new Error(
+                    "Invalid index access expression, expected unsigned integer index got " +
+                        expr.index.inferredType?.toString(),
+                );
+            }
+        }
+
+        let indexReg = this.visitExpression(expr.index, ctx);
+
+        // generate the array
+        let reg = this.visitExpression(expr.lhs, ctx);
+
+        this.i("debug", "array index access");
+        let instr = arrayGetReverseIndexType(arrayType.arrayOf.dereference());
+        let tmp = this.generateTmp();
+        this.i(instr, tmp, indexReg, reg);
+        this.destroyTmp(reg);
+        this.destroyTmp(indexReg);
+
+        return tmp;
+    }
+
     ir_generate_array_set(
         expr: IndexSetExpression,
         ctx: Context,
@@ -3967,7 +4093,28 @@ export class FunctionGenerator {
         this.i(instr, array_reg, index_reg, value_reg);
         this.destroyTmp(array_reg);
         this.destroyTmp(index_reg);
-        this.destroyTmp(value_reg);
+        this.destroyTmp(value_reg); // TODO: << do we return the value? or the array?
+        return value_reg;
+    }
+
+    ir_generate_reverse_array_set(
+        expr: ReverseIndexSetExpression,
+        ctx: Context,
+        mainExprType: ArrayType,
+    ): string {
+        this.i("debug", "reverse array index set");
+        this.i("debug", "array expression");
+        let array_reg = this.visitExpression(expr.lhs, ctx);
+        this.i("debug", "array index expression");
+        let index_reg = this.visitExpression(expr.index, ctx);
+        this.i("debug", "array value expression");
+        let value_reg = this.visitExpression(expr.value, ctx);
+
+        let instr = arraySetReverseIndexType(mainExprType.arrayOf);
+        this.i(instr, array_reg, index_reg, value_reg);
+        this.destroyTmp(array_reg);
+        this.destroyTmp(index_reg);
+        this.destroyTmp(value_reg); // TODO: << do we return the value? or the array?
         return value_reg;
     }
 

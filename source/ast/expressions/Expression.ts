@@ -38,6 +38,8 @@ export type ExpressionKind =
     "if_else" | // if x => y else z
     "index_access" | // x[1]
     "index_set" | // x[1] = 2
+    "reverse_index_access" | // x[-1]
+    "reverse_index_set" | // x[-1] = 2
     "instance_check" | // x is Y
     "lambda" | // x => y
     "let_in" | // let x = 1 in y

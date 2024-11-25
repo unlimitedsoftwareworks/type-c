@@ -33,6 +33,9 @@ export class InterfaceMethod extends FunctionPrototype {
      */
     _indexInInterface: number = -1;
 
+
+    alternativeName: string[] = [];
+
     static methodUIDGenerator: Map<string, number> = new Map();
     static methodUIDCounter: number = 0;
 
@@ -60,6 +63,10 @@ export class InterfaceMethod extends FunctionPrototype {
     constructor(location: SymbolLocation, name: string, header: FunctionType, isStatic: boolean, generics: GenericType[] = []){
         super(location, name, header, generics);
         this.isStatic = isStatic;
+    }
+
+    addAlternativeName(name: string) {
+        this.alternativeName.push(name);
     }
 
     shortname() {

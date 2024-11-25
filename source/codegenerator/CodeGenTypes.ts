@@ -206,6 +206,54 @@ export function arrayGetIndexType(v: DataType): IRInstructionType {
 }
 
 
+export function arraySetReverseIndexType(v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "a_set_reverse_index_i8";
+        if (u.kind == "u8") return "a_set_reverse_index_u8";
+        if (u.kind == "i16") return "a_set_reverse_index_i16";
+        if (u.kind == "u16") return "a_set_reverse_index_u16";
+        if (u.kind == "i32") return "a_set_reverse_index_i32";
+        if (u.kind == "u32") return "a_set_reverse_index_u32";
+        if (u.kind == "i64") return "a_set_reverse_index_i64";
+        if (u.kind == "u64") return "a_set_reverse_index_u64";
+        if (u.kind == "f32") return "a_set_reverse_index_f32";
+        if (u.kind == "f64") return "a_set_reverse_index_f64";
+        if (u.kind == "array") return "a_set_reverse_index_ptr";
+        if (u.kind == "bool") return "a_set_reverse_index_u8";
+    }
+    if (u instanceof BooleanType) return "a_set_reverse_index_u8"
+    if (u instanceof EnumType) {
+        return ("a_set_reverse_index_" + u.as) as IRInstructionType;
+    }
+    return "a_set_reverse_index_ptr";
+}
+
+export function arrayGetReverseIndexType(v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "a_get_reverse_index_i8";
+        if (u.kind == "u8") return "a_get_reverse_index_u8";
+        if (u.kind == "i16") return "a_get_reverse_index_i16";
+        if (u.kind == "u16") return "a_get_reverse_index_u16";
+        if (u.kind == "i32") return "a_get_reverse_index_i32";
+        if (u.kind == "u32") return "a_get_reverse_index_u32";
+        if (u.kind == "i64") return "a_get_reverse_index_i64";
+        if (u.kind == "u64") return "a_get_reverse_index_u64";
+        if (u.kind == "f32") return "a_get_reverse_index_f32";
+        if (u.kind == "f64") return "a_get_reverse_index_f64";
+        if (u.kind == "array") return "a_get_reverse_index_ptr";
+        if (u.kind == "bool") return "a_get_reverse_index_u8";
+    }
+    if (u instanceof BooleanType) return "a_get_reverse_index_u8"
+    if (u instanceof EnumType) {
+        return ("a_get_reverse_index_" + u.as) as IRInstructionType;
+    }
+    return "a_get_reverse_index_ptr";
+}
+
+
+
 export function structSetFieldType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if (u instanceof BasicType) {
@@ -543,7 +591,9 @@ const modInstructions: { [key: string]: IRInstructionType } = {
     "i8": "mod_i8",
     "i16": "mod_i16",
     "i32": "mod_i32",
-    "i64": "mod_i64"
+    "i64": "mod_i64",
+    "f32": "mod_f32",
+    "f64": "mod_f64"
 }
 
 const lshiftInstructions: { [key: string]: IRInstructionType } = {

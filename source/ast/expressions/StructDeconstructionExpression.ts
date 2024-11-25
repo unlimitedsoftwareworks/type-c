@@ -28,7 +28,7 @@ export class StructDeconstructionExpression extends Expression {
         public visited_fields: string[] | null = null,
         public rest: boolean
     ) {
-        super(location, "array_deconstruction");
+        super(location, "object_deconstruction");
     }
 
     infer(ctx: Context, hint: DataType | null): DataType {

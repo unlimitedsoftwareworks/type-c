@@ -42,6 +42,7 @@ export enum TokenType {
     TOK_YIELD_FINAL = "yield!",
     TOK_YIELD = "yield",
     TOK_UNREACHABLE = "unreachable",
+    TOK_OVERRIDE = "override",
     TOK_I8 = "i8",
     TOK_I16 = "i16",
     TOK_I32 = "i32",

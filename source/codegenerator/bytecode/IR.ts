@@ -182,6 +182,30 @@ export type IRInstructionType =
     "a_get_index_f64" |
     "a_get_index_ptr" |
 
+    "a_set_reverse_index_i8" |
+    "a_set_reverse_index_u8" |
+    "a_set_reverse_index_i16" |
+    "a_set_reverse_index_u16" |
+    "a_set_reverse_index_i32" |
+    "a_set_reverse_index_u32" |
+    "a_set_reverse_index_i64" |
+    "a_set_reverse_index_u64" |
+    "a_set_reverse_index_f32" |
+    "a_set_reverse_index_f64" |
+    "a_set_reverse_index_ptr" |
+
+    "a_get_reverse_index_i8" |
+    "a_get_reverse_index_u8" |
+    "a_get_reverse_index_i16" |
+    "a_get_reverse_index_u16" |
+    "a_get_reverse_index_i32" |
+    "a_get_reverse_index_u32" |
+    "a_get_reverse_index_i64" |
+    "a_get_reverse_index_u64" |
+    "a_get_reverse_index_f32" |
+    "a_get_reverse_index_f64" |
+    "a_get_reverse_index_ptr" |
+
     "fn" |
     "fn_alloc" | // prepare for a function call
     "fn_set_reg_u8" | // init args pre function call
@@ -343,8 +367,10 @@ export type IRInstructionType =
     "mod_u16" |
     "mod_i32" |
     "mod_u32" |
+    "mod_f32" |
     "mod_i64" |
     "mod_u64" |
+    "mod_f64" |
 
     "lshift_i8" |
     "lshift_u8" |

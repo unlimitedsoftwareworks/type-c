@@ -85,7 +85,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
 
     if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isSubable(ctx, lhs as OverridableMethodType)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__sub__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -109,7 +109,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
 
     if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isMultiplicable(ctx, lhs as OverridableMethodType)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__mul__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -133,7 +133,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
     if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isDivisible(ctx, lhs as OverridableMethodType)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__div__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
@@ -157,7 +157,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
 
     if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isModable(ctx, lhs as OverridableMethodType)){
-            let method = getOperatorOverloadType(ctx, "__add__", lhs as OverridableMethodType, [rhs]);
+            let method = getOperatorOverloadType(ctx, "__mod__", lhs as OverridableMethodType, [rhs]);
             if(method){
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }

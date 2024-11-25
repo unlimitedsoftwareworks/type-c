@@ -124,12 +124,118 @@ import { ImplementationAttribute } from "../ast/other/ImplementationAttribute";
 import { ImplementationMethod } from "../ast/other/ImplementationMethod";
 import { ImplementationType } from "../ast/types/ImplementationType";
 import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistributedAssignExpression";
+import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAccessExpression";
+import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
+import { getOperatorOverloadName } from "../typechecking/OperatorOverload";
 
 let INTIALIZER_GROUP_ID = 1;
 
 type ExpressionParseOptions = {
     allowNullable: boolean;
 };
+
+export type MethodOperatorName = "+" 
+                        | "-" 
+                        | "*" 
+                        | "/" 
+                        | "%"  
+                        | "<" 
+                        | ">" 
+                        | "<=" 
+                        | ">="
+                        | ">>"
+                        | "<<"
+                        | "!"
+                        | "~"
+                        | "&"
+                        | "|"
+                        | "^"
+                        | "&&"
+                        | "||"
+                        | "[]"
+                        | "[-]"
+                        | "[]="
+                        | "[-]="
+                        | "()"
+                        | "+"
+                        | "-"
+                        | "*"
+                        | "/"
+                        | "%"
+                        | ">"
+                        | "<"
+                        | ">="
+                        | "<="
+                        | "<<"
+                        | ">>"
+                        | "&"
+                        | "|"
+                        | "^"
+                        | "&&"
+                        | "||"
+                        | "-"
+                        | "!"
+                        | "~"
+                        | "++"
+                        | "--";
+
+function parseMethodOperatorName(parser: Parser): MethodOperatorName {
+    let tok = parser.peek();
+    if (["+", "-", "*", "/", "%", "<", ">", "<=", ">=", ">>", "<<", "&", "|", "^", "&&", "||", "!", "~", "&", "|", "^", "&&", "||", "-", "!"].includes(tok.value)) {
+        parser.accept();
+        return tok.value as MethodOperatorName;
+    }
+    
+    // unusual cases such as "[]", "[-]", "[]=", "[-]=", "()"
+    switch(tok.value) {
+        case "[":
+            parser.accept();
+            tok = parser.peek();
+            if (tok.value === "]") {
+                parser.accept();
+                tok = parser.peek();
+                if (tok.value === "=") {
+                    parser.accept();
+                    return "[]=";
+                }
+                parser.reject();
+                return "[]";
+            }
+            else if (tok.value === "-") {
+                parser.accept();
+                tok = parser.peek();
+                if (tok.value === "]") {
+                    parser.accept();
+                    
+                    tok = parser.peek();
+                    if(tok.value === "="){
+                        parser.accept();
+                        return "[-]=";
+                    }
+                    parser.reject();
+                    return "[-]";
+                }
+                parser.customError("Invalid method operator name", parser.loc());
+            }
+            break;
+        case "(":
+            parser.accept();
+            if (parser.peek().value === ")") {
+                parser.accept();
+                return "()";
+            }
+            else {
+                parser.customError("Invalid method operator name, expected '()'", parser.loc());
+            }
+            break;
+        default:
+            parser.customError("Invalid method operator name", parser.loc());
+    }
+
+    parser.customError("Invalid method operator name", tok.location);
+}
+
+
 
 // <genericArgDecl> ::= "<" id (":" <type>)? ("," id (":" <type>)?)+ ">"
 function parseGenericArgDecl(parser: Parser, ctx: Context): GenericType[] {
@@ -361,7 +467,88 @@ function parseFunctionPrototype(
     return new FunctionPrototype(loc, name, header, generics);
 }
 
-function parseMethodInterface(parser: Parser, ctx: Context): InterfaceMethod {
+function parseMethodFunctionPrototype(
+    parser: Parser,
+    ctx: Context,
+): {fnProto: FunctionPrototype, altNames: string[]} {
+    let loc = parser.loc();
+    let tok = parser.expect("fn");
+    tok = parser.peek();
+    let name: string | null = null;
+    let altNames: string[] = [];
+
+        parser.reject();
+
+    let canLoop = true;
+    while(canLoop){
+        let tok = parser.peek();
+        if(tok.type === "identifier"){
+            parser.accept();
+            if(name === null){
+                name = tok.value;
+            }
+            else{
+                altNames.push(tok.value);
+            }
+        }
+        else {
+            parser.reject();
+            let op = parseMethodOperatorName(parser);
+            let opName = getOperatorOverloadName(ctx, op);
+            if(name !== null){
+                altNames.push(opName);
+            }
+            else{
+                name = opName
+            }
+        }
+
+        tok = parser.peek();
+        if(tok.type === "|"){
+            parser.accept();
+        }
+        else{
+            canLoop = false;
+        }
+        parser.reject();
+    }
+
+    let generics: GenericType[] = [];
+
+    let lexeme = parser.peek();
+    parser.reject();
+    if (lexeme.type === "<") {
+        generics = parseGenericArgDecl(parser, ctx);
+    }
+
+    let header = parseFnTypeBody(parser, ctx);
+    header.isCoroutine = tok.type === "cfn";
+
+    if(name === null){
+        throw new Error("Unreachable code");
+    }
+    return {fnProto: new FunctionPrototype(loc, name!, header, generics), altNames};
+}
+
+function parseMethodInterface(parser: Parser, ctx: Context): InterfaceMethod[] {
+    let loc = parser.loc();
+
+    //let fnProto = parseFunctionPrototype(parser, ctx);
+    let {imethod, altNames} = parseClassMethodInterface(parser, ctx);
+
+    let methods: InterfaceMethod[] = [imethod];
+
+    let emptyMap: { [key: string]: DataType } = {};
+    for(let altName of altNames) {
+        let newM = imethod.clone(emptyMap);
+        newM.name = altName;
+        methods.push(newM);
+    }
+
+    return methods;
+}
+
+function parseRegularMethodInterface(parser: Parser, ctx: Context): InterfaceMethod {
     let loc = parser.loc();
     let isStatic = false;
     let token = parser.peek();
@@ -381,6 +568,25 @@ function parseMethodInterface(parser: Parser, ctx: Context): InterfaceMethod {
         isStatic,
         fnProto.generics,
     );
+}
+
+function parseClassMethodInterface(parser: Parser, ctx: Context): {
+    imethod: InterfaceMethod,
+    altNames: string[]
+} {
+    let loc = parser.loc();
+
+    let {fnProto, altNames} = parseMethodFunctionPrototype(parser, ctx);
+
+    let imethod = new InterfaceMethod(
+        loc,
+        fnProto.name,
+        fnProto.header,
+        false,
+        fnProto.generics,
+    );
+
+    return {imethod, altNames};
 }
 
 // parses fn body starting from parenthesis "(" <args> ")" ("->" <type>)?
@@ -584,7 +790,7 @@ function parseFFI(parser: Parser, ctx: Context) {
     let canLoop = tok.type != "}";
     let methods: FFIMethodType[] = [];
     while (canLoop) {
-        let method = parseMethodInterface(parser, ctx);
+        let method = parseRegularMethodInterface(parser, ctx);
         // make sure no duplicate methods
         if (methods.find((m) => method.name == m.imethod.name)) {
             parser.customError(
@@ -1056,21 +1262,24 @@ function parseTypeInterface(parser: Parser, ctx: Context): DataType {
     let methods: InterfaceMethod[] = [];
 
     while (canLoop) {
-        let method = parseMethodInterface(parser, ctx);
-        // in interfaces, replace unset with void
-        if (method.header.returnType.kind == "unset") {
-            method.header.returnType = new VoidType(
-                method.header.returnType.location,
-            );
-        }
-        if (method.isStatic) {
-            parser.customError(
-                "Interfaces cannot have static methods",
-                method.location,
-            );
+        let parsedMethods = parseMethodInterface(parser, ctx);
+        for(let method of parsedMethods) {
+            // in interfaces, replace unset with void
+            if (method.header.returnType.kind == "unset") {
+                method.header.returnType = new VoidType(
+                    method.header.returnType.location,
+                );
+            }
+            if (method.isStatic) {
+                parser.customError(
+                    "Interfaces cannot have static methods",
+                    method.location,
+                );
+            }
+
+            methods.push(method);
         }
 
-        methods.push(method);
         lexeme = parser.peek();
         canLoop = lexeme.type != "}";
         parser.reject();
@@ -1206,10 +1415,35 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
                 staticBlockCtx = new Context(tok.location, parser, ctx, { withinClassStaticBlock: true, withinClass: true });
                 staticBlock = parseStatementBlock(parser, staticBlockCtx);
             } else if (tok2.type === "fn") {
-                parser.reject();
-                let method = parseClassMethod(parser, ctx);
-                method.imethod.isStatic = true;
+                parser.rejectOne();// reject the fn
+                parser.accept();// accept the static
+                let parsedMethods = parseClassMethod(parser, ctx);
+                for(let method of parsedMethods) {
+                    if(method.isOverride) {
+                        parser.customError(
+                            `Cannot override method "${method.imethod.name}" in static block`,
+                            method.location,
+                        );
+                    }
+                    method.imethod.isStatic = true;
+                }
 
+                // also comapre it with attributes
+                for(let method of parsedMethods) {
+                    if (attributes.find((a) => a.name == method.imethod.name)) {
+                        parser.customError(
+                            `Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`,
+                        method.location,
+                        );
+                    }
+                    methods.push(method);
+                }
+                
+            }
+        } else if (tok.type === "override") {
+            parser.accept();
+            let parsedMethods = parseClassMethod(parser, ctx);
+            for(let method of parsedMethods) {
                 // also comapre it with attributes
                 if (attributes.find((a) => a.name == method.imethod.name)) {
                     parser.customError(
@@ -1217,20 +1451,23 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
                         method.location,
                     );
                 }
-                
+                method.isOverride = true;
                 methods.push(method);
             }
-        } else if (tok.type === "fn") {
+        }
+        else if (tok.type === "fn") {
             parser.reject();
-            let method = parseClassMethod(parser, ctx);
-            // also comapre it with attributes
-            if (attributes.find((a) => a.name == method.imethod.name)) {
-                parser.customError(
-                    `Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`,
-                    method.location,
-                );
+            let parsedMethods = parseClassMethod(parser, ctx);
+            for(let method of parsedMethods) {
+                // also comapre it with attributes
+                if (attributes.find((a) => a.name == method.imethod.name)) {
+                    parser.customError(
+                        `Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`,
+                        method.location,
+                    );
+                }
+                methods.push(method);
             }
-            methods.push(method);
         } else if (tok.type === "impl") {
             parser.reject();
             let impl = parseClassImplementation(parser, ctx);
@@ -1262,7 +1499,6 @@ function parseTypeImplementation(parser: Parser, ctx: Context): DataType {
     let loc = parser.loc();
     parser.expect("impl");
     let forType: DataType | null = null;
-    let requiredAttributes: ImplementationAttribute[] = [];
 
     // check if we have `for` next
     let tok = parser.peek();
@@ -1398,10 +1634,10 @@ function parseImplementationAttribute(parser: Parser, ctx: Context): Implementat
 function parseClassMethod(
     parser: Parser,
     ctx: Context
-): ClassMethod {
+): ClassMethod[] {
     let loc = parser.loc();
 
-    let fnProto = parseMethodInterface(parser, ctx);
+    let {imethod, altNames} = parseClassMethodInterface(parser, ctx);
     let body: BlockStatement | null = null;
     let expression: Expression | null = null;
 
@@ -1412,7 +1648,8 @@ function parseClassMethod(
     });
     methodScope.location = loc;
 
-    let fn = new ClassMethod(loc, methodScope, fnProto, null, null);
+    let fn = new ClassMethod(loc, methodScope, imethod, null, null);
+
     methodScope.setOwner(fn);
 
     if (parser.peek().type === "=") {
@@ -1429,17 +1666,30 @@ function parseClassMethod(
     fn.body = body;
 
     methodScope.endLocation = parser.loc();
-    return fn;
+
+    let allmethods = [fn];
+
+    let emptyTypeMap: { [key: string]: DataType } = {};
+    for(let altName of altNames) {
+        
+        let newMethod = fn.clone(emptyTypeMap, true);
+        newMethod.imethod.name = altName;
+        allmethods.push(newMethod);
+    }
+
+    return allmethods;
 }
 
 function parseImplementationMethodList(parser: Parser, ctx: Context): ImplementationMethod[] {
     let methods: ImplementationMethod[] = [];
     let tok = parser.peek();
     let canLoop = tok.type !== "}";
-
+    parser.reject();
     while (canLoop) {
-        let method = parseImplementationMethod(parser, ctx);
-        methods.push(method);
+        let parsedMethods = parseImplementationMethod(parser, ctx);
+        for(let method of parsedMethods) {
+            methods.push(method);
+        }
 
         tok = parser.peek();
         canLoop = tok.type !== "}";
@@ -1452,10 +1702,10 @@ function parseImplementationMethodList(parser: Parser, ctx: Context): Implementa
 function parseImplementationMethod(
     parser: Parser,
     ctx: Context
-): ImplementationMethod {
+): ImplementationMethod[] {
     let loc = parser.loc();
 
-    let fnProto = parseMethodInterface(parser, ctx);
+    let fnProtos = parseMethodInterface(parser, ctx);
     let body: BlockStatement | null = null;
     let expression: Expression | null = null;
 
@@ -1466,7 +1716,7 @@ function parseImplementationMethod(
     });
     methodScope.location = loc;
 
-    let fn = new ImplementationMethod(loc, methodScope, fnProto, null, null);
+    let fn = new ImplementationMethod(loc, methodScope, fnProtos[0], null, null);
     methodScope.setOwner(fn);
 
     if (parser.peek().type === "=") {
@@ -1483,7 +1733,20 @@ function parseImplementationMethod(
     fn.body = body;
 
     methodScope.endLocation = parser.loc();
-    return fn;
+
+    if(fnProtos.length == 1) {
+        return [fn];
+    }
+
+    let allMethods: ImplementationMethod[] = [fn];
+    let emptyTypeMap: { [key: string]: DataType } = {};
+    for(let i = 1; i < fnProtos.length; i++) {
+        let newMethod = fn.clone(emptyTypeMap, true);
+        newMethod.imethod.name = fnProtos[i].name;
+        allMethods.push(newMethod);
+    }
+
+    return allMethods;
 }
 
 /**
@@ -1596,6 +1859,15 @@ function parseExpressionOpAssign(
                     loc,
                     indexAccess.lhs,
                     indexAccess.indexes,
+                    right,
+                );
+            }
+            if(left.kind === "reverse_index_access") {
+                let reverseIndexAccess = left as ReverseIndexAccessExpression;
+                return new ReverseIndexSetExpression(
+                    loc,
+                    reverseIndexAccess.lhs,
+                    reverseIndexAccess.index,
                     right,
                 );
             }
@@ -2179,10 +2451,18 @@ function parseExpressionMemberSelection(
         let index =
             lexeme.type == "]" ? [] : parseExpressionList(parser, ctx, opts);
         parser.expect("]");
+
+        let indexExpression: Expression;
+        if((index.length == 1) && (index[0] instanceof UnaryExpression) && (index[0].operator == "-")) {
+            indexExpression = new ReverseIndexAccessExpression(loc, lhs, index[0].expression);
+        }
+        else {
+            indexExpression = new IndexAccessExpression(loc, lhs, index);
+        }
         return parseExpressionMemberSelection(
             parser,
             ctx,
-            new IndexAccessExpression(loc, lhs, index),
+            indexExpression,
             opts,
         );
     }

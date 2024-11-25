@@ -271,12 +271,14 @@ export class CodeSegment {
                 this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
 
+            case BytecodeInstructionType.a_rstoref_reg:
             case BytecodeInstructionType.a_storef_reg:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
 
+            case BytecodeInstructionType.a_rstoref_reg_ptr:
             case BytecodeInstructionType.a_storef_reg_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
@@ -293,12 +295,14 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 return this.writer.push_32(args[2]);
 
+            case BytecodeInstructionType.a_rloadf:
             case BytecodeInstructionType.a_loadf:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
                 this.writer.push_8(args[2]);
                 return this.writer.push_8(args[3]);
 
+            case BytecodeInstructionType.a_rloadf_ptr:
             case BytecodeInstructionType.a_loadf_ptr:
                 this.writer.push_8(args[0]);
                 this.writer.push_8(args[1]);
@@ -430,8 +434,10 @@ export class CodeSegment {
             case BytecodeInstructionType.mod_u16:
             case BytecodeInstructionType.mod_i32:
             case BytecodeInstructionType.mod_u32:
+            case BytecodeInstructionType.mod_f32:
             case BytecodeInstructionType.mod_i64:
             case BytecodeInstructionType.mod_u64:
+            case BytecodeInstructionType.mod_f64:
             case BytecodeInstructionType.lshift_i8:
             case BytecodeInstructionType.lshift_u8:
             case BytecodeInstructionType.lshift_i16:

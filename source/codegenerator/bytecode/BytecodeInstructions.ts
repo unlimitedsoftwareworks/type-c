@@ -235,6 +235,14 @@ export enum BytecodeInstructionType{
     a_storef_reg_ptr,
 
     /**
+     * a_storef_reg_[size] dest: r, index: r, source: r, bytesize: s
+     * stores [size] bytes from register src to field
+     * index of array dest, uses reverse indexing
+     */
+    a_rstoref_reg,
+    a_rstoref_reg_ptr,
+
+    /**
      * a_storef_const_[size] dest: r, index: r, offset: i (8 bytes), bytesize: s
      * stores [size] bytes from constant pool address offset to field
      * value stored in register index of array stored at dest
@@ -249,6 +257,15 @@ export enum BytecodeInstructionType{
      */
     a_loadf,
     a_loadf_ptr,
+
+
+    /**
+     * a_rloadf dest: r, index: r, src: r, bytesize: s
+     * loads [size] bytes from field value stored in register index
+     * of array stored at src to register dest, uses reverse indexing
+     */
+    a_rloadf,
+    a_rloadf_ptr,
 
 
     /**
@@ -424,8 +441,10 @@ export enum BytecodeInstructionType{
     mod_u16,
     mod_i32,
     mod_u32,
+    mod_f32,
     mod_i64,
     mod_u64,
+    mod_f64,
 
     lshift_i8,
     lshift_u8,

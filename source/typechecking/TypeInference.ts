@@ -142,8 +142,9 @@ export function inferFunctionReturnFromHeader(
             // all return types must match the defined return type
             for (let i = 0; i < returnStatements.length; i++) {
                 let retType = returnStatements[i].stmt.getReturnType(returnStatements[i].ctx);
-                if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, returnStatements[i].stmt.location);
+                let res = matchDataTypes(ctx, definedReturnType, retType, false);
+                if (!res.success) {
+                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}. ${res.message}`, returnStatements[i].stmt.location);
                 }
                 
                 returnStatements[i].stmt.returnExpression?.setHint(definedReturnType);
@@ -151,8 +152,9 @@ export function inferFunctionReturnFromHeader(
         }
         else {
             let retType = expr!.inferReturn(ctx, definedReturnType);
-            if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
+            let res = matchDataTypes(ctx, definedReturnType, retType, false);
+            if (!res.success) {
+                ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}. ${res.message}`, expr!.location);
             }
         }
     }
