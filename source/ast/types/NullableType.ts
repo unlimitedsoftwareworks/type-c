@@ -14,6 +14,7 @@ import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import {DataType} from "./DataType";
 import { GenericType } from "./GenericType";
+import { ImplementationType } from "./ImplementationType";
 import { NullType } from "./NullType";
 import { TupleType } from "./TupleType";
 
@@ -42,6 +43,9 @@ export class NullableType extends DataType {
         }
         if (this.type.is(ctx, TupleType)){
             ctx.parser.customError("Tuples cannot be nullable", this.type.location);
+        }
+        if(this.type.is(ctx, ImplementationType)) {
+            ctx.parser.customError("Cannot have a nullable implementation type", this.type.location);
         }
 
         this.type.resolve(ctx);

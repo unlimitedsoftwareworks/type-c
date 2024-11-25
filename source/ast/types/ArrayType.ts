@@ -14,6 +14,7 @@ import {DataType} from "./DataType";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { GenericType } from "./GenericType";
+import { ImplementationType } from "./ImplementationType";
 
 export class ArrayType extends DataType {
     arrayOf: DataType;
@@ -31,6 +32,11 @@ export class ArrayType extends DataType {
         }
 
         this.arrayOf.resolve(ctx);
+
+
+        if(this.arrayOf.is(ctx, ImplementationType)) {
+            ctx.parser.customError("Cannot have an array of implementation types", this.location);
+        }
 
         this.postResolveRecursion();
     }

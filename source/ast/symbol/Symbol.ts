@@ -20,7 +20,9 @@ export type SymbolKind =
     "function_argument" |
     "closure_argument" |
     "class_attribute" |
+    "implementation_attribute" |
     "class_method" |
+    "implementation_method" |
     "function" |
     "lambda" |
     "ffi" |

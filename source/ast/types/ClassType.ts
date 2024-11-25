@@ -20,9 +20,26 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "./DataType"
 import { GenericType } from "./GenericType";
+import { ImplementationType } from "./ImplementationType";
 import { InterfaceType, checkOverloadedMethods } from "./InterfaceType";
 import { UnsetType } from "./UnsetType";
 import { VoidType } from "./VoidType";
+
+export class ClassImplementation {
+    type: DataType;
+    attributes: string[];
+
+    constructor(type: DataType, attributes: string[]) {
+        this.type = type;
+        this.attributes = attributes;
+    }
+
+    clone(genericsTypeMap: { [key: string]: DataType }): ClassImplementation {
+        // we only clone the required interface
+        return new ClassImplementation(this.type.clone(genericsTypeMap), this.attributes);
+    }
+}
+
 
 export class ClassType extends DataType {
     attributes: ClassAttribute[];
@@ -50,12 +67,16 @@ export class ClassType extends DataType {
     // contains all methods, with all concrete types etc
     _allMethods: ClassMethod[] = [];
 
-    constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[]) {
+    impls: ClassImplementation[] = [];
+
+    implsResolved: boolean = false;
+
+    constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[], impls: ClassImplementation[]) {
         super(location, "class");
         this.superTypes = superTypes;
         this.attributes = attributes;
         this.methods = methods;
-
+        this.impls = impls;
         // TODO: check if we need this:
         for (const method of this.methods) {
             method.context.setActiveClass(this);
@@ -94,6 +115,57 @@ export class ClassType extends DataType {
          * 2. Make sure attributes are correctly defined and init methods are correctly defined
          */
         this.checkAttributes(ctx);
+
+
+        /**
+         * Resolve implementations
+         */
+        if(!this.implsResolved) {
+            for (const impl of this.impls) {
+                impl.type.resolve(ctx);
+            if(impl.type.is(ctx, ImplementationType)) {
+                let implType = impl.type.to(ctx, ImplementationType) as ImplementationType;
+                
+                // make sure all required attributes are present
+                if(implType.requiredAttributes.length !== impl.attributes.length) {
+                    ctx.parser.customError(`Expected ${implType.requiredAttributes.length} attributes, got ${impl.attributes.length}`, impl.type.location);
+                }
+
+                let classAttrMap: { [key: string]: ClassAttribute } = {};
+                for (let i = 0; i < implType.requiredAttributes.length; i++) {
+                    let classAttr = this.attributes.find(e => e.name === impl.attributes[i]);
+                    let implAttr = implType.requiredAttributes[i];
+
+                    if(classAttr === undefined) {
+                        ctx.parser.customError(`Attribute ${impl.attributes[i]} is required by the implementation but not defined in the class`, impl.type.location);
+                    }
+                    // make sure they match
+                    let res = matchDataTypes(ctx, classAttr.type, implAttr.type, true);
+                    if(!res.success) {
+                        ctx.parser.customError(`Attribute ${impl.attributes[i]} types do not match: ${res.message}`, impl.type.location);
+                    }
+
+                    classAttrMap[implAttr.name] = classAttr;
+                }
+
+                // now for the methods
+                for (const method of implType.implementedMethods) {
+                    let classMethod = method.toClassMethod(classAttrMap);
+                    classMethod.context.setActiveClass(this);
+                    if (classMethod.body) {
+                        classMethod.body.context.overrideParent(classMethod.context);
+                    }
+                    this.methods.push(classMethod);
+                }
+
+            }
+            else {
+                ctx.parser.customError(`Expected implementation type, got ${impl.type.shortname()}`, impl.type.location);
+                }
+            }
+        }
+
+
         this.checkInitMethods(ctx);
 
         /**
@@ -562,7 +634,8 @@ export class ClassType extends DataType {
             this.location,
             this.superTypes.map(e => e.clone(genericsTypeMap)),
             this.attributes.map(e => e.clone(genericsTypeMap)),
-            this.methods.filter(e => !e.imethod.isStatic).map(e => e.clone(genericsTypeMap))
+            this.methods.filter(e => !e.imethod.isStatic).map(e => e.clone(genericsTypeMap)),
+            this.impls.map(e => e.clone(genericsTypeMap))
         );
 
         // make sure each method has current class as active class
@@ -573,6 +646,8 @@ export class ClassType extends DataType {
                 stmt.ctx.setActiveClass(clone);
             })
         })
+
+        clone.implsResolved = this.implsResolved;
 
         return clone;
     }

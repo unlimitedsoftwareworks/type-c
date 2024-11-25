@@ -74,7 +74,7 @@ import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { ArrayType } from "../ast/types/ArrayType";
 import { BasicType, BasicTypeKind } from "../ast/types/BasicType";
 import { BooleanType } from "../ast/types/BooleanType";
-import { ClassType } from "../ast/types/ClassType";
+import { ClassImplementation, ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { EnumField, EnumTargetType, EnumType } from "../ast/types/EnumType";
 import { FFIMethodType } from "../ast/types/FFIMethodType";
@@ -120,6 +120,9 @@ import { MutateExpression } from "../ast/expressions/MutateExpression";
 import { UnreachableExpression } from "../ast/expressions/UnreachableExpression";
 import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
 import { BasePackage } from "../ast/BasePackage";
+import { ImplementationAttribute } from "../ast/other/ImplementationAttribute";
+import { ImplementationMethod } from "../ast/other/ImplementationMethod";
+import { ImplementationType } from "../ast/types/ImplementationType";
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -846,6 +849,10 @@ function parseTypePrimary(parser: Parser, ctx: Context): DataType {
         return parseTypeClass(parser, ctx);
     }
 
+    if (lexeme.type === "impl") {
+        parser.reject();
+        return parseTypeImplementation(parser, ctx);
+    }
     if (lexeme.type === "coroutine") {
         parser.reject();
         return parseTypeCoroutine(parser, ctx);
@@ -1093,6 +1100,40 @@ function parseTypeInterface(parser: Parser, ctx: Context): DataType {
     return new InterfaceType(loc, methods, superTypes as ReferenceType[]);
 }
 
+
+// format 'impl' <reference type> '(' attribute_names* ')'
+function parseClassImplementation(parser: Parser, ctx: Context): ClassImplementation {
+    let loc = parser.loc();
+    parser.expect("impl");
+    let type = parseTypeReference(parser, ctx);
+    parser.expect("(");
+    
+    let tok = parser.peek();
+    let canLoop = tok.type !== ")";
+    let attributes: string[] = [];
+
+    parser.reject();
+
+    while(canLoop) {
+        let id = parser.expect("identifier");
+        attributes.push(id.value);
+        tok = parser.peek();
+        if(tok.type === ",") {
+            parser.accept();
+        }
+        else {
+            parser.reject();
+        }
+
+        tok = parser.peek();
+        canLoop = tok.type !== ")";
+        parser.reject();
+    }
+
+    parser.expect(")");
+    return new ClassImplementation(type, attributes);
+}
+
 function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     let loc = parser.loc();
     parser.expect("class");
@@ -1110,6 +1151,7 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
     let attributes: ClassAttribute[] = [];
     let methods: ClassMethod[] = [];
     let staticBlock: BlockStatement | null = null;
+    let impls: ClassImplementation[] = [];
 
     while (canLoop) {
         let tok = parser.peek();
@@ -1169,6 +1211,10 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
                 );
             }
             methods.push(method);
+        } else if (tok.type === "impl") {
+            parser.reject();
+            let impl = parseClassImplementation(parser, ctx);
+            impls.push(impl);
         } else {
             parser.reject();
             canLoop = false;
@@ -1182,7 +1228,36 @@ function parseTypeClass(parser: Parser, ctx: Context): ClassType {
         superTypes as ReferenceType[],
         attributes,
         methods,
+        impls,
     );
+}
+
+function parseTypeImplementation(parser: Parser, ctx: Context): DataType {
+    let loc = parser.loc();
+    parser.expect("impl");
+    let forType: DataType | null = null;
+    let requiredAttributes: ImplementationAttribute[] = [];
+
+    // check if we have `for` next
+    let tok = parser.peek();
+    if (tok.type === "for") {
+        parser.accept();
+        forType = parseType(parser, ctx);
+    }
+    else {
+        parser.reject();
+    }
+
+    parser.expect("(");
+    let attributes = parseImplementationAttributeList(parser, ctx);
+    parser.expect(")");
+
+    parser.expect("{");
+    let methods = parseImplementationMethodList(parser, ctx);
+    parser.expect("}");
+
+    let t = new ImplementationType(loc, attributes, forType, methods);
+    return t;
 }
 
 function parseTypeFunction(parser: Parser, ctx: Context): DataType {
@@ -1234,10 +1309,70 @@ function parseClassAttribute(parser: Parser, ctx: Context): ClassAttribute {
     return new ClassAttribute(loc, id.value, type, isStatic, isConst);
 }
 
+function parseImplementationAttributeList(parser: Parser, ctx: Context): ImplementationAttribute[] {
+    let attributes: ImplementationAttribute[] = [];
+    let tok = parser.peek();
+    let canLoop = tok.type !== ")";
+
+    while (canLoop) {
+        let attr = parseImplementationAttribute(parser, ctx);
+        attributes.push(attr);
+        tok = parser.peek();
+        
+        if(tok.type === ",") {
+            parser.accept();
+        }
+        else {
+            parser.reject();
+        }
+
+        tok = parser.peek();
+        canLoop = tok.type !== ")";
+        parser.reject();
+    }
+
+    return attributes;
+}
+
+function parseImplementationAttribute(parser: Parser, ctx: Context): ImplementationAttribute {
+    let loc = parser.loc();
+    let tok = parser.peek();
+
+    // we have const, static, static const or const static
+    let isStatic = tok.type === "static";
+    let isConst = tok.type === "const";
+
+    if (isStatic) {
+        parser.accept();
+        let tok2 = parser.peek();
+        if (tok2.type === "const") {
+            parser.accept();
+            isConst = true;
+        } else {
+            parser.reject();
+        }
+    } else if (isConst) {
+        parser.accept();
+        let tok2 = parser.peek();
+        if (tok2.type === "static") {
+            parser.accept();
+            isStatic = true;
+        } else {
+            parser.reject();
+        }
+    } else {
+        parser.reject();
+    }
+
+    let id = parser.expect("identifier");
+    parser.expect(":");
+    let type = parseType(parser, ctx);
+    return new ImplementationAttribute(loc, id.value, type, isStatic, isConst);
+}
+
 function parseClassMethod(
     parser: Parser,
-    ctx: Context,
-    classOrProcessMethod = "class",
+    ctx: Context
 ): ClassMethod {
     let loc = parser.loc();
 
@@ -1247,12 +1382,66 @@ function parseClassMethod(
 
     // create method ctx and capture return statements
     let methodScope = new Context(loc, parser, ctx, {
-        withinClass: classOrProcessMethod == "class",
+        withinClass: true,
         withinFunction: true,
     });
     methodScope.location = loc;
 
     let fn = new ClassMethod(loc, methodScope, fnProto, null, null);
+    methodScope.setOwner(fn);
+
+    if (parser.peek().type === "=") {
+        parser.accept();
+        expression = parseExpression(parser, methodScope, {
+            allowNullable: false,
+        });
+    } else {
+        parser.reject();
+        body = parseStatementBlock(parser, methodScope);
+    }
+
+    fn.expression = expression;
+    fn.body = body;
+
+    methodScope.endLocation = parser.loc();
+    return fn;
+}
+
+function parseImplementationMethodList(parser: Parser, ctx: Context): ImplementationMethod[] {
+    let methods: ImplementationMethod[] = [];
+    let tok = parser.peek();
+    let canLoop = tok.type !== "}";
+
+    while (canLoop) {
+        let method = parseImplementationMethod(parser, ctx);
+        methods.push(method);
+
+        tok = parser.peek();
+        canLoop = tok.type !== "}";
+        parser.reject();
+    }
+
+    return methods;
+}
+
+function parseImplementationMethod(
+    parser: Parser,
+    ctx: Context
+): ImplementationMethod {
+    let loc = parser.loc();
+
+    let fnProto = parseMethodInterface(parser, ctx);
+    let body: BlockStatement | null = null;
+    let expression: Expression | null = null;
+
+    // create method ctx and capture return statements
+    let methodScope = new Context(loc, parser, ctx, {
+        withinImplementation: true,
+        withinFunction: true,
+    });
+    methodScope.location = loc;
+
+    let fn = new ImplementationMethod(loc, methodScope, fnProto, null, null);
     methodScope.setOwner(fn);
 
     if (parser.peek().type === "=") {
@@ -1920,10 +2109,23 @@ function parseExpressionMemberSelection(
             parser.customError("Expected identifier", rhs.location);
         }
 
+        let memberAccess = new MemberAccessExpression(loc, lhs, rhs, lexeme.type === "?.");
+
+        if(ctx.env.withinImplementation) {
+            // we need to register the member access expression as a thisMemberAccessExpression
+            // for the current implementation method
+            let implMethod = ctx.getActiveImplementationMethod();
+            // sanity check
+            if(!(implMethod instanceof ImplementationMethod)) {
+                throw new Error("Unreachable");
+            }
+            implMethod.thisMemberAccessExpression.push(memberAccess);
+        }
+        
         return parseExpressionMemberSelection(
             parser,
             ctx,
-            new MemberAccessExpression(loc, lhs, rhs, lexeme.type === "?."),
+            memberAccess,
             opts,
         );
     }
