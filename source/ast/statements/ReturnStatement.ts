@@ -57,7 +57,8 @@ export class ReturnStatement extends Statement {
     clone(typeMap: {[key: string]: DataType}, ctx: Context): ReturnStatement {
         let newExpression = this.returnExpression ? this.returnExpression.clone(typeMap, ctx) : null;
         let newReturn = new ReturnStatement(this.location, newExpression);
-        ctx.findParentFunction()?.returnStatements.push({ctx: ctx, stmt: newReturn});
+        let p = ctx.findParentFunction()
+        p?.returnStatements.push({ctx: ctx, stmt: newReturn});
         return newReturn;
     }
 }

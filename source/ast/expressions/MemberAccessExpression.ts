@@ -445,11 +445,24 @@ export class MemberAccessExpression extends Expression {
         typeMap: { [key: string]: DataType },
         ctx: Context,
     ): MemberAccessExpression {
-        return new MemberAccessExpression(
+        let expr = new MemberAccessExpression(
             this.location,
             this.left.clone(typeMap, ctx),
             this.right.clone(typeMap, ctx),
             this.isNullable,
         );
+
+        if(this.left instanceof ThisExpression) {
+            /**
+             * While we do remove withinImplementation when we clone the context,
+             * the child context still has it set to true, so we check if we are within a class to
+             */
+            if(ctx.env.withinImplementation && !ctx.env.withinClass) {
+                let method = ctx.getActiveImplementationMethod()
+                method!.thisMemberAccessExpression.push(expr);
+            }
+        }
+
+        return expr;
     }
 }

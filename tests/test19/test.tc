@@ -1,34 +1,237 @@
-
-
-from std.string import String
-/*
 from std.io import println
 from std.unit.test import TestUnit, UnitSet
-*/
 
-type RandomAssType = class {
-    let static x: u32
-    let static y: u32
+type Callable<T> = interface {
+    fn __call__() -> T
+}
 
-    fn __init__(){
-
+type DefaultCallBehavior<T> = impl(
+    value: T
+) {
+    fn __call__() -> T {
+        return this.value
     }
 }
 
-type CustomStruct = {name: String, age: u32, data: struct {
-    x: u32, y: u32
-}?}
+type Placeholder<T> = class {
+    let v: T  
+    
+    fn init(mut v: T) {
+        this.v = v
+    }
 
-fn callMe<T>(x: T) {
-    return 1 as T
+    impl DefaultCallBehavior<T>(v)
 }
 
-let zzz = callMe(1 as u32)
+fn test_callable_placeholder(rn: TestUnit) {
+    let p = new Placeholder<u32>(42)
+    let v = p()
+    rn.assert_eq(v, 42)
 
-let z : CustomStruct? = {name: "Brian", age: 13, data: null}
+    let p2 = new Placeholder<String>("Haha")
+    let v2 = p2()
+    rn.assert_obj_eq(v2, "Haha")
+}
 
-let a: u32 = z?.age ?? 0
+type Vec3 = class {
+    let x: f32
+    let y: f32
+    let z: f32
 
-let b = z?.age ?? z?.age ?? 0
+    fn init(x: f32, y: f32, z: f32) {
+        this.x = x
+        this.y = y
+        this.z = z
+    }
 
-let d = z?.name
+    fn __add__ (v: Vec3) -> Vec3 {
+        return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z)
+    }
+
+    fn __mul__ (v: Vec3) -> Vec3 {
+        return new Vec3(this.x * v.x, this.y * v.y, this.z * v.z)
+    }
+    
+    fn eq(v: Vec3) -> bool {
+        return (this.x == v.x) && (this.y == v.y) && (this.z == v.z)
+    }
+
+    fn toString() -> String {
+        return "Vec3(" + this.x + ", " + this.y + ", " + this.z + ")"
+    }
+}
+
+type Object3D = interface {
+    fn getRotation() -> Vec3
+    fn setRotation(mut rot: Vec3) -> void
+    fn getPosition() -> Vec3
+    fn setPosition(pos: Vec3) -> void
+    fn getScale() -> Vec3
+    fn setScale(scale: Vec3) -> void
+
+    fn getWorldPosition() -> Vec3
+    fn getWorldRotation() -> Vec3
+    fn getWorldScale() -> Vec3
+}
+
+namespace traits {
+    type Default3DPropsAccessTrait = impl (
+        pos: Vec3,
+        rot: Vec3,
+        slx: Vec3
+    ) {
+        fn getRotation() -> Vec3 = this.rot
+        fn getPosition() -> Vec3 = this.pos
+        fn getScale() -> Vec3 = this.slx
+
+        fn setRotation(mut rot: Vec3) -> void {
+            this.rot = rot
+        }
+
+        fn setPosition(mut pos: Vec3) -> void {
+            this.pos = pos
+        }
+
+        fn setScale(mut scale: Vec3) -> void {
+            this.slx = scale
+        }
+    }
+
+    type DefaultWorldTrait = impl for interface {
+        fn getPosition() -> Vec3
+        fn getRotation() -> Vec3
+        fn getScale() -> Vec3
+    } (
+        parent: Object3D?
+    ) {
+        fn getWorldPosition() -> Vec3 {
+            if(this.parent == null){
+                return this.getPosition()
+            }
+            return this.getPosition() + this.parent!.getWorldPosition()
+        }
+
+        fn getWorldRotation() -> Vec3 {
+            if(this.parent == null){
+                return this.getRotation()
+            }
+            return this.getRotation() + this.parent!.getWorldRotation()
+        }
+
+        fn getWorldScale() -> Vec3 {
+            if(this.parent == null){
+                return this.getScale()
+            }
+            return this.getScale() * this.parent!.getWorldScale()
+        }
+    }
+}
+
+type StaticMesh = class {
+    let position: Vec3
+    let rotation: Vec3
+    let scale: Vec3
+    let obj_parent: Object3D?
+
+    impl traits.Default3DPropsAccessTrait(position, rotation, scale)
+    impl traits.DefaultWorldTrait(obj_parent)
+
+    fn init(mut position: Vec3, mut rotation: Vec3, mut scale: Vec3) {
+        this.position = position
+        this.rotation = rotation
+        this.scale = scale
+        this.obj_parent = null
+    }
+}
+
+type DefaultGenericImpl<T> = impl (
+        value: T
+    ) {
+        fn getValue() -> T {
+            return this.value
+        }
+
+        fn setValue(mut newValue: T) -> void {
+            this.value = newValue
+        }
+    }
+
+type GenericContainer<T> = class {
+    let value: T
+
+    impl DefaultGenericImpl<T>(value)
+
+    fn init(mut value: T) {
+        this.value = value
+    }
+}
+
+fn test_generic_container(rn: TestUnit) {
+    let container = new GenericContainer<u32>(100)
+    rn.assert_eq(container.getValue(), 100)
+
+    container.setValue(200)
+    rn.assert_eq(container.getValue(), 200)
+
+    let strContainer = new GenericContainer<String>("Hello")
+    rn.assert_obj_eq(strContainer.getValue(), "Hello")
+
+    strContainer.setValue("World")
+    rn.assert_obj_eq(strContainer.getValue(), "World")
+}
+
+type GenericMath<T> = impl (
+    value1: T,
+    value2: T
+) {
+    fn addValues() -> T {
+        return this.value1 + this.value2
+    }
+}
+
+type MathOperation<T> = class {
+    let value1: T
+    let value2: T
+
+    impl GenericMath<T>(value1, value2)
+
+    fn init(mut value1: T, mut value2: T) {
+        this.value1 = value1
+        this.value2 = value2
+    }
+}
+
+fn test_generic_math(rn: TestUnit) {
+    let op = new MathOperation<Vec3>(new Vec3(1.0f, 2.0f, 3.0f), new Vec3(4.0f, 5.0f, 6.0f))
+    let result = op.addValues()
+    rn.assert_obj_eq(result, new Vec3(5.0f, 7.0f, 9.0f))
+}
+
+fn test_static_mesh(rn: TestUnit) {
+    let pos = new Vec3(1.0f, 2.0f, 3.0f)
+    let rot = new Vec3(4.0f, 5.0f, 6.0f)
+    let scale = new Vec3(7.0f, 8.0f, 9.0f)
+
+    let mesh = new StaticMesh(pos, rot, scale)
+    rn.assert_obj_eq(mesh.getPosition(), pos)
+    rn.assert_obj_eq(mesh.getRotation(), rot)
+    rn.assert_obj_eq(mesh.getScale(), scale)
+
+    let mesh2 = new StaticMesh(new Vec3(5.0f, 10.0f, -10.0f), new Vec3(4.0f, 5.0f, 6.0f), new Vec3(7.0f, 8.0f, 9.0f))
+    mesh.obj_parent = mesh2
+
+    let worldPos = mesh.getWorldPosition()
+    let expectedWorldPos = new Vec3(6.0f, 12.0f, -7.0f)
+    rn.assert_obj_eq(worldPos, expectedWorldPos)
+}
+
+fn main() -> u32 {
+    let test_1 = new TestUnit("test callable placeholder", "Tests callable behavior with generics", test_callable_placeholder)
+    let test_2 = new TestUnit("test static mesh", "Tests composable 3D object properties", test_static_mesh)
+    let test_3 = new TestUnit("test generic container", "Tests generic implementation with set and get", test_generic_container)
+    let test_4 = new TestUnit("test generic math", "Tests generic implementation with math operations", test_generic_math)
+
+    let set = new UnitSet("Impl Feature Test Suite", "Tests implementation of composable behaviors using impl", [test_1, test_2, test_3, test_4])
+
+    return set.run()
+}

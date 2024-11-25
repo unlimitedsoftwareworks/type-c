@@ -17,8 +17,10 @@ import { BasePackage } from "../BasePackage";
 import { DoExpression } from "../expressions/DoExpression";
 import { LambdaExpression } from "../expressions/LambdaExpression";
 import { ClassMethod } from "../other/ClassMethod";
+import { ImplementationMethod } from "../other/ImplementationMethod";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
+import { ImplementationType } from "../types/ImplementationType";
 import { DeclaredFunction } from "./DeclaredFunction";
 import { DeclaredNamespace } from "./DeclaredNamespace";
 import { DeclaredType } from "./DeclaredType";
@@ -35,6 +37,7 @@ export type SymbolScope = "local" | "global" | "upvalue";
 
 export type ContextEnvironment = {
     withinClass: boolean;
+    withinImplementation: boolean;
     withinFunction: boolean;
     withinLoop: boolean;
     loopContext: boolean;
@@ -45,6 +48,7 @@ type ContextOwner =
     | BasePackage
     | LambdaExpression
     | ClassMethod
+    | ImplementationMethod
     | DeclaredFunction
     | DoExpression
     | DeclaredNamespace
@@ -77,6 +81,11 @@ export class Context {
      * If the context is within a class, we need this when we are resolving `this` for example
      */
     private activeClass: ClassType | null = null;
+
+    /**
+     * If the context is within an implementation, we need this when we are resolving `this` for example
+     */
+    private activeImplementation: ImplementationType | null = null;
 
     /**
      * Global context pointer,
@@ -113,6 +122,7 @@ export class Context {
         loopContext: false, // indicates if this context is a loop context, used for break/continue.
         // only set to true in the context that belongs to a loop and not the subsequent children contexts
         withinDoExpression: false,
+        withinImplementation: false,
     };
 
     /**
@@ -144,8 +154,8 @@ export class Context {
             this.env.withinFunction = parent.env.withinFunction || false;
             this.env.withinLoop = parent.env.withinLoop || false;
             this.env.loopContext = parent.env.loopContext || false;
-            this.env.withinDoExpression =
-                parent.env.withinDoExpression || false;
+            this.env.withinDoExpression = parent.env.withinDoExpression || false;
+            this.env.withinImplementation = parent.env.withinImplementation || false;
         }
 
         // override with new env
@@ -153,16 +163,16 @@ export class Context {
         this.env.withinFunction = env.withinFunction || this.env.withinFunction;
         this.env.withinLoop = env.withinLoop || this.env.withinLoop;
         this.env.loopContext = env.loopContext || this.env.loopContext;
-        this.env.withinDoExpression =
-            env.withinDoExpression || this.env.withinDoExpression;
-
+        this.env.withinDoExpression = env.withinDoExpression || this.env.withinDoExpression;
+        this.env.withinImplementation = env.withinImplementation || this.env.withinImplementation;
         //Context._contextMap.set(this.uuid, this);
 
-        if (parser.mode == "intellisense") {
-            if (parent) {
-                parent._children.push(this);
-            }
+        //if (parser.mode == "intellisense") {
+        // sadly its now needed T.T
+        if (parent) {
+            parent._children.push(this);
         }
+        //}
     }
 
     setOwner(owner: ContextOwner) {
@@ -273,10 +283,14 @@ export class Context {
 
     findParentFunction():
         | DeclaredFunction
+        | ImplementationMethod
         | LambdaExpression
         | ClassMethod
         | null {
         if (this.owner instanceof DeclaredFunction) {
+            return this.owner;
+        }
+        if (this.owner instanceof ImplementationMethod) {
             return this.owner;
         }
         if (this.owner instanceof ClassMethod) {
@@ -432,12 +446,36 @@ export class Context {
         }
     }
 
+    setActiveImplementation(impl: ImplementationType | null) {
+        this.activeImplementation = impl;
+    }
+
+    getActiveImplementation(): ImplementationType | null {
+        if (this.activeImplementation) {
+            return this.activeImplementation;
+        }
+        if (this.parent) {
+            return this.parent.getActiveImplementation();
+        }
+        return null;
+    }
+
     getActiveMethod(): ClassMethod | null {
         if (this.owner instanceof ClassMethod) {
             return this.owner;
         }
         if (this.parent) {
             return this.parent.getActiveMethod();
+        }
+        return null;
+    }
+
+    getActiveImplementationMethod(): ImplementationMethod | null {
+        if (this.owner instanceof ImplementationMethod) {
+            return this.owner;
+        }
+        if (this.parent) {
+            return this.parent.getActiveImplementationMethod();
         }
         return null;
     }
@@ -518,7 +556,7 @@ export class Context {
 
     registerThisAsUpvalue(
         thisUp: Symbol,
-    ): ClassMethod | LambdaExpression | DeclaredFunction | null {
+    ): ClassMethod | LambdaExpression | DeclaredFunction | ImplementationMethod | null {
         if (this.owner instanceof ClassMethod) {
             return this.owner;
         } else {
@@ -572,6 +610,15 @@ export class Context {
         return false;
     }
 
+    // used by ImplementationMethod to remove the implementation env
+    // and set the class env instead
+    removeImplementationEnv() {
+        this.env.withinClass = true;
+        this.env.withinImplementation = false;
+        for (const child of this._children) {
+            child.removeImplementationEnv();
+        }
+    }
     /**
      * Intellisense API
      */

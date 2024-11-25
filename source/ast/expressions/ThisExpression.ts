@@ -58,7 +58,7 @@ export class ThisExpression extends Expression {
             return this.inferredType;
         }
         else {
-            ctx.parser.customError(`'this' can only be used within a class or thread`, this.location);
+            ctx.parser.customError(`'this' can only be used within a class`, this.location);
         }
     }
 

@@ -2844,7 +2844,8 @@ export class FunctionGenerator {
                 "debug",
                 "unary minus expression, replacing with subtraction with 0",
             );
-            this.i(constType(lhsType), zeroTmp, 0);
+            // must set entire register
+            this.i("const_u64", zeroTmp, 0);
             this.i(
                 getUnaryInstruction(expr.inferredType as BasicType, "-"),
                 resTmp,

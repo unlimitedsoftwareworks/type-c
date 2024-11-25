@@ -1244,7 +1244,7 @@ export class BytecodeGenerator {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                this.emit(BytecodeInstructionType.sub_u32, dest, src1, src2);
+                this.emit(BytecodeInstructionType.sub_f32, dest, src1, src2);
             }
             else if (instruction.type == "sub_i64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -1455,44 +1455,44 @@ export class BytecodeGenerator {
             }
             else if (instruction.type == "lshift_i16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i16, dest, src1, src2);
             }
             else if (instruction.type == "lshift_i32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i32, dest, src1, src2);
             }
             else if (instruction.type == "lshift_i64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i64, dest, src1, src2);
             }
             else if (instruction.type == "rshift_i8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i8, dest, src1, src2);
             }
             else if (instruction.type == "rshift_i16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i16, dest, src1, src2);
             }
             else if (instruction.type == "rshift_i32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i32, dest, src1, src2);
             }
             else if (instruction.type == "rshift_i64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[3] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i64, dest, src1, src2);
             }
 
@@ -1504,72 +1504,72 @@ export class BytecodeGenerator {
             else if (instruction.type == "band_i8" || instruction.type == "band_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
-                let src2 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.band_8, dest, src1, src2);
             }
             else if (instruction.type == "band_i16" || instruction.type == "band_u16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.band_16, dest, src1, src2);
             }
             else if (instruction.type == "band_i32" || instruction.type == "band_u32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.band_32, dest, src1, src2);
             }
             else if (instruction.type == "band_i64" || instruction.type == "band_u64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.band_64, dest, src1, src2);
             }
             else if (instruction.type == "bor_i8" || instruction.type == "bor_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bor_8, dest, src1, src2);
             }
             else if (instruction.type == "bor_i16" || instruction.type == "bor_u16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bor_16, dest, src1, src2);
             }
             else if (instruction.type == "bor_i32" || instruction.type == "bor_u32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bor_32, dest, src1, src2);
             }
             else if (instruction.type == "bor_i64" || instruction.type == "bor_u64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bor_64, dest, src1, src2);
             }
             else if (instruction.type == "bxor_i8" || instruction.type == "bxor_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bxor_8, dest, src1, src2);
             }
             else if (instruction.type == "bxor_i16" || instruction.type == "bxor_u16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bxor_16, dest, src1, src2);
             }
             else if (instruction.type == "bxor_i32" || instruction.type == "bxor_u32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bxor_32, dest, src1, src2);
             }
             else if (instruction.type == "bxor_i64" || instruction.type == "bxor_u64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                let src1 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.bxor_64, dest, src1, src2);
             }

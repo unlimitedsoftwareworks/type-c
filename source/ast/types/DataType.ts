@@ -58,8 +58,8 @@ export type DataTypeKind =
     "meta_enum" | // MetaStructType, used for meta structs
     "tuple" | // TupleType
     "coroutine"| // CoroutineType, representing a coroutine instance
-    "cofn"; // CoFunctionType, representing a coroutine function
-
+    "cofn" | // CoFunctionType, representing a coroutine function
+    "implementation"; // ImplementationType, representing an implementation
 
 export class DataType {
     kind: DataTypeKind;
