@@ -873,10 +873,10 @@ export function areSignaturesIdentical(ctx: Context, a: InterfaceMethod, b: Inte
     }
 
     // return type do not matter when overloading methods, so we check parameter types
-
+    /*
     let aGenerics = a.generics.map(e => e.name);
     let bGenerics = b.generics.map(e => e.name);
-
+    */
     for (let i = 0; i < a.header.parameters.length; i++) {
         if (!areDataTypesIdentical(ctx, a.header.parameters[i].type, b.header.parameters[i].type)) {
             return false;
