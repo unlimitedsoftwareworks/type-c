@@ -1,6 +1,6 @@
 {
     "name": "@unlimitedsoftwareworks/type-c",
-    "version": "1.0.6-dev",
+    "version": "1.0.7-dev",
     "description": "Type-C Programming Language Compiler",
     "main": "dist/compiler.js",
     "types": "dist/compiler.d.ts",
