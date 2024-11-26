@@ -152,8 +152,8 @@ export class MemberAccessExpression extends Expression {
                     ],
                     new ArrayType(this.location, arrayType.arrayOf),
                 );
-                // a new array is not constant
-                this.isConstant = false;
+                // a new array inherits the constness of the original array
+                this.isConstant = this.left.isConstant;
                 this.checkHint(ctx);
                 return this.checkNullableAndReturn(ctx)
             }
