@@ -32,14 +32,14 @@ type DataArray<T> = class {
      */
     fn push(v: T) -> void {
         this.data.extend(this.data.length+1)
-        this.data[this.data.length-1] = v
+        this.data[-1] = v
     }
 
     /**
      * @description Returns the element at the given index
      */
     fn pop() -> T {
-        let v = this.data[this.data.length-1]
+        let v = this.data[-1]
         this.data.extend(this.data.length-1)
         return v
     }

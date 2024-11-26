@@ -31,7 +31,7 @@ type Array<T> = class Iterable<T> {
     }
 
     fn pop(keep: bool) {
-        let res = this.data[this.data.length-1]
+        let res = this.data[-1]
 
         if !keep {
             this.data.extend(this.data.length-1)
