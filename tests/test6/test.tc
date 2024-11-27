@@ -25,7 +25,7 @@ type Map<K, V> = class {
 
         this.array.extend(this.array.length+1)
 
-        this.array[this.array.length-1] = ({key: key, value: value} as KeyValuePair<K, V>)
+        this.array[-1] = ({key: key, value: value} as KeyValuePair<K, V>)
     }
 
     fn get(key: K) -> V? {
