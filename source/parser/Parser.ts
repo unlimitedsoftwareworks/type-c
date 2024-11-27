@@ -19,6 +19,7 @@ import * as parsefuncs from "./parsefuncs";
 import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarationStatement";
 import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarationStatement";
 import { Context } from "../ast/symbol/Context";
+import { TokenType } from "../lexer/TokenType";
 
 /**
  * A parser mode is either "compiler" or "intellisense".
@@ -124,6 +125,22 @@ export class Parser {
     expect(type: string | string[]): Token {
         let t = typeof type === "string" ? [type] : type;
         let token = this.peek();
+
+        if(type == ">"){
+            if(token.type == ">"){
+                this.accept();
+                return token;
+            }
+            else if (token.type == ">>"){
+                // accept and and insert a new token
+                let t1 = new Token(TokenType.TOK_GREATER, ">", token.location.pos+1, token.location.line, token.location.col+1, token.location.file)
+                let t2 = new Token(TokenType.TOK_GREATER, ">", token.location.pos, token.location.line, token.location.col, token.location.file)
+                this.accept();
+                this.tokenStack.push(t2);
+                return t1;
+            }
+        }
+
         if (this.mode == "compiler") {
             this.assert(
                 t.includes(token.type),
