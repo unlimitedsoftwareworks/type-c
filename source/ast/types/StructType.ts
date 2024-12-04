@@ -23,13 +23,24 @@ export class StructField {
     type: DataType;
     location: SymbolLocation;
 
-    static globalFieldID = 0;
-    static fieldIdMap: { [key: string]: number } = {};
+    static globalFieldID = 1;
+    static fieldIdMap: { [key: string]: number } = {
+        "$tag": 0
+    };
 
     static getFieldID(name: string): number {
         if (StructField.fieldIdMap[name] == undefined) {
             throw new Error(`Field ${name} does not exist`);
         }
+        return StructField.fieldIdMap[name];
+    }
+
+    static registerFieldID(name: string): number {
+        if (StructField.fieldIdMap[name] != undefined){
+            return StructField.fieldIdMap[name];
+        }
+        StructField.fieldIdMap[name] = StructField.globalFieldID;
+        StructField.globalFieldID++;
         return StructField.fieldIdMap[name];
     }
 
@@ -39,10 +50,7 @@ export class StructField {
         this.name = name;
         this.type = type;
 
-        if (StructField.fieldIdMap[name] == undefined) {
-            StructField.fieldIdMap[name] = StructField.globalFieldID;
-            StructField.globalFieldID++;
-        }
+        StructField.registerFieldID(name);
     }
 
     clone(typeMap: { [key: string]: DataType; }): StructField {
@@ -165,10 +173,47 @@ export class StructType extends DataType {
         return fieldNum*alignment;
     }
 
-    toSortedStruct(){
-        let sortedFields = this.fields.sort((a, b) => a.getFieldID() - b.getFieldID());
-        return new StructType(this.location, sortedFields);
+    toSortedStruct() {
+        // Step 1: Sort the fields by their FieldID
+        const sortedFields = this.fields.sort((a, b) => a.getFieldID() - b.getFieldID());
+        
+        // Step 2: Prepare the Eytzinger array transformation
+        const eytzingerFields = this.convertToEytzinger(sortedFields);
+    
+        // Debug: Log the FieldIDs in the Eytzinger order
+        //console.log(eytzingerFields.map(f => f.getFieldID()));
+    
+        // Step 3: Return a new StructType with the transformed fields
+        return new StructType(this.location, eytzingerFields);
     }
+    
+    // Helper method to perform the Eytzinger transformation
+    convertToEytzinger(sortedFields: StructField[]): StructField[] {
+        const eytzingerArray = new Array(sortedFields.length + 1); // 1-based indexing
+        this.fillEytzinger(sortedFields, eytzingerArray, 0, 1); // Start with root at index 1
+        return eytzingerArray.slice(1); // Convert to 0-based indexing
+    }
+    
+    // Recursive helper to fill the Eytzinger array
+    fillEytzinger(
+        sortedFields: StructField[], 
+        eytzingerArray: StructField[], 
+        i: number, 
+        k: number
+    ): number {
+        if (k < eytzingerArray.length) { // Ensure the current index is within bounds
+            // Fill the left subtree
+            i = this.fillEytzinger(sortedFields, eytzingerArray, i, 2 * k);
+    
+            // Assign the current element to the Eytzinger array
+            eytzingerArray[k] = sortedFields[i++];
+    
+            // Fill the right subtree
+            i = this.fillEytzinger(sortedFields, eytzingerArray, i, 2 * k + 1);
+        }
+        return i; // Return the updated index in sortedFields
+    }
+    
 
     getFieldPointerBitMask(): number {
         let mask = 0;
