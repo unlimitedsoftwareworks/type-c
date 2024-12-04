@@ -49,6 +49,7 @@ export class CastExpression extends Expression {
         let r = canCastTypes(ctx, this.target, expressionType);
 
         if(!r.success && (this.castType === 'regular')) {
+            let r = canCastTypes(ctx, this.target, expressionType);
             ctx.parser.customError(`Cannot cast ${expressionType.shortname()} to ${this.target.shortname()}: ${r.message}`, this.location);
         }
 

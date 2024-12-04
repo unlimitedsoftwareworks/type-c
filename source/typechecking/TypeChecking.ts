@@ -15,7 +15,7 @@ import { Expression } from "../ast/expressions/Expression";
 import { Context } from "../ast/symbol/Context";
 import { FunctionArgument } from "../ast/symbol/FunctionArgument";
 import { ArrayType } from "../ast/types/ArrayType";
-import { BasicType } from "../ast/types/BasicType";
+import { BasicType, BasicTypeKind } from "../ast/types/BasicType";
 import { BooleanType } from "../ast/types/BooleanType";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
@@ -192,6 +192,11 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
             return res;
         }
 
+
+        if (t2.is(ctx, EnumType)) {
+            return matchBasicTypes(ctx, t1, new BasicType(t2.location, (t2.to(ctx, EnumType) as EnumType).as as BasicTypeKind), strict);
+        }
+
         if (!t2.is(ctx, BasicType)) {
             res = Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
             scopeCache.set(typeKey, res);
@@ -248,6 +253,10 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         if ((t2.is(ctx, LiteralIntType)) && (!strict)) {
             scopeCache.set(typeKey, res);
             return res;
+        }
+
+        if (t2.is(ctx, BasicType)) {
+            return matchBasicTypes(ctx, new BasicType(t1.location, (t1.to(ctx, EnumType) as EnumType).as as BasicTypeKind), t2.to(ctx, BasicType) as BasicType, strict);
         }
 
         let te = t1.to(ctx, EnumType) as EnumType;

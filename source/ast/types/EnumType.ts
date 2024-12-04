@@ -75,10 +75,10 @@ export class EnumType extends DataType {
      */
     _resolved: boolean = false;
 
-    constructor(location: SymbolLocation, fields: EnumField[], as: EnumTargetType = "u32"){
+    constructor(location: SymbolLocation, fields: EnumField[], as: EnumTargetType | null){
         super(location, "enum");
         this.fields = fields;
-        this.as = as;
+        this.as = as ?? "unset";
     }
 
     addField(field: EnumField){
@@ -108,13 +108,13 @@ export class EnumType extends DataType {
             // find the smallest type that can hold all the values
             let len = this.fields.length;
             if(len <= 255){
-                this.as = "u8";
+                this.setAs("u8");
             }
             else if(len <= 65535){
-                this.as = "u16";
+                this.setAs("u16");
             }
             else if(len <= 4294967295){
-                this.as = "u32";
+                this.setAs("u32");
             }
             else {
                 ctx.parser.customError("Enum fields cannot be more than 4294967295", this.location);
@@ -128,6 +128,7 @@ export class EnumType extends DataType {
                 if (this.fields[i].value === null) {
                     currentValue += 1;
                     this.fields[i].value = currentValue.toString();
+                    this.fields[i].literal_type = "int_literal";
                     seenValues.push(currentValue);
                 } else {
                     // Rule 3: If the first element and another element have a value
@@ -149,10 +150,29 @@ export class EnumType extends DataType {
                     break; // All subsequent fields have values and are correctly incremented
                 }
             }
+
+            let m = Math.max(...seenValues);
+            if(m <= 255){
+                this.setAs("u8");
+            }
+            else if(m <= 65535){
+                this.setAs("u16");
+            } else if(m <= 4294967295){
+                this.setAs("u32");
+            } else {
+                ctx.parser.customError("Enum fields cannot be more than 4294967295", this.location);
+            }
         }
     
         this._resolved = true;
     }
+
+    setAs(as: EnumTargetType){
+        if (this.as == "unset") {
+            this.as = as;
+        }
+    }
+
 
     shortname(): string {
         return "enum{"+this.fields.map(f => f.name).join(", ")+"}";
