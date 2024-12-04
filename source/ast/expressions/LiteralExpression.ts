@@ -296,8 +296,11 @@ export class BinaryIntLiteralExpression extends LiteralExpression {
             this.inferredType = hint;
         }
 
+        else if (!hint) {
+            this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
+        }
         else {
-            throw new Error("Hint for integer literal must be a basic type or a boolean type");
+            ctx.parser.customError("Hint for integer literal must be a basic type or a boolean type", this.location);
         }
 
         this.setInferredToHint();
@@ -329,8 +332,11 @@ export class OctIntLiteralExpression extends LiteralExpression {
             this.inferredType = hint;
         }
 
+        else if (!hint) {
+            this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
+        }
         else {
-            throw new Error("Hint for integer literal must be a basic type or a boolean type");
+            ctx.parser.customError("Hint for integer literal must be a basic type or a boolean type", this.location);
         }
 
         this.setInferredToHint();
@@ -362,8 +368,11 @@ export class HexIntLiteralExpression extends LiteralExpression {
             this.inferredType = hint;
         }
 
+        else if (!hint) {
+            this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
+        }
         else {
-            throw new Error("Hint for integer literal must be a basic type or a boolean type");
+            ctx.parser.customError("Hint for integer literal must be a basic type or a boolean type", this.location);
         }
 
         this.setInferredToHint();
