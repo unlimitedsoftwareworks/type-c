@@ -1,3 +1,4 @@
+import { ClassMethod } from "../ast/other/ClassMethod";
 import { Context } from "../ast/symbol/Context";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
@@ -130,7 +131,8 @@ export class TemplateSegment {
         let num_attrs = classType.attributes.length;
         let size_attrs = classType.getAttributesBlockSize();
         // !!! IMPORTANT: we have to create new array as some other methods awaiting to be generated
-        let classMethods = [...classType.getAllMethods()];
+        let classMethods = sortClassMethods([...classType.getAllMethods()]);
+
         let num_methods = classMethods.length;
 
         this.writer.push_8(num_attrs);
@@ -143,8 +145,6 @@ export class TemplateSegment {
             this.writer.push_8(isPointer(field.type) ? 1 : 0);
         }
 
-        classMethods.sort((a, b) => a.imethod.getUID() - b.imethod.getUID());
-
         for (let i = 0; i < classMethods.length; i++) {
             let method = classMethods[i];
             this.writer.push_32(method.imethod.getUID());
@@ -156,4 +156,38 @@ export class TemplateSegment {
         //this.writer.alignTo8();
         return classWritePos;
     }
+}
+
+/**
+ * Sorts class methods by their UID, to eytzinger order
+ */
+function sortClassMethods(methods: ClassMethod[]) {
+    let sortedMethods = methods.sort((a, b) => a.imethod.getUID() - b.imethod.getUID());
+
+    let eytzingerArray = new Array(sortedMethods.length + 1);
+    fillEytzinger(sortedMethods, eytzingerArray, 0, 1);
+
+    //console.log(eytzingerArray.map(m => m.imethod.getUID()));
+    return eytzingerArray.slice(1);
+}
+
+
+    // Recursive helper to fill the Eytzinger array
+function fillEytzinger(
+    sortedFields: ClassMethod[], 
+    eytzingerArray: ClassMethod[], 
+    i: number, 
+    k: number
+): number {
+    if (k < eytzingerArray.length) { // Ensure the current index is within bounds
+        // Fill the left subtree
+        i = fillEytzinger(sortedFields, eytzingerArray, i, 2 * k);
+
+        // Assign the current element to the Eytzinger array
+        eytzingerArray[k] = sortedFields[i++];
+
+        // Fill the right subtree
+        i = fillEytzinger(sortedFields, eytzingerArray, i, 2 * k + 1);
+    }
+    return i; // Return the updated index in sortedFields
 }

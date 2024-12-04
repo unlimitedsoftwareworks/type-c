@@ -106,7 +106,7 @@ import {
 import { NullableType } from "../ast/types/NullableType";
 import { StructType } from "../ast/types/StructType";
 import { TupleType } from "../ast/types/TupleType";
-import { VariantConstructorType } from "../ast/types/VariantConstructorType";
+import { VariantConstructorType, VariantParameter } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
 import { canCastTypes, getLargestStruct } from "../typechecking/TypeChecking";
@@ -1774,13 +1774,13 @@ export class FunctionGenerator {
         // now we need to get the variant ID
         let variantID = variantType.getId();
 
-        let parameters = [...variantType.parameters];
-        parameters.sort((a, b) => a.getFieldID() - b.getFieldID());
+        let parameters = VariantParameter.sortParameters([...variantType.parameters], expr.location);
 
         // each parameter maps to the index of the parameter in the variant constructor
         let parameterMapping = parameters.map((x) =>
             variantType.parameters.indexOf(x),
         );
+        //console.log("Variant order: ",parameters.map(x => x.name + ': '+x.getFieldID()));
         // allocate the variant
         let variantReg = this.generateTmp();
         this.i("debug", "allocating variant");
@@ -1788,10 +1788,9 @@ export class FunctionGenerator {
         this.i(
             "s_alloc",
             variantReg,
-            parameters.length + 1,
+            parameters.length,
             variantType.getStructSize(),
         );
-        this.i("s_reg_field", variantReg, 0, 0, 0, 0); // TAG
 
         //console.log(parameters.map((x) => x.name + ': '+x.getFieldID()))
         for (let i = 0; i < parameters.length; i++) {
@@ -1801,9 +1800,9 @@ export class FunctionGenerator {
             this.i(
                 "s_reg_field",
                 variantReg,
-                i + 1,
+                i,
                 param.getFieldID(),
-                variantType.getParameterOffset(i + 1),
+                variantType.getParameterOffset(i),
                 isPointer(param.type) ? 1 : 0,
             );
         }
@@ -1814,9 +1813,13 @@ export class FunctionGenerator {
         this.i("s_set_field_u16", variantReg, 0, variantIdReg);
         this.destroyTmp(variantIdReg);
 
-        for (let i = 0; i < expr.args.length; i++) {
+        for (let i = 0; i < parameters.length; i++) {
             this.i("debug", `setting variant field ${parameters[i].name}`);
             let idx = parameterMapping[i];
+            // tag  has been, it has no mapping
+            if(idx == -1){
+                continue;
+            }
             let arg = this.visitExpression(expr.args[idx], ctx);
             let instr = structSetFieldType(parameters[i].type);
             this.i(instr, variantReg, parameters[i].getFieldID(), arg);
