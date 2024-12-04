@@ -110,6 +110,11 @@ This checklist containts only major changes and updates, for minor changes and u
     - Added special assignment for `ThisExpression` in the form of `ThisDistributedAssignExpression`, which allows for distributed assignment to the attributes of `this`, such as `this += {x, y, z}` or `this += {a: x, b: y, c: z}`. Only works with `this`. Does not translate to creating a new struct, it extract field names and values from the RHS and translates it to a series of assignments.
     - Added special __index_rset__ which sets the value of an index of an array-like object, but in reverse order of __index_get__, such as `x[-3]`, Evaluates to `__index_rset__(x, 3, value)`. This is important because value is not evaluated as a negative number, the negative sign within an index `[]` translates to a reverse index access.
     - Added `override` keyword to class methods, to indicate that the method is overriding an external method with the same signature.
+
+- 04/12/2024:
+    - Eytzinger layout for structs and variants and class methods
+    - Variants now have a $tag field which is always UID 0 and variant field UIDs share same pool as struct fields.
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.
