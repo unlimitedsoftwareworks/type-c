@@ -12,6 +12,7 @@
 
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
 import { FunctionInferenceCache } from "../../typechecking/FunctionInference";
+import { areOverloadedFunctionsIdentical } from "../../typechecking/TypeChecking";
 import { buildGenericsMaps, inferFunctionReturnFromHeader, inferFunctionYieldFromHeader, signatureFromGenerics } from "../../typechecking/TypeInference";
 import { Expression } from "../expressions/Expression";
 import { YieldExpression } from "../expressions/YieldExpression";
@@ -20,11 +21,11 @@ import { BlockStatement } from "../statements/BlockStatement";
 import { FunctionDeclarationStatement } from "../statements/FunctionDeclarationStatement";
 import { ReturnStatement } from "../statements/ReturnStatement";
 import { DataType } from "../types/DataType";
+import { FunctionType } from "../types/FunctionType";
 import { GenericType } from "../types/GenericType";
 import { Context } from "./Context";
 import { Symbol } from "./Symbol";
 import { SymbolLocation } from "./SymbolLocation";
-
 
 export class DeclaredFunction extends Symbol {
     prototype: FunctionPrototype;
@@ -275,5 +276,52 @@ export class DeclaredFunction extends Symbol {
             throw new Error(`No concrete method found for signature ${signature}`);
         }
         return concrete;
+    }
+}
+
+export class DeclaredOverloadedFunction extends Symbol {
+    overloadedFunctions: Map<string, DeclaredFunction> = new Map();
+
+    constructor(location: SymbolLocation, name: string){
+        super(location, "overloaded_function", name);
+    }
+
+    addFunction(fn: DeclaredFunction, ctx: Context){
+        for(const [key, value] of this.overloadedFunctions){
+            if(areOverloadedFunctionsIdentical(ctx, fn.prototype.header, value.prototype.header)){
+                throw ctx.parser.customError(`Function ${fn.name} is already overloaded with ${value.name}`, fn.location);
+            }
+        }
+
+        this.overloadedFunctions.set(fn.prototype.header.parameters.map(p => p.type.hash()).join('-'), fn);
+    }
+
+    getFunctionByParams(params: DataType[]): DeclaredFunction | null {
+        let func = this.overloadedFunctions.get(params.map(p => p.hash()).join('-'));
+        if(!func){
+            return null;
+        }
+        return func;
+    }
+
+    getFunction(fn: FunctionType, ctx: Context): DeclaredFunction {
+        for(const [key, value] of this.overloadedFunctions){
+            if(areOverloadedFunctionsIdentical(ctx, fn, value.prototype.header)){
+                return value;
+            }
+        }
+        ctx.parser.customError(`No function found for prototype ${fn.toString()}`, this.location);
+    }
+
+    getFunctionsByArity(arity: number): DeclaredFunction[] {
+        return Array.from(this.overloadedFunctions.values()).filter(f => f.prototype.header.parameters.length === arity);
+    }
+
+    clone(typeMap: { [key: string]: DataType; }, ctx: Context): DeclaredOverloadedFunction {
+        let newM = new DeclaredOverloadedFunction(this.location, this.name);
+        for(const [key, value] of this.overloadedFunctions){
+            newM.addFunction(value.clone(typeMap, ctx), ctx);
+        }
+        return newM;
     }
 }

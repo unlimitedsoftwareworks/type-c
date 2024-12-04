@@ -167,7 +167,16 @@ export class FunctionCallExpression extends Expression {
             left.numParams = this.args.length;
         }
 
-        let lhsType = this.lhs.infer(ctx, null);
+        let lhsType: DataType;
+
+
+        if (left instanceof ElementExpression) {
+            lhsType = this.lhs.infer(ctx, null, {args: this.args});
+        }
+        else {
+            lhsType = left.infer(ctx, null);
+        }
+
         if (lhsType.is(ctx, NullableType)) {
             ctx.parser.customError("Cannot call a possibly null value", this.location);
         }

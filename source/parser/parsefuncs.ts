@@ -731,6 +731,20 @@ function parseFrom(parser: Parser) {
     let canReadPackage = true;
 
     while (canReadPackage) {
+        let asterisk = parser.peek();
+        if(asterisk.type === "*"){
+            parser.accept();
+
+            parser.basePackage.addImport(
+                new ImportNode(loc, basePath, "*", "*", []),
+            );
+            canReadPackage = false;
+            break;
+        }
+        else{
+            parser.reject();
+        }
+
         const id = parser.expectPackageName();
         const postPath = [id.value];
         let canLoop = parser.peek().type === ".";

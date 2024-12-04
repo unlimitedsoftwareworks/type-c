@@ -244,6 +244,17 @@ export module TypeC {
                     parser.customError(`Could not find symbol ${imp.actualName} in ${imp.basePath.join("/")}`, imp.location);
                 }
             }
+            else if (imp.actualName === "*"){
+                // import all symbols
+                for(let sym of importBase.ctx.getSymbols()){
+                    if(sym.isLocal || sym.external){
+                        continue;
+                    }
+                    basePackage.ctx.addExternalSymbol(sym, sym.name);
+                    
+                }
+                return;
+            }
             else {
                 sym = importBase.ctx.lookup(imp.actualName);
                 if (!sym) {

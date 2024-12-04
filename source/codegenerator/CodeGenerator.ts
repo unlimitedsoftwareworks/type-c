@@ -1,6 +1,6 @@
 import { BasePackage } from "../ast/BasePackage";
 import { DeclaredFFI } from "../ast/symbol/DeclaredFFI";
-import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
+import { DeclaredFunction, DeclaredOverloadedFunction } from "../ast/symbol/DeclaredFunction";
 import { DeclaredType } from "../ast/symbol/DeclaredType";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { ClassType } from "../ast/types/ClassType";
@@ -144,6 +144,17 @@ export class CodeGenerator {
                 // namespace content is stored in the global context
                 // so are the assignments of variables declared in the namespace
                 continue;
+            }
+            if (sym instanceof DeclaredOverloadedFunction) {
+                for (const [key, concreteSym] of sym.overloadedFunctions) {
+                    let generator = new FunctionGenerator(
+                        concreteSym,
+                        this.bytecodeGenerator.templateSegment,
+                    );
+                    generator.generate();
+                    this.functions.set(concreteSym.uid, generator);
+                    this.bytecodeGenerator.generateBytecode(generator);
+                }
             }
             if (sym instanceof DeclaredFunction) {
                 // check if it is generic

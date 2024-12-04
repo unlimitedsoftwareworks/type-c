@@ -32,6 +32,9 @@ export class FFINamespaceType extends DataType {
         return `@ffi_namespace_type{id:${this.parentFFI.ffiId}}`
     }
 
+    shortname(): string {
+        return this.parentFFI.name;
+    }
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // nothing to do

@@ -26,4 +26,8 @@ export class GlobalContext {
         // it is okay to overwrite symbols cuz uid is unique
         this.globalSymbols.set(symbol.uid, symbol);
     }
+
+    removeSymbol(symbol: Symbol) {
+        this.globalSymbols.delete(symbol.uid);
+    }
 }

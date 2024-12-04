@@ -12,7 +12,7 @@
 
 import { Context, SymbolScope } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
-import { DeclaredFunction } from "../symbol/DeclaredFunction";
+import { DeclaredFunction, DeclaredOverloadedFunction } from "../symbol/DeclaredFunction";
 import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
 import { DeclaredType } from "../symbol/DeclaredType";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
@@ -25,11 +25,12 @@ import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { EnumType } from "../types/EnumType";
 import { FFINamespaceType } from "../types/FFINamespaceType";
+import { FunctionType } from "../types/FunctionType";
 import { InterfaceType } from "../types/InterfaceType";
 import { MetaClassType, MetaEnumType, MetaInterfaceType, MetaVariantType } from "../types/MetaTypes";
 import { NamespaceType } from "../types/NamespaceType";
 import { VariantType } from "../types/VariantType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class ElementExpression extends Expression {
     name: string;
@@ -73,7 +74,8 @@ export class ElementExpression extends Expression {
         return this._isVariable;
     }
 
-    infer(ctx: Context, hint: DataType | null = null): DataType {
+
+    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType {
         //if (this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -268,6 +270,51 @@ export class ElementExpression extends Expression {
                 this.isConstant = false;
                 this.checkHint(ctx);
                 return this.inferredType;
+            }
+        }
+        else if (variable instanceof DeclaredOverloadedFunction) {
+            if (hint) {
+                // make sure hint is a function type
+                if (!hint.is(ctx, FunctionType)) {
+                    ctx.parser.customError(`Type ${hint.shortname()} is not allowed with an overloaded function`, this.location);
+                }
+
+                let func = variable.getFunction(hint as FunctionType, ctx);
+                this.inferredType = func.prototype.header;
+                this._functionReference = func;
+                this.isConstant = true;
+                this.checkHint(ctx);
+                return this.inferredType;
+            }
+            else if (meta && meta.args) {
+                // first see if we have one function that matches exactly the number of arguments
+                let matchingFunctions = variable.getFunctionsByArity(meta.args.length);
+
+                // avoid inferring arguments without hint
+                if (matchingFunctions.length === 1) {
+                    this.inferredType = matchingFunctions[0].prototype.header;
+                    this._functionReference = matchingFunctions[0];
+                    this.isConstant = true;
+                    this.checkHint(ctx);
+                    return this.inferredType;
+                }
+
+                // if we have multiple functions with the same arity, we need to infer the given arguments
+                let paramTypes = meta.args.map(e => e.infer(ctx, null));
+
+                let matchingFunction = variable.getFunctionByParams(paramTypes);
+                if (!matchingFunction) {
+                    ctx.parser.customError(`No function found for parameters ${paramTypes.map(p => p.toString()).join('-')}`, this.location);
+                }
+                this.inferredType = matchingFunction.prototype.header;
+                this._functionReference = matchingFunction;
+                this.isConstant = true;
+                this.checkHint(ctx);
+                return this.inferredType;
+            }
+
+            else {
+                ctx.parser.customError(`Overloaded function ${variable.name} cannot be resolved`, this.location);
             }
         }
 

@@ -21,7 +21,7 @@ import { ImplementationMethod } from "../other/ImplementationMethod";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { ImplementationType } from "../types/ImplementationType";
-import { DeclaredFunction } from "./DeclaredFunction";
+import { DeclaredFunction, DeclaredOverloadedFunction } from "./DeclaredFunction";
 import { DeclaredNamespace } from "./DeclaredNamespace";
 import { DeclaredType } from "./DeclaredType";
 import { DeclaredVariable } from "./DeclaredVariable";
@@ -190,10 +190,36 @@ export class Context {
     addSymbol(symbol: Symbol) {
         let v = this.lookupLocal(symbol.name);
         if (v !== null) {
-            throw this.parser.customError(
+            
+            if((v instanceof DeclaredOverloadedFunction) && (symbol instanceof DeclaredFunction) && !symbol.isGeneric()){
+                (v as DeclaredOverloadedFunction).addFunction(symbol as DeclaredFunction, this);
+                symbol.noRegister = true;
+                return;
+            }
+
+            if ((v instanceof DeclaredFunction) && (symbol instanceof DeclaredFunction) && !symbol.isGeneric()) {
+                let oldFn = v;
+                let newFn = symbol;
+
+                let overLoadedFn = new DeclaredOverloadedFunction(symbol.location, symbol.name);
+                overLoadedFn.addFunction(oldFn, this);
+                overLoadedFn.addFunction(newFn as DeclaredFunction, this);
+
+                oldFn.noRegister = true;
+                newFn.noRegister = true;
+
+                this.removeFromGlobalContext(oldFn);
+                this.symbols.delete(oldFn.name);
+                this.addSymbol(overLoadedFn);
+                this.registerToGlobalContext(overLoadedFn);
+                return;
+            }
+            else {
+                throw this.parser.customError(
                 `Symbol ${symbol.name} already declared in this scope`,
                 symbol.location,
-            );
+                );
+            }
         }
 
         let v2 = this.lookup(symbol.name);
@@ -540,6 +566,15 @@ export class Context {
             }
 
             this.globalContext.registerSymbol(sym);
+        }
+    }
+
+    removeFromGlobalContext(sym: Symbol) {
+        if (this.globalContext !== null) {
+            this.globalContext.removeSymbol(sym);
+        }
+        else if (this.parent !== null){
+            this.parent.removeFromGlobalContext(sym);
         }
     }
 

@@ -39,6 +39,7 @@ import { CoroutineType } from "../ast/types/CoroutineType";
 import { getDataTypeByteSize } from "../codegenerator/utils";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { UnreachableType } from "../ast/types/UnreachableType";
+import { FunctionPrototype } from "../ast/other/FunctionPrototype";
 
 
 export type TypeMatchResult = {
@@ -879,6 +880,25 @@ export function areSignaturesIdentical(ctx: Context, a: InterfaceMethod, b: Inte
     */
     for (let i = 0; i < a.header.parameters.length; i++) {
         if (!areDataTypesIdentical(ctx, a.header.parameters[i].type, b.header.parameters[i].type)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+export function areOverloadedFunctionsIdentical(ctx: Context, a: FunctionType, b: FunctionType): boolean {
+    // first, check if the number of parameters is the same
+    if (a.parameters.length !== b.parameters.length) return false;
+
+
+    // return type do not matter when overloading methods, so we check parameter types
+    /*
+    let aGenerics = a.generics.map(e => e.name);
+    let bGenerics = b.generics.map(e => e.name);
+    */
+    for (let i = 0; i < a.parameters.length; i++) {
+        if (!areDataTypesIdentical(ctx, a.parameters[i].type, b.parameters[i].type)) {
             return false;
         }
     }

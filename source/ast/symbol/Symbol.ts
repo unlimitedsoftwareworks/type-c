@@ -24,6 +24,7 @@ export type SymbolKind =
     "class_method" |
     "implementation_method" |
     "function" |
+    "overloaded_function" |
     "lambda" |
     "ffi" |
     "namespace";

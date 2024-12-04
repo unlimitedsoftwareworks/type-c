@@ -80,7 +80,7 @@ import { Statement } from "../ast/statements/Statement";
 import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarationStatement";
 import { WhileStatement } from "../ast/statements/WhileStatement";
 import { Context } from "../ast/symbol/Context";
-import { DeclaredFunction } from "../ast/symbol/DeclaredFunction";
+import { DeclaredFunction, DeclaredOverloadedFunction } from "../ast/symbol/DeclaredFunction";
 import { DeclaredType } from "../ast/symbol/DeclaredType";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { FunctionArgument } from "../ast/symbol/FunctionArgument";
@@ -570,7 +570,17 @@ export class FunctionGenerator {
                 let fnCtxID = sym.context.uuid;
                 return this.ir_generate_closure(ctx, sym.codeGenProps, fnCtxID);
             }
-        } else {
+        } else if (sym instanceof DeclaredOverloadedFunction) {
+            if(expr._functionReference) {
+                
+                let fnCtxID = expr._functionReference.context.uuid;
+                return this.ir_generate_closure(ctx, expr._functionReference.codeGenProps, fnCtxID);
+            }
+            else {
+                throw new Error("No function reference found for overloaded function " + sym.name);
+            }
+        }
+        else {
             throw new Error("Invalid symbol type " + symScope.sym.kind);
         }
     }
