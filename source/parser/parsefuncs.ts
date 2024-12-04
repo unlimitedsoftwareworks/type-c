@@ -1592,6 +1592,7 @@ function parseImplementationAttributeList(parser: Parser, ctx: Context): Impleme
         parser.reject();
     }
 
+    parser.reject();
     return attributes;
 }
 
