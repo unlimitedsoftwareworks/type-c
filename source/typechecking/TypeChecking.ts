@@ -115,7 +115,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     }
 
     if (scopeCache.has(typeKey)) {
-        return scopeCache.get(typeKey)!;
+        //return scopeCache.get(typeKey)!;
     }
 
     stack.push(typeKey);
@@ -705,7 +705,7 @@ function matchClasses(ctx: Context, ct1: DataType, ct2: DataType, strict: boolea
      * Some times, classes are not resolved due to circular dependencies, so we resolve them here
      */
     let t1 = ct1.to(ctx, ClassType) as ClassType;
-    let t2 = ct1.to(ctx, ClassType) as ClassType
+    let t2 = ct2.to(ctx, ClassType) as ClassType
 
     t1.resolve(ctx);
     t2.resolve(ctx);
@@ -923,7 +923,7 @@ export function areOverloadedFunctionsIdentical(ctx: Context, a: FunctionType, b
  * @returns 
  */
 export function areDataTypesIdentical(ctx: Context, a: DataType, b: DataType): boolean {
-    return matchDataTypesRecursive(ctx, a, b, true).success;
+    return matchDataTypesRecursive(ctx, a, b, true).success && matchDataTypesRecursive(ctx, b, a, true).success;
 }
 
 
