@@ -62,6 +62,8 @@ export class FunctionCallExpression extends Expression {
 
     _calledNamespaceSymbol: Symbol | null = null;
 
+    _calledFFIMethod: InterfaceMethod | null = null;
+
     constructor(location: SymbolLocation, lhs: Expression, args: Expression[]) {
         super(location, "function_call");
         this.lhs = lhs;
@@ -241,6 +243,7 @@ export class FunctionCallExpression extends Expression {
     }
 
     private inferFFIMethod(ctx: Context, lhsType: DataType) {
+        lhsType.resolve(ctx);
         if(this._isNullableCall){
             ctx.parser.customError("Cannot call a FFI method with a nullable member access ?.", this.location)
         }
@@ -268,6 +271,7 @@ export class FunctionCallExpression extends Expression {
             }
 
         }
+        this._calledFFIMethod = interfaceMethod;
         this.inferredType = interfaceMethod.header.returnType;
         this.checkMutability(ctx, interfaceMethod.header);
 

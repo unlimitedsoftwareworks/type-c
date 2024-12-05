@@ -177,43 +177,8 @@ export class StructType extends DataType {
         // Step 1: Sort the fields by their FieldID
         const sortedFields = this.fields.sort((a, b) => a.getFieldID() - b.getFieldID());
         
-        // Step 2: Prepare the Eytzinger array transformation
-        const eytzingerFields = this.convertToEytzinger(sortedFields);
-    
-        // Debug: Log the FieldIDs in the Eytzinger order
-        //console.log(eytzingerFields.map(f => f.getFieldID()));
-    
-        // Step 3: Return a new StructType with the transformed fields
-        return new StructType(this.location, eytzingerFields);
+        return new StructType(this.location, sortedFields);
     }
-    
-    // Helper method to perform the Eytzinger transformation
-    convertToEytzinger(sortedFields: StructField[]): StructField[] {
-        const eytzingerArray = new Array(sortedFields.length + 1); // 1-based indexing
-        this.fillEytzinger(sortedFields, eytzingerArray, 0, 1); // Start with root at index 1
-        return eytzingerArray.slice(1); // Convert to 0-based indexing
-    }
-    
-    // Recursive helper to fill the Eytzinger array
-    fillEytzinger(
-        sortedFields: StructField[], 
-        eytzingerArray: StructField[], 
-        i: number, 
-        k: number
-    ): number {
-        if (k < eytzingerArray.length) { // Ensure the current index is within bounds
-            // Fill the left subtree
-            i = this.fillEytzinger(sortedFields, eytzingerArray, i, 2 * k);
-    
-            // Assign the current element to the Eytzinger array
-            eytzingerArray[k] = sortedFields[i++];
-    
-            // Fill the right subtree
-            i = this.fillEytzinger(sortedFields, eytzingerArray, i, 2 * k + 1);
-        }
-        return i; // Return the updated index in sortedFields
-    }
-    
 
     getFieldPointerBitMask(): number {
         let mask = 0;

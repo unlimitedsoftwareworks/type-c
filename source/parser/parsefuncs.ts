@@ -1187,6 +1187,7 @@ function parseTypeEnum(parser: Parser, ctx: Context): DataType {
                             | "hex_int_literal",
                     ),
                 );
+                parser.accept();
             } else {
                 parser.customError(
                     `Unexpected enum value "${vtok.type}", must be an integer (dec, bin, oct, hex) literal`,

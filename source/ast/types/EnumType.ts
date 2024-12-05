@@ -222,4 +222,11 @@ export class EnumType extends DataType {
         }
         return new BasicType(this.location, this.as as BasicTypeKind);
     }
+
+
+    to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
+        if(targetType === BasicType) return this.toBasicType(ctx);
+        if(targetType === EnumType) return this;
+        throw new Error("Invalid cast");
+    }
 }

@@ -1149,7 +1149,7 @@ export class FunctionGenerator {
             return this.ir_generate_comparison(expr, ctx, left, right);
         } else {
             let inst = getBinaryInstruction(
-                expr.left.inferredType as BasicType,
+                expr.left.inferredType!.to(ctx, BasicType) as BasicType,
                 expr.operator,
             );
             let tmp = this.generateTmp();
@@ -3683,11 +3683,50 @@ export class FunctionGenerator {
         // first generate the expression
 
         this.i("debug", "tuple deconstruction group");
+
         let fnReg = this.visitExpression(
             (group[0].initializer as TupleDeconstructionExpression)
                 .tupleExpression,
             ctx,
         );
+
+        let initializer = group[0].initializer as TupleDeconstructionExpression
+
+        if((initializer.tupleExpression instanceof FunctionCallExpression) && (initializer.tupleExpression as FunctionCallExpression)._calledFFIMethod && (initializer.tupleExpression as FunctionCallExpression).inferredType!.is(ctx, TupleType)){
+            let ret =  (initializer.tupleExpression as FunctionCallExpression).inferredType!.to(ctx, TupleType) as TupleType;
+
+            let usedTmps: string[] = [];
+            let lastTmp = ""
+
+            for (const decl of group) {
+                let expr: Expression = new ElementExpression(
+                    decl.location,
+                    decl.name,
+                );
+                let elementReg = this.visitExpression(expr, ctx);
+
+                let returnIndex = (
+                    decl.initializer as TupleDeconstructionExpression
+                ).index;
+
+                usedTmps[returnIndex] = elementReg;
+            }
+
+            for(let i = 0; i < ret.length; i++){
+                let tmp = "";
+                if(usedTmps[i]){
+                    tmp = usedTmps[i];
+                }else{
+                    tmp = this.generateTmp();
+                }
+                let instruction = popStackType(ret.types[i]);
+                this.i(instruction, tmp);
+                lastTmp = tmp;
+            }
+
+            return lastTmp;
+        }
+
 
         this.destroyTmp(fnReg);
 

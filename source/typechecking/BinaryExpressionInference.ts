@@ -16,6 +16,7 @@ import { BasicType } from "../ast/types/BasicType";
 import { BooleanType } from "../ast/types/BooleanType";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
+import { EnumType } from "../ast/types/EnumType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { NullableType } from "../ast/types/NullableType";
 import { ReferenceType } from "../ast/types/ReferenceType";
@@ -38,9 +39,22 @@ export const basicTypePromotionMap: Record<string, Record<string, DataTypeKind>>
     "f64": { "u8": "f64", "u16": "f64", "u32": "f64", "u64": "f64", "i8": "f64", "i16": "f64", "i32": "f64", "i64": "f64", "f32": "f64", "f64": "f64"},
 };
 
+export function preCheckEnums(ctx: Context, lhs: DataType, rhs: DataType): DataType[]{
+    if (lhs.is(ctx, EnumType)) {
+        lhs = (lhs.to(ctx, EnumType) as EnumType).toBasicType(ctx);
+    }
+    if (rhs.is(ctx, EnumType)) {
+        rhs = (rhs.to(ctx, EnumType) as EnumType).toBasicType(ctx);
+    }
+
+    return [lhs, rhs];
+}
+
 // addition(+), addition assignment(+=) requires two numeric inputs and returns a numeric output
 function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -74,6 +88,9 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 // subtraction(-), substraction assignment (-=) requires two numeric inputs and returns a numeric output
 function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -98,6 +115,9 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
 // multiplication(*), multiplication assignment(*=) requires two numeric inputs and returns a numeric output
 function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -122,6 +142,9 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
 // division(/), division assignment requires two numeric inputs and returns a numeric output
 function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -146,6 +169,9 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 // modulo(%) requires two numeric inputs and returns a numeric output
 function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BasicType(expr.location, res);
@@ -170,6 +196,9 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
 // less than(<), less or equal(<=), greater than(>), greater or tequal(>=) requires two numeric inputs and returns a bool
 function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
         if (res) {
             return new BooleanType(expr.location);
@@ -287,6 +316,9 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
     }
 
     if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){ 
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        
         // make sure it is not float 
         if(lhs.kind === "f32" || lhs.kind === "f64"){
             ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}`, expr.location);

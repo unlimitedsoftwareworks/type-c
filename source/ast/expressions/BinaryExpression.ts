@@ -194,6 +194,7 @@ export class BinaryExpression extends Expression {
             }
         }
 
+
         this.inferredType = binaryTypeCheckers[this.operator](ctx, lhsType, rhsType, this);
 
         this.checkHint(ctx);

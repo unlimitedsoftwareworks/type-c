@@ -159,35 +159,10 @@ export class TemplateSegment {
 }
 
 /**
- * Sorts class methods by their UID, to eytzinger order
+ * Sorts class methods by their UID,
  */
 function sortClassMethods(methods: ClassMethod[]) {
     let sortedMethods = methods.sort((a, b) => a.imethod.getUID() - b.imethod.getUID());
-
-    let eytzingerArray = new Array(sortedMethods.length + 1);
-    fillEytzinger(sortedMethods, eytzingerArray, 0, 1);
-
-    //console.log(eytzingerArray.map(m => m.imethod.getUID()));
-    return eytzingerArray.slice(1);
-}
-
-
-    // Recursive helper to fill the Eytzinger array
-function fillEytzinger(
-    sortedFields: ClassMethod[], 
-    eytzingerArray: ClassMethod[], 
-    i: number, 
-    k: number
-): number {
-    if (k < eytzingerArray.length) { // Ensure the current index is within bounds
-        // Fill the left subtree
-        i = fillEytzinger(sortedFields, eytzingerArray, i, 2 * k);
-
-        // Assign the current element to the Eytzinger array
-        eytzingerArray[k] = sortedFields[i++];
-
-        // Fill the right subtree
-        i = fillEytzinger(sortedFields, eytzingerArray, i, 2 * k + 1);
-    }
-    return i; // Return the updated index in sortedFields
+    //console.log(sortedMethods.map(m => m.imethod.getUID()+ ': ' + m.shortname()));
+    return sortedMethods;
 }

@@ -165,39 +165,10 @@ export class VariantConstructorType  extends DataType{
     }
 }
 
-
-
-
 /**
- * Sorts class methods by their UID, to eytzinger order
+ * Sorts class methods by their UID,
  */
 function sortVariantParameters(params: VariantParameter[]) {
     let sortedParams = params.sort((a, b) => a.getFieldID() - b.getFieldID());
-
-    let eytzingerArray = new Array(sortedParams.length + 1);
-    fillEytzinger(sortedParams, eytzingerArray, 0, 1);
-
-    //console.log(eytzingerArray.map(m => m.getFieldID()));
-    return eytzingerArray.slice(1);
-}
-
-
-    // Recursive helper to fill the Eytzinger array
-function fillEytzinger(
-    sortedParams: VariantParameter[], 
-    eytzingerArray: VariantParameter[], 
-    i: number, 
-    k: number
-): number {
-    if (k < eytzingerArray.length) { // Ensure the current index is within bounds
-        // Fill the left subtree
-        i = fillEytzinger(sortedParams, eytzingerArray, i, 2 * k);
-
-        // Assign the current element to the Eytzinger array
-        eytzingerArray[k] = sortedParams[i++];
-
-        // Fill the right subtree
-        i = fillEytzinger(sortedParams, eytzingerArray, i, 2 * k + 1);
-    }
-    return i; // Return the updated index in sortedFields
+    return sortedParams;
 }
