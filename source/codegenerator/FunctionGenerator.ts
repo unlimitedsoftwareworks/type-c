@@ -1149,7 +1149,7 @@ export class FunctionGenerator {
             return this.ir_generate_comparison(expr, ctx, left, right);
         } else {
             let inst = getBinaryInstruction(
-                expr.left.inferredType!.to(ctx, BasicType) as BasicType,
+                expr.left.inferredType!.is(ctx, BasicType) ? expr.left.inferredType!.to(ctx, BasicType) as BasicType : expr.left.inferredType!,
                 expr.operator,
             );
             let tmp = this.generateTmp();
