@@ -45,8 +45,15 @@ function unescapeCString(input: string): string {
         input = input.substring(1, input.length - 1);
     }
 
-    // Replace C-style escape sequences
+    // Regex pattern for terminal escape sequences (e.g., \x1b[31m)
+    const terminalEscapeSequence = /\\x1b\[\d{1,3}m/g;
+
+    // Replace C-style escape sequences while preserving terminal escape sequences
     return input
+        .replace(terminalEscapeSequence, (match) => {
+            // Replace the backslashes to create a valid terminal escape sequence
+            return match.replace(/\\x1b/, '\x1b');
+        })
         .replace(/\\n/g, '\n')    // Newline
         .replace(/\\t/g, '\t')    // Tab
         .replace(/\\r/g, '\r')    // Carriage return
