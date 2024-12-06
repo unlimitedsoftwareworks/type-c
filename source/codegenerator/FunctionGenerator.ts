@@ -4047,7 +4047,7 @@ export class FunctionGenerator {
         }
 
         // make sure the index is an integer
-        if (!expr.indexes[0].inferredType!.is(ctx, BasicType)) {
+        if (!expr.indexes[0].inferredType!.is(ctx, BasicType) && !expr.indexes[0].inferredType!.is(ctx, BooleanType) && !expr.indexes[0].inferredType!.is(ctx, EnumType)) {
             throw new Error(
                 "Invalid index access expression, expected integer index got " +
                     expr.indexes[0].inferredType?.toString(),
