@@ -118,9 +118,21 @@ function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
 }
 
 function findLeastSufficientType(value: string): BasicTypeKind {
-    // Determine if the value is floating-point or integer
-    const isFloat = value.includes('.') || value.toLowerCase().includes('e');
-    const num = isFloat ? parseFloat(value) : BigInt(value);
+    // Helper to determine if a string represents a hexadecimal number
+    const isHex = value.startsWith('0x') || value.startsWith('0X');
+
+    // Determine if the value is floating-point
+    const isFloat = !isHex && (value.includes('.') || value.toLowerCase().includes('e'));
+
+    // Parse the number appropriately
+    let num;
+    if (isFloat) {
+        num = parseFloat(value);
+    } else if (isHex) {
+        num = BigInt(value);
+    } else {
+        num = value.startsWith('-') ? BigInt(value) : BigInt(value);
+    }
 
     // Handle floating-point numbers
     if (isFloat) {
@@ -129,19 +141,18 @@ function findLeastSufficientType(value: string): BasicTypeKind {
     }
 
     // Handle signed integers
-    if (value.startsWith('-')) {
+    if (!isHex && value.startsWith('-')) {
         if (num >= BigInt(-128) && num <= BigInt(127)) return "i8";
         else if (num >= BigInt(-32768) && num <= BigInt(32767)) return "i16";
         else if (num >= BigInt(-2147483648) && num <= BigInt(2147483647)) return "i32";
         else return "i64"; // Assumes i64 can cover the rest of the cases
     }
+
     // Handle unsigned integers
-    else {
-        if (num >= BigInt(0) && num <= BigInt(255)) return "u8";
-        else if (num >= BigInt(0) && num <= BigInt(65535)) return "u16";
-        else if (num >= BigInt(0) && num <= BigInt(4294967295)) return "u32";
-        else return "u64"; // Assumes u64 can cover the rest of the cases
-    }
+    if (num >= BigInt(0) && num <= BigInt(255)) return "u8";
+    else if (num >= BigInt(0) && num <= BigInt(65535)) return "u16";
+    else if (num >= BigInt(0) && num <= BigInt(4294967295)) return "u32";
+    else return "u64"; // Assumes u64 can cover the rest of the cases
 }
 
 
@@ -182,7 +193,7 @@ export class StringLiteralExpression extends LiteralExpression {
         }
 
         this.inferredType = BuiltinModules.String;
-        this.checkHint(ctx);
+        this.checkHint(ctx, false);
 
         return this.inferredType;
     }
@@ -404,7 +415,7 @@ export class FloatLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BasicType(this.location, "f32");
 
-        this.checkHint(ctx);
+        this.checkHint(ctx, false);
         if(hint) {
             // for literal expressions, the inferred type is the hint type when available,
             // so that literals are stored as the expected type in the bytecode
@@ -433,7 +444,7 @@ export class DoubleLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BasicType(this.location, "f64");
 
-        this.checkHint(ctx);
+        this.checkHint(ctx, false);
         return this.inferredType;
     }
 
@@ -452,7 +463,7 @@ export class TrueLiteralExpression extends LiteralExpression {
 
         this.inferredType = new BooleanType(this.location);
 
-        this.checkHint(ctx);
+        this.checkHint(ctx, false);
         return this.inferredType;
     }
 
@@ -479,7 +490,7 @@ export class FalseLiteralExpression extends LiteralExpression {
         this.inferredType = new BooleanType(this.location);
 
         
-        this.checkHint(ctx);
+        this.checkHint(ctx, false);
         return this.inferredType;
     }
 
