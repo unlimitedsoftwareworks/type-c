@@ -1519,11 +1519,23 @@ export class BytecodeGenerator {
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i8, dest, src1, src2);
             }
+            else if (instruction.type == "lshift_u8") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.lshift_u8, dest, src1, src2);
+            }
             else if (instruction.type == "lshift_i16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i16, dest, src1, src2);
+            }
+            else if (instruction.type == "lshift_u16") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.lshift_u16, dest, src1, src2);
             }
             else if (instruction.type == "lshift_i32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -1531,11 +1543,23 @@ export class BytecodeGenerator {
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i32, dest, src1, src2);
             }
+            else if (instruction.type == "lshift_u32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.lshift_u32, dest, src1, src2);
+            }
             else if (instruction.type == "lshift_i64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.lshift_i64, dest, src1, src2);
+            }
+            else if (instruction.type == "lshift_u64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.lshift_u64, dest, src1, src2);
             }
             else if (instruction.type == "rshift_i8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -1543,11 +1567,23 @@ export class BytecodeGenerator {
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i8, dest, src1, src2);
             }
+            else if (instruction.type == "rshift_u8") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.rshift_u8, dest, src1, src2);
+            }
             else if (instruction.type == "rshift_i16") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
-                this.emit(BytecodeInstructionType.rshift_i16, dest, src1, src2);
+                this.emit(BytecodeInstructionType.rshift_i32, dest, src1, src2);
+            }
+            else if (instruction.type == "rshift_u16") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.rshift_u16, dest, src1, src2);
             }
             else if (instruction.type == "rshift_i32") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
@@ -1555,13 +1591,24 @@ export class BytecodeGenerator {
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i32, dest, src1, src2);
             }
+            else if (instruction.type == "rshift_u32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.rshift_u32, dest, src1, src2);
+            }
             else if (instruction.type == "rshift_i64") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
                 let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
                 this.emit(BytecodeInstructionType.rshift_i64, dest, src1, src2);
             }
-
+            else if (instruction.type == "rshift_u64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src1 = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                let src2 = this.getRegisterForVariable(fn, instruction.args[2] as string);
+                this.emit(BytecodeInstructionType.rshift_u64, dest, src1, src2);
+            }
             else if (instruction.type == "not") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
