@@ -46,6 +46,9 @@ export type BinaryExpressionOperator =
     "??"
 ;
 
+function isArithmeticOperator(op: BinaryExpressionOperator): boolean {
+    return ["+", "-", "*", "/", "%", "^", ">>", "<<"].includes(op);
+}
 
 export class BinaryExpression extends Expression {
     left: Expression;
@@ -198,6 +201,11 @@ export class BinaryExpression extends Expression {
         this.inferredType = binaryTypeCheckers[this.operator](ctx, lhsType, rhsType, this);
 
         this.checkHint(ctx);
+
+        if(isArithmeticOperator(this.operator) && (lhsType.is(ctx, BasicType) && rhsType.is(ctx, BasicType))){
+            this.right.infer(ctx, this.inferredType);
+            this.left.infer(ctx, this.inferredType);
+        }
 
         if(!this.inferredType) {
             ctx.parser.customError(`Cannot apply operator ${this.operator} to types ${lhsType} and ${rhsType}`, this.location);

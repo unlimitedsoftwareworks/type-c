@@ -39,7 +39,6 @@ import { CoroutineType } from "../ast/types/CoroutineType";
 import { getDataTypeByteSize } from "../codegenerator/utils";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { UnreachableType } from "../ast/types/UnreachableType";
-import { FunctionPrototype } from "../ast/other/FunctionPrototype";
 
 
 export type TypeMatchResult = {
@@ -115,7 +114,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     }
 
     if (scopeCache.has(typeKey)) {
-        //return scopeCache.get(typeKey)!;
+        return scopeCache.get(typeKey)!;
     }
 
     stack.push(typeKey);
@@ -529,6 +528,26 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         } else {
             return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
         }
+    }
+
+    // allow casting from f32 to u32 or i32
+    if(t1.kind === "f32" && (t2.kind === "u32" || t2.kind === "i32")) {
+        return Ok();
+    }
+
+    // allow casting from f64 to u64 or i64
+    if(t1.kind === "f64" && (t2.kind === "u64" || t2.kind === "i64")) {
+        return Ok();
+    }
+
+    // allow casting from u32 or i32 to f32
+    if((t1.kind === "u32" || t1.kind === "i32") && t2.kind === "f32") {
+        return Ok();
+    }
+
+    // allow casting from u64 or i64 to f64
+    if((t1.kind === "u64" || t1.kind === "i64") && t2.kind === "f64") {
+        return Ok();
     }
 
     // All other combinations are incompatible.

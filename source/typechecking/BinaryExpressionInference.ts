@@ -353,7 +353,8 @@ function inferAssignment(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
 
 // equal and not equal(!=) requires two compatible inputs and returns a bool
 function inferEquality(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression) {
-    let res = matchDataTypes(ctx, lhs, rhs);
+    let useStrict = (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType))?false:true;
+    let res = matchDataTypes(ctx, lhs, rhs, useStrict);
     if (!res.success) {
         ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.shortname()} and ${rhs.shortname()}: ${res.message}`, expr.location);
     }

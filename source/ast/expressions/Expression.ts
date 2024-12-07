@@ -14,6 +14,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { BasicType } from "../types/BasicType";
 
 
 /**
@@ -120,10 +121,19 @@ export class Expression {
     
     checkHint(ctx: Context, strict: boolean = true){
         if(this.hintType) {
+
+            /**
+             * to allow u64*f32 for example, we disable strictness when both basic types
+             */
+            if(this.hintType!.is(ctx, BasicType) && this.inferredType!.is(ctx, BasicType)){
+                strict = false;
+            }
+
             let r = matchDataTypes(ctx, this.hintType!, this.inferredType!, strict);
             if(!r.success) {
-                //r = matchDataTypes(ctx, this.hintType!, this.inferredType!);
-                ctx.parser.customError(`Type mismatch, expected ${this.hintType!.shortname()} but found ${this.inferredType!.shortname()}: ${r.message}`, this.location);
+                let r = matchDataTypes(ctx, this.hintType!, this.inferredType!, strict);
+                r = matchDataTypes(ctx, this.hintType!, this.inferredType!, strict);
+                    ctx.parser.customError(`Type mismatch, expected ${this.hintType!.shortname()} but found ${this.inferredType!.shortname()}: ${r.message}`, this.location);
             }
         }
     }
