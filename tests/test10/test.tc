@@ -13,7 +13,7 @@ type Data<T> = class {
         return this.data[index]
     }
 
-    fn __index_set__(value: T, index: u64, index2: T){
+    fn __index_set__(index: u64, index2: T, value: T){
         this.data[index] = value
         return value
     }

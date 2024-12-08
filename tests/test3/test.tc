@@ -106,7 +106,7 @@ type Array = class {
         return this.data[index]
     }
 
-    fn __index_set__(value: i32, i1: u64, i2: u64) {
+    fn __index_set__(i1: u64, i2: u64, value: i32) {
         this.data[i1+i2] = value
     }
 }

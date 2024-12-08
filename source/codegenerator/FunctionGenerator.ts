@@ -690,7 +690,7 @@ export class FunctionGenerator {
                     expr.operatorOverloadState.methodRef!.name,
                 ),
             ),
-            [expr.value, ...expr.indexes],
+            [...expr.indexes, expr.value],
         );
 
         methodCall.infer(ctx, expr.hintType);
@@ -727,7 +727,7 @@ export class FunctionGenerator {
                     expr.operatorOverloadState.methodRef!.name,
                 ),
             ),
-            [expr.value, expr.index],
+            [expr.index, expr.value],
         );
 
         methodCall.infer(ctx, expr.hintType);

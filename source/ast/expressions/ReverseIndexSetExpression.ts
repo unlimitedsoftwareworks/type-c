@@ -63,7 +63,7 @@ export class ReverseIndexSetExpression extends Expression {
             }
 
             let valueType = this.value.infer(ctx, null);
-            let m = getOperatorOverloadType(ctx, "__reverse_index_set__", lhsT, [valueType, this.index.infer(ctx, null)]);
+            let m = getOperatorOverloadType(ctx, "__reverse_index_set__", lhsT, [this.index.infer(ctx, null), valueType]);
             if(m === null) {
                 ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __reverse_index_set__(${this.index.infer(ctx, null).shortname()})`, this.location);
             }

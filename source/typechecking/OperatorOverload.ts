@@ -49,6 +49,7 @@ export function setIndexesHint(ctx: Context, method: InterfaceMethod, exprList: 
 
 /**
  *  __index_set__ x[i, j, ...] = y
+ * -> __index_set__(i, j, ..., y)
  */
 export function isIndexSettable(ctx: Context, dt: OverridableMethodType){
     return dt.methodExists(ctx, "__index_set__");
@@ -58,7 +59,7 @@ export function setIndexesSetHint(ctx: Context, method: InterfaceMethod, indexes
 
     // make sure rest of methods match the index access types
     for(let i = 0; i < indexes.length; i++){
-        let paramType = method.header.parameters[i + 1].type;
+        let paramType = method.header.parameters[i].type;
         let res = matchDataTypes(ctx, paramType, indexes[i].infer(ctx, paramType));
     }
 
@@ -68,8 +69,8 @@ export function setIndexesSetHint(ctx: Context, method: InterfaceMethod, indexes
 
 export function setReverseIndexesSetHint(ctx: Context, method: InterfaceMethod, index: Expression){
 
-    // param 1 is the index, same as index set
-    let paramType = method.header.parameters[1].type;
+    // param 0 is the index, same as index set
+    let paramType = method.header.parameters[0].type;
     let res = matchDataTypes(ctx, paramType, index.infer(ctx, paramType));
     if(!res.success){
         ctx.parser.customError(`Type mismatch in __reverse_index_set__: ${res.message}`, index.location);

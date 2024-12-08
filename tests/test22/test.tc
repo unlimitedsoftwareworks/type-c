@@ -16,9 +16,9 @@ type Addable = interface {
     fn getCoords() -> {x: f32, y: f32, z: f32}
 
     fn get | [](i: u64) -> f32
-    fn set | []=(v: f32, i: u64) -> void
+    fn set | []=(i: u64, v: f32) -> void
     fn rget | [-](i: u64) -> f32 // reverse get
-    fn rset | [-]=(v: f32, i: u64) -> void // reverse set
+    fn rset | [-]=(i: u64, v: f32) -> void // reverse set
 }
 
 type DefaultAddition = impl (x: f32, y: f32, z: f32) {
@@ -77,7 +77,7 @@ type DefaultAddition = impl (x: f32, y: f32, z: f32) {
         return data[i]
     }
 
-    fn set | []=(v: f32, i: u64) -> void {
+    fn set | []=(i: u64, v: f32) -> void {
         let data = [this.x, this.y, this.z]
         data[i] = v
         this += {x: data[0], y: data[1], z: data[2]}
@@ -88,7 +88,7 @@ type DefaultAddition = impl (x: f32, y: f32, z: f32) {
         return data[-i]
     }
 
-    fn rset | [-]=(v: f32, i: u64) -> void {
+    fn rset | [-]=(i: u64, v: f32) -> void {
         let data = [this.x, this.y, this.z]
         data[-i] = v
         this += {x: data[0], y: data[1], z: data[2]}
@@ -111,7 +111,7 @@ type Vec3 = class Addable {
 
     fn getCoords() = {x: this.x, y: this.y, z: this.z}
 
-    override fn rset | [-]=(v: f32, i: u64) -> void {
+    override fn rset | [-]=(i: u64, v: f32) -> void {
         println("Setting reverse index: " + i + " to " + v)
         let data = [this.x, this.y, this.z]
         data[-i] = v

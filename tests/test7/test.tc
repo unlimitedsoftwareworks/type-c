@@ -58,7 +58,7 @@ type DataArray<T> = class {
     }
 
     /** x[i] = v */
-    fn __index_set__(v: T, i: u64) -> T {
+    fn __index_set__(i: u64, v: T) -> T {
         this.data[i] = v
         return v
     }
