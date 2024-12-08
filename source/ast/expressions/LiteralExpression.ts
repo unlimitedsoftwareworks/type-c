@@ -105,7 +105,7 @@ function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
             return BigInt(value) >= BigInt(0) && BigInt(value) <= BigInt("0xFFFFFFFFFFFFFFFF");
         case "i64":
             // Similarly, using BigInt for 64-bit signed integer range
-            return BigInt(value) >= BigInt("-0x8000000000000000") && BigInt(value) <= BigInt("0x7FFFFFFFFFFFFFFF");
+            return BigInt(value) >= -BigInt("0x8000000000000000") && BigInt(value) <= BigInt("0x7FFFFFFFFFFFFFFF");
         case "f32":
             // Check against the maximum and minimum values that a 32-bit float can represent
             return Number.isFinite(value) && Math.fround(value as number) === value;
