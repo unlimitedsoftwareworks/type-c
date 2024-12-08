@@ -45,7 +45,7 @@ export class IndexAccessExpression extends Expression {
         let lhsType = this.lhs.infer(ctx, null);
 
         if(lhsType.is(ctx, NullableType)) {
-            ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.shortname()}, please denull the expression first`, this.location);
+            ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.getShortName()}, please denull the expression first`, this.location);
         }
             
 
@@ -53,12 +53,12 @@ export class IndexAccessExpression extends Expression {
         if(lhsType.is(ctx, InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isIndexable(ctx, lhsT)) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access`, this.location);
             }
 
             let m = getOperatorOverloadType(ctx, "__index__", lhsT, this.indexes.map((index) => index.infer(ctx, null)));
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __index__(${this.indexes.map((index) => index.infer(ctx, null).getShortName()).join(", ")})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -76,7 +76,7 @@ export class IndexAccessExpression extends Expression {
             this.inferredType = arrayType.arrayOf;
         }
         else {
-            ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+            ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access`, this.location);
         }
 
         

@@ -94,7 +94,7 @@ export class DoExpression extends Expression {
             for (let i = 0; i < this.returnStatements.length; i++) {
                 let retType = this.returnStatements[i].stmt.getReturnType(this.returnStatements[i].ctx);
                 if (!matchDataTypes(ctx, hint, retType, false).success) {
-                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${hint.shortname()}`, this.returnStatements[i].stmt.location);
+                    ctx.parser.customError(`Return type ${retType.getShortName()} does not match the defined return type ${hint.getShortName()}`, this.returnStatements[i].stmt.location);
                 }
                 
                 this.returnStatements[i].stmt.returnExpression?.setHint(hint);

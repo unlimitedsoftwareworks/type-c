@@ -196,7 +196,7 @@ export class ElementExpression extends Expression {
         else if (variable instanceof DeclaredFFI){
             // we make sure we have no hint
             if(hint) {
-                ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a FFI`, this.location);
+                ctx.parser.customError(`Type ${hint.getShortName()} is not allowed with a FFI`, this.location);
             }
 
             this.inferredType = new FFINamespaceType(this.location, variable);
@@ -215,7 +215,7 @@ export class ElementExpression extends Expression {
         else if (variable instanceof DeclaredType) {
             // we make sure we have no hint
             if(hint) {
-                ctx.parser.customError(`Type ${hint.shortname()} is not allowed with a MetaType`, this.location);
+                ctx.parser.customError(`Type ${hint.getShortName()} is not allowed with a MetaType`, this.location);
             }
 
             if(this.typeArguments.length > 0) {
@@ -244,7 +244,7 @@ export class ElementExpression extends Expression {
             if(variable.type.is(ctx, InterfaceType)) {
                 // no generics are allowed here, so we make sure we have none
                 if(this.typeArguments.length > 0) {
-                    ctx.parser.customError(`Interface ${variable.type.shortname()} is not allowed to have generics`, this.location);
+                    ctx.parser.customError(`Interface ${variable.type.getShortName()} is not allowed to have generics`, this.location);
                 }
                 this.inferredType = new MetaInterfaceType(this.location, variable.type);
                 this.isConstant = false;
@@ -255,7 +255,7 @@ export class ElementExpression extends Expression {
             if(variable.type.is(ctx, EnumType)) {
                 // make sure we have no generics
                 if(this.typeArguments.length > 0) {
-                    ctx.parser.customError(`Enum ${variable.type.shortname()} is not allowed to have generics`, this.location);
+                    ctx.parser.customError(`Enum ${variable.type.getShortName()} is not allowed to have generics`, this.location);
                 }
 
                 this.inferredType = new MetaEnumType(this.location, variable.type);
@@ -276,7 +276,7 @@ export class ElementExpression extends Expression {
             if (hint) {
                 // make sure hint is a function type
                 if (!hint.is(ctx, FunctionType)) {
-                    ctx.parser.customError(`Type ${hint.shortname()} is not allowed with an overloaded function`, this.location);
+                    ctx.parser.customError(`Type ${hint.getShortName()} is not allowed with an overloaded function`, this.location);
                 }
 
                 let func = variable.getFunction(hint as FunctionType, ctx);

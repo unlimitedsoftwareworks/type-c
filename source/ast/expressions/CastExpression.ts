@@ -50,16 +50,16 @@ export class CastExpression extends Expression {
 
         if(!r.success && (this.castType === 'regular')) {
             let r = canCastTypes(ctx, this.target, expressionType);
-            ctx.parser.customError(`Cannot cast ${expressionType.shortname()} to ${this.target.shortname()}: ${r.message}`, this.location);
+            ctx.parser.customError(`Cannot cast ${expressionType.getShortName()} to ${this.target.getShortName()}: ${r.message}`, this.location);
         }
 
         if(r.success && (this.castType === 'force')) {
-            ctx.parser.customWarning(`Unnecessary forced cast from ${expressionType.shortname()} to ${this.target.shortname()}`, this.location);
+            ctx.parser.customWarning(`Unnecessary forced cast from ${expressionType.getShortName()} to ${this.target.getShortName()}`, this.location);
             this.isCastUnnecessary = true;
         }
 
         if(r.success && (this.castType === 'safe')) {
-            ctx.parser.customWarning(`Unnecessary safe cast from ${expressionType.shortname()} to ${this.target.shortname()}`, this.location);
+            ctx.parser.customWarning(`Unnecessary safe cast from ${expressionType.getShortName()} to ${this.target.getShortName()}`, this.location);
             this.isCastUnnecessary = true;
         }
 
@@ -75,10 +75,10 @@ export class CastExpression extends Expression {
         else {
             let res = matchDataTypes(ctx, this.target, hint);
             if(!res.success && (this.castType !== 'force')) {
-                ctx.parser.customError(`Cannot cast ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);
+                ctx.parser.customError(`Cannot cast ${this.target.getShortName()} to ${hint.getShortName()}: ${res.message}`, this.location);
             }
             else if (!res.success && (this.castType === 'force')) {
-                ctx.parser.customWarning(`Dangerous forced cast from ${this.target.shortname()} to ${hint.shortname()}: ${res.message}`, this.location);
+                ctx.parser.customWarning(`Dangerous forced cast from ${this.target.getShortName()} to ${hint.getShortName()}: ${res.message}`, this.location);
                 this.inferredType = hint;
             }
             else {

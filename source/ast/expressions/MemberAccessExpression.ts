@@ -159,7 +159,7 @@ export class MemberAccessExpression extends Expression {
             }
 
             ctx.parser.customError(
-                `Invalid member access of field ${this.right.name} on array type ${arrayType.arrayOf.shortname()}`,
+                `Invalid member access of field ${this.right.name} on array type ${arrayType.arrayOf.getShortName()}`,
                 this.location,
             );
         }
@@ -174,7 +174,7 @@ export class MemberAccessExpression extends Expression {
             );
             if (!field) {
                 ctx.parser.customError(
-                    `Field ${this.right.name} not found on struct ${structType.shortname()}`,
+                    `Field ${this.right.name} not found on struct ${structType.getShortName()}`,
                     this.location,
                 );
             }
@@ -195,7 +195,7 @@ export class MemberAccessExpression extends Expression {
             );
             if (!field) {
                 ctx.parser.customError(
-                    `Field ${this.right.name} not found on class ${classType.shortname()}`,
+                    `Field ${this.right.name} not found on class ${classType.getShortName()}`,
                     this.location,
                 );
             }
@@ -225,7 +225,7 @@ export class MemberAccessExpression extends Expression {
             );
             if (!method) {
                 ctx.parser.customError(
-                    `Method ${this.right.name} not found on FFI namespace ${ffiType.shortname()}`,
+                    `Method ${this.right.name} not found on FFI namespace ${ffiType.getShortName()}`,
                     this.location,
                 );
             }
@@ -248,7 +248,7 @@ export class MemberAccessExpression extends Expression {
 
             if (!parameter) {
                 ctx.parser.customError(
-                    `Parameter ${this.right.name} not found on variant constructor ${variantConstructorType.shortname()}`,
+                    `Parameter ${this.right.name} not found on variant constructor ${variantConstructorType.getShortName()}`,
                     this.location,
                 );
             }
@@ -274,7 +274,7 @@ export class MemberAccessExpression extends Expression {
             );
             if (!field) {
                 ctx.parser.customError(
-                    `Field ${this.right.name} not found on class ${classType.shortname()}`,
+                    `Field ${this.right.name} not found on class ${classType.getShortName()}`,
                     this.location,
                 );
             }
@@ -329,7 +329,7 @@ export class MemberAccessExpression extends Expression {
 
             if (!constructor) {
                 ctx.parser.customError(
-                    `Constructor ${this.right.name} not found on variant ${variantType.shortname()}`,
+                    `Constructor ${this.right.name} not found on variant ${variantType.getShortName()}`,
                     this.location,
                 );
             }
@@ -363,7 +363,7 @@ export class MemberAccessExpression extends Expression {
         if (lhsType.is(ctx, MetaEnumType)) {
             if (this.right.typeArguments.length > 0) {
                 ctx.parser.customError(
-                    `Enum ${lhsType.shortname()} is not allowed to have generics`,
+                    `Enum ${lhsType.getShortName()} is not allowed to have generics`,
                     this.location,
                 );
             }
@@ -374,7 +374,7 @@ export class MemberAccessExpression extends Expression {
             let value = enumType.fields.find((v) => v.name === this.right.name);
             if (!value) {
                 ctx.parser.customError(
-                    `Value ${this.right.name} not found on enum ${enumType.shortname()}`,
+                    `Value ${this.right.name} not found on enum ${enumType.getShortName()}`,
                     this.location,
                 );
             }
@@ -435,7 +435,7 @@ export class MemberAccessExpression extends Expression {
         }
 
         ctx.parser.customError(
-            `Invalid member access of field ${this.right.name} on type ${lhsType.shortname()}`,
+            `Invalid member access of field ${this.right.name} on type ${lhsType.getShortName()}`,
             this.location,
         );
     }

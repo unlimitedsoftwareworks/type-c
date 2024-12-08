@@ -77,6 +77,9 @@ export class DataType {
     // when resolving types .resolve()
     private static _recursiveTypeResolution: string[] = [];
 
+    // the original type, i.e its definition reference
+    private _originalType: DataType | null = null   ;
+
     constructor(location: SymbolLocation, kind: DataTypeKind){
         this.kind = kind;
         this.location = location;
@@ -103,6 +106,24 @@ export class DataType {
      */
     dereference(): DataType {
         return this;
+    }
+
+    getOriginalType(): DataType {
+        if(this._originalType === null){
+            return this
+        }
+        return this._originalType;
+    }
+
+    setOriginalType(dt: DataType){
+        this._originalType = dt;
+    }
+
+    getShortName(): string {
+        if(this._originalType === null){
+            return this.shortname();
+        }
+        return this._originalType.getShortName();
     }
 
     /**
@@ -183,6 +204,7 @@ export class DataType {
         // we use the kind attribute to avoid circular dependencies
         if (this.kind === "reference") {
             let dt = this.getBaseType(ctx);
+            dt.setOriginalType(this);
             dt.resolve(ctx)
             return dt.is(ctx, targetType);
         }

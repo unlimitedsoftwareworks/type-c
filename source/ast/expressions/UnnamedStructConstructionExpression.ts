@@ -35,7 +35,7 @@ export class UnnamedStructConstructionExpression extends Expression {
         }
 
         if(!hint.is(ctx, StructType)) {
-            ctx.parser.customError(`Cannot construct unnamed struct of type ${hint.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot construct unnamed struct of type ${hint.getShortName()}`, this.location);
         }
 
         let structType = hint.to(ctx, StructType) as StructType;

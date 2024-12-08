@@ -105,7 +105,7 @@ export class ReferenceType extends DataType{
 
         // check if we have the right number of type arguments
         if(typeDecl.genericParameters.length != this.typeArgs.length){
-            ctx.parser.customError(`Type ${fullPkg} requires ${typeDecl.genericParameters.length} type arguments [${typeDecl.genericParameters.map(e => e.shortname()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
+            ctx.parser.customError(`Type ${fullPkg} requires ${typeDecl.genericParameters.length} type arguments [${typeDecl.genericParameters.map(e => e.getShortName()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
         }
 
 
@@ -155,6 +155,7 @@ export class ReferenceType extends DataType{
             }
         }
 
+
         this.postResolveRecursion();
     }
 
@@ -162,7 +163,7 @@ export class ReferenceType extends DataType{
         if(this.baseType == null){
             throw new Error("Reference type not resolved, call .resolve first (or add ctx to dereference)");
         }
-
+        this.baseType.setOriginalType(this);
         // in case of a reference to a reference
         return this.baseType.dereference();
     }
@@ -184,8 +185,8 @@ export class ReferenceType extends DataType{
 
     }
 
-    shortname(){
-        return this.pkg.join(".") + (this.typeArgs.length > 0 ? "<" + this.typeArgs.map(t => t.shortname()).join(", ") + ">" : "");
+    getShortName(){
+        return this.pkg.join(".") + (this.typeArgs.length > 0 ? "<" + this.typeArgs.map(t => t.getShortName()).join(", ") + ">" : "");
     }
 
     serialize(unpack: boolean = false): string {

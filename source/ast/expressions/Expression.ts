@@ -133,7 +133,7 @@ export class Expression {
             if(!r.success) {
                 let r = matchDataTypes(ctx, this.hintType!, this.inferredType!, strict);
                 r = matchDataTypes(ctx, this.hintType!, this.inferredType!, strict);
-                    ctx.parser.customError(`Type mismatch, expected ${this.hintType!.shortname()} but found ${this.inferredType!.shortname()}: ${r.message}`, this.location);
+                    ctx.parser.customError(`Type mismatch, expected ${this.hintType!.getShortName()} but found ${this.inferredType!.getShortName()}: ${r.message}`, this.location);
             }
         }
     }

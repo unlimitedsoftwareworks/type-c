@@ -144,7 +144,7 @@ export function inferFunctionReturnFromHeader(
                 let retType = returnStatements[i].stmt.getReturnType(returnStatements[i].ctx);
                 let res = matchDataTypes(ctx, definedReturnType, retType, false);
                 if (!res.success) {
-                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}. ${res.message}`, returnStatements[i].stmt.location);
+                    ctx.parser.customError(`Return type ${retType.getShortName()} does not match the defined return type ${definedReturnType.getShortName()}. ${res.message}`, returnStatements[i].stmt.location);
                 }
                 
                 returnStatements[i].stmt.returnExpression?.setHint(definedReturnType);
@@ -154,7 +154,7 @@ export function inferFunctionReturnFromHeader(
             let retType = expr!.inferReturn(ctx, definedReturnType);
             let res = matchDataTypes(ctx, definedReturnType, retType, false);
             if (!res.success) {
-                ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}. ${res.message}`, expr!.location);
+                ctx.parser.customError(`Return type ${retType.getShortName()} does not match the defined return type ${definedReturnType.getShortName()}. ${res.message}`, expr!.location);
             }
         }
     }
@@ -282,7 +282,7 @@ export function inferFunctionYieldFromHeader(
             for (let i = 0; i < yieldExpressions.length; i++) {
                 let retType = yieldExpressions[i].yield.getReturnType(yieldExpressions[i].ctx);
                 if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                    ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, yieldExpressions[i].yield.location);
+                    ctx.parser.customError(`Return type ${retType.getShortName()} does not match the defined return type ${definedReturnType.getShortName()}`, yieldExpressions[i].yield.location);
                 }
                 
                 yieldExpressions[i].yield.yieldExpression?.setHint(definedReturnType);
@@ -291,7 +291,7 @@ export function inferFunctionYieldFromHeader(
         else {
             let retType = expr!.inferReturn(ctx, definedReturnType);
             if (!matchDataTypes(ctx, definedReturnType, retType, false).success) {
-                ctx.parser.customError(`Return type ${retType.shortname()} does not match the defined return type ${definedReturnType.shortname()}`, expr!.location);
+                ctx.parser.customError(`Return type ${retType.getShortName()} does not match the defined return type ${definedReturnType.getShortName()}`, expr!.location);
             }
         }
     }
@@ -501,7 +501,7 @@ export function buildGenericsMaps(ctx: Context, generics: GenericType[], concret
         if (generic.constraint) {
             let ok = generic.constraint.checkType(ctx, concrete);
             if (!ok) {
-                ctx.parser.customError(`Generic type ${generic.name} does not respect the constraints: ${generic.constraint.types.map(e => e.shortname()).join(" | ")}`, ctx.location);
+                ctx.parser.customError(`Generic type ${generic.name} does not respect the constraints: ${generic.constraint.types.map(e => e.getShortName()).join(" | ")}`, ctx.location);
             }
         }
 

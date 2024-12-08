@@ -59,13 +59,13 @@ export class IndexSetExpression extends Expression {
         if(lhsType.is(ctx,InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isIndexSettable(ctx, lhsT)) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index set`, this.location);
             }
 
             let valueType = this.value.infer(ctx, null);
             let m = getOperatorOverloadType(ctx, "__index_set__", lhsT, [...this.indexes.map((index) => index.infer(ctx, null)), valueType]);
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null).shortname()).join(", ")})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null).getShortName()).join(", ")})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -91,7 +91,7 @@ export class IndexSetExpression extends Expression {
             // infer the type of the index
             let indexType = this.indexes[0].infer(ctx, null);
             if(!indexType.is(ctx, BasicType)) {
-                ctx.parser.customError(`Array index must be of type int, got ${indexType.shortname()}`, this.location);
+                ctx.parser.customError(`Array index must be of type int, got ${indexType.getShortName()}`, this.location);
             }
             
             let basicIndexType = indexType.to(ctx, BasicType) as BasicType;
@@ -100,7 +100,7 @@ export class IndexSetExpression extends Expression {
             }
         }
         else {
-            ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
+            ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index set`, this.location);
         }
 
         this.checkHint(ctx);

@@ -41,7 +41,7 @@ export class ImplementationType extends DataType {
             // we make sure that the interface is resolved
             this.requiredInterface.resolve(ctx);
             if(!this.requiredInterface.is(ctx, InterfaceType)) {
-                ctx.parser.customError(`Required interface ${this.requiredInterface.shortname()} is not an interface`, this.location);
+                ctx.parser.customError(`Required interface ${this.requiredInterface.getShortName()} is not an interface`, this.location);
             }
         }
 
@@ -77,7 +77,7 @@ export class ImplementationType extends DataType {
     }
 
     shortname(): string {
-        return `implementation ${this.requiredInterface?("for " + this.requiredInterface.shortname()):""}(${this.requiredAttributes.map(a => a.name).join(", ")}){${this.implementedMethods.map(m => m.shortname()).join(", ")}}`
+        return `implementation ${this.requiredInterface?("for " + this.requiredInterface.getShortName()):""}(${this.requiredAttributes.map(a => a.name).join(", ")}){${this.implementedMethods.map(m => m.shortname()).join(", ")}}`
     }
 
     serialize(unpack: boolean = false): string {

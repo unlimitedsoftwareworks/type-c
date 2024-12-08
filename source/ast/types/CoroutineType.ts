@@ -39,7 +39,7 @@ export class CoroutineType extends DataType {
     }
 
     shortname(): string {
-        return `@coroutine{${this.fnType.shortname()}}`;
+        return `@coroutine{${this.fnType.getShortName()}}`;
     }
 
     serialize(unpack: boolean = false): string {
@@ -57,7 +57,7 @@ export class CoroutineType extends DataType {
 
         // make sure originalType is a CoroutineType
         if(!originalType.is(ctx, CoroutineType)){
-            ctx.parser.customError(`Expected coroutine type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected coroutine type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let coroutineType = originalType.to(ctx, CoroutineType) as CoroutineType;

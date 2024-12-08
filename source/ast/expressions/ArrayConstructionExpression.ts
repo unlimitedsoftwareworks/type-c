@@ -33,7 +33,7 @@ export class ArrayUnpackingExpression extends Expression {
         this.inferredType = this.expression.infer(ctx, hint?new ArrayType(this.location, hint):null);
         // make sure the expression is an array
         if(!this.inferredType.is(ctx, ArrayType)){
-            ctx.parser.customError(`Expected an array, but ${this.inferredType.shortname()} found`, this.location);
+            ctx.parser.customError(`Expected an array, but ${this.inferredType.getShortName()} found`, this.location);
         }
         let arrayType = this.inferredType.to(ctx, ArrayType) as ArrayType;
         this.inferredType = arrayType.arrayOf;
@@ -67,7 +67,7 @@ export class ArrayConstructionExpression extends Expression {
         }
 
         if(hint && !hint.is(ctx, ArrayType)){ 
-            ctx.parser.customError(`Type missmatch, ${hint.shortname()} expected, but array was found`, this.location);
+            ctx.parser.customError(`Type missmatch, ${hint.getShortName()} expected, but array was found`, this.location);
         }
 
         let baseHint = hint?hint.to(ctx, ArrayType) as ArrayType:null;
@@ -97,7 +97,7 @@ export class ArrayConstructionExpression extends Expression {
 
                 let res = matchDataTypes(ctx, baseHint, commonType);
                 if(!res.success){
-                    ctx.parser.customError(`Could not match array type ${baseHint!.shortname()} with ${commonType.shortname()}: ${res.message}`, this.location);
+                    ctx.parser.customError(`Could not match array type ${baseHint!.getShortName()} with ${commonType.getShortName()}: ${res.message}`, this.location);
                 }
 
                 for(const element of this.elements){

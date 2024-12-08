@@ -73,13 +73,13 @@ export function getDataTypeByteSize(type: DataType): number {
             if(enumType.as === "u64" || enumType.as === "i64") {
                 return 8;
             }
-            throw new Error(`Unknown enum target type for enum ${enumType.shortname()} ${enumType.as}`);
+            throw new Error(`Unknown enum target type for enum ${enumType.getShortName()} ${enumType.as}`);
         }
 
         case "reference": {
             let ref = type as ReferenceType;
             if(ref.baseType === null) {
-                throw new Error(`Reference type ${type.shortname()} is missing a base type`);
+                throw new Error(`Reference type ${type.getShortName()} is missing a base type`);
             }
             return getDataTypeByteSize(ref.baseType);
         }
@@ -89,7 +89,7 @@ export function getDataTypeByteSize(type: DataType): number {
         }
 
         default : {
-            throw new Error(`${type.shortname()} aka ${type.kind} number types should not be used in the code generator`);
+            throw new Error(`${type.getShortName()} aka ${type.kind} number types should not be used in the code generator`);
         }
     }
 }

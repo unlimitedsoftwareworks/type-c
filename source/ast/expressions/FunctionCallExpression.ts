@@ -132,12 +132,12 @@ export class FunctionCallExpression extends Expression {
                  */
 
                 if(!baseExprType.allowedNullable(ctx)){
-                    ctx.parser.customError(`Cannot perform \`?.\` on non-nullable type ${baseExprType.shortname()}.`, this.location);
+                    ctx.parser.customError(`Cannot perform \`?.\` on non-nullable type ${baseExprType.getShortName()}.`, this.location);
                 }
             }
             else {
                 if(baseExprType.is(ctx, NullableType)){
-                    ctx.parser.customError(`Cannot perform \`.\` on nullable type ${baseExprType.shortname()}, maybe you want to use \`?.\` instead.`, this.location);
+                    ctx.parser.customError(`Cannot perform \`.\` on nullable type ${baseExprType.getShortName()}, maybe you want to use \`?.\` instead.`, this.location);
                 }
             }
 
@@ -220,13 +220,13 @@ export class FunctionCallExpression extends Expression {
         let iscallable = isCallable(ctx, lhsT);
 
         if (!iscallable) {
-            ctx.parser.customError(`Type ${lhsT.shortname()} is not callable`, this.location);
+            ctx.parser.customError(`Type ${lhsT.getShortName()} is not callable`, this.location);
         }
 
         let method = getOperatorOverloadType(ctx, "__call__", lhsT, this.args.map(e => e.infer(ctx, null)));
 
         if (!method) {
-            ctx.parser.customError(`Method __call__ not found in ${lhsT.shortname()}`, this.location);
+            ctx.parser.customError(`Method __call__ not found in ${lhsT.getShortName()}`, this.location);
         }
 
         // setup the hint for call arguments
@@ -262,7 +262,7 @@ export class FunctionCallExpression extends Expression {
 
             let res = matchDataTypes(ctx, paramType, argType);
             if (!res.success) {
-                ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
+                ctx.parser.customError(`Expected ${paramType.getShortName()}, got ${argType.getShortName()}: ${res.message}`, this.args[i].location);
             }
 
             // we also make sure that we respect the constraints of the parameter, i.e mutability
@@ -303,10 +303,11 @@ export class FunctionCallExpression extends Expression {
             let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
-                ctx.parser.customError(`Method ${memberExpr.name} not found in class ${baseExprType.shortname()}`, this.location);
+                let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
+                ctx.parser.customError(`Method ${memberExpr.name}(${inferredArgTypes.map(e => e.getShortName()).join(", ")}) not found in class ${baseExprType.getShortName()}`, this.location);
             }
             if (candidateMethods.length > 1) {
-                ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseExprType.shortname()}`, this.location);
+                ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseExprType.getShortName()}`, this.location);
             }
 
             let method = candidateMethods[0];
@@ -366,7 +367,7 @@ export class FunctionCallExpression extends Expression {
 
             let res = matchDataTypes(ctx, paramType, argType);
             if (!res.success) {
-                ctx.parser.customError(`Expected ${paramType.shortname()}, got ${argType.shortname()}: ${res.message}`, this.args[i].location);
+                ctx.parser.customError(`Expected ${paramType.getShortName()}, got ${argType.getShortName()}: ${res.message}`, this.args[i].location);
             }
         }
 
@@ -391,10 +392,10 @@ export class FunctionCallExpression extends Expression {
 
         let candidateMethods = baseInterface.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint);
         if (candidateMethods.length === 0) {
-            ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseExprType.shortname()}`, this.location);
+            ctx.parser.customError(`Method ${memberExpr.name} not found in interface ${baseExprType.getShortName()}`, this.location);
         }
         if (candidateMethods.length > 1) {
-            ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseExprType.shortname()}`, this.location);
+            ctx.parser.customError(`Ambiguous method ${memberExpr.name} in interface ${baseExprType.getShortName()}`, this.location);
         }
 
         let method = candidateMethods[0];
@@ -444,11 +445,11 @@ export class FunctionCallExpression extends Expression {
             let candidateMethods = classType.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
 
             if (candidateMethods.length === 0) {
-                ctx.parser.customError(`Method ${memberExpr.name} not found in class ${classType.shortname()}`, this.location);
+                ctx.parser.customError(`Method ${memberExpr.name} not found in class ${classType.getShortName()}`, this.location);
             }
 
             if (candidateMethods.length > 1) {
-                ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${classType.shortname()}`, this.location);
+                ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${classType.getShortName()}`, this.location);
             }
 
             let method = candidateMethods[0];
@@ -544,7 +545,7 @@ export class FunctionCallExpression extends Expression {
                 if(hint != null){
                     // we make sure that the hint is either a variant constructor or a variant type
                     if(!hint.is(ctx, VariantType) && !hint.is(ctx, VariantConstructorType)){
-                        ctx.parser.customError(`Expected a variant constructor or a variant type, got ${hint.shortname()}`, this.location);
+                        ctx.parser.customError(`Expected a variant constructor or a variant type, got ${hint.getShortName()}`, this.location);
                     }
 
                     if(hint.is(ctx, VariantConstructorType)){
@@ -575,7 +576,7 @@ export class FunctionCallExpression extends Expression {
 
                 variantConstructor = variantType.constructors.find(c => c.name === memberExpr.name)!;
                 if (variantConstructor == undefined) {
-                    ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.shortname()}`, this.location);
+                    ctx.parser.customError(`Constructor ${memberExpr.name} not found in variant ${variantType.getShortName()}`, this.location);
                 }
             }
             // if we have generics, we need to clone the variant type

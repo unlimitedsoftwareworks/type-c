@@ -102,7 +102,7 @@ export class ClassMethod extends Symbol {
     }
 
     shortname(): string {
-        return this.imethod.shortname();
+        return this.imethod.getShortName();
     }
 
     serialize(unpack: boolean = false): string {
@@ -185,7 +185,7 @@ export class ClassMethod extends Symbol {
 
             let res = arg.constraint.checkType(ctx, typeMap[arg.name]);
             if(res === false) {
-                ctx.parser.customError(`Type ${typeMap[arg.name].shortname()} does not satisfy constraint set on generic type ${arg.name}`, this.location);
+                ctx.parser.customError(`Type ${typeMap[arg.name].getShortName()} does not satisfy constraint set on generic type ${arg.name}`, this.location);
             }
         }
 

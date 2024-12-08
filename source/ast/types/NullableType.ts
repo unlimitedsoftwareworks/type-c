@@ -54,7 +54,7 @@ export class NullableType extends DataType {
     }
 
     shortname(): string {
-        return this.type.shortname()+"?";
+        return this.type.getShortName()+"?";
     }
 
     denull(): DataType {
@@ -85,7 +85,7 @@ export class NullableType extends DataType {
 
         // make sure originalType is a NullableType
         if(!originalType.is(ctx, NullableType)){
-            ctx.parser.customError(`Expected nullable type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected nullable type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let nullableType = originalType.to(ctx, NullableType) as NullableType;

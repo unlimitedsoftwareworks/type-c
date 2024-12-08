@@ -59,13 +59,13 @@ export class ReverseIndexSetExpression extends Expression {
         if(lhsType.is(ctx,InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isReverseIndexSettable(ctx, lhsT)) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index set`, this.location);
             }
 
             let valueType = this.value.infer(ctx, null);
             let m = getOperatorOverloadType(ctx, "__reverse_index_set__", lhsT, [this.index.infer(ctx, null), valueType]);
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __reverse_index_set__(${this.index.infer(ctx, null).shortname()})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __reverse_index_set__(${this.index.infer(ctx, null).getShortName()})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -86,7 +86,7 @@ export class ReverseIndexSetExpression extends Expression {
             // infer the type of the index
             let indexType = this.index.infer(ctx, null);
             if(!indexType.is(ctx, BasicType)) {
-                ctx.parser.customError(`Array index must be of type int, got ${indexType.shortname()}`, this.location);
+                ctx.parser.customError(`Array index must be of type int, got ${indexType.getShortName()}`, this.location);
             }
             
             let basicIndexType = indexType.to(ctx, BasicType) as BasicType;
@@ -95,7 +95,7 @@ export class ReverseIndexSetExpression extends Expression {
             }
         }
         else {
-            ctx.parser.customError(`Type ${lhsType.shortname()} does not support index set`, this.location);
+            ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index set`, this.location);
         }
 
         this.checkHint(ctx);

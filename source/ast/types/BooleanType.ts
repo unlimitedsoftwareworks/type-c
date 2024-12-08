@@ -42,7 +42,7 @@ export class BooleanType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is a BooleanType
         if(!originalType.is(ctx, BooleanType)){
-            ctx.parser.customError(`Expected boolean type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected boolean type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
     }
 }

@@ -85,7 +85,7 @@ export class StructType extends DataType {
     }
 
     shortname(): string {
-        return "struct{"+this.fields.map(f => f.name+":"+f.type.shortname()).join(",")+"}"
+        return "struct{"+this.fields.map(f => f.name+":"+f.type.getShortName()).join(",")+"}"
     }
 
     serialize(unpack: boolean = false): string {
@@ -140,7 +140,7 @@ export class StructType extends DataType {
 
         // make sure originalType is a StructType
         if(!originalType.is(ctx, StructType)){
-            ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let structType = originalType.to(ctx, StructType) as StructType;

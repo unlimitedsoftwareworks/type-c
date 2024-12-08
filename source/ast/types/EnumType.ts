@@ -193,24 +193,24 @@ export class EnumType extends DataType {
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
         // make sure originalType is an EnumType
         if(!originalType.is(ctx, EnumType)){
-            ctx.parser.customError(`Expected enum type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected enum type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let enumType = originalType.to(ctx, EnumType) as EnumType;
         let res = matchDataTypes(ctx, this, enumType);
         if(!res.success){
-            ctx.parser.customError(`Expected enum type ${this.shortname()}, got ${enumType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected enum type ${this.getShortName()}, got ${enumType.getShortName()} instead.`, this.location);
         }
     }
 
     getFieldValue(ctx: Context, name: string): number {
         let field = this.fields.find((f) => f.name == name);
         if(!field){
-            ctx.parser.customError("Enum " + this.shortname() + " does not have a field named " + name, this.location);
+            ctx.parser.customError("Enum " + this.getShortName() + " does not have a field named " + name, this.location);
         }
 
         if(field.value == undefined){
-            ctx.parser.customError("Enum " + this.shortname() + " does not have a value for field " + name, this.location);
+            ctx.parser.customError("Enum " + this.getShortName() + " does not have a value for field " + name, this.location);
         }
 
         return field.toNumber()!;

@@ -87,7 +87,7 @@ export class VariantConstructorType  extends DataType{
     }
 
     shortname(): string {
-        return this.name+"("+this.parameters.map(f => f.name+":"+f.type.shortname()).join(",")+")"
+        return this.name+"("+this.parameters.map(f => f.name+":"+f.type.getShortName()).join(",")+")"
     }
 
     serialize(unpack: boolean = false): string {
@@ -111,7 +111,7 @@ export class VariantConstructorType  extends DataType{
 
         // make sure originalType is a VariantConstructorType
         if(!originalType.is(ctx, VariantConstructorType)){
-            ctx.parser.customError(`Expected variant constructor type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected variant constructor type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let variantConstructorType = originalType.to(ctx, VariantConstructorType) as VariantConstructorType;

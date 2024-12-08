@@ -163,6 +163,6 @@ export class TemplateSegment {
  */
 function sortClassMethods(methods: ClassMethod[]) {
     let sortedMethods = methods.sort((a, b) => a.imethod.getUID() - b.imethod.getUID());
-    //console.log(sortedMethods.map(m => m.imethod.getUID()+ ': ' + m.shortname()));
+    //console.log(sortedMethods.map(m => m.imethod.getUID()+ ': ' + m.getShortName()));
     return sortedMethods;
 }

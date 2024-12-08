@@ -276,7 +276,7 @@ export class IntLiteralExpression extends LiteralExpression {
         }
         else {
             this.inferredType = new BasicType(this.location, findLeastSufficientType(this.value));
-            ctx.parser.customError(`Unexpected type, ${hint.shortname()} expected but found ${this.inferredType?.shortname()}`, this.location);
+            ctx.parser.customError(`Unexpected type, ${hint.getShortName()} expected but found ${this.inferredType?.getShortName()}`, this.location);
         }
         this.setInferredToHint();
         return this.inferredType;

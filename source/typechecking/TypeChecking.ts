@@ -140,7 +140,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     // case 4: null types, a null can be only assigned a null
     if (t1.is(ctx, NullType)) {
         if (!(t2.is(ctx, NullType))) {
-            res = Err(`Type mismatch, expected null, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected null, got ${t2.getShortName()}`);
         }
         scopeCache.set(typeKey, res);
         return res;
@@ -167,7 +167,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     }
 
     if(t2.is(ctx, NullableType)){
-        res = Err(`Cannot match non-nullable type ${t1.shortname()} with nullable type ${t2.shortname()}`);
+        res = Err(`Cannot match non-nullable type ${t1.getShortName()} with nullable type ${t2.getShortName()}`);
         scopeCache.set(typeKey, res);
         return res;
     }
@@ -176,7 +176,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     if (t1.is(ctx, VoidType)) {
         // make sure t2 is also a void type
         if (!(t2 instanceof VoidType)) {
-            res = Err(`Type mismatch, expected void, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected void, got ${t2.getShortName()}`);
             scopeCache.set(typeKey, res);
         }
 
@@ -197,7 +197,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         }
 
         if (!t2.is(ctx, BasicType)) {
-            res = Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected ${t1.getShortName()}, got ${t2.getShortName()}`);
             scopeCache.set(typeKey, res);
             return res;
         }
@@ -216,7 +216,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     // case 2: boolean
     if (t1.is(ctx, BooleanType)) {
         if (!(t2.is(ctx, BooleanType))) {
-            res = Err(`Type mismatch, expected boolean, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected boolean, got ${t2.getShortName()}`);
         }
 
         scopeCache.set(typeKey, res);
@@ -227,7 +227,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     if (t1.is(ctx, ArrayType)) {
         if (!(t2.is(ctx, ArrayType))) {
-            res = Err(`Type mismatch, expected array, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected array, got ${t2.getShortName()}`);
         }
         else {
             res = matchDataTypesRecursive(ctx, (t1.to(ctx, ArrayType) as ArrayType).arrayOf, (t2.to(ctx, ArrayType) as ArrayType).arrayOf, strict, stack);
@@ -259,7 +259,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         }
 
         let te = t1.to(ctx, EnumType) as EnumType;
-        res = Err(`Type mismatch, expected enum with fields ${te.fields.map(e => e.name).join(", ")}, got ${t2.shortname()}`);
+        res = Err(`Type mismatch, expected enum with fields ${te.fields.map(e => e.name).join(", ")}, got ${t2.getShortName()}`);
         scopeCache.set(typeKey, res);
         return res
     }
@@ -281,7 +281,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if (t1.is(ctx, FunctionType)) {
         if (!t2.is(ctx, FunctionType)) {
-            res = Err(`Type mismatch, expected function, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected function, got ${t2.getShortName()}`);
             scopeCache.set(typeKey, res);
             return res;
         }
@@ -303,7 +303,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if (t1.is(ctx, LiteralIntType)) {
         if (!t2.is(ctx, BasicType)) {
-            res = Err(`Type mismatch, expected basic type, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected basic type, got ${t2.getShortName()}`);
             scopeCache.set(typeKey, res);
             return res;
         }
@@ -328,7 +328,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
             scopeCache.set(typeKey, res);
             return res;
         }
-        res = Err(`Type mismatch, expected interface, got ${t2.shortname()}`);
+        res = Err(`Type mismatch, expected interface, got ${t2.getShortName()}`);
         scopeCache.set(typeKey, res);
         return res;
     }
@@ -339,7 +339,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if (t1.is(ctx, ClassType)) {
         if (!t2.is(ctx, ClassType)) {
-            res = Err(`Type mismatch, expected class, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected class, got ${t2.getShortName()}`);
             scopeCache.set(typeKey, res);
             return res;
         }
@@ -379,7 +379,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
             res = matchVariantWithConstructor(ctx, t1.to(ctx, VariantType) as VariantType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
         }
         else {
-            res = Err(`Type mismatch, expected variant or variant constructor type of base tyep ${(t1.to(ctx, VariantType) as VariantType).shortname()}, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected variant or variant constructor type of base tyep ${(t1.to(ctx, VariantType) as VariantType).getShortName()}, got ${t2.getShortName()}`);
         }
         scopeCache.set(typeKey, res);
         return res;
@@ -391,7 +391,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if (t1.is(ctx, VariantConstructorType)) {
         if (!t2.is(ctx, VariantConstructorType)) {
-            res = Err(`Type mismatch, expected variant constructor, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected variant constructor, got ${t2.getShortName()}`);
         }
         else {
             res = matchVariantConstructors(ctx, t1.to(ctx, VariantConstructorType) as VariantConstructorType, t2.to(ctx, VariantConstructorType) as VariantConstructorType, strict, stack);
@@ -404,7 +404,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     if (t1.is(ctx, StructType)) {
         if (!(t2.is(ctx, StructType))) {
-            res = Err(`Type mismatch, expected struct, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected struct, got ${t2.getShortName()}`);
         }
         else {
             res = matchStructs(ctx, t1.to(ctx, StructType) as StructType, t2.to(ctx, StructType) as StructType, strict, stack);
@@ -416,7 +416,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     if (t1.is(ctx, TupleType)) {
         if (!(t2.is(ctx, TupleType))) {
-            res = Err(`Type mismatch, expected tuple, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected tuple, got ${t2.getShortName()}`);
         }
         else {
             res = matchTuples(ctx, t1.to(ctx, TupleType) as TupleType, t2.to(ctx, TupleType) as TupleType, strict, stack);
@@ -440,7 +440,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      */
     if (t1.is(ctx, CoroutineType)) {
         if (!t2.is(ctx, CoroutineType)) {
-            res = Err(`Type mismatch, expected coroutine, got ${t2.shortname()}`);
+            res = Err(`Type mismatch, expected coroutine, got ${t2.getShortName()}`);
         }
         else {
             res = matchDataTypesRecursive(ctx, (t1.to(ctx, CoroutineType) as CoroutineType).fnType, (t2.to(ctx, CoroutineType) as CoroutineType).fnType, strict, stack);
@@ -449,7 +449,7 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         return res;
     }
 
-    res = Err(`Type mismatch, ${t1.shortname()} and ${t2.shortname()} are not compatible`);
+    res = Err(`Type mismatch, ${t1.getShortName()} and ${t2.getShortName()} are not compatible`);
     scopeCache.set(typeKey, res);
     return res;
 }
@@ -459,7 +459,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         if (t1.kind === t2.kind) {
             return Ok();
         } else {
-            return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            return Err(`Type mismatch, expected ${t1.getShortName()}, got ${t2.getShortName()}`);
         }
     }
 
@@ -467,7 +467,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         return Ok();
     }
     if (strict && (t1.kind !== t2.kind)) {
-        return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+        return Err(`Type mismatch, expected ${t1.getShortName()}, got ${t2.getShortName()}`);
     }
 
     // Define an ordered list for numeric types.
@@ -485,7 +485,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         if (t2Index >= t1Index + 1) {
             return Ok();
         } else {
-            return Err(`Type mismatch, cannot safely cast ${t1.shortname()} to ${t2.shortname()}`);
+            return Err(`Type mismatch, cannot safely cast ${t1.getShortName()} to ${t2.getShortName()}`);
         }
     }
 
@@ -500,7 +500,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         if (t2Index >= t1Index + 1) {
             return Ok();
         } else {
-            return Err(`Type mismatch, cannot safely cast ${t1.shortname()} to ${t2.shortname()}`);
+            return Err(`Type mismatch, cannot safely cast ${t1.getShortName()} to ${t2.getShortName()}`);
         }
     }
 
@@ -509,7 +509,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         if (unsignedInts.indexOf(t1.kind) >= unsignedInts.indexOf(t2.kind)) {
             return Ok();
         } else {
-            return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            return Err(`Type mismatch, expected ${t1.getShortName()}, got ${t2.getShortName()}`);
         }
     }
 
@@ -517,7 +517,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         if (signedInts.indexOf(t1.kind) >= signedInts.indexOf(t2.kind)) {
             return Ok();
         } else {
-            return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            return Err(`Type mismatch, expected ${t1.getShortName()}, got ${t2.getShortName()}`);
         }
     }
 
@@ -526,7 +526,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         if (floats.indexOf(t1.kind) >= floats.indexOf(t2.kind)) {
             return Ok();
         } else {
-            return Err(`Type mismatch, expected ${t1.shortname()}, got ${t2.shortname()}`);
+            return Err(`Type mismatch, expected ${t1.getShortName()}, got ${t2.getShortName()}`);
         }
     }
 
@@ -551,7 +551,7 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
     }
 
     // All other combinations are incompatible.
-    return Err(`Type mismatch, unexpected combination of ${t1.shortname()} and ${t2.shortname()}`);
+    return Err(`Type mismatch, unexpected combination of ${t1.getShortName()} and ${t2.getShortName()}`);
 }
 
 
@@ -668,7 +668,7 @@ function matchInterfaces(ctx: Context, t1: InterfaceType, t2: InterfaceType, str
             }
         }
         if (!found) {
-            return Err(`Method ${method.name} not found in interface ${t2.shortname()}`);
+            return Err(`Method ${method.name} not found in interface ${t2.getShortName()}`);
         }
     }
 
@@ -700,7 +700,7 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
             }
         }
         if(!found) {
-            return Err(`Method ${method.name} not found in class ${t2.shortname()}`);
+            return Err(`Method ${method.name} not found in class ${t2.getShortName()}`);
         }
     }*/
 
@@ -708,10 +708,10 @@ function matchInterfaceClass(ctx: Context, t1: InterfaceType, t2: ClassType, str
         // method is from the interface, we try and find it in the class
         let m = t2.getMethodBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType, []);
         if (m.length === 0) {
-            return Err(`Method ${method.shortname()} not found in class ${t2.shortname()}`);
+            return Err(`Method ${method.getShortName()} not found in class ${t2.getShortName()}`);
         }
         else if (m.length > 1) {
-            return Err(`Ambiguous method ${method.shortname()} in class ${t2.shortname()}`);
+            return Err(`Ambiguous method ${method.getShortName()} in class ${t2.getShortName()}`);
         }
         // OK!
     }
@@ -730,7 +730,7 @@ function matchClasses(ctx: Context, ct1: DataType, ct2: DataType, strict: boolea
     t2.resolve(ctx);
 
     if (t1.classId !== t2.classId) {
-        return Err(`Type mismatch, classes ${t1.shortname()} and ${t2.shortname()} are not compatible`);
+        return Err(`Type mismatch, classes ${t1.getShortName()} and ${t2.getShortName()} are not compatible`);
     }
 
 
@@ -783,7 +783,7 @@ function matchVariantWithConstructor(ctx: Context, t1: VariantType, t2: VariantC
         }
     }
 
-    return Err(`Constructor ${t2.name} not found in variant ${t1.shortname()}`);
+    return Err(`Constructor ${t2.name} not found in variant ${t1.getShortName()}`);
 }
 
 // matches two variant constructors
@@ -845,7 +845,7 @@ function matchStructs(ctx: Context, t1: StructType, t2: StructType, strict: bool
             }
         }
         if (!found) {
-            return Err(`Field ${field.name} not found in struct ${t2.shortname()}`);
+            return Err(`Field ${field.name} not found in struct ${t2.getShortName()}`);
         }
     }
     //}

@@ -78,7 +78,7 @@ export class NamedStructConstructionExpression extends Expression {
         if (hint) {
             // make sure the hint is a struct
             if (!hint.is(ctx, StructType)) {
-                ctx.parser.customError(`Cannot create a named struct from a non-struct type ${hint.shortname()}`, this.location);
+                ctx.parser.customError(`Cannot create a named struct from a non-struct type ${hint.getShortName()}`, this.location);
             }
 
             // the hint may not contain all the fields present in the name struct construction
@@ -146,7 +146,7 @@ export class NamedStructConstructionExpression extends Expression {
 
                 // now we get the inferred type of e
                 if (!inferredType.is(ctx, StructType)) {
-                    ctx.parser.customError(`Cannot unpack a non-struct type ${inferredType.shortname()}`, dec.location);
+                    ctx.parser.customError(`Cannot unpack a non-struct type ${inferredType.getShortName()}`, dec.location);
                 }
 
                 let structType = inferredType.to(ctx, StructType) as StructType;
@@ -183,12 +183,12 @@ export class NamedStructConstructionExpression extends Expression {
             let expr = new NamedStructConstructionExpression(this.location, pairs);
             let fullStruct = expr.infer(ctx, hint);
             if(!fullStruct.is(ctx, StructType)) {
-                ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.shortname()}`, this.location);
+                ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.getShortName()}`, this.location);
             }
             let fullStructType = fullStruct.to(ctx, StructType) as StructType;
             let res = reduceStructFields(ctx, fullStructType.fields, false, []);
             if(!res.err.success) {
-                ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.shortname()}: ${res.err.message}`, this.location);
+                ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.getShortName()}: ${res.err.message}`, this.location);
             }
 
             this.inferredType = new StructType(this.location, res.fields);

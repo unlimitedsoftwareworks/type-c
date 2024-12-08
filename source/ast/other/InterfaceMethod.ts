@@ -69,8 +69,8 @@ export class InterfaceMethod extends FunctionPrototype {
         this.alternativeName.push(name);
     }
 
-    shortname() {
-        return this.name+"("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.shortname()).join(",")+") -> "+this.header.returnType.shortname();
+    getShortName() {
+        return this.name+"("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
     }
 
     serialize(unpack: boolean = false): string {

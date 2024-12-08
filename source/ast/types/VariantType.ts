@@ -50,11 +50,11 @@ export class VariantType extends DataType {
     }
 
     toString(): string {
-        return `variant{`+this.constructors.map((c) => c.shortname()).join("|")+`}`;
+        return `variant{`+this.constructors.map((c) => c.getShortName()).join("|")+`}`;
     }
 
     shortname(): string {
-        return `@variant{`+this.constructors.map((c) => c.shortname()).join("|")+`}`;
+        return `@variant{`+this.constructors.map((c) => c.getShortName()).join("|")+`}`;
     }
 
     allowedNullable(ctx: Context): boolean {
@@ -74,7 +74,7 @@ export class VariantType extends DataType {
 
         // make sure originalType is a VariantType
         if(!originalType.is(ctx, VariantType)){
-            ctx.parser.customError(`Expected variant type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected variant type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let variantType = originalType.to(ctx, VariantType) as VariantType;

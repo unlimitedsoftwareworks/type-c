@@ -43,7 +43,7 @@ export class ReverseIndexAccessExpression extends Expression {
         let lhsType = this.lhs.infer(ctx, null);
 
         if(lhsType.is(ctx, NullableType)) {
-            ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.shortname()}, please denull the expression first`, this.location);
+            ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.getShortName()}, please denull the expression first`, this.location);
         }
             
 
@@ -51,12 +51,12 @@ export class ReverseIndexAccessExpression extends Expression {
         if(lhsType.is(ctx, InterfaceType) || lhsType.is(ctx, ClassType)) {
             let lhsT = lhsType.dereference() as ClassType | InterfaceType;
             if(!isReverseIndexable(ctx, lhsT)) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access`, this.location);
             }
 
             let m = getOperatorOverloadType(ctx, "__reverse_index__", lhsT, [this.index.infer(ctx, null)]);
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access with signature __reverse_index__(${this.index.infer(ctx, null).shortname()})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __reverse_index__(${this.index.infer(ctx, null).getShortName()})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -70,7 +70,7 @@ export class ReverseIndexAccessExpression extends Expression {
             this.inferredType = arrayType.arrayOf;
         }
         else {
-            ctx.parser.customError(`Type ${lhsType.shortname()} does not support index access`, this.location);
+            ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access`, this.location);
         }
 
         

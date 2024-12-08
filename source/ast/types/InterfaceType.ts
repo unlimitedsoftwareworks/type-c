@@ -212,7 +212,7 @@ export class InterfaceType extends DataType {
             return -1;
         }
         if (candidates.length > 1) {
-            ctx.parser.customError(`Ambiguous method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in interface ${this.shortname()}`, this.location);
+            ctx.parser.customError(`Ambiguous method ${name} with given types ${parameters.map(e => e.getShortName()).join(", ")} -> ${returnType?.getShortName() || "void"} in interface ${this.getShortName()}`, this.location);
         }
         return candidates[0]._indexInInterface;
     }
@@ -234,7 +234,7 @@ export class InterfaceType extends DataType {
 
         // make sure originalType is an InterfaceType
         if(!originalType.is(ctx, InterfaceType)){
-            ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         // make sure number of methods is the same

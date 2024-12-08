@@ -1118,7 +1118,7 @@ export class FunctionGenerator {
                 "Binary operation " +
                     expr.operator +
                     " is not yet implemented for " +
-                    expr.inferredType?.shortname(),
+                    expr.inferredType?.getShortName(),
                 expr.location,
             );
         }
@@ -1334,7 +1334,7 @@ export class FunctionGenerator {
                 return right;
             }
             else {
-                console.log(baseType.shortname());
+                console.log(baseType.getShortName());
             }
         }
         {
@@ -4246,7 +4246,7 @@ export class FunctionGenerator {
             // castType has to be an interface
             if (!castType.is(ctx, InterfaceType)) {
                 throw new Error(
-                    "Expected interface type, got " + castType.shortname(),
+                    "Expected interface type, got " + castType.getShortName(),
                 );
             }
 

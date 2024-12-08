@@ -119,7 +119,7 @@ export class BinaryExpression extends Expression {
                 let leftType = this.left.infer(ctx, null, meta);
 
                 if(!(leftType.is(ctx, NullableType))){
-                    ctx.parser.customError(`Cannot apply operator ?? to non-nullable LHS type ${leftType.shortname()}: LHS Must be nullable, if not, remove the ?? operator`, this.location);
+                    ctx.parser.customError(`Cannot apply operator ?? to non-nullable LHS type ${leftType.getShortName()}: LHS Must be nullable, if not, remove the ?? operator`, this.location);
                 }
 
 

@@ -102,7 +102,7 @@ export class ClassType extends DataType {
             superType.resolve(ctx);
 
             if (!superType.is(ctx, InterfaceType)) {
-                ctx.parser.customError(`A class can only implement interfaces, ${superType.shortname()} is not an interface`, superType.location);
+                ctx.parser.customError(`A class can only implement interfaces, ${superType.getShortName()} is not an interface`, superType.location);
             }
 
             let interfaceSuper = superType.to(ctx, InterfaceType) as InterfaceType;
@@ -160,7 +160,7 @@ export class ClassType extends DataType {
 
                 }
                 else {
-                    ctx.parser.customError(`Expected implementation type, got ${impl.type.shortname()}`, impl.type.location);
+                    ctx.parser.customError(`Expected implementation type, got ${impl.type.getShortName()}`, impl.type.location);
                 }
             }
         }
@@ -232,7 +232,7 @@ export class ClassType extends DataType {
         for (const method of requiredMethods) {
             let m = this.findExactMethod(ctx, method);
             if (m == null) {
-                ctx.parser.customError(`Method ${method.shortname()} is not implemented`, this.location);
+                ctx.parser.customError(`Method ${method.getShortName()} is not implemented in class ${this.getShortName()}`, this.location);
             }
         }
 
@@ -604,7 +604,7 @@ export class ClassType extends DataType {
                 let method = allMethods[i];
                 if (method.imethod.name === name) {
                     if (method.imethod.generics.length > 0) {
-                        ctx.parser.customError(`Cannot find non-generic method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in class ${this.shortname()}`, this.location);
+                        ctx.parser.customError(`Cannot find non-generic method ${name} with given types ${parameters.map(e => e.getShortName()).join(", ")} -> ${returnType?.getShortName() || "void"} in class ${this.getShortName()}`, this.location);
                     }
 
                     if (returnType !== null) {
@@ -640,7 +640,7 @@ export class ClassType extends DataType {
         }
 
         if (index === -1) {
-            ctx.parser.customError(`Cannot find method ${name} with given types ${parameters.map(e => e.shortname()).join(", ")} -> ${returnType?.shortname() || "void"} in class ${this.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot find method ${name} with given types ${parameters.map(e => e.getShortName()).join(", ")} -> ${returnType?.getShortName() || "void"} in class ${this.getShortName()}`, this.location);
         }
 
         return index;
@@ -728,7 +728,7 @@ export class ClassType extends DataType {
 
         // make sure we have a class type
         if (!originalType.is(ctx, ClassType)) {
-            ctx.parser.customError(`Expected class type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected class type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let classType = (originalType.to(ctx, ClassType) as ClassType);

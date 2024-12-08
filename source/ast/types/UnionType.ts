@@ -39,6 +39,6 @@ export class UnionType extends DataType {
     }
 
     shortname(): string {
-        return `@union{lhs:${this.left.shortname()},rhs:${this.right.shortname()}}`;
+        return `@union{lhs:${this.left.getShortName()},rhs:${this.right.getShortName()}}`;
     }
 }

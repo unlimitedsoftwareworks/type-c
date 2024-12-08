@@ -45,7 +45,7 @@ export class FunctionType extends DataType {
     }
 
     shortname(): string {
-        return (this.isCoroutine?"c":"")+"fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.shortname()).join(", ")+") -> "+this.returnType.shortname();
+        return (this.isCoroutine?"c":"")+"fn("+this.parameters.map((param) => (param.isMutable?"mut ":"")+param.type.getShortName()).join(", ")+") -> "+this.returnType.getShortName();
     }
 
     serialize(unpack: boolean = false): string {
@@ -68,7 +68,7 @@ export class FunctionType extends DataType {
 
         // make sure originalType is a FunctionType
         if(!originalType.is(ctx, FunctionType)){
-            ctx.parser.customError(`Expected ${this.isCoroutine?"coroutine ":""} function type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected ${this.isCoroutine?"coroutine ":""} function type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let functionType = originalType.to(ctx, FunctionType) as FunctionType;

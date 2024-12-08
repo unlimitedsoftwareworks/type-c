@@ -108,12 +108,12 @@ export class GenericType extends DataType {
                 // Find a common type
                 let commonType = findCompatibleTypes(ctx, [typeMap[this.name], originalType]);
                 if(commonType === null){
-                    ctx.parser.customError(`Generic type ${this.name} do not match its same instance: expected ${typeMap[this.name].shortname()}, but ${originalType.shortname()} found`, originalType.location);
+                    ctx.parser.customError(`Generic type ${this.name} do not match its same instance: expected ${typeMap[this.name].getShortName()}, but ${originalType.getShortName()} found`, originalType.location);
                 }
                 else {
                     // we match the common type against the constraint of the generic type
                     if(!this.constraint.checkType(ctx, commonType)){
-                        ctx.parser.customError(`Inferred generic type ${this.name}: ${commonType.shortname()} does not match constraint, found multiple different usages of generic type: ${typeMap[this.name].shortname()} and ${originalType.shortname()}`, originalType.location);
+                        ctx.parser.customError(`Inferred generic type ${this.name}: ${commonType.getShortName()} does not match constraint, found multiple different usages of generic type: ${typeMap[this.name].getShortName()} and ${originalType.getShortName()}`, originalType.location);
                     }
                     
                     // we update the type map

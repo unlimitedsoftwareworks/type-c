@@ -38,7 +38,7 @@ export class ArrayPatternExpression extends PatternExpression {
 
     infer(ctx: Context, expressionType: DataType, isConst: boolean | 0) {
         if(!expressionType.is(ctx, ArrayType)) {
-            ctx.parser.customError(`Cannot perform array matching on non-array type ${expressionType.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot perform array matching on non-array type ${expressionType.getShortName()}`, this.location);
         }
 
         let arrayElement = (expressionType.to(ctx, ArrayType) as ArrayType).arrayOf;

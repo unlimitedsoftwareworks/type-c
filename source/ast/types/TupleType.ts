@@ -42,7 +42,7 @@ export class TupleType extends DataType {
     }
 
     shortname(): string {
-        return `(${this.types.map(t => t.shortname()).join(", ")})`;
+        return `(${this.types.map(t => t.getShortName()).join(", ")})`;
     }
 
     serialize(unpack: boolean = false): string {
@@ -64,7 +64,7 @@ export class TupleType extends DataType {
 
         // make sure originalType is an Array
         if(!originalType.is(ctx, TupleType)){
-            ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let tupleType = originalType.to(ctx, TupleType) as TupleType;

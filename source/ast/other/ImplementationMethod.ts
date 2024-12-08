@@ -60,7 +60,7 @@ export class ImplementationMethod extends Symbol {
     }
 
     shortname(): string {
-        return "impl{"+this.imethod.shortname()+"}";
+        return "impl{"+this.imethod.getShortName()+"}";
     }
 
     serialize(unpack: boolean = false): string {

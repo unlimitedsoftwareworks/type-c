@@ -42,7 +42,7 @@ export class ArrayType extends DataType {
     }
 
     shortname(): string {
-        return this.arrayOf.shortname() + "[]";
+        return this.arrayOf.getShortName() + "[]";
     }
 
     serialize(unpack: boolean = false): string {
@@ -64,7 +64,7 @@ export class ArrayType extends DataType {
 
         // make sure originalType is an Array
         if(!originalType.is(ctx, ArrayType)){
-            ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+            ctx.parser.customError(`Expected array type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
         let arrayType = originalType.to(ctx, ArrayType) as ArrayType;

@@ -113,7 +113,7 @@ export function matchCall(ctx: Context, method: InterfaceMethod, exprList: Expre
 
         let res = matchDataTypes(ctx, param.type, expr.infer(ctx, param.type));
         if(!res.success){
-            ctx.parser.customError(`Type mismatch in __call__, parameter #${i} "${param.name}": cannot assign type '${expr.infer(ctx).shortname()}' to parameter of type '${param.type.shortname()}': ${res.message}`, expr.location);
+            ctx.parser.customError(`Type mismatch in __call__, parameter #${i} "${param.name}": cannot assign type '${expr.infer(ctx).getShortName()}' to parameter of type '${param.type.getShortName()}': ${res.message}`, expr.location);
         }
     }
 
@@ -172,7 +172,7 @@ export function getOperatorOverloadType(ctx: Context, __op__: string, dt: Overri
             return method[0];
         }
         else {
-            ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
+            ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.getShortName()}`, dt.location);
         }
 
     }
@@ -187,7 +187,7 @@ export function getOperatorOverloadType(ctx: Context, __op__: string, dt: Overri
             return method[0];
         }
         else {
-            ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.shortname()}`, dt.location);
+            ctx.parser.customError(`Ambiguous ${__op__} method for type ${dt.getShortName()}`, dt.location);
         }
 
     }

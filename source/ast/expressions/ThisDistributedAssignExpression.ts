@@ -37,7 +37,7 @@ export class ThisDistributedAssignExpression extends Expression {
         let lhsType = this.left.infer(ctx, hintType);
 
         if(!lhsType.is(ctx, ClassType)) {
-            ctx.parser.customError(`Cannot use += operator with non-class type ${lhsType.shortname()}`, this.location);
+            ctx.parser.customError(`Cannot use += operator with non-class type ${lhsType.getShortName()}`, this.location);
         }
 
         let classType = lhsType.to(ctx, ClassType) as ClassType;
@@ -51,11 +51,11 @@ export class ThisDistributedAssignExpression extends Expression {
 
                 let attr = classType.getAttribute(field.name);
                 if(attr === null) {
-                    ctx.parser.customError(`Class ${classType.shortname()} does not have an attribute named ${field.name}`, field.location);
+                    ctx.parser.customError(`Class ${classType.getShortName()} does not have an attribute named ${field.name}`, field.location);
                 }
 
                 if(attr.isStatic) {
-                    ctx.parser.customError(`Cannot assign to static attribute ${field.name} of class ${classType.shortname()} using \`this\``, field.location);
+                    ctx.parser.customError(`Cannot assign to static attribute ${field.name} of class ${classType.getShortName()} using \`this\``, field.location);
                 }
 
                 let elementType = field.infer(ctx, attr.type);
@@ -71,11 +71,11 @@ export class ThisDistributedAssignExpression extends Expression {
 
                 let attr = classType.getAttribute(field.name);
                 if(attr === null) {
-                    ctx.parser.customError(`Class ${classType.shortname()} does not have an attribute named ${field.name}`, field.location);
+                    ctx.parser.customError(`Class ${classType.getShortName()} does not have an attribute named ${field.name}`, field.location);
                 }
 
                 if(attr.isStatic) {
-                    ctx.parser.customError(`Cannot assign to static attribute ${field.name} of class ${classType.shortname()} using \`this\``, field.location);
+                    ctx.parser.customError(`Cannot assign to static attribute ${field.name} of class ${classType.getShortName()} using \`this\``, field.location);
                 }
 
                 let elementType = field.value.infer(ctx, attr.type);
