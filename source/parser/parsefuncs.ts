@@ -2593,13 +2593,24 @@ function parserElementHasGenerics(parser: Parser, ctx: Context) {
 
     let stack: string[] = [];
     let lexeme = parser.peek();
+    let depth = 0;
+    let line = lexeme.location.line;
 
     if (lexeme.type === "<") {
         let canLoop = true;
         while (canLoop) {
             lexeme = parser.peek();
+
+            if(lexeme.location.line != line) {
+                parser.reject();
+                return false;
+            }
+
             if (["(", "[", "<", "{"].includes(lexeme.type)) {
                 stack.push(lexeme.type);
+                if(lexeme.type != "<") {
+                    depth++;
+                }
             }
             if (["}", ">", "]", ")"].includes(lexeme.type)) {
                 if (stack.length == 0 && lexeme.type == ">") {
@@ -2608,6 +2619,9 @@ function parserElementHasGenerics(parser: Parser, ctx: Context) {
                 }
 
                 let last = stack.pop();
+                if(lexeme.type != ">") {
+                    depth--;
+                }
                 if (!last) {
                     parser.reject();
                     return false;
@@ -2616,6 +2630,12 @@ function parserElementHasGenerics(parser: Parser, ctx: Context) {
                     parser.reject();
                     return false;
                 }
+            }
+
+            // if we find any arithmetic operator, we need to check if we are at the top level.
+            // so we can avoid cases like x < 0 && y % 0 == 1 for example
+            if(["+", "-", "*", "/", "=", "==", "!=", "%", "&", "|", "^", "<<", ">>"].includes(lexeme.type) && depth == 0) {
+                return false;
             }
 
             canLoop = stack.length > 0 || lexeme.type != "EOF";
