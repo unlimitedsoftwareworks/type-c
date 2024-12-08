@@ -204,6 +204,7 @@ export class Parser {
         throw this.error(
             message,
             {
+                file: location.file,
                 line: location.line,
                 col: location.col,
                 pos: location.pos,
@@ -214,7 +215,7 @@ export class Parser {
 
     error(
         message: string,
-        coords?: { line: number; col: number; pos: number },
+        coords?: { file: string,line: number; col: number; pos: number },
         tokenLength: number = 1,
     ) {
         // get current active lexeme without changing the stack
@@ -231,6 +232,7 @@ export class Parser {
             line: token.location.line,
             col: token.location.col,
             pos: token.location.pos,
+            file: token.location.file,
         };
 
         if (coords) {
@@ -243,7 +245,7 @@ export class Parser {
             line: coordinates?.line,
             column: coordinates?.col,
             length: tokenLength,
-            file: this.lexer.filepath || "<stdin>",
+            file: coordinates?.file || this.lexer.filepath || "<stdin>",
         });
 
         // draw ^^^^^ under the token
@@ -283,7 +285,7 @@ export class Parser {
         );
         console.log(colors.Reset);
         console.log(
-            `${this.lexer.filepath || "<stdin>"}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`,
+            `${coordinates.file}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`,
         );
 
 

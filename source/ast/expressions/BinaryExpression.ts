@@ -29,6 +29,7 @@ import { VoidType } from "../types/VoidType";
 import { EnumType } from "../types/EnumType";
 import { CoroutineType } from "../types/CoroutineType";
 import { UnaryExpression } from "./UnaryExpression";
+import { BinaryIntLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, OctIntLiteralExpression } from "./LiteralExpression";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -52,6 +53,10 @@ function isArithmeticOperator(op: BinaryExpressionOperator): boolean {
 
 function isBasicType(type: DataType): boolean {
     return ["i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64", "bool"].includes(type.kind);
+}
+
+function isLiteralIntExpr(e: Expression): boolean {
+    return (e instanceof IntLiteralExpression) || (e instanceof HexIntLiteralExpression) || (e instanceof BinaryIntLiteralExpression) || (e instanceof OctIntLiteralExpression);
 }
 
 export class BinaryExpression extends Expression {
@@ -181,7 +186,7 @@ export class BinaryExpression extends Expression {
                 rhsHint = lhsType;
             }
 
-            rhsType = this.right.infer(ctx, rhsHint);   
+            rhsType = this.right.infer(ctx, null);   
         }
 
         /**
@@ -203,6 +208,16 @@ export class BinaryExpression extends Expression {
             if(!canAssign.success && !ignoreConst) {
                 ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
             }
+        }
+
+        if((isLiteralIntExpr(this.left)) && !(isLiteralIntExpr(this.right)) && isBasicType(rhsType)){
+            this.left.setHint(this.right.inferredType);
+            lhsType = this.right.inferredType!;
+        }
+
+        if((isLiteralIntExpr(this.right)) && !(isLiteralIntExpr(this.left)) && isBasicType(lhsType)){
+            this.right.setHint(this.left.inferredType);
+            rhsType = this.left.inferredType!;
         }
 
 

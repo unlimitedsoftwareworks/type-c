@@ -243,7 +243,7 @@ export class ClassType extends DataType {
             for (let j = i + 1; j < this.methods.length; j++) {
                 if (this.methods[i].imethod.name === this.methods[j].imethod.name) {
                     if (areSignaturesIdentical(ctx, this.methods[i].imethod, this.methods[j].imethod)) {
-                        ctx.parser.customError(`Method ${this.methods[i].shortname()} is overloaded`, this.location);
+                        ctx.parser.customError(`Method ${this.methods[i].shortname()} is overloaded`, this.methods[i].location);
                     }
                 }
             }

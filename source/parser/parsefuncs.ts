@@ -643,7 +643,7 @@ function parseFnTypeBody(parser: Parser, ctx: Context): FunctionType {
     if (parameters.length > 255) {
         parser.error(
             `Function cannot have more than 255 parameters, ${parameters.length} found`,
-            { line: fnLoc.line, col: fnLoc.col, pos: fnLoc.pos },
+            { file: fnLoc.file, line: fnLoc.line, col: fnLoc.col, pos: fnLoc.pos },
         );
     }
     return new FunctionType(fnLoc, parameters, returnType);

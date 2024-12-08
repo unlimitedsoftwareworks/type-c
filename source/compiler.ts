@@ -195,7 +195,6 @@ export module TypeC {
             }
 
             // if not, add it
-
             BuiltinModules.getStringClass(this);
             basePackage.imports.push(BuiltinModules.stringImport);
         }
