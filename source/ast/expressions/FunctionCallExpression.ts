@@ -14,7 +14,7 @@
 
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
 import { MemberAccessExpression } from "./MemberAccessExpression";
@@ -82,7 +82,7 @@ export class FunctionCallExpression extends Expression {
         }
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
         /**
@@ -314,6 +314,8 @@ export class FunctionCallExpression extends Expression {
 
             // since we might have a generic method, we need to re-infer the arguments of the call
             for (let i = 0; i < this.args.length; i++) {
+                // we do not always use the hint, for cases like "hi" + ("world" - "!")
+                //                                               would infer ("world" - "!") as a i64, hence inferring string literal as i64 which is wrong
                 this.args[i].infer(ctx, method.header.parameters[i].type);
                 if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
                     ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
