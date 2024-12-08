@@ -50,6 +50,10 @@ function isArithmeticOperator(op: BinaryExpressionOperator): boolean {
     return ["+", "-", "*", "/", "%", "^", ">>", "<<"].includes(op);
 }
 
+function isBasicType(type: DataType): boolean {
+    return ["i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64", "bool"].includes(type.kind);
+}
+
 export class BinaryExpression extends Expression {
     left: Expression;
     right: Expression;
@@ -76,8 +80,12 @@ export class BinaryExpression extends Expression {
 
         let lhsHint: DataType | null = null;
 
+        if(hint) {
+            hint.resolve(ctx);
+        }
+
         // the following operators result in boolean types
-        if(!([">", "<", ">=", "<=", "==", "!="].includes(this.operator))){
+        if(!([">", "<", ">=", "<=", "==", "!="].includes(this.operator)) && (hint) && (isBasicType(hint))){
             lhsHint = hint;
         }
 
@@ -153,7 +161,7 @@ export class BinaryExpression extends Expression {
             lhsType =(this.left as TupleConstructionExpression).inferLHSAssginment(ctx, lhsHint);
         }
         else {
-            lhsType = this.left.infer(ctx, lhsHint);
+            lhsType = this.left.infer(ctx, null);
         }
 
         let rhsType: DataType | null = null;
