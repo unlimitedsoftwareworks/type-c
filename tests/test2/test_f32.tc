@@ -66,7 +66,7 @@ fn test_f32_operations(runner: TestUnit) {
     runner.assert_eq<bool>(v_f32 != v_f32, false)    // f32 != f32
     runner.assert_eq<bool>(v_f32 > v_u8 as f32, true) // f32 > u8
     runner.assert_eq<bool>(v_f32 < v_u16 as f32, false) // f32 < u16
-    runner.assert_eq<bool>(v_f23 >= v_u32 as f32, true) // f32 >= u32
+    runner.assert_eq<bool>(v_f32 >= v_u32 as f32, true) // f32 >= u32
     runner.assert_eq<bool>(v_f32 <= v_i8 as f32, false) // f32 <= i8
 
     // Logical Operations
