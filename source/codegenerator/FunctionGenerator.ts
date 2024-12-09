@@ -52,7 +52,6 @@ import { MatchExpression } from "../ast/expressions/MatchExpression";
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
 import {
     NamedStructConstructionExpression,
-    StructUnpackedElement,
     StructKeyValueExpressionPair,
 } from "../ast/expressions/NamedStructConstructionExpression";
 import { NewExpression } from "../ast/expressions/NewExpression";
@@ -84,12 +83,11 @@ import { DeclaredFunction, DeclaredOverloadedFunction } from "../ast/symbol/Decl
 import { DeclaredType } from "../ast/symbol/DeclaredType";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
 import { FunctionArgument } from "../ast/symbol/FunctionArgument";
-import { Symbol } from "../ast/symbol/Symbol";
 import { getSymbolType } from "../ast/symbol/SymbolType";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { VariablePattern } from "../ast/symbol/VariablePattern";
 import { ArrayType } from "../ast/types/ArrayType";
-import { BasicType } from "../ast/types/BasicType";
+import { BasicType, BasicTypeKind } from "../ast/types/BasicType";
 import { BooleanType } from "../ast/types/BooleanType";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
@@ -129,6 +127,7 @@ import {
     getUnaryInstruction,
     globalType,
     isPointer,
+    jCmpNullType,
     popStackType,
     pushStackType,
     retType,
@@ -480,7 +479,7 @@ export class FunctionGenerator {
         else throw new Error("Invalid expression!" + expr.toString());
 
         if (tmp != "") {
-            this.handleTypeCasting(expr, ctx, tmp);
+            return this.handleTypeCasting(expr, ctx, tmp);
         }
         this.srcMapPopLoc();
         return tmp;
@@ -490,6 +489,7 @@ export class FunctionGenerator {
         let inferredType = expr.inferredType?.dereference();
         let hintType = expr.hintType?.dereference();
 
+        
         if (hintType != undefined && hintType.kind != "void") {
             let requireSafe =
                 inferredType instanceof NullableType ||
@@ -510,6 +510,8 @@ export class FunctionGenerator {
                 tmp,
             );
         }
+
+        return tmp;
     }
 
     visitElementExpression(expr: ElementExpression, ctx: Context): string {
@@ -1170,7 +1172,9 @@ export class FunctionGenerator {
         // result will be either 0 or 1
         let tmp = this.generateTmp();
         // first we cmp
-        let inferredType = expr.left.inferredType?.dereference();
+
+        // for comparaison we use the hint type if present
+        let inferredType = expr.promotedType;
         let cmp: IRInstructionType = "j_cmp_u8";
         if (
             inferredType instanceof BasicType ||
@@ -1198,34 +1202,26 @@ export class FunctionGenerator {
         }
 
         // now we need three labels for the jumps
-        // true label
-        let lblTrue = this.generateLabel();
-        // false label
-        let lblFalse = this.generateLabel();
         // end label, if true, it needs to skip the false label
         let lblEnd = this.generateLabel();
 
         // if the condition is true, jump to the true label
         this.i("debug", "conditional jump");
 
+        // assume true
+        this.i("const_u8", tmp, 1);
         if (expr.operator == "==") {
-            this.i(cmp, left, right, 0, lblTrue);
-            this.i("j", lblFalse);
+            this.i(cmp, left, right, 0, lblEnd);
         } else if (expr.operator == "!=") {
-            this.i(cmp, left, right, 1, lblTrue);
-            this.i("j", lblFalse);
+            this.i(cmp, left, right, 1, lblEnd);
         } else if (expr.operator == "<") {
-            this.i(cmp, left, right, 4, lblTrue);
-            this.i("j", lblFalse);
+            this.i(cmp, left, right, 4, lblEnd);
         } else if (expr.operator == ">") {
-            this.i(cmp, left, right, 2, lblTrue);
-            this.i("j", lblFalse);
+            this.i(cmp, left, right, 2, lblEnd);
         } else if (expr.operator == "<=") {
-            this.i(cmp, left, right, 5, lblTrue);
-            this.i("j", lblFalse);
+            this.i(cmp, left, right, 5, lblEnd);
         } else if (expr.operator == ">=") {
-            this.i(cmp, left, right, 3, lblTrue);
-            this.i("j", lblFalse);
+            this.i(cmp, left, right, 3, lblEnd);
         } else {
             throw new Error("Unknown operator " + expr.operator);
         }
@@ -1233,21 +1229,12 @@ export class FunctionGenerator {
         this.destroyTmp(left);
         this.destroyTmp(right);
 
-        // true label
-        this.i("debug", "true label");
-        this.i("label", lblTrue);
-        this.i("const_u8", tmp, 1);
-        // jump to the end
-        this.i("debug", "true label jump");
-        this.i("j", lblEnd);
 
-        // false label
+        // true label
         this.i("debug", "false label");
-        this.i("label", lblFalse);
         this.i("const_u8", tmp, 0);
 
         // no need to jump to the end, it will continue
-
         // end label
         this.i("debug", "end label");
         this.i("label", lblEnd);
@@ -2677,19 +2664,49 @@ export class FunctionGenerator {
             if (toType == fromType) {
                 return castReg;
             }
-            // generate expresion
-            let instructions = generateCastInstruction(
-                fromType as unknown as CastType,
-                toType as unknown as CastType,
-                castReg,
-            );
 
-            for (let instr of instructions) {
-                let cmd = instr[0] as IRInstructionType;
-                // remaining converted to array of number
-                let args = instr.slice(1).map((x: string) => x);
+            if(fromType == "bool"){
+                fromType = "u8";
+            }
 
-                this.i(cmd, ...args);
+
+            // we create a new register to hold the casted value
+            let tmp = this.generateTmp();
+            let instruction = tmpType(new BasicType(inferredType.location, toType as BasicTypeKind));
+            this.i(instruction, tmp, "reg_copy", castReg);
+            castReg = tmp;
+
+            if(toType == "bool"){
+                // normally we could just cast to max type and check if it is 0
+                // but instead we will use `*` to check if the value is 0
+                let jumpInstruction = jCmpNullType(new BasicType(inferredType.location, fromType as BasicTypeKind));
+                let non_null_reg = this.generateTmp();
+                let endLabel = this.generateLabel();
+                // suppose it is null
+                this.i("const_u8", non_null_reg, 0);
+                this.i(jumpInstruction, castReg, endLabel);
+                this.i("const_u8", non_null_reg, 1);
+
+                this.i("label", endLabel);
+
+                this.destroyTmp(non_null_reg);
+                return non_null_reg;
+            }
+            else {
+                // generate expresion
+                let instructions = generateCastInstruction(
+                    fromType as unknown as CastType,
+                    toType as unknown as CastType,
+                    castReg,
+                );
+
+                for (let instr of instructions) {
+                    let cmd = instr[0] as IRInstructionType;
+                    // remaining converted to array of number
+                    let args = instr.slice(1).map((x: string) => x);
+
+                    this.i(cmd, ...args);
+                }
             }
         } else if (inferredType instanceof StructType) {
             if (hintType != undefined && hintType instanceof StructType) {

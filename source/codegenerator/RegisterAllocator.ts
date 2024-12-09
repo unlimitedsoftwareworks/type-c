@@ -343,6 +343,19 @@ export class RegisterAllocator {
                     position++;
                     continue;
                 }
+
+                if (type == "reg_copy") {
+                    // we need to copy the register
+                    // so we it counts as its own live range
+                    // used for casting basic types to other basic types, temporariry, such as comparing u8 with i8, they are both upgrated to i16,
+                    // because register values change overriding values in the previous types
+                    // 
+                    this.linkTmpToNewVReg(name);
+                    this.markVRegAtInstruction(this.tmpVRegs.get(name)!, position);
+                    this.markVRegAtInstruction(this.tmpVRegs.get(uid)!, position);
+                    position++;
+                    continue;
+                }
             }
 
 
@@ -426,6 +439,8 @@ export class RegisterAllocator {
                 }
             }
         }
+
+        //console.log(this.interferenceGraph);
     }
 
 
@@ -495,6 +510,7 @@ export class RegisterAllocator {
         }
 
 
+        //console.log(tmpColoring);
 
         return {coloring: tmpColoring};
     }

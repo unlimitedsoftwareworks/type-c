@@ -520,7 +520,7 @@ export class BytecodeGenerator {
                     let varOffset = this.globalSegment.getVariableOffset(id);
                     this.emit(BytecodeInstructionType.mv_reg_global, reg, varOffset, 1);
                 }
-                else if (type == "reg") {
+                else if (type == "reg" || type == "reg_copy") {
                     let reg2 = this.getRegisterForVariable(fn, id);
                     if(reg != reg2)
                         this.emit(BytecodeInstructionType.mv_reg_reg, reg, reg2, 1);
@@ -538,7 +538,7 @@ export class BytecodeGenerator {
                     let varOffset = this.globalSegment.getVariableOffset(id);
                     this.emit(BytecodeInstructionType.mv_reg_global, reg, varOffset, 2);
                 }
-                else if (type == "reg") {
+                else if (type == "reg" || type == "reg_copy") {
                     let reg2 = this.getRegisterForVariable(fn, id);
                     if(reg != reg2)
                         this.emit(BytecodeInstructionType.mv_reg_reg, reg, reg2, 2);
@@ -556,7 +556,7 @@ export class BytecodeGenerator {
                     let varOffset = this.globalSegment.getVariableOffset(id);
                     this.emit(BytecodeInstructionType.mv_reg_global, reg, varOffset, 4);
                 }
-                else if (type == "reg") {
+                else if (type == "reg" || type == "reg_copy") {
                     let reg2 = this.getRegisterForVariable(fn, id);
                     if(reg != reg2)
                         this.emit(BytecodeInstructionType.mv_reg_reg, reg, reg2, 4);
@@ -574,7 +574,7 @@ export class BytecodeGenerator {
                     let varOffset = this.globalSegment.getVariableOffset(id);
                     this.emit(BytecodeInstructionType.mv_reg_global, reg, varOffset, 8);
                 }
-                else if (type == "reg") {
+                else if (type == "reg" || type == "reg_copy") {
                     let reg2 = this.getRegisterForVariable(fn, id);
                     if(reg != reg2)
                         this.emit(BytecodeInstructionType.mv_reg_reg, reg, reg2, 8);
@@ -592,7 +592,7 @@ export class BytecodeGenerator {
                     let varOffset = this.globalSegment.getVariableOffset(id);
                     this.emit(BytecodeInstructionType.mv_reg_global_ptr, reg, varOffset);
                 }
-                else if (type == "reg") {
+                else if (type == "reg" || type == "reg_copy") {
                     let reg2 = this.getRegisterForVariable(fn, id);
                     if(reg != reg2)
                         this.emit(BytecodeInstructionType.mv_reg_reg_ptr, reg, reg2);

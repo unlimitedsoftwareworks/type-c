@@ -30,6 +30,7 @@ import { EnumType } from "../types/EnumType";
 import { CoroutineType } from "../types/CoroutineType";
 import { UnaryExpression } from "./UnaryExpression";
 import { BinaryIntLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, OctIntLiteralExpression } from "./LiteralExpression";
+import { BooleanType } from "../types/BooleanType";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -51,6 +52,10 @@ function isArithmeticOperator(op: BinaryExpressionOperator): boolean {
     return ["+", "-", "*", "/", "%", "^", ">>", "<<"].includes(op);
 }
 
+function isBinaryResultingOperator(op: BinaryExpressionOperator): boolean {
+    return ["==", "!=", "<", "<=", ">", ">=", "&&", "||"].includes(op);
+}
+
 function isBasicType(type: DataType): boolean {
     return ["i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64", "bool"].includes(type.kind);
 }
@@ -67,6 +72,8 @@ export class BinaryExpression extends Expression {
     // capture the state of the operator overload, if any
     // default is not overloaded
     operatorOverloadState: OperatorOverloadState = new OperatorOverloadState();
+
+    promotedType: DataType | null = null;
 
     constructor(location: SymbolLocation, left: Expression, right: Expression, operator: BinaryExpressionOperator) {
         super(location, "binary_op");
@@ -174,18 +181,6 @@ export class BinaryExpression extends Expression {
         if(this.operator == "="){
             rhsType = this.right.infer(ctx, lhsType);
         } else {
-            // check if we need to promote the rhs type to the lhs type
-            /*if(lhsType.is(ctx, BasicType) && (["+" , "+=","-" , "-=" , "*" , "*=" , "/" , "/=" , "%" , "%=" ,"==" , "!="].includes(this.operator))){
-                // chech if we can promote the rhs type to the lhs type
-            }*/
-
-
-            let rhsHint: DataType | null = null;
-
-            if(lhsType.is(ctx, BasicType) && (this.operator != "&&") && (this.operator != "||")){
-                rhsHint = lhsType;
-            }
-
             rhsType = this.right.infer(ctx, null);   
         }
 
@@ -221,19 +216,29 @@ export class BinaryExpression extends Expression {
         }
 
 
-        this.inferredType = binaryTypeCheckers[this.operator](ctx, lhsType, rhsType, this);
+        let promotionType = binaryTypeCheckers[this.operator](ctx, lhsType, rhsType, this);
+        this.promotedType = promotionType;
 
-        this.checkHint(ctx);
+        if(((lhsType.is(ctx, BasicType) || lhsType.is(ctx, BooleanType)) && (rhsType.is(ctx, BasicType) || rhsType.is(ctx, BooleanType)))){
+            //this.right.infer(ctx, promotionType);
+            //this.left.infer(ctx, promotionType);
 
-        if(isArithmeticOperator(this.operator) && (lhsType.is(ctx, BasicType) && rhsType.is(ctx, BasicType))){
-            this.right.infer(ctx, this.inferredType);
-            this.left.infer(ctx, this.inferredType);
+            this.right.setHint(promotionType);
+            this.left.setHint(promotionType);
+        }
+
+        if(isBinaryResultingOperator(this.operator)){
+            this.inferredType = new BooleanType(this.location);
+        }
+        else {
+            this.inferredType = promotionType;
         }
 
         if(!this.inferredType) {
             ctx.parser.customError(`Cannot apply operator ${this.operator} to types ${lhsType} and ${rhsType}`, this.location);
         }
 
+        this.checkHint(ctx);
         this.isConstant = this.left.isConstant;
 
         return this.inferredType;

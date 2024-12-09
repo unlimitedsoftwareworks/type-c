@@ -200,14 +200,9 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         rhs = rhs.to(ctx, BasicType) as BasicType;
         
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
-        if (res) {
-            return new BooleanType(expr.location);
-        }
-        else {
-            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}`, expr.location);
-        }
+        return new BasicType(expr.location, res);
     }
-
+    
     if(lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)){
         if(isLt(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === "<")){
             let method = getOperatorOverloadType(ctx, "__lt__", lhs as OverridableMethodType, [rhs]);
@@ -264,7 +259,10 @@ function inferLogicalAndOr(ctx: Context, lhs: DataType, rhs: DataType, expr: Bin
         }
     }
 
-    if (((lhs.dereference() instanceof BasicType) || (lhs instanceof BooleanType) || (lhs instanceof NullableType)) && ((rhs.dereference() instanceof BasicType) || (rhs instanceof BooleanType) || (rhs instanceof NullableType))) {
+    let lhsType = lhs.dereference();
+    let rhsType = rhs.dereference();
+
+    if ((lhsType.is(ctx, BasicType) || lhsType.is(ctx, BooleanType) || lhsType.is(ctx, NullableType)) && (rhsType.is(ctx, BasicType) || rhsType.is(ctx, BooleanType) || rhsType.is(ctx, NullableType))) {
         // set the hint to bool
         expr.left.setHint(new BooleanType(expr.location));
         expr.right.setHint(new BooleanType(expr.location));
@@ -358,7 +356,15 @@ function inferEquality(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
     if (!res.success) {
         ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}: ${res.message}`, expr.location);
     }
-    return new BooleanType(expr.location);
+    
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        let lhsType = lhs.to(ctx, BasicType) as BasicType;
+        let rhsType = rhs.to(ctx, BasicType) as BasicType;
+        
+        return new BasicType(expr.location, basicTypePromotionMap[lhsType.kind][rhsType.kind]);
+    }
+
+    return lhs;
 }
 
 
