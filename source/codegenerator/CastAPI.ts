@@ -40,6 +40,10 @@ export function generateCastInstruction(from: CastType, to: CastType, reg: strin
             instructions.push(["upcast_u", reg, typeInfo[from].size.toString(), typeInfo[to].size.toString()]);
             currentType = `u${typeInfo[to].size * 8}` as CastType;
         }
+        else if (typeInfo[from].size > typeInfo[to].size) {
+            instructions.push(["dcast_u", reg, typeInfo[from].size.toString(), typeInfo[to].size.toString()]);
+            currentType = `u${typeInfo[to].size * 8}` as CastType;
+        }
         // Convert to the corresponding signed type
         instructions.push([`cast_${currentType}_i${typeInfo[to].size * 8}`, reg]);
         // Convert to the target floating point
@@ -53,6 +57,8 @@ export function generateCastInstruction(from: CastType, to: CastType, reg: strin
         instructions.push([`cast_${from}_${intermediateType}`, reg]);
         currentType = intermediateType;
     }
+
+    //if(from.startsWith("u"))
 
     // Handle int to float conversion
     if (!from.startsWith('f') && to.startsWith('f')) {
