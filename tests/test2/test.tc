@@ -1,45 +1,44 @@
-from std.unit.test import TestUnit, UnitSet
+from std.io import println
 from std.string import String
+from std.unit.test import TestUnit, UnitSet
 
-type A = interface {
-    fn methodA() -> void
-}
-
-type B = interface {
-    fn methodB() -> void
-}
-
-type C = interface {
-    fn methodC() -> void
-}
-
-type D = interface A, B{
-    fn methodD() -> void
-}
-type E = interface A {
-    fn methodE() -> void
-}
+from test_i8 import test_i8_operations
+from test_u8 import test_u8_operations
+from test_i16 import test_i16_operations
+from test_u16 import test_u16_operations
+from test_i32 import test_i32_operations
+from test_u32 import test_u32_operations
+from test_i64 import test_i64_operations
+from test_u64 import test_u64_operations
+from test_f32 import test_f32_operations
+from test_f64 import test_f64_operations
 
 
-type DClass = class D {
-    fn methodA() -> void {}
-    fn methodB() -> void {}
-    fn methodC() -> void {}
-    fn methodD() -> void {}
-}
+fn main() {
+    let test_i8_ops = new TestUnit("test i8", "Tests i8 against all types", test_i8_operations)
+    let test_u8_ops = new TestUnit("test u8", "Tests u8 against all types", test_u8_operations)
+    let test_i16_ops = new TestUnit("test i16", "Tests i16 against all types", test_i16_operations)
+    let test_u16_ops = new TestUnit("test u16", "Tests u16 against all types", test_u16_operations)
+    let test_i32_ops = new TestUnit("test i32", "Tests i32 against all types", test_i32_operations)
+    let test_u32_ops = new TestUnit("test u32", "Tests u32 against all types", test_u32_operations)
+    let test_i64_ops = new TestUnit("test i64", "Tests i64 against all types", test_i64_operations)
+    let test_u64_ops = new TestUnit("test u64", "Tests u64 against all types", test_u64_operations)
+    let test_f32_ops = new TestUnit("test f32", "Tests f32 against all types", test_f32_operations)
+    let test_f64_ops = new TestUnit("test f64", "Tests f64 against all types", test_f64_operations)
 
-
-fn test_case_1(runner: TestUnit) {
-    let deepOptional: ((A & B) & C) ? = new DClass() // should be valid
-    let deepUnwrap: ((A & B) & C) = deepOptional! // should be valid
-
-    runner.assert_obj_not_null<((A & B) & C)>(deepOptional)
-}
-
-fn main(){
-    let test_1 = new TestUnit("test 1", "Basic Sanity", test_case_1)
-
-    let set = new UnitSet("STD Test 2", "Tests random stuff", [test_1])
+    let set = new UnitSet("Madness", "Tests all operations for all types", [
+        test_i8_ops,
+        test_u8_ops,
+        test_i16_ops,
+        test_u16_ops,
+        test_i32_ops,
+        test_u32_ops,
+        test_i64_ops,
+        test_u64_ops,
+        test_f32_ops,
+        test_f64_ops
+    ])
 
     return set.run()
 }
+

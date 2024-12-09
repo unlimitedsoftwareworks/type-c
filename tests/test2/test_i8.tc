@@ -1,0 +1,64 @@
+from std.unit.test import TestUnit
+
+fn test_i8_operations(runner: TestUnit) {
+    // Declare variables for all types
+    let v_i8: i8 = 5
+    let v_u8: u8 = 1
+    let v_u16: u16 = 2
+    let v_u32: u32 = 3
+    let v_u64: u64 = 4
+    let v_i16: i16 = 6
+    let v_i32: i32 = 7
+    let v_i64: i64 = 8
+    let v_f32: f32 = 9.0f
+    let v_f64: f64 = 10.0
+
+    // Arithmetic Operations: Addition
+    runner.assert_eq<i8>(v_i8 + v_i8, 10)           // i8 + i8
+    runner.assert_eq<i16>(v_i8 + v_u8 as i16, 6)    // i8 + u8
+    runner.assert_eq<i16>(v_i8 + v_i16, 11)         // i8 + i16
+    runner.assert_eq<i32>(v_i8 + v_i32, 12)         // i8 + i32
+    runner.assert_eq<i64>(v_i8 + v_i64, 13)         // i8 + i64
+    runner.assert_f32_eq_pre(v_i8 + v_f32, 14.0f, 0.00001f)       // i8 + f32
+    runner.assert_eq<f64>(v_i8 + v_f64, 15.0)       // i8 + f64
+
+    // Arithmetic Operations: Subtraction
+    runner.assert_eq<i8>(v_i8 - v_i8, 0)            // i8 - i8
+    runner.assert_eq<i16>(v_i8 - v_u8 as i16, 4)    // i8 - u8
+    runner.assert_eq<i16>(v_i8 - v_i16, -1)         // i8 - i16
+    runner.assert_eq<i32>(v_i8 - v_i32, -2)         // i8 - i32
+    runner.assert_eq<i64>(v_i8 - v_i64, -3)         // i8 - i64
+    runner.assert_f32_eq_pre(v_i8 - v_f32, -4.0f, 0.00001f)       // i8 - f32
+    runner.assert_eq<f64>(v_i8 - v_f64, -5.0)       // i8 - f64
+
+    // Arithmetic Operations: Multiplication
+    runner.assert_eq<i8>(v_i8 * v_i8, 25)           // i8 * i8
+    runner.assert_eq<i16>(v_i8 * v_u8 as i16, 5)    // i8 * u8
+    runner.assert_eq<i16>(v_i8 * v_i16, 30)         // i8 * i16
+    runner.assert_eq<i32>(v_i8 * v_i32, 35)         // i8 * i32
+    runner.assert_eq<i64>(v_i8 * v_i64, 40)         // i8 * i64
+    runner.assert_f32_eq_pre(v_i8 * v_f32, 45.0f, 0.00001f)       // i8 * f32
+    runner.assert_eq<f64>(v_i8 * v_f64, 50.0)       // i8 * f64
+
+    // Arithmetic Operations: Division
+    runner.assert_eq<i8>(v_i8 / v_i8, 1)            // i8 / i8
+    runner.assert_eq<i16>(v_i8 / v_u8 as i16, 5)    // i8 / u8
+    runner.assert_eq<i16>(v_i8 / v_i16, 0)          // i8 / i16
+    runner.assert_eq<i32>(v_i8 / v_i32, 0)          // i8 / i32
+    runner.assert_eq<i64>(v_i8 / v_i64, 0)          // i8 / i64
+    runner.assert_f32_eq_pre(v_i8 / v_f32, 0.555556f, 0.00001f)   // i8 / f32
+    runner.assert_eq<f64>(v_i8 / v_f64, 0.5)        // i8 / f64
+
+    // Comparison Operations
+    runner.assert_eq<bool>(v_i8 == v_i8, true)      // i8 == i8
+    runner.assert_eq<bool>(v_i8 != v_i8, false)     // i8 != i8
+    runner.assert_eq<bool>(v_i8 < v_u8 as i8, false) // i8 < u8 (as signed comparison)
+    runner.assert_eq<bool>(v_i8 > v_i16 as i8, false) // i8 > i16
+    runner.assert_eq<bool>(v_i8 <= v_i32 as i8, true) // i8 <= i32
+    runner.assert_eq<bool>(v_i8 >= v_f64 as i8, false) // i8 >= f64
+
+    // Logical Operations
+    runner.assert_eq<bool>((v_i8 > 0) && (v_i8 < 10), true)  // Logical AND
+    runner.assert_eq<bool>((v_i8 < 0) || (v_i8 > 0), true)   // Logical OR
+    runner.assert_eq<bool>(!(v_i8 < 0), true)               // Logical NOT
+}

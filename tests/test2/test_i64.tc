@@ -1,0 +1,76 @@
+from std.unit.test import TestUnit
+
+fn test_i64_operations(runner: TestUnit) {
+    // Declare variables for all types
+    let v_i64: i64 = 8
+    let v_u8: u8 = 1
+    let v_u16: u16 = 2
+    let v_u32: u32 = 3
+    let v_u64: u64 = 4
+    let v_i8: i8 = 5
+    let v_i16: i16 = 6
+    let v_i32: i32 = 7
+    let v_f32: f32 = 9.0f
+    let v_f64: f64 = 10.0
+
+    // Arithmetic Operations: Addition
+    runner.assert_eq<i64>(v_i64 + v_i64, 16)          // i64 + i64
+    runner.assert_eq<i64>(v_i64 + v_u8 as i64, 9)     // i64 + u8
+    runner.assert_eq<i64>(v_i64 + v_u16 as i64, 10)   // i64 + u16
+    runner.assert_eq<i64>(v_i64 + v_u32 as i64, 11)   // i64 + u32
+    runner.assert_eq<i64>(v_i64 + v_u64 as i64, 12)   // i64 + u64
+    runner.assert_eq<i64>(v_i64 + v_i8 as i64, 13)    // i64 + i8
+    runner.assert_eq<i64>(v_i64 + v_i16 as i64, 14)   // i64 + i16
+    runner.assert_eq<i64>(v_i64 + v_i32 as i64, 15)   // i64 + i32
+    runner.assert_f32_eq_pre(v_i64 + v_f32, 17.0f, 0.00001f)        // i64 + f32
+    runner.assert_eq<f64>(v_i64 + v_f64, 18.0)        // i64 + f64
+
+    // Arithmetic Operations: Subtraction
+    runner.assert_eq<i64>(v_i64 - v_i64, 0)           // i64 - i64
+    runner.assert_eq<i64>(v_i64 - v_u8 as i64, 7)     // i64 - u8
+    runner.assert_eq<i64>(v_i64 - v_u16 as i64, 6)    // i64 - u16
+    runner.assert_eq<i64>(v_i64 - v_u32 as i64, 5)    // i64 - u32
+    runner.assert_eq<i64>(v_i64 - v_u64 as i64, 4)    // i64 - u64
+    runner.assert_eq<i64>(v_i64 - v_i8 as i64, 3)     // i64 - i8
+    runner.assert_eq<i64>(v_i64 - v_i16 as i64, 2)    // i64 - i16
+    runner.assert_eq<i64>(v_i64 - v_i32 as i64, 1)    // i64 - i32
+    runner.assert_f32_eq_pre(v_i64 - v_f32, -1.0f, 0.00001f)        // i64 - f32
+    runner.assert_eq<f64>(v_i64 - v_f64, -2.0)        // i64 - f64
+
+    // Arithmetic Operations: Multiplication
+    runner.assert_eq<i64>(v_i64 * v_i64, 64)          // i64 * i64
+    runner.assert_eq<i64>(v_i64 * v_u8 as i64, 8)     // i64 * u8
+    runner.assert_eq<i64>(v_i64 * v_u16 as i64, 16)   // i64 * u16
+    runner.assert_eq<i64>(v_i64 * v_u32 as i64, 24)   // i64 * u32
+    runner.assert_eq<i64>(v_i64 * v_u64 as i64, 32)   // i64 * u64
+    runner.assert_eq<i64>(v_i64 * v_i8 as i64, 40)    // i64 * i8
+    runner.assert_eq<i64>(v_i64 * v_i16 as i64, 48)   // i64 * i16
+    runner.assert_eq<i64>(v_i64 * v_i32 as i64, 56)   // i64 * i32
+    runner.assert_f32_eq_pre(v_i64 * v_f32, 72.0f, 0.00001f)        // i64 * f32
+    runner.assert_eq<f64>(v_i64 * v_f64, 80.0)        // i64 * f64
+
+    // Arithmetic Operations: Division
+    runner.assert_eq<i64>(v_i64 / v_i64, 1)           // i64 / i64
+    runner.assert_eq<i64>(v_i64 / v_u8 as i64, 8)     // i64 / u8
+    runner.assert_eq<i64>(v_i64 / v_u16 as i64, 4)    // i64 / u16
+    runner.assert_eq<i64>(v_i64 / v_u32 as i64, 2)    // i64 / u32
+    runner.assert_eq<i64>(v_i64 / v_u64 as i64, 2)    // i64 / u64
+    runner.assert_eq<i64>(v_i64 / v_i8 as i64, 1)     // i64 / i8
+    runner.assert_eq<i64>(v_i64 / v_i16 as i64, 1)    // i64 / i16
+    runner.assert_eq<i64>(v_i64 / v_i32 as i64, 1)    // i64 / i32
+    runner.assert_f32_eq_pre(v_i64 / v_f32, 0.888889f, 0.00001f)    // i64 / f32
+    runner.assert_eq<f64>(v_i64 / v_f64, 0.8)         // i64 / f64
+
+    // Comparison Operations
+    runner.assert_eq<bool>(v_i64 == v_i64, true)      // i64 == i64
+    runner.assert_eq<bool>(v_i64 != v_i64, false)     // i64 != i64
+    runner.assert_eq<bool>(v_i64 < v_u8 as i64, false) // i64 < u8
+    runner.assert_eq<bool>(v_i64 > v_u16 as i64, true) // i64 > u16
+    runner.assert_eq<bool>(v_i64 <= v_u32 as i64, false) // i64 <= u32
+    runner.assert_eq<bool>(v_i64 >= v_f64 as i64, false) // i64 >= f64
+
+    // Logical Operations
+    runner.assert_eq<bool>((v_i64 > 0) && (v_i64 < 10), true)  // Logical AND
+    runner.assert_eq<bool>((v_i64 < 0) || (v_i64 > 0), true)   // Logical OR
+    runner.assert_eq<bool>(!(v_i64 < 0), true)                // Logical NOT
+}
