@@ -58,8 +58,6 @@ export function generateCastInstruction(from: CastType, to: CastType, reg: strin
         currentType = intermediateType;
     }
 
-    //if(from.startsWith("u"))
-
     // Handle int to float conversion
     if (!from.startsWith('f') && to.startsWith('f')) {
         const intermediateType = `i${typeInfo[to].size * 8}` as CastType;

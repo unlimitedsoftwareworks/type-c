@@ -334,6 +334,18 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
 
 // assignment(=) requires two compatible inputs and returns the lhs type
 function inferAssignment(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression) {
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        let res = basicTypePromotionMap[lhs.kind][rhs.kind];
+        if (res) {
+            return new BasicType(expr.location, res);
+        }
+        else {
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}`, expr.location);
+        }
+    }
+    
     let res = matchDataTypes(ctx, lhs, rhs);
     if (!res.success) {
         ctx.parser.customError(`Cannot use = operator on types ${lhs.getShortName()} and ${rhs.getShortName()}: ${res.message}`, expr.location);
@@ -351,17 +363,22 @@ function inferAssignment(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
 
 // equal and not equal(!=) requires two compatible inputs and returns a bool
 function inferEquality(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression) {
-    let useStrict = (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType))?false:true;
-    let res = matchDataTypes(ctx, lhs, rhs, useStrict);
+
+    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
+        lhs = lhs.to(ctx, BasicType) as BasicType;
+        rhs = rhs.to(ctx, BasicType) as BasicType;
+        let res = basicTypePromotionMap[lhs.kind][rhs.kind];
+        if (res) {
+            return new BasicType(expr.location, res);
+        }
+        else {
+            ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}`, expr.location);
+        }
+    }
+
+    let res = matchDataTypes(ctx, lhs, rhs);
     if (!res.success) {
         ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}: ${res.message}`, expr.location);
-    }
-    
-    if(lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)){
-        let lhsType = lhs.to(ctx, BasicType) as BasicType;
-        let rhsType = rhs.to(ctx, BasicType) as BasicType;
-        
-        return new BasicType(expr.location, basicTypePromotionMap[lhsType.kind][rhsType.kind]);
     }
 
     return lhs;
