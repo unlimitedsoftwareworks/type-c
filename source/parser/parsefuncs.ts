@@ -2631,6 +2631,13 @@ function parserElementHasGenerics(parser: Parser, ctx: Context) {
                     return false;
                 }
             }
+            if (lexeme.type === ">>") {
+                // if we have two consecutive left brackets, we have a generic type
+                if(stack.length >= 1 && stack[stack.length - 1] == "<") {
+                    parser.reject();
+                    return true;
+                }
+            }
 
             // if we find any arithmetic operator, we need to check if we are at the top level.
             // so we can avoid cases like x < 0 && y % 0 == 1 for example
