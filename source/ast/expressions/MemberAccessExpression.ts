@@ -17,6 +17,7 @@ import { Symbol } from "../symbol/Symbol";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ArrayType } from "../types/ArrayType";
 import { BasicType } from "../types/BasicType";
+import { BooleanType } from "../types/BooleanType";
 import { ClassType } from "../types/ClassType";
 import { CoroutineType } from "../types/CoroutineType";
 import { DataType } from "../types/DataType";
@@ -386,7 +387,7 @@ export class MemberAccessExpression extends Expression {
         }
         if(lhsType.is(ctx, CoroutineType)) {
              /**
-             * Only one of the following are accepted: length, extend and slice
+             * Only one of the following are accepted: state, reset, finish
              */
              if (this.right.name === "state") {
                 this.inferredType = new BasicType(this.location, "u8");
@@ -394,7 +395,29 @@ export class MemberAccessExpression extends Expression {
                 this.checkHint(ctx);
                 return this.checkNullableAndReturn(ctx)
             }
+
+            if (this.right.name === "alive") {
+                this.inferredType = new BooleanType(this.location);
+                this.isConstant = false;
+                this.checkHint(ctx);
+                return this.checkNullableAndReturn(ctx)
+            }
+
+           
+           if (this.right.name === "reset" || this.right.name === "finish") {
+                this.inferredType = new FunctionType(
+                    this.location,
+                    [],
+                    new VoidType(this.location),
+                );
+
+                // inherit constness from lhs
+                this.isConstant = this.left.isConstant;
+                this.checkHint(ctx);
+                return this.checkNullableAndReturn(ctx)
+            }
         }
+        
         if(lhsType.is(ctx, NamespaceType)){
             if(this.isNullable){
                 ctx.parser.customError(

@@ -1045,6 +1045,31 @@ export class FunctionGenerator {
                 this.destroyTmp(lhsReg);
                 resultTMP = tmp;
             }
+            if (rhs.name === "alive") {
+                // replace with coroutine.state != 3
+                let tmpCoState = this.generateTmp();
+                resultTMP = this.generateTmp();
+                let tmpValue = this.generateTmp();
+
+
+                let jmpSuccess = this.generateLabel();
+                // load state
+                this.i("coroutine_get_state", tmpCoState, lhsReg);
+                // assume false
+                this.i("const_u8", resultTMP, 1);
+                this.i("const_u8", tmpValue, 3);
+                // co state != 3, so we make sure it is not equal to 3
+                this.i("j_cmp_u8", tmpCoState, tmpValue, 1, jmpSuccess);
+                this.i("const_u8", resultTMP, 0);
+                this.i("label", jmpSuccess);
+
+                this.destroyTmp(tmpCoState);
+                this.destroyTmp(tmpValue);
+                this.destroyTmp(lhsReg);
+            }
+            else {
+                throw new Error("Unknown coroutine member " + rhs.name);
+            }
         } else if (baseType.is(ctx, StructType)) {
             let structType = baseType.to(ctx, StructType) as StructType;
             let fieldType = structType.getFieldTypeByName(rhs.name);
@@ -1606,6 +1631,13 @@ export class FunctionGenerator {
                     baseExpression,
                     baseType,
                 );
+            } else if (baseType instanceof CoroutineType) {
+                return this.ir_generate_coroutine_method_call(
+                    expr,
+                    ctx,
+                    baseExpression,
+                    baseType,
+                );
             } else if (baseType instanceof MetaType) {
                 if (baseType instanceof MetaClassType) {
                     // Class static method call
@@ -1941,6 +1973,35 @@ export class FunctionGenerator {
             return tmp;
         }
 
+        ctx.parser.customError("Invalid expression!", expr.location);
+    }
+
+    ir_generate_coroutine_method_call(
+        expr: FunctionCallExpression,
+        ctx: Context,
+        baseExpression: MemberAccessExpression,
+        baseType: CoroutineType,
+    ): string {
+
+        if(!(expr.lhs instanceof MemberAccessExpression)){
+            ctx.parser.customError("Invalid expression!", expr.location);
+        }
+
+        let coroutineReg = this.visitExpression(baseExpression.left, ctx);
+
+        if ((expr.lhs.right as ElementExpression).name == "reset") {
+            this.i("coroutine_reset", coroutineReg);
+            this.destroyTmp(coroutineReg);
+
+            return "";
+        } 
+        else if ((expr.lhs.right as ElementExpression).name == "finish") {
+            this.i("coroutine_finish", coroutineReg);
+            this.destroyTmp(coroutineReg);
+
+            return "";
+        }
+        
         ctx.parser.customError("Invalid expression!", expr.location);
     }
 

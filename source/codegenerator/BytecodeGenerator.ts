@@ -1953,6 +1953,14 @@ export class BytecodeGenerator {
                 this.emit(BytecodeInstructionType.coroutine_ret);
             }
 
+            else if (instruction.type == "coroutine_reset") {
+                this.emit(BytecodeInstructionType.coroutine_reset, instruction.args[0] as number);
+            }
+
+            else if (instruction.type == "coroutine_finish") {
+                this.emit(BytecodeInstructionType.coroutine_finish, instruction.args[0] as number);
+            }
+
             else if (instruction.type == "throw_rt") {
                 this.emit(BytecodeInstructionType.throw_rt, instruction.args[0] as number);
             }
