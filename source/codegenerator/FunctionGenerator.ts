@@ -148,6 +148,7 @@ import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
 import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistributedAssignExpression";
 import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAccessExpression";
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
+import { NullType } from "../ast/types/NullType";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -886,6 +887,11 @@ export class FunctionGenerator {
         let reg = this.visitExpression(expr.expression, ctx);
         let actualType = expr.expression.inferredType!.dereference();
         let castType = expr.type.dereference();
+
+        if(actualType.allowedNullable(ctx) && castType.is(ctx, NullType)) {
+            return this.ir_generate_null_instance_check(expr, ctx, reg, actualType, castType);
+        }
+
 
         if (actualType instanceof ClassType) {
             return this.ir_generate_class_instance_check(
@@ -4395,6 +4401,26 @@ export class FunctionGenerator {
         }
     }
 
+    ir_generate_null_instance_check(
+        expr: InstanceCheckExpression,
+        ctx: Context,
+        reg: string,
+        actualType: DataType,
+        castType: DataType,
+    ): string {
+        
+        let tmp = this.generateTmp();
+        let endLabel = this.generateLabel();
+        // assume null
+        this.i("const_u8", tmp, 1);
+        let jumpInstruction = jCmpNullType(actualType);
+        this.i(jumpInstruction, reg, endLabel);
+        this.i("const_u8", tmp, 0);
+        this.i("label", endLabel);
+        
+        return tmp;
+    }
+    
     ir_generate_class_instance_check(
         expr: InstanceCheckExpression,
         ctx: Context,

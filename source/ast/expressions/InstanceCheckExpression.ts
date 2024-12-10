@@ -19,6 +19,7 @@ import { BooleanType } from "../types/BooleanType";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { InterfaceType } from "../types/InterfaceType";
+import { NullType } from "../types/NullType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
 import { Expression } from "./Expression";
@@ -80,31 +81,36 @@ export class InstanceCheckExpression extends Expression {
             ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
         }
 
-        if(lhsType.is(ctx, ClassType)) {
-            if(!(this.type.is(ctx, InterfaceType))) {
-                ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
-            }
+        if(lhsType.allowedNullable(ctx) && this.type.is(ctx, NullType)) {
+            
         }
+        else {
+            if(lhsType.is(ctx, ClassType)) {
+                if(!(this.type.is(ctx, InterfaceType))) {
+                    ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+                }
+            }
 
-        if(lhsType.is(ctx, InterfaceType)) {
-            if(!(this.type.is(ctx, InterfaceType) || this.type.is(ctx, ClassType))) {
-                ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+            if(lhsType.is(ctx, InterfaceType)) {
+                if(!(this.type.is(ctx, InterfaceType) || this.type.is(ctx, ClassType))) {
+                    ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+                }
             }
-        }
 
-        if(lhsType.is(ctx, VariantConstructorType)) {
-            if(!(this.type.is(ctx, VariantType))) {
-                ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+            if(lhsType.is(ctx, VariantConstructorType)) {
+                if(!(this.type.is(ctx, VariantType))) {
+                    ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+                }
             }
-        }
 
-        /* unsure about this
-        if(lhsType.is(ctx, VariantType)) {
-            if(!(this.type.is(ctx, VariantType))) {
-                ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+            /* unsure about this
+            if(lhsType.is(ctx, VariantType)) {
+                if(!(this.type.is(ctx, VariantType))) {
+                    ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+                }
             }
+            */
         }
-        */
 
         this.isConstant = false;
         this.inferredType = new BooleanType(this.location);
