@@ -22,7 +22,7 @@ fn test_u64_operations(runner: TestUnit) {
     runner.assert_eq<u64>(v_u64 + v_i16 as u64, 10)   // u64 + i16
     runner.assert_eq<u64>(v_u64 + v_i32 as u64, 11)   // u64 + i32
     runner.assert_eq<u64>(v_u64 + v_i64 as u64, 12)   // u64 + i64
-    runner.assert_f32_eq_pre(v_u64 + v_f32, 13.0f, 0.00001f)        // u64 + f32
+    runner.assert_f64_eq_pre(v_u64 + v_f32, 13.0f, 0.00001f)        // u64 + f32
     runner.assert_eq<f64>(v_u64 + v_f64, 14.0)        // u64 + f64
 
     // Arithmetic Operations: Subtraction
@@ -34,7 +34,7 @@ fn test_u64_operations(runner: TestUnit) {
     runner.assert_eq<u64>((v_i16 - v_u64) as u64, 2 as u64) // Wrap-around
     runner.assert_eq<u64>((v_i32 - v_u64) as u64, 3 as u64) // Wrap-around
     runner.assert_eq<u64>((v_i64 - v_u64) as u64, 4 as u64) // Wrap-around
-    runner.assert_f32_eq_pre(v_u64 - v_f32, -5.0f, 0.00001f)        // u64 - f32
+    runner.assert_f64_eq_pre(v_u64 - v_f32, -5.0f, 0.00001f)        // u64 - f32
     runner.assert_eq<f64>(v_u64 - v_f64, -6.0)        // u64 - f64
 
     // Arithmetic Operations: Multiplication
@@ -46,7 +46,7 @@ fn test_u64_operations(runner: TestUnit) {
     runner.assert_eq<u64>(v_u64 * v_i16 as u64, 24)   // u64 * i16
     runner.assert_eq<u64>(v_u64 * v_i32 as u64, 28)   // u64 * i32
     runner.assert_eq<u64>(v_u64 * v_i64 as u64, 32)   // u64 * i64
-    runner.assert_f32_eq_pre(v_u64 * v_f32, 36.0f, 0.00001f)        // u64 * f32
+    runner.assert_f64_eq_pre(v_u64 * v_f32, 36.0f, 0.00001f)        // u64 * f32
     runner.assert_eq<f64>(v_u64 * v_f64, 40.0)        // u64 * f64
 
     // Arithmetic Operations: Division
@@ -58,7 +58,7 @@ fn test_u64_operations(runner: TestUnit) {
     runner.assert_eq<u64>(v_u64 / v_i16 as u64, 0)    // u64 / i16
     runner.assert_eq<u64>(v_u64 / v_i32 as u64, 0)    // u64 / i32
     runner.assert_eq<u64>(v_u64 / v_i64 as u64, 0)    // u64 / i64
-    runner.assert_f32_eq_pre(v_u64 / v_f32, 0.444444f, 0.00001f)    // u64 / f32
+    runner.assert_f64_eq_pre(v_u64 / v_f32, 0.444444f, 0.00001f)    // u64 / f32
     runner.assert_eq<f64>(v_u64 / v_f64, 0.4)         // u64 / f64
 
     // Comparison Operations

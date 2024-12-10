@@ -14,63 +14,63 @@ fn test_u32_operations(runner: TestUnit) {
     let v_f64: f64 = 10.0
 
     // Arithmetic Operations: Addition
-    runner.assert_eq<u32>(v_u32 + v_u32, 6)           // u32 + u32
-    runner.assert_eq<u32>(v_u32 + v_u8 as u32, 4)     // u32 + u8
-    runner.assert_eq<u32>(v_u32 + v_u16 as u32, 5)    // u32 + u16
-    runner.assert_eq<u64>(v_u32 + v_u64, 7)           // u32 + u64
-    runner.assert_eq<i32>(v_u32 + v_i8 as i32, 8)     // u32 + i8
-    runner.assert_eq<i32>(v_u32 + v_i16 as i32, 9)    // u32 + i16
-    runner.assert_eq<i32>(v_u32 + v_i32, 10)          // u32 + i32
-    runner.assert_eq<i64>(v_u32 + v_i64, 11)          // u32 + i64
+    runner.assert_eq(v_u32 + v_u32, 6)           // u32 + u32
+    runner.assert_eq(v_u32 + v_u8, 4)     // u32 + u8
+    runner.assert_eq(v_u32 + v_u16, 5)    // u32 + u16
+    runner.assert_eq(v_u32 + v_u64, 7)           // u32 + u64
+    runner.assert_eq(v_u32 + v_i8, 8)     // u32 + i8
+    runner.assert_eq(v_u32 + v_i16, 9)    // u32 + i16
+    runner.assert_eq(v_u32 + v_i32, 10)          // u32 + i32
+    runner.assert_eq(v_u32 + v_i64, 11)          // u32 + i64
     runner.assert_f32_eq_pre(v_u32 + v_f32, 12.0f, 0.00001f)        // u32 + f32
-    runner.assert_eq<f64>(v_u32 + v_f64, 13.0)        // u32 + f64
+    runner.assert_eq(v_u32 + v_f64, 13.0)        // u32 + f64
 
     // Arithmetic Operations: Subtraction
-    runner.assert_eq<u32>(v_u32 - v_u32, 0)           // u32 - u32
-    runner.assert_eq<u32>(v_u32 - v_u8 as u32, 2)     // u32 - u8
-    runner.assert_eq<u32>(v_u32 - v_u16 as u32, 1)    // u32 - u16
-    runner.assert_eq<u64>(v_u64 - v_u8, 3)            // u64 - u32
-    runner.assert_eq<i32>(v_u32 - v_i8 as i32, -2)    // u32 - i8
-    runner.assert_eq<i32>(v_u32 - v_i16 as i32, -3)   // u32 - i16
-    runner.assert_eq<i32>(v_u32 - v_i32, -4)          // u32 - i32
-    runner.assert_eq<i64>(v_u32 - v_i64, -5)          // u32 - i64
+    runner.assert_eq(v_u32 - v_u32, 0)           // u32 - u32
+    runner.assert_eq(v_u32 - v_u8, 2)     // u32 - u8
+    runner.assert_eq(v_u32 - v_u16, 1)    // u32 - u16
+    runner.assert_eq(v_u64 - v_u8, 3)            // u64 - u32
+    runner.assert_eq(v_u32 - v_i8, -2)    // u32 - i8
+    runner.assert_eq(v_u32 - v_i16, -3)   // u32 - i16
+    runner.assert_eq(v_u32 - v_i32, -4)          // u32 - i32
+    runner.assert_eq(v_u32 - v_i64, -5)          // u32 - i64
     runner.assert_f32_eq_pre(v_u32 - v_f32, -6.0f, 0.00001f)        // u32 - f32
-    runner.assert_eq<f64>(v_u32 - v_f64, -7.0)        // u32 - f64
+    runner.assert_eq(v_u32 - v_f64, -7.0)        // u32 - f64
 
     // Arithmetic Operations: Multiplication
-    runner.assert_eq<u32>(v_u32 * v_u32, 9)           // u32 * u32
-    runner.assert_eq<u32>(v_u32 * v_u8 as u32, 3)     // u32 * u8
-    runner.assert_eq<u32>(v_u32 * v_u16 as u32, 6)    // u32 * u16
-    runner.assert_eq<u64>(v_u32 * v_u64, 12)          // u32 * u64
-    runner.assert_eq<i32>(v_u32 * v_i8 as i32, 15)    // u32 * i8
-    runner.assert_eq<i32>(v_u32 * v_i16 as i32, 18)   // u32 * i16
-    runner.assert_eq<i32>(v_u32 * v_i32, 21)          // u32 * i32
-    runner.assert_eq<i64>(v_u32 * v_i64, 24)          // u32 * i64
+    runner.assert_eq(v_u32 * v_u32, 9)           // u32 * u32
+    runner.assert_eq(v_u32 * v_u8 as u32, 3)     // u32 * u8
+    runner.assert_eq(v_u32 * v_u16 as u32, 6)    // u32 * u16
+    runner.assert_eq(v_u32 * v_u64, 12)          // u32 * u64
+    runner.assert_eq(v_u32 * v_i8 as i32, 15)    // u32 * i8
+    runner.assert_eq(v_u32 * v_i16 as i32, 18)   // u32 * i16
+    runner.assert_eq(v_u32 * v_i32, 21)          // u32 * i32
+    runner.assert_eq(v_u32 * v_i64, 24)          // u32 * i64
     runner.assert_f32_eq_pre(v_u32 * v_f32, 27.0f, 0.00001f)        // u32 * f32
-    runner.assert_eq<f64>(v_u32 * v_f64, 30.0)        // u32 * f64
+    runner.assert_eq(v_u32 * v_f64, 30.0)        // u32 * f64
 
     // Arithmetic Operations: Division
-    runner.assert_eq<u32>(v_u32 / v_u32, 1)           // u32 / u32
-    runner.assert_eq<u32>(v_u32 / v_u8 as u32, 3)     // u32 / u8
-    runner.assert_eq<u32>(v_u32 / v_u16 as u32, 1)    // u32 / u16
-    runner.assert_eq<u64>(v_u32 / v_u64, 0)           // u32 / u64
-    runner.assert_eq<i32>(v_u32 / v_i8 as i32, 0)     // u32 / i8
-    runner.assert_eq<i32>(v_u32 / v_i16 as i32, 0)    // u32 / i16
-    runner.assert_eq<i32>(v_u32 / v_i32, 0)           // u32 / i32
-    runner.assert_eq<i64>(v_u32 / v_i64, 0)           // u32 / i64
+    runner.assert_eq(v_u32 / v_u32, 1)           // u32 / u32
+    runner.assert_eq(v_u32 / v_u8 as u32, 3)     // u32 / u8
+    runner.assert_eq(v_u32 / v_u16 as u32, 1)    // u32 / u16
+    runner.assert_eq(v_u32 / v_u64, 0)           // u32 / u64
+    runner.assert_eq(v_u32 / v_i8 as i32, 0)     // u32 / i8
+    runner.assert_eq(v_u32 / v_i16 as i32, 0)    // u32 / i16
+    runner.assert_eq(v_u32 / v_i32, 0)           // u32 / i32
+    runner.assert_eq(v_u32 / v_i64, 0)           // u32 / i64
     runner.assert_f32_eq_pre(v_u32 / v_f32, 0.333333f, 0.00001f)    // u32 / f32
-    runner.assert_eq<f64>(v_u32 / v_f64, 0.3)         // u32 / f64
+    runner.assert_eq(v_u32 / v_f64, 0.3)         // u32 / f64
 
     // Comparison Operations
-    runner.assert_eq<bool>(v_u32 == v_u32, true)      // u32 == u32
-    runner.assert_eq<bool>(v_u32 != v_u32, false)     // u32 != u32
-    runner.assert_eq<bool>(v_u32 < v_u64, true)       // u32 < u64
-    runner.assert_eq<bool>(v_u32 <= v_i32 as u32, true) // u32 <= i32
-    runner.assert_eq<bool>(v_u32 > v_i8 as u32, false) // u32 > i8
-    runner.assert_eq<bool>(v_u32 >= v_f32 as u32, false) // u32 >= f32
+    runner.assert_eq(v_u32 == v_u32, true)      // u32 == u32
+    runner.assert_eq(v_u32 != v_u32, false)     // u32 != u32
+    runner.assert_eq(v_u32 < v_u64, true)       // u32 < u64
+    runner.assert_eq(v_u32 <= v_i32 as u32, true) // u32 <= i32
+    runner.assert_eq(v_u32 > v_i8 as u32, false) // u32 > i8
+    runner.assert_eq(v_u32 >= v_f32 as u32, false) // u32 >= f32
 
     // Logical Operations
-    runner.assert_eq<bool>((v_u32 < v_u64) && (v_u32 > 0), true)  // Logical AND
-    runner.assert_eq<bool>((v_u32 > v_u64) || (v_u32 > 0), true)  // Logical OR
-    runner.assert_eq<bool>(!(v_u32 > v_u64), true)                // Logical NOT
+    runner.assert_eq((v_u32 < v_u64) && (v_u32 > 0), true)  // Logical AND
+    runner.assert_eq((v_u32 > v_u64) || (v_u32 > 0), true)  // Logical OR
+    runner.assert_eq(!(v_u32 > v_u64), true)                // Logical NOT
 }
