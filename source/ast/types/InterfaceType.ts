@@ -10,12 +10,13 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import {DataType} from "./DataType";
-import {InterfaceMethod} from "../other/InterfaceMethod";
-import {SymbolLocation} from "../symbol/SymbolLocation";
+import { DataType } from "./DataType";
+import { InterfaceMethod } from "../other/InterfaceMethod";
+import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { areSignaturesIdentical, matchDataTypes } from "../../typechecking/TypeChecking";
 import { GenericType } from "./GenericType";
+import { ClassType } from "./ClassType";
 
 
 export class InterfaceType extends DataType {
@@ -57,14 +58,14 @@ export class InterfaceType extends DataType {
 
 
     to(ctx: Context, targetType: new (...args: any[]) => DataType): DataType {
-        if(targetType === InterfaceType) return this;
+        if (targetType === InterfaceType) return this;
         throw new Error(`Cannot cast interface to ${targetType.name}`);
     }
 
     resolve(ctx: Context) {
-        if(this._resolved) return;
+        if (this._resolved) return;
 
-        if(this.preResolveRecursion()){
+        if (this.preResolveRecursion()) {
             return;
         }
 
@@ -73,7 +74,7 @@ export class InterfaceType extends DataType {
         this.superTypes.forEach((superType) => {
             superType.resolve(ctx);
 
-            if(!superType.is(ctx, InterfaceType)){
+            if (!superType.is(ctx, InterfaceType)) {
                 ctx.parser.customError("Interface can only extend from other interfaces", superType.location);
                 return;
             }
@@ -87,7 +88,7 @@ export class InterfaceType extends DataType {
 
         // make sure methods has no generic types
         this.methods.forEach((method) => {
-            if(method.generics.length > 0) {
+            if (method.generics.length > 0) {
                 ctx.parser.customError("Interface methods cannot be generic", method.generics[0].location);
                 return;
             }
@@ -112,13 +113,13 @@ export class InterfaceType extends DataType {
          */
         let methodNames: string[] = allMethods.map((method) => method.name);
 
-        for(let i = 0; i < methodNames.length; i++){
-            for(let j = i+1; j < methodNames.length; j++){
-                if(methodNames[i] == methodNames[j]){
+        for (let i = 0; i < methodNames.length; i++) {
+            for (let j = i + 1; j < methodNames.length; j++) {
+                if (methodNames[i] == methodNames[j]) {
                     // if one of them is generic, we do allow duplicates
 
                     // we perform the check solely based on the arguments, not the return type
-                    if(areSignaturesIdentical(ctx, allMethods[i], allMethods[j])){
+                    if (areSignaturesIdentical(ctx, allMethods[i], allMethods[j])) {
                         ctx.parser.customError(`Method ${methodNames[i]} is duplicated with the same signature`, allMethods[j].location);
                         return;
                     }
@@ -143,7 +144,7 @@ export class InterfaceType extends DataType {
         return this._allMethods.some((method) => method.name == name);
     }
 
-     /**
+    /**
      * Returns the methods which matches the given signature.
      * The return type is optional as it is not part of the signature, but if present
      * in this function call, a check will be performed to make sure it matches.
@@ -158,26 +159,26 @@ export class InterfaceType extends DataType {
      * @param parameters
      * @param returnType
      */
-     getMethodBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): InterfaceMethod[] {
+    getMethodBySignature(ctx: Context, name: string, parameters: DataType[], returnType: DataType | null): InterfaceMethod[] {
         let findMethod = (strict: boolean): InterfaceMethod[] => {
             let candidates: InterfaceMethod[] = [];
             let allMethods = this._allMethods;
 
-            for(let method of allMethods) {
+            for (let method of allMethods) {
                 if (method.name === name) {
-                    if(method.generics.length > 0) {
+                    if (method.generics.length > 0) {
                         // generic methods cannot be overloaded, returning only one
                         return [method];
                     }
 
-                    if(returnType !== null) {
+                    if (returnType !== null) {
                         let res = matchDataTypes(ctx, method.header.returnType, returnType, strict);
-                        if(!res.success){
+                        if (!res.success) {
                             continue;
                         }
                     }
 
-                    if(method.header.parameters.length != parameters.length) {
+                    if (method.header.parameters.length != parameters.length) {
                         continue
                     }
 
@@ -186,7 +187,7 @@ export class InterfaceType extends DataType {
                         return res.success;
                     });
 
-                    if(!allMatch) {
+                    if (!allMatch) {
                         continue;
                     }
 
@@ -198,7 +199,46 @@ export class InterfaceType extends DataType {
         }
 
         let candidates = findMethod(true);
-        if(candidates.length === 0) {
+        if (candidates.length === 0) {
+            candidates = findMethod(false);
+        }
+
+        return candidates;
+    }
+
+    /**
+     * Same as getMethodBySignature, but also takes into account the generics
+     * Meaning it automatically matches the generics to the given types
+     * @param ctx
+     * @param name
+     * @param parameters
+     * @param returnType
+     */
+    getConcreteMethod(ctx: Context, imethod: InterfaceMethod, declaredGenerics: { [key: string]: GenericType }): InterfaceMethod[] {
+        let findMethod = (strict: boolean): InterfaceMethod[] => {
+            let candidates: InterfaceMethod[] = [];
+            let allMethods = this._allMethods;
+
+            for (let method of allMethods) {
+                if ((method.name === imethod.name) && (method.header.parameters.length === imethod.header.parameters.length)) {
+                    try {
+                        let matches: { [key: string]: DataType } = {};
+                        // imethod is the generic method, method is the concrete method
+                        imethod.header.getGenericParametersRecursive(ctx, method.header, declaredGenerics, matches);
+                    }
+                    catch(e){
+                        continue;
+                    }
+
+                    candidates.push(method);
+                }
+            }
+
+            return candidates;
+        }
+
+        let candidates = findMethod(true);
+        if (candidates.length === 0) {
             candidates = findMethod(false);
         }
 
@@ -221,36 +261,49 @@ export class InterfaceType extends DataType {
         return true;
     }
 
-    clone(genericsTypeMap: {[key: string]: DataType}): InterfaceType{
-        let clone = new InterfaceType(this.location, this.methods.map((method) => method.clone(genericsTypeMap)), this.superTypes.map((superType) => superType.clone(genericsTypeMap)));
+    clone(genericsTypeMap: { [key: string]: DataType }): InterfaceType {
+        let clone = new InterfaceType(
+            this.location,
+            this.methods.map((method) => method.clone(genericsTypeMap)),
+            this.superTypes.map((superType) => superType.clone(genericsTypeMap)));
         return clone;
     }
 
 
-    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
-        if(this.preGenericExtractionRecursion()){
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: { [key: string]: GenericType }, typeMap: { [key: string]: DataType }) {
+        if (this.preGenericExtractionRecursion()) {
             return;
         }
 
-        // make sure originalType is an InterfaceType
-        if(!originalType.is(ctx, InterfaceType)){
+        // make sure originalType is an InterfaceType or a ClassType
+        if (!originalType.is(ctx, InterfaceType) && !originalType.is(ctx, ClassType)) {
             ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
-        // make sure number of methods is the same
+        // make sure they are compatible
         let interfaceType = originalType.to(ctx, InterfaceType) as InterfaceType;
-        if(this._allMethods.length != interfaceType._allMethods.length){
-            ctx.parser.customError(`Expected ${interfaceType.methods.length} methods, got ${this._allMethods.length} instead.`, this.location);
-        }
 
-        for(let i = 0; i < this._allMethods.length; i++){
-            // make sure method name is the same
-            if(this._allMethods[i].name != interfaceType.methods[i].name){
-                ctx.parser.customError(`Expected method ${interfaceType._allMethods[i].name}, got ${this._allMethods[i].name} instead.`, this.location);
+        // disabled because we cannot match in the presence of generics
+        //let res = matchDataTypes(ctx, this, interfaceType, false);
+        //if(!res.success){
+        //    ctx.parser.customError(`Expected interface type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
+        //}
+
+        for (let i = 0; i < this.methods.length; i++) {
+
+            let candidates = interfaceType.getConcreteMethod(ctx, this.methods[i], declaredGenerics);
+            if (candidates.length === 0) {
+                ctx.parser.customError(`Method ${this.methods[i].name} not found in interface ${interfaceType.getShortName()}`, this.methods[i].location);
             }
 
+            if (candidates.length > 1) {
+                ctx.parser.customError(`Ambiguous method ${this.methods[i].name} with given types ${this.methods[i].header.parameters.map(e => e.type.getShortName()).join(", ")} -> ${this.methods[i].header.returnType?.getShortName() || "void"} in interface ${interfaceType.getShortName()}`, this.location);
+            }
+
+            let method = candidates[0];
+
             // get generics for the method
-            this._allMethods[i].header.getGenericParametersRecursive(ctx, interfaceType._allMethods[i].header, declaredGenerics, typeMap);
+            this.methods[i].header.getGenericParametersRecursive(ctx, method.header, declaredGenerics, typeMap);
         }
 
         this.postGenericExtractionRecursion();
@@ -263,19 +316,19 @@ export class InterfaceType extends DataType {
      * @param interface
      */
     interfacesAlign(obj: InterfaceType): boolean {
-        if(obj._allMethods.length > this._allMethods.length){
+        if (obj._allMethods.length > this._allMethods.length) {
             return false;
         }
         // TODO: refactor this to use getMethodIndexBySignature
-        for(let i = 0; i < obj._allMethods.length; i++){
-            if(obj._allMethods[i].name != this._allMethods[i].name){
+        for (let i = 0; i < obj._allMethods.length; i++) {
+            if (obj._allMethods[i].name != this._allMethods[i].name) {
                 return false;
             }
             // make sure they also match, in terms of prototype
             // here we perform an exact match, maybe a compatible match in the future?
             // TODO: compare with type checking for compatible match instead of exact match
             let match = obj._allMethods[i].header.toString() == this._allMethods[i].header.toString()
-            if(!match){
+            if (!match) {
                 return false;
             }
         }
@@ -302,7 +355,7 @@ export class InterfaceType extends DataType {
      */
     generateOffsetSwaps(ctx: Context, obj: InterfaceType) {
         let swaps: number[] = [];
-        for(let i = 0; i < obj._allMethods.length; i++){
+        for (let i = 0; i < obj._allMethods.length; i++) {
             let method = obj.methods[i];
             let index = this.getMethodIndexBySignature(ctx, method.name, method.header.parameters.map(e => e.type), method.header.returnType);
             if (index == -1) {
@@ -312,46 +365,46 @@ export class InterfaceType extends DataType {
         }
 
         return swaps;
-        }
+    }
 }
 
-export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[]){
+export function checkOverloadedMethods(ctx: Context, methods: InterfaceMethod[]) {
     methods.forEach((method) => {
         // make sure __inc__, __dec__, __neg__, __not__, __invert__ have no arguments
-        if(["__inc__", "__dec__", "__neg__", "__not__", "__invert__"].includes(method.name)){
-            if(method.header.parameters.length != 0){
+        if (["__inc__", "__dec__", "__neg__", "__not__", "__invert__"].includes(method.name)) {
+            if (method.header.parameters.length != 0) {
                 ctx.parser.customError(`Method ${method.name} cannot have arguments`, method.location);
             }
-            if(method.isStatic){
+            if (method.isStatic) {
                 ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
 
         // make sure __index__ has at least one argument
-        if(method.name == "__index__"){
-            if(method.header.parameters.length == 0){
+        if (method.name == "__index__") {
+            if (method.header.parameters.length == 0) {
                 ctx.parser.customError(`Method ${method.name} must have at least one argument`, method.location);
             }
-            if(method.isStatic){
+            if (method.isStatic) {
                 ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
 
-        if(method.name == "__index_set__"){
-            if(method.header.parameters.length < 2){
+        if (method.name == "__index_set__") {
+            if (method.header.parameters.length < 2) {
                 ctx.parser.customError(`Method ${method.name} must have at least two argument`, method.location);
             }
-            if(method.isStatic){
+            if (method.isStatic) {
                 ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }
 
         // make sure __mul__, __div__, __mod__, __add__, __sub__, __lshift__, __rshift__, __lt__, __le__, __gt__, __ge__, __band__, __xor__, __bor__, __and__, __or__ have exactly one argument
-        if(["__mul__", "__div__", "__mod__", "__add__", "__sub__", "__lshift__", "__rshift__", "__lt__", "__le__", "__gt__", "__ge__", "__band__", "__xor__", "__bor__", "__and__", "__or__"].includes(method.name)){
-            if(method.header.parameters.length != 1){
+        if (["__mul__", "__div__", "__mod__", "__add__", "__sub__", "__lshift__", "__rshift__", "__lt__", "__le__", "__gt__", "__ge__", "__band__", "__xor__", "__bor__", "__and__", "__or__"].includes(method.name)) {
+            if (method.header.parameters.length != 1) {
                 ctx.parser.customError(`Method ${method.name} must have exactly one argument`, method.location);
             }
-            if(method.isStatic){
+            if (method.isStatic) {
                 ctx.parser.customError(`Method ${method.name} cannot be static`, method.location);
             }
         }

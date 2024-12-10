@@ -32,6 +32,10 @@ export class ReferenceType extends DataType{
     baseType: DataType | null = null;
     baseDecl: DeclaredType | null = null;
 
+    // used to check if the reference is a partial generic type
+    // so that we do not resolve it fully
+    _partialGeneric: boolean = false;
+
     /**
      * The context in which the reference is used (not necessarily the context in which it is declared)
      */
@@ -51,7 +55,11 @@ export class ReferenceType extends DataType{
         }
     }
 
-    resolve(ctx: Context) {
+    resolvePartialGeneric(ctx: Context){
+        this.resolve(ctx, true);
+    }
+
+    resolve(ctx: Context, partial: boolean = false) {
         if(this.preResolveRecursion()){
             return;
         }
@@ -114,7 +122,7 @@ export class ReferenceType extends DataType{
             // causes infinite loop
             this.baseDecl = typeDecl;
         }
-        else {
+        else if (!partial){
             // we have to clone the original type
             let map = buildGenericsMaps(ctx, typeDecl.genericParameters, this.typeArgs);
             let signature = signatureFromGenerics(this.typeArgs);
@@ -143,6 +151,13 @@ export class ReferenceType extends DataType{
                 //this.baseType.resolve(ctx);
                 typeDecl.concreteTypes.set(signature, this.baseType);
             }
+        }
+        else {
+            // partial generic type
+            this._partialGeneric = true;
+            this.baseType = typeDecl.type;
+            // causes infinite loop
+            this.baseDecl = typeDecl;
         }
 
         if(actualReference.length > 1){
@@ -238,9 +253,7 @@ export class ReferenceType extends DataType{
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
-        if(this.preGenericExtractionRecursion()){
-            return;
-        }
+        this.preGenericExtractionRecursion();
 
 
         // there are two cases:
@@ -257,7 +270,7 @@ export class ReferenceType extends DataType{
             generic.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
         }
         else {
-            this.resolveIfNeeded(ctx);
+            this.resolvePartialGeneric(ctx);
             this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
         }
 

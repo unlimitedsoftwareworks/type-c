@@ -82,7 +82,7 @@ export class FunctionType extends DataType {
         for(let i = 0; i < this.parameters.length; i++){
             // make sure the mutability is the same
             if(this.parameters[i].isMutable != functionType.parameters[i].isMutable){
-                ctx.parser.customError(`Expected ${functionType.parameters[i].isMutable} mutability, got ${this.parameters[i].isMutable} instead.`, this.location);
+                ctx.parser.customError(`Expected ${functionType.parameters[i].isMutable} mutability for parameter ${this.parameters[i].name}, got ${this.parameters[i].isMutable} instead.`, this.location);
             }
 
             this.parameters[i].type.getGenericParametersRecursive(ctx, functionType.parameters[i].type, declaredGenerics, typeMap);

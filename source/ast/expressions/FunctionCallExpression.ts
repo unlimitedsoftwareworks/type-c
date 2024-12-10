@@ -303,7 +303,6 @@ export class FunctionCallExpression extends Expression {
             let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
-                let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
                 ctx.parser.customError(`Method ${memberExpr.name}(${inferredArgTypes.map(e => e.getShortName()).join(", ")}) not found in class ${baseExprType.getShortName()}`, this.location);
             }
             if (candidateMethods.length > 1) {

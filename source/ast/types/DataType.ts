@@ -281,6 +281,7 @@ export class DataType {
         if(DataType._recursiveGenericRecursion.includes(key)){
             return true;
         }
+        
 
         DataType._recursiveGenericRecursion.push(key);
         return false;
@@ -288,7 +289,11 @@ export class DataType {
 
     postGenericExtractionRecursion(){
         // just pop
-        DataType._recursiveGenericRecursion.pop();
+        //DataType._recursiveGenericRecursion.pop();
+        let pos = DataType._recursiveGenericRecursion.indexOf(this.hash());
+        if(pos !== -1){
+            DataType._recursiveGenericRecursion.splice(pos, 1);
+        }
     }
 
     preResolveRecursion(){

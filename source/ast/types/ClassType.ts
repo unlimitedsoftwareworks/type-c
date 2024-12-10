@@ -61,7 +61,7 @@ export class ClassType extends DataType {
      * If two classes do not have the same ID, they are different.
      */
     static classCounter = 0;
-    classId = ClassType.classCounter++;
+    
 
     // used after parsing and analysis and prior to code gen
     // contains all methods, with all concrete types etc
@@ -70,6 +70,7 @@ export class ClassType extends DataType {
     impls: ClassImplementation[] = [];
 
     implsResolved: boolean = false;
+    classId: number
 
     constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[], impls: ClassImplementation[]) {
         super(location, "class");
@@ -84,6 +85,7 @@ export class ClassType extends DataType {
                 method.body.context.overrideParent(method.context);
             }
         }
+        this.classId = ClassType.classCounter++;
     }
 
     resolve(ctx: Context, hint: DataType | null = null) {
@@ -659,13 +661,14 @@ export class ClassType extends DataType {
         if (targetType === InterfaceType) {
             let methods: InterfaceMethod[] = [];
             for (const method of this.methods) {
-                // interfaces cannot have generic methods
-                if (method.imethod.generics.length === 0) {
+                // interfaces cannot have generic methods, static or constructors
+                if ((method.imethod.generics.length === 0) && (method.imethod.isStatic === false) && (method.name !== "init")) {
                     methods.push(method.imethod);
                 }
             }
-
-            return new InterfaceType(this.location, methods, []);
+            let newInterface = new InterfaceType(this.location, methods, []);
+            newInterface.resolve(ctx);
+            return newInterface;
         }
         else if (targetType === ClassType) {
             return this;
@@ -727,10 +730,16 @@ export class ClassType extends DataType {
         }
 
         // make sure we have a class type
-        if (!originalType.is(ctx, ClassType)) {
+        if (!originalType.is(ctx, ClassType)/* && !originalType.is(ctx, InterfaceType)*/) {
             ctx.parser.customError(`Expected class type when mapping generics to types, got ${originalType.getShortName()} instead.`, this.location);
         }
 
+
+        if(originalType.is(ctx, InterfaceType)){
+            let inter = this.to(ctx, InterfaceType) as InterfaceType;
+            inter.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+        }
+        else {
         let classType = (originalType.to(ctx, ClassType) as ClassType);
 
         // now we call all attribute types and method types!
@@ -739,7 +748,7 @@ export class ClassType extends DataType {
             if (this.attributes[i].name !== classType.attributes[i].name) {
                 ctx.parser.customError(`Expected attribute ${this.attributes[i].name} got ${classType.attributes[i].name}`, this.location);
             }
-            classType.attributes[i].type.getGenericParametersRecursive(ctx, classType.attributes[i].type, declaredGenerics, typeMap);
+            this.attributes[i].type.getGenericParametersRecursive(ctx, classType.attributes[i].type, declaredGenerics, typeMap);
         }
 
         for (let i = 0; i < this.methods.length; i++) {
@@ -747,7 +756,13 @@ export class ClassType extends DataType {
             if (this.methods[i].imethod.name !== classType.methods[i].imethod.name) {
                 ctx.parser.customError(`Expected method ${this.methods[i].imethod.name} got ${classType.methods[i].imethod.name}`, this.location);
             }
+
+            if(this.methods[i].imethod.generics.length > 0){
+                continue
+            }
+
             this.methods[i].imethod.header.getGenericParametersRecursive(ctx, classType.methods[i].imethod.header, declaredGenerics, typeMap);
+            }
         }
 
         this.postGenericExtractionRecursion();
