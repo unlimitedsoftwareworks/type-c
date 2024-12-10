@@ -3630,7 +3630,7 @@ function parseStatementFor(parser: Parser, ctx: Context): ForStatement {
         parser.reject();
     }
 
-    let body = parseStatementBlock(parser, newScope);
+    let body = parseStatementBlock(parser, newScope, true);
     newScope.endLocation = parser.loc();
     // mark the statement block as a loop context
     return new ForStatement(
@@ -3652,9 +3652,8 @@ function parseStatementForEach(parser: Parser, ctx: Context): ForeachStatement {
     let expression = parseExpression(parser, ctx, {
         allowNullable: false,
     });
-    let body = parseStatementBlock(parser, ctx);
-    // mark the statement block as a loop context
-    body.context.env.loopContext = true;
+    let body = parseStatementBlock(parser, ctx, true);
+    
     //return new ForeachStatement(loc, ctx, name, expression, body);
     parser.error("Not implemented", loc, 1);
     return null!;

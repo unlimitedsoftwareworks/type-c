@@ -235,6 +235,11 @@ export class FunctionGenerator {
     doExpressionLabelStack: string[] = [];
     doExpressionTmpStack: string[] = [];
 
+    // labels of the current loop, nested loops will be pushed to the stack
+    // a break or continue statement will use the last label in the stack
+    loopBeginLabelStack: string[] = [];
+    loopEndLabelStack: string[] = [];
+
     constructor(fn: FunctionGenType, templateSegment: TemplateSegment, isGlobal: boolean = false) {
         this.fn = fn;
         this.templateSegment = templateSegment;
@@ -247,7 +252,27 @@ export class FunctionGenerator {
     }
 
     generateLabel(): string {
-        return "lbl_" + this.fn.context.uuid + ("_" + this.lblCounter++);
+        let lbl = "lbl_" + this.fn.context.uuid + ("_" + this.lblCounter++);
+
+        return lbl;
+    }
+    
+    pushLoopLabels(begin: string, end: string){
+        this.loopBeginLabelStack.push(begin);
+        this.loopEndLabelStack.push(end);
+    }
+
+    popLoopLabels(){
+        this.loopBeginLabelStack.pop();
+        this.loopEndLabelStack.pop();
+    }
+
+    getLoopBeginLabel(){
+        return this.loopBeginLabelStack[this.loopBeginLabelStack.length - 1];
+    }
+
+    getLoopEndLabel(){
+        return this.loopEndLabelStack[this.loopEndLabelStack.length - 1];
     }
 
     // generates an IR instruction
@@ -2924,7 +2949,8 @@ export class FunctionGenerator {
         let tmp = this.generateTmp();
         let tmpIndexReg = this.generateTmp();
         // if hint is available, use it
-        let c = constType(expr?.hintType ?? expr?.inferredType!);
+        // hint type removed because upcasting is done after evaluation
+        let c = constType(/*expr?.hintType ??*/ expr?.inferredType!);
 
         if (expr instanceof StringLiteralExpression) {
             /*
@@ -3319,31 +3345,29 @@ export class FunctionGenerator {
         this.i("debug", "Exiting block " + stmt.context.uuid);
     }
     visitBreakStatement(stmt: BreakStatement, ctx: Context) {
-        // TODO: check how break works with for loops
-        let loopScope = ctx.getInnerLoopContext();
-
-        if (loopScope == null) {
-            throw new Error("Cannot break outside of a loop");
-        }
+        let endLabel = this.getLoopEndLabel();
         this.i("debug", "break statement");
-
-        // end of scope label is the label of the loop prefixed with end-of-scope
-        this.i("j", loopScope.generateEndOfContextLabel());
+        this.i("j", endLabel);
     }
     visitContinueStatement(stmt: ContinueStatement, ctx: Context) {
-        let loopScope = ctx.getInnerLoopContext();
-
-        if (loopScope == null) {
-            throw new Error("Cannot continue outside of a loop");
-        }
-
+        let loopBegin = this.getLoopBeginLabel();
         this.i("debug", "continue statement");
-        this.i("j", loopScope.uuid);
+        this.i("j", loopBegin);
     }
+
     visitDoWhileStatement(stmt: DoWhileStatement, ctx: Context) {
         this.i("debug", "do-while statement");
         // generate the label first
-        this.i("label", stmt.body.context.uuid);
+
+        // This is not the jump location of continue, it is the label of the body!
+        // a continue statement will jump to the condition check
+        let loopBodyLabel = stmt.body.context.uuid;
+        let loopConditionLabel = this.generateLabel();
+        let loopEndLabel = stmt.body.context.generateEndOfContextLabel();
+
+        this.pushLoopLabels(loopConditionLabel, loopEndLabel);
+
+        this.i("label", loopBodyLabel);
 
         // generate the body
         this.i("debug", "do-while statement body");
@@ -3352,23 +3376,22 @@ export class FunctionGenerator {
         // generate the condition
         this.i("debug", "do-while statement condition");
         let resTmp = this.visitExpression(stmt.condition, stmt.body.context);
+        this.i("j_eq_null_u8", resTmp, loopEndLabel);
+        this.i("j", loopBodyLabel)
+        this.destroyTmp(resTmp);
 
-        // u8 because all logical operators return u8
-        let tmp = this.generateTmp();
-        this.i("const_u8", tmp, 0);
-        this.i("j_cmp_u8", resTmp, tmp, 1, stmt.body.context.uuid);
-        this.destroyTmp(tmp);
-
-        // generate the jump instruction
-        this.i("debug", "do-while statement jump");
 
         this.i("debug", "do-while statement end of scope");
         // generate the end of scope label for break statements
-        this.i("label", stmt.body.context.generateEndOfContextLabel());
+        this.i("label", loopEndLabel);
+
+        this.popLoopLabels();
     }
+    
     visitForeachStatement(stmt: ForeachStatement, ctx: Context) {
         throw new Error("Method not implemented.");
     }
+
     visitForStatement(stmt: ForStatement, ctx: Context) {
         // start with the initialization
         this.i("debug", "for-statement init");
@@ -3376,9 +3399,14 @@ export class FunctionGenerator {
             this.visitStatement(init, stmt.context);
         }
 
+        let beginLabel = stmt.context.uuid;
+        let endLabel = stmt.context.generateEndOfContextLabel();
+
+        this.pushLoopLabels(beginLabel, endLabel);
+
         // generate the label for continue
         this.i("debug", "for-statement label");
-        this.i("label", stmt.context.uuid);
+        this.i("label", beginLabel);
 
         // generate the conditions
         this.i("debug", "for-statement condition");
@@ -3393,7 +3421,7 @@ export class FunctionGenerator {
                 resTmp,
                 tmp,
                 0,
-                stmt.context.generateEndOfContextLabel(),
+                endLabel,
             );
             this.destroyTmp(tmp);
             this.destroyTmp(resTmp);
@@ -3415,7 +3443,9 @@ export class FunctionGenerator {
 
         // generate the end of scope label for break statements
         this.i("debug", "for-statement end of scope");
-        this.i("label", stmt.context.generateEndOfContextLabel());
+        this.i("label", endLabel);
+
+        this.popLoopLabels();
     }
     visitFunctionDeclarationStatement(
         stmt: FunctionDeclarationStatement,
@@ -3662,23 +3692,16 @@ export class FunctionGenerator {
         // generate the label first
         this.i("debug", "while statement");
         let conditionLabel = this.generateLabel();
-        this.i("label", conditionLabel);
+        let beginLabel = conditionLabel;
+        let endLabel = stmt.body.context.generateEndOfContextLabel();
+
+        this.pushLoopLabels(beginLabel, endLabel);
 
         // generate the condition
         this.i("debug", "while statement condition");
+        this.i("label", conditionLabel);
         let resTmp = this.visitExpression(stmt.condition, stmt.body.context);
-        // if the condition is false, jump to the end of the scope
-        // u8 because all logical operators return u8
-        let tmp = this.generateTmp();
-        this.i("const_u8", tmp, 0);
-        this.i("j_cmp_u8", resTmp, tmp, 1, stmt.body.context.uuid);
-        this.destroyTmp(tmp);
-        this.destroyTmp(resTmp);
-        // generate the jump instruction
-        this.i("debug", "while statement jump");
-        // generate the opposite jump instruction
-        this.i("debug", "while statement jump");
-        this.i("j", stmt.body.context.generateEndOfContextLabel());
+        this.i("j_eq_null_u8", resTmp, endLabel);
 
         // generate the body
         this.i("debug", "while statement body");
@@ -3690,7 +3713,9 @@ export class FunctionGenerator {
 
         // generate the end of scope label for break statements
         this.i("debug", "while statement end of scope");
-        this.i("label", stmt.body.context.generateEndOfContextLabel());
+        this.i("label", endLabel);
+
+        this.popLoopLabels();
     }
 
     visitTupeDeconstructionGroup(ctx: Context, group: DeclaredVariable[]) {
