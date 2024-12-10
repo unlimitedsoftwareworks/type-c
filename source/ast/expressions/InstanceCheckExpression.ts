@@ -19,6 +19,7 @@ import { BooleanType } from "../types/BooleanType";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { InterfaceType } from "../types/InterfaceType";
+import { NullableType } from "../types/NullableType";
 import { NullType } from "../types/NullType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
@@ -70,21 +71,23 @@ export class InstanceCheckExpression extends Expression {
          * - lhs is variant and rhs is variant
          * - lhs is variant and rhs is interface
          */
-
+        
         let lhsType = this.expression.infer(ctx, null); // we use null bc lhs doesn't depend on hint
-        if(!(
-            lhsType.is(ctx, VariantConstructorType) ||
-            lhsType.is(ctx, VariantType) ||
-            lhsType.is(ctx, ClassType) ||
-            lhsType.is(ctx, InterfaceType)
-        )) {
-            ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
-        }
-
-        if(lhsType.allowedNullable(ctx) && this.type.is(ctx, NullType)) {
-            
+  
+        if(lhsType.is(ctx, NullableType) && this.type.is(ctx, NullType)) {
+            // we just directly return true
         }
         else {
+            
+            if(!(
+                lhsType.is(ctx, VariantConstructorType) ||
+                lhsType.is(ctx, VariantType) ||
+                lhsType.is(ctx, ClassType) ||
+                lhsType.is(ctx, InterfaceType)
+            )) {
+                ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);
+            }
+    
             if(lhsType.is(ctx, ClassType)) {
                 if(!(this.type.is(ctx, InterfaceType))) {
                     ctx.parser.customError(`Invalid instance check on type ${lhsType.getShortName()} against ${this.type.getShortName()}`, this.location);

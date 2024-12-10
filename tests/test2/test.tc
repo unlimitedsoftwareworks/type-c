@@ -13,6 +13,65 @@ from test_u64 import test_u64_operations
 from test_f32 import test_f32_operations
 from test_f64 import test_f64_operations
 
+type Enum = enum {
+    Ok,
+    Err,
+    Maybe
+}
+
+fn getErr(i: u64) -> Enum {
+    let x: Enum[] = [Enum.Err, Enum.Ok, Enum.Maybe, Enum.Err, Enum.Ok, Enum.Maybe]
+    return x[i]
+}
+
+
+fn test_stuff(runner: TestUnit) {
+
+    runner.assert_eq(getErr(0), Enum.Err)
+    runner.assert_eq(getErr(1), Enum.Ok)
+    runner.assert_eq(getErr(2), Enum.Maybe)
+    runner.assert_eq(getErr(3), Enum.Err)
+    runner.assert_eq(getErr(4), Enum.Ok)
+    runner.assert_eq(getErr(5), Enum.Maybe)
+
+
+    let x: u32[]? = null
+    let y: u32[]? = [1, 2, 3]
+
+    if x {
+        runner.assert_unreachable()
+    }
+    else {
+        runner.assert_reachable()
+    }
+
+    if x && !(x is null) {
+        runner.assert_unreachable()
+    }
+    else {
+        runner.assert_reachable()
+    }
+
+    if y && x is null {
+        runner.assert_reachable()
+    }
+
+    runner.assert_eq(true == true, true)
+    runner.assert_eq(true == false, false)
+    runner.assert_eq(false == true, false)
+    runner.assert_eq(false == false, true)
+
+    runner.assert_eq(true != true, false)
+    runner.assert_eq(true != false, true)
+    runner.assert_eq(false != true, true)
+    runner.assert_eq(false != false, false)
+
+    runner.assert_eq(true || true, true)
+    runner.assert_eq(true && true, true)
+    runner.assert_eq(true || false, true)
+
+
+}
 
 fn main() {
     let test_i8_ops = new TestUnit("test i8", "Tests i8 against all types", test_i8_operations)
@@ -26,6 +85,8 @@ fn main() {
     let test_f32_ops = new TestUnit("test f32", "Tests f32 against all types", test_f32_operations)
     let test_f64_ops = new TestUnit("test f64", "Tests f64 against all types", test_f64_operations)
 
+    let test_null_instance_check = new TestUnit("test null instance check", "Tests null instance check", test_stuff)
+
     let set = new UnitSet("Madness", "Tests all operations for all types", [
         test_i8_ops,
         test_u8_ops,
@@ -36,7 +97,8 @@ fn main() {
         test_i64_ops,
         test_u64_ops,
         test_f32_ops,
-        test_f64_ops
+        test_f64_ops,
+        test_null_instance_check
     ])
 
     return set.run()

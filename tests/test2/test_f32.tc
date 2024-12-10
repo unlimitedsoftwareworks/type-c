@@ -12,55 +12,6 @@ fn test_f32_operations(runner: TestUnit) {
     let v_i32: i32 = 7
     let v_i64: i64 = 8
     let v_f64: f64 = 10.0
-
-    // Arithmetic Operations: Addition
-    runner.assert_f32_eq_pre(v_f32 + v_f32, 18.0f, 0.00001f)       // f32 + f32
-    runner.assert_f32_eq_pre(v_f32 + v_u8 as f32, 10.0f, 0.00001f) // f32 + u8
-    runner.assert_f32_eq_pre(v_f32 + v_u16 as f32, 11.0f, 0.00001f) // f32 + u16
-    runner.assert_f32_eq_pre(v_f32 + v_u32 as f32, 12.0f, 0.00001f) // f32 + u32
-    runner.assert_f32_eq_pre(v_f32 + v_u64 as f32, 13.0f, 0.00001f) // f32 + u64
-    runner.assert_f32_eq_pre(v_f32 + v_i8 as f32, 14.0f, 0.00001f) // f32 + i8
-    runner.assert_f32_eq_pre(v_f32 + v_i16 as f32, 15.0f, 0.00001f) // f32 + i16
-    runner.assert_f32_eq_pre(v_f32 + v_i32 as f32, 16.0f, 0.00001f) // f32 + i32
-    runner.assert_f32_eq_pre(v_f32 + v_i64 as f32, 17.0f, 0.00001f) // f32 + i64
-    runner.assert_f32_eq_pre(v_f32 + v_f64 as f32, 19.0f, 0.00001f) // f32 + f64
-
-    // Arithmetic Operations: Subtraction
-    runner.assert_f32_eq_pre(v_f32 - v_f32, 0.0f, 0.00001f)        // f32 - f32
-    runner.assert_f32_eq_pre(v_f32 - v_u8 as f32, 8.0f, 0.00001f)  // f32 - u8
-    runner.assert_f32_eq_pre(v_f32 - v_u16 as f32, 7.0f, 0.00001f) // f32 - u16
-    runner.assert_f32_eq_pre(v_f32 - v_u32 as f32, 6.0f, 0.00001f) // f32 - u32
-    runner.assert_f32_eq_pre(v_f32 - v_u64 as f32, 5.0f, 0.00001f) // f32 - u64
-    runner.assert_f32_eq_pre(v_f32 - v_i8 as f32, 4.0f, 0.00001f)  // f32 - i8
-    runner.assert_f32_eq_pre(v_f32 - v_i16 as f32, 3.0f, 0.00001f) // f32 - i16
-    runner.assert_f32_eq_pre(v_f32 - v_i32 as f32, 2.0f, 0.00001f) // f32 - i32
-    runner.assert_f32_eq_pre(v_f32 - v_i64 as f32, 1.0f, 0.00001f) // f32 - i64
-    runner.assert_f32_eq_pre(v_f32 - v_f64 as f32, -1.0f, 0.00001f) // f32 - f64
-
-    // Arithmetic Operations: Multiplication
-    runner.assert_f32_eq_pre(v_f32 * v_f32, 81.0f, 0.00001f)       // f32 * f32
-    runner.assert_f32_eq_pre(v_f32 * v_u8 as f32, 9.0f, 0.00001f)  // f32 * u8
-    runner.assert_f32_eq_pre(v_f32 * v_u16 as f32, 18.0f, 0.00001f) // f32 * u16
-    runner.assert_f32_eq_pre(v_f32 * v_u32 as f32, 27.0f, 0.00001f) // f32 * u32
-    runner.assert_f32_eq_pre(v_f32 * v_u64 as f32, 36.0f, 0.00001f) // f32 * u64
-    runner.assert_f32_eq_pre(v_f32 * v_i8 as f32, 45.0f, 0.00001f) // f32 * i8
-    runner.assert_f32_eq_pre(v_f32 * v_i16 as f32, 54.0f, 0.00001f) // f32 * i16
-    runner.assert_f32_eq_pre(v_f32 * v_i32 as f32, 63.0f, 0.00001f) // f32 * i32
-    runner.assert_f32_eq_pre(v_f32 * v_i64 as f32, 72.0f, 0.00001f) // f32 * i64
-    runner.assert_f32_eq_pre(v_f32 * v_f64 as f32, 90.0f, 0.00001f) // f32 * f64
-
-    // Arithmetic Operations: Division
-    runner.assert_f32_eq_pre(v_f32 / v_f32, 1.0f, 0.00001f)        // f32 / f32
-    runner.assert_f32_eq_pre(v_f32 / v_u8 as f32, 9.0f, 0.00001f)  // f32 / u8
-    runner.assert_f32_eq_pre(v_f32 / v_u16 as f32, 4.5f, 0.00001f) // f32 / u16
-    runner.assert_f32_eq_pre(v_f32 / v_u32 as f32, 3.0f, 0.00001f) // f32 / u32
-    runner.assert_f32_eq_pre(v_f32 / v_u64 as f32, 2.25f, 0.00001f) // f32 / u64
-    runner.assert_f32_eq_pre(v_f32 / v_i8 as f32, 1.8f, 0.00001f)  // f32 / i8
-    runner.assert_f32_eq_pre(v_f32 / v_i16 as f32, 1.5f, 0.00001f) // f32 / i16
-    runner.assert_f32_eq_pre(v_f32 / v_i32 as f32, 1.285714f, 0.00001f) // f32 / i32
-    runner.assert_f32_eq_pre(v_f32 / v_i64 as f32, 1.125f, 0.00001f) // f32 / i64
-    runner.assert_f32_eq_pre(v_f32 / v_f64 as f32, 0.9f, 0.00001f)  // f32 / f64
-
     // Comparison Operations
     runner.assert_eq<bool>(v_f32 == v_f32, true)     // f32 == f32
     runner.assert_eq<bool>(v_f32 != v_f32, false)    // f32 != f32

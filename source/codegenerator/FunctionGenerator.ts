@@ -520,6 +520,13 @@ export class FunctionGenerator {
             let requireSafe =
                 inferredType instanceof NullableType ||
                 hintType instanceof NullableType;
+            
+            // one exception, if the hint is a boolean, it becomes a regular cast
+            // since the result is true or false 
+
+            if(hintType.kind == "bool") {
+                requireSafe = false;
+            }
 
             this.i(
                 "debug",
@@ -888,7 +895,7 @@ export class FunctionGenerator {
         let actualType = expr.expression.inferredType!.dereference();
         let castType = expr.type.dereference();
 
-        if(actualType.allowedNullable(ctx) && castType.is(ctx, NullType)) {
+        if((actualType.allowedNullable(ctx) || actualType.is(ctx, NullableType)) && castType.is(ctx, NullType)) {
             return this.ir_generate_null_instance_check(expr, ctx, reg, actualType, castType);
         }
 
@@ -923,7 +930,7 @@ export class FunctionGenerator {
         }
 
         throw new Error(
-            `Instance check expressions on ${actualType.kind} are not yet implemented`,
+            `Instance check expressions on ${actualType.getShortName()} are not yet implemented`,
         );
     }
 
@@ -1051,7 +1058,7 @@ export class FunctionGenerator {
                 this.destroyTmp(lhsReg);
                 resultTMP = tmp;
             }
-            if (rhs.name === "alive") {
+            else if (rhs.name === "alive") {
                 // replace with coroutine.state != 3
                 let tmpCoState = this.generateTmp();
                 resultTMP = this.generateTmp();
@@ -1233,13 +1240,16 @@ export class FunctionGenerator {
         let inferredType = expr.promotedType;
         let cmp: IRInstructionType = "j_cmp_u8";
         if (
-            inferredType instanceof BasicType ||
-            inferredType instanceof EnumType ||
-            inferredType instanceof BooleanType
+            inferredType?.is(ctx, BasicType) || 
+            inferredType?.is(ctx, EnumType) ||
+            inferredType?.is(ctx, BooleanType)
         ) {
-            let basic_type = inferredType as BasicType;
-            if (inferredType instanceof EnumType) {
-                basic_type = inferredType.toBasicType(ctx);
+            let basic_type: BasicType;
+            if (inferredType.is(ctx, EnumType)) {
+                basic_type = (inferredType.to(ctx, BasicType) as BasicType);
+            }
+            else {
+                basic_type = inferredType as BasicType;
             }
             cmp = getBinaryInstruction(basic_type, expr.operator);
         } else {
@@ -4477,7 +4487,7 @@ export class FunctionGenerator {
         }
 
         let inst = constType(new BasicType(sym.location, type.as));
-        this.i(inst, tmp, value);
+        this.i(inst, tmp, ""+value);
 
         return tmp;
     }
