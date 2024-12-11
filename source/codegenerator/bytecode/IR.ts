@@ -496,6 +496,7 @@ export type IRInstructionType =
     "coroutine_ret" |
     "coroutine_reset" |
     "coroutine_finish" |
+    
 
     "throw_rt" |
 

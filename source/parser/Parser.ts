@@ -20,6 +20,7 @@ import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarat
 import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarationStatement";
 import { Context } from "../ast/symbol/Context";
 import { TokenType } from "../lexer/TokenType";
+import { Annotation } from "../annotations/Annotation";
 
 /**
  * A parser mode is either "compiler" or "intellisense".
@@ -48,6 +49,8 @@ export class Parser {
 
     basePackage: BasePackage;
     lexer: Lexer;
+
+    pendingAnnotations: Annotation[] = [];
 
     mode: ParserMode = "compiler";
     logs: CompilerLogs[] = [];

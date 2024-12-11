@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { Annotation } from "../../annotations/Annotation";
 import { Context } from "./Context";
 import {SymbolLocation} from "./SymbolLocation";
 
@@ -37,6 +38,8 @@ export class Symbol {
     parentContext: Context | null = null;
     external: boolean = false;
     isLocal: boolean = false; // local to global scope or namespace
+
+    annotations: Annotation[] = [];
 
     // the parent context will set the UID of the symbol
     uid: string = "";

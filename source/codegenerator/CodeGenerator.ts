@@ -83,6 +83,7 @@ export class CodeGenerator {
                             encoder.encode(dynlibName),
                         ) as number[],
                     });
+                    
                 this.bytecodeGenerator.codeSegment.emit(
                     BytecodeInstructionType.reg_ffi,
                     nameConstPos,

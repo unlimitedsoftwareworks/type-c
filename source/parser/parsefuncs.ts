@@ -235,8 +235,6 @@ function parseMethodOperatorName(parser: Parser): MethodOperatorName {
     parser.customError("Invalid method operator name", tok.location);
 }
 
-
-
 // <genericArgDecl> ::= "<" id (":" <type>)? ("," id (":" <type>)?)+ ">"
 function parseGenericArgDecl(parser: Parser, ctx: Context): GenericType[] {
     let generics: GenericType[] = [];
