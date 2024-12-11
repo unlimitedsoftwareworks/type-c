@@ -107,6 +107,11 @@ export module TypeC {
 
             this.importStringIfNeeded(this.basePackage)
 
+            /**
+             * Imports main transformer to load the arguments
+             */
+            this.importMainArgsTransformers(this.basePackage)
+
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
                 TCCompiler.registerImport(base, imp, parser, this.basePackage);
@@ -197,6 +202,12 @@ export module TypeC {
             // if not, add it
             BuiltinModules.getStringClass(this);
             basePackage.imports.push(BuiltinModules.stringImport);
+        }
+
+        importMainArgsTransformers(basePackage: BasePackage) {
+            // if not, add it
+            BuiltinModules.getMainArgTransformer(this);
+            basePackage.imports.push(BuiltinModules.argsTransformerImport);
         }
 
         generateBytecode() {
@@ -298,7 +309,7 @@ export module TypeC {
             if (options.runOutput) {
                 let interpreterPath = process.env.TYPE_V_PATH!;
 
-                const command = `cd ${interpreterPath} && ./type_v ${binFile} ${srcMapFile}`;
+                const command = `cd ${interpreterPath} && ./type_v /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv`;
 
                 const result = spawnSync(command, { shell: true });
 

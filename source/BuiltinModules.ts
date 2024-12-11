@@ -1,4 +1,5 @@
 import { ImportNode } from "./ast/ImportNode";
+import { DeclaredFunction } from "./ast/symbol/DeclaredFunction";
 import { DeclaredType } from "./ast/symbol/DeclaredType";
 import { SymbolLocation } from "./ast/symbol/SymbolLocation";
 import { DataType } from "./ast/types/DataType";
@@ -8,9 +9,11 @@ import { TypeC } from "./compiler";
 export class BuiltinModules {
     /** Imports */
     static stringImport: ImportNode = new ImportNode(new SymbolLocation("<<stdin>>", 0,0,0), ["std", "string"], "String", "String");
+    static argsTransformerImport: ImportNode = new ImportNode(new SymbolLocation("<<stdin>>", 0,0,0), ["std", "compilerUtils", "transformArgs"], "$transformArgs", "transformArgs");
     
     /** Symbols */
     static String: DataType | null = null;
+    static transformArgs: DeclaredFunction | null = null;
 
     static getStringClass(compiler: TypeC.TCCompiler): DataType {
         if(BuiltinModules.String != null){
@@ -29,5 +32,32 @@ export class BuiltinModules {
         }
         BuiltinModules.String = new ReferenceType(sym.location, ["String"], [], base.ctx);
         return BuiltinModules.String;
+    }
+
+    /**
+     * Gets the main argument transformer function
+     * This is injected by the compiler to transform the arguments of the main function, 
+     * because they are not actually passed by the VM but instead read as runtime 
+     * environment variables, by stdcore library
+     * 
+     * This function is injectted into every main function. And only one main should be present in the program.
+     * 
+     * @param compiler 
+     * @returns 
+     */
+    static getMainArgTransformer(compiler: TypeC.TCCompiler): DeclaredFunction {
+        if(BuiltinModules.transformArgs != null){
+            return BuiltinModules.transformArgs;
+        }
+        let base = compiler.resolveImport(BuiltinModules.argsTransformerImport);
+        if(base == null){
+            throw new Error("Could not find built-in interface 'String'");
+        }
+        let sym = base.ctx.lookup("transformArgs");
+        if(sym == null){
+            throw new Error("Could not find built-in interface 'String'");
+        }
+        BuiltinModules.transformArgs = sym as DeclaredFunction;
+        return BuiltinModules.transformArgs;
     }
 }

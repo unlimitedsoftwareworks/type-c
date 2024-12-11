@@ -107,7 +107,7 @@ import { TupleType } from "../ast/types/TupleType";
 import { VariantConstructorType, VariantParameter } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
-import { canCastTypes, getLargestStruct } from "../typechecking/TypeChecking";
+import { canCastTypes, getLargestStruct, matchDataTypes } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
@@ -149,6 +149,7 @@ import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistribu
 import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAccessExpression";
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 import { NullType } from "../ast/types/NullType";
+import { BuiltinModules } from "../BuiltinModules";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -340,6 +341,8 @@ export class FunctionGenerator {
             expression = this.fn.lambdaExpression.expression;
         }
 
+        this.prepareArgsIfMain()
+
         if (body) {
             this.visitStatement(body, this.fn.context);
             if (
@@ -402,6 +405,53 @@ export class FunctionGenerator {
         }
 
         this.allocateRegisters();
+    }
+
+    /**
+     * Checks if the function is a main function and prepares the arguments
+     */
+    prepareArgsIfMain() {
+        /**
+         * Check if we have a main to extract the arguments
+         */
+        if((this.fn instanceof DeclaredFunction) && (this.fn.name == "main")){
+            // get the argument
+            if (this.fn.prototype.header.parameters.length > 0){
+                let argType = this.fn.prototype.header.parameters[0].type;
+                let argName = this.fn.prototype.header.parameters[0].name;
+                let res = matchDataTypes(
+                    this.fn.context,
+                    argType,
+                    new ArrayType(
+                        this.fn.location,
+                        BuiltinModules.String!,
+                    ),
+                );
+
+                if(res.success){
+                    let func = new FunctionCallExpression(
+                        this.fn.location,
+                        new ElementExpression(
+                            this.fn.location,
+                            "$transformArgs"
+                        ),
+                        []
+                    )
+                    let expr = new BinaryExpression(
+                        this.fn.location,
+                        new ElementExpression(this.fn.location, argName),
+                        func,
+                        "="
+                    )
+
+                    expr.infer(this.fn.context, null, {ignoreConst: true})
+                    this.visitExpression(
+                        expr,
+                        this.fn.context
+                    )
+                }
+            }
+        }
     }
 
     allocateRegisters() {
