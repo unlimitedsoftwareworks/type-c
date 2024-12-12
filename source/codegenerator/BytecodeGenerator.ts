@@ -1,3 +1,15 @@
+/**
+ * Filename: BytecodeGenerator.ts
+ * Author: Soulaymen Chouri
+ * Date: 2023-2024
+ * 
+ * Description:
+ *     Bytecode generator from IR
+ * 
+ * Type-C Compiler, Copyright (c) 2023-2024 Soulaymen Chouri. All rights reserved.
+ * This file is licensed under the terms described in the LICENSE.md.
+ */
+
 import { ClassAttribute } from "../ast/other/ClassAttribute";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";

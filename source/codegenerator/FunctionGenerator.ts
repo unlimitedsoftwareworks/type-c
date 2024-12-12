@@ -150,6 +150,7 @@ import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAcc
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 import { NullType } from "../ast/types/NullType";
 import { BuiltinModules } from "../BuiltinModules";
+import { convertForeachArrayToFor } from "./ASTTransformers";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -408,7 +409,6 @@ export class FunctionGenerator {
             }
             this.srcMapPopLoc();
         }
-
     }
 
     /**
@@ -3520,7 +3520,17 @@ export class FunctionGenerator {
     }
     
     visitForeachStatement(stmt: ForeachStatement, ctx: Context) {
-        throw new Error("Method not implemented.");
+        if(stmt.iteratorType == "array"){
+            // gets transformed to a for statement
+            /**
+             * foreach i, v in arr -> for (i = 0; i < arr.length; i++, v = arr[i]) {
+             */
+
+            let forLoop = convertForeachArrayToFor(stmt)
+
+            forLoop.infer(ctx);
+            this.visitForStatement(forLoop, ctx);
+        }
     }
 
     visitForStatement(stmt: ForStatement, ctx: Context) {

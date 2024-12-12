@@ -84,6 +84,16 @@ export class DeclaredVariable extends Symbol {
         }
     }
 
+    /**
+     * Called from statements that inject variables into the context such as foreach statements
+     * @param ctx 
+     * @param type 
+     */
+    inferWithoutAssignment(ctx: Context){
+        this.annotation!.resolve(ctx);
+        ctx.overrideSymbol(this);
+    }
+
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): DeclaredVariable{
         let newVar = new DeclaredVariable(this.location, this.name, this.initializer.clone(typeMap, ctx), this.annotation?.clone(typeMap) || null, this.isConst, this.isLocal, this.isStrict);
 

@@ -75,6 +75,11 @@ export class BinaryExpression extends Expression {
 
     promotedType: DataType | null = null;
 
+    // set by the bytecode generator when transforming expressions into others,
+    // to ignore constness of the left hand side
+    // one is use example is foreach -> for
+    __ignoreConst: boolean = false;
+
     constructor(location: SymbolLocation, left: Expression, right: Expression, operator: BinaryExpressionOperator) {
         super(location, "binary_op");
         this.left = left;
@@ -200,7 +205,7 @@ export class BinaryExpression extends Expression {
             let ignoreConst = this.left.isConstant === 0;
 
             //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
-            if(!canAssign.success && !ignoreConst) {
+            if(!canAssign.success && !ignoreConst && !this.__ignoreConst) {
                 ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
             }
         }
@@ -247,6 +252,10 @@ export class BinaryExpression extends Expression {
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): BinaryExpression{
         return new BinaryExpression(this.location, this.left.clone(typeMap, ctx), this.right.clone(typeMap, ctx), this.operator);
+    }
+
+    ignoreConst(): void{
+        this.__ignoreConst = true;
     }
 }
 

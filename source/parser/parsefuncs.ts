@@ -3644,17 +3644,41 @@ function parseStatementFor(parser: Parser, ctx: Context): ForStatement {
 function parseStatementForEach(parser: Parser, ctx: Context): ForeachStatement {
     let loc = parser.loc();
     parser.expect("foreach");
-    let token = parser.expect("identifier");
-    let name = token.value;
+
+    let useConst = false;
+    let token = parser.peek();
+    if(token.type === "const"){
+        parser.accept();
+        useConst = true;
+    }
+    else {
+        parser.reject();
+    }
+    
+    let newScope = new Context(loc, parser, ctx);
+    newScope.location = loc;
+
+    token = parser.expect("identifier");
+    
+    let valueName: string | null = null;
+    let indexName: string | null = null;
+
+    valueName = token.value;
+
+    token = parser.peek();
+    if(token.type === ","){
+        parser.accept();
+        indexName = valueName;
+        valueName = parser.expect("identifier").value;
+    }
+
     parser.expect("in");
-    let expression = parseExpression(parser, ctx, {
+    let expression = parseExpression(parser, newScope, {
         allowNullable: false,
     });
-    let body = parseStatementBlock(parser, ctx, true);
+    let body = parseStatementBlock(parser, newScope, true);
     
-    //return new ForeachStatement(loc, ctx, name, expression, body);
-    parser.error("Not implemented", loc, 1);
-    return null!;
+    return new ForeachStatement(loc, newScope, useConst, valueName, indexName, expression, body);
 }
 
 function parseStatementMatch(parser: Parser, ctx: Context): MatchStatement {
