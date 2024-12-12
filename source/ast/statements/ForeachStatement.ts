@@ -82,11 +82,11 @@ export class ForeachStatement extends Statement {
 
         this.valueIteratorVariable = new DeclaredVariable(this.location, this.valueIteratorName, null as any, elementType, this.iterableExpression.isConstant == true || this.useConst, true, false);
         this.context.addSymbol(this.valueIteratorVariable);
-        this.valueIteratorVariable.inferWithoutAssignment(ctx);
+        this.valueIteratorVariable.inferWithoutAssignment(this.context);
 
         this.indexIteratorVariable = new DeclaredVariable(this.location, this.indexIteratorName, null as any, new BasicType(this.location, "u64"), this.useConst, true, false);
         this.context.addSymbol(this.indexIteratorVariable);
-        this.indexIteratorVariable.inferWithoutAssignment(ctx);
+        this.indexIteratorVariable.inferWithoutAssignment(this.context);
     }
 
     inferCoroutineIterator(ctx: Context, iterableType: CoroutineType){
@@ -102,6 +102,8 @@ export class ForeachStatement extends Statement {
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): ForeachStatement {
-        throw new Error("Foreach clone does not support cloning just yet");
+        let newContext = this.context.clone(typeMap, ctx);
+        let newBody = this.body.clone(typeMap, newContext);
+        return new ForeachStatement(this.location, newContext, this.useConst, this.valueIteratorName, this.indexIteratorName, this.iterableExpression.clone(typeMap, newContext), newBody);
     }
 }

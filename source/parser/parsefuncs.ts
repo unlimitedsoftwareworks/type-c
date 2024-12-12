@@ -3671,6 +3671,9 @@ function parseStatementForEach(parser: Parser, ctx: Context): ForeachStatement {
         indexName = valueName;
         valueName = parser.expect("identifier").value;
     }
+    else {
+        parser.reject();
+    }
 
     parser.expect("in");
     let expression = parseExpression(parser, newScope, {
