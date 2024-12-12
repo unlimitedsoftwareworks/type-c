@@ -238,6 +238,11 @@ export class CodeGenerator {
         }
     }
 
+    /**
+     * Generates the call main instruction,
+     * checks the return type and the arguments of the main function
+     * @param basePackage 
+     */
     generateCallMain(basePackage: BasePackage) {
         let main = basePackage?.ctx.lookup("main");
         if (!main || !(main instanceof DeclaredFunction)) {
@@ -247,8 +252,8 @@ export class CodeGenerator {
         let mainHasReturn = 0;
         let mainRequireArgs = false;
 
-        if (main.prototype.header.returnType instanceof BasicType) {
-            let basic = main.prototype.header.returnType as BasicType;
+        if (main.prototype.header.returnType.is(main.context, BasicType)) {
+            let basic = main.prototype.header.returnType.to(main.context, BasicType) as BasicType;
             // make sure it is either void u8, i8, u16, i16, u32, i32
             if (["u8", "i8", "u16", "i16", "u32", "i32"].includes(basic.kind)) {
                 mainHasReturn = getDataTypeByteSize(basic);
@@ -296,12 +301,6 @@ export class CodeGenerator {
             }
         }
 
-        if (mainRequireArgs) {
-            main.context.parser.customWarning(
-                "Alert! `main` function with arguments is not supported yet",
-                main.prototype.header.parameters[0].location,
-            );
-        }
 
         this.bytecodeGenerator.emitCallMain(
             main.context.uuid,

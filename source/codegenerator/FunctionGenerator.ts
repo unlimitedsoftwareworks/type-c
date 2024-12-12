@@ -328,6 +328,11 @@ export class FunctionGenerator {
 
         this.srcMapPushLoc(this.fn.location);
 
+        this.generateIR()
+        this.allocateRegisters();
+    }
+
+    generateIR(){
         this.i("debug", "fn " + this.fn.context.uuid + ":" + this.fn.name);
         if (!this.isGlobal) {
             this.i("fn", this.fn.context.uuid);
@@ -404,7 +409,6 @@ export class FunctionGenerator {
             this.srcMapPopLoc();
         }
 
-        this.allocateRegisters();
     }
 
     /**
