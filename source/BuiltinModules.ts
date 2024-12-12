@@ -10,10 +10,13 @@ export class BuiltinModules {
     /** Imports */
     static stringImport: ImportNode = new ImportNode(new SymbolLocation("<<stdin>>", 0,0,0), ["std", "string"], "String", "String");
     static argsTransformerImport: ImportNode = new ImportNode(new SymbolLocation("<<stdin>>", 0,0,0), ["std", "compilerUtils", "transformArgs"], "$transformArgs", "transformArgs");
+    static arrayIteatorInterfaceImport: ImportNode = new ImportNode(new SymbolLocation("<<stdin>>", 0,0,0), ["std", "collections", "iterator"], "ArrayIterator", "ArrayIterator");
+
     
     /** Symbols */
     static String: DataType | null = null;
     static transformArgs: DeclaredFunction | null = null;
+    static ArrayIterator: DataType | null = null;
 
     static getStringClass(compiler: TypeC.TCCompiler): DataType {
         if(BuiltinModules.String != null){
@@ -59,5 +62,25 @@ export class BuiltinModules {
         }
         BuiltinModules.transformArgs = sym as DeclaredFunction;
         return BuiltinModules.transformArgs;
+    }
+
+    static getArrayIteratorInterface(compiler: TypeC.TCCompiler): DataType {
+        if(BuiltinModules.ArrayIterator != null){
+            return BuiltinModules.ArrayIterator;
+        }
+
+        let base = compiler.resolveImport(BuiltinModules.arrayIteatorInterfaceImport);
+        if(base == null){
+            throw new Error("Could not find built-in interface 'ArrayIterator'");
+        }
+        let sym = base.ctx.lookup("ArrayIterator");
+        if(sym == null){
+            throw new Error("Could not find built-in interface 'ArrayIterator'");
+        }
+        if(!(sym instanceof DeclaredType)){
+            throw new Error("Could not find built-in interface 'ArrayIterator'");
+        }
+        BuiltinModules.ArrayIterator = new ReferenceType(sym.location, ["ArrayIterator"], [], base.ctx);
+        return BuiltinModules.ArrayIterator;
     }
 }

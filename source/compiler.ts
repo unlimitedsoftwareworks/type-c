@@ -111,6 +111,7 @@ export module TypeC {
              * Imports main transformer to load the arguments
              */
             this.importMainArgsTransformers(this.basePackage)
+            this.importArrayIteratorInterfaceIfNeeded(this.basePackage)
 
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
@@ -190,13 +191,20 @@ export module TypeC {
             return null;
         }
 
-        importStringIfNeeded(basePackage: BasePackage) {
-            // check if std.string.String is imported:
+        checkIfImportExists(basePackage: BasePackage, name: string, alias: string, actualName: string) {
             for (let i = 0; i < basePackage.imports.length; i++) {
                 let imp = basePackage.imports[i];
-                if ((imp.basePath.join("/") == "std/string") && (imp.actualName == "String") && (imp.alias == "String")) {
-                    return;
+                if ((imp.basePath.join("/") == name) && (imp.actualName == actualName) && (imp.alias == alias)) {
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        importStringIfNeeded(basePackage: BasePackage) {
+            // check if std.string.String is imported:
+            if(this.checkIfImportExists(basePackage, "std/string", "String", "String")){
+                return;
             }
 
             // if not, add it
@@ -205,9 +213,17 @@ export module TypeC {
         }
 
         importMainArgsTransformers(basePackage: BasePackage) {
-            // if not, add it
             BuiltinModules.getMainArgTransformer(this);
             basePackage.imports.push(BuiltinModules.argsTransformerImport);
+        }
+
+        importArrayIteratorInterfaceIfNeeded(basePackage: BasePackage) {
+            if(this.checkIfImportExists(basePackage, "std/collections/array", "ArrayIterator", "ArrayIterator")){
+                return;
+            }
+
+            BuiltinModules.getArrayIteratorInterface(this);
+            basePackage.imports.push(BuiltinModules.arrayIteatorInterfaceImport);
         }
 
         generateBytecode() {

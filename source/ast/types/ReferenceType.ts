@@ -112,10 +112,9 @@ export class ReferenceType extends DataType{
         }
 
         // check if we have the right number of type arguments
-        if(typeDecl.genericParameters.length != this.typeArgs.length){
-            ctx.parser.customError(`Type ${fullPkg} requires ${typeDecl.genericParameters.length} type arguments [${typeDecl.genericParameters.map(e => e.getShortName()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
-        }
-
+        // if(typeDecl.genericParameters.length != this.typeArgs.length){
+        //     ctx.parser.customError(`Type ${fullPkg} requires ${typeDecl.genericParameters.length} type arguments [${typeDecl.genericParameters.map(e => e.getShortName()).join(", ")}], but got ${this.typeArgs.length}`, this.location);
+        // }
 
         if(typeDecl.genericParameters.length === 0){
             this.baseType = typeDecl.type;

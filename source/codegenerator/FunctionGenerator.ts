@@ -150,7 +150,7 @@ import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAcc
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 import { NullType } from "../ast/types/NullType";
 import { BuiltinModules } from "../BuiltinModules";
-import { convertForeachArrayToFor } from "./ASTTransformers";
+import { convertForeachAbstractIterableToFor, convertForeachArrayToFor } from "./ASTTransformers";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -3530,6 +3530,20 @@ export class FunctionGenerator {
 
             forLoop.infer(ctx);
             this.visitForStatement(forLoop, ctx);
+        }
+        else if (stmt.iteratorType == "AbstractIterable") {
+            let forLoop = convertForeachAbstractIterableToFor(stmt)
+
+            forLoop.infer(ctx);
+            this.visitForStatement(forLoop, ctx);
+
+        }
+        else if (stmt.iteratorType == "coroutine") {
+            // coroutine foreach is not supported
+            throw new Error("Coroutine foreach is not supported");
+        }
+        else {
+            throw new Error("Unknown iterator type " + stmt.iteratorType);
         }
     }
 
