@@ -25,6 +25,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { DeclaredNamespace } from "../ast/symbol/DeclaredNamespace";
 import { DataType } from "../ast/types/DataType";
+import { Context } from "../ast/symbol/Context";
 
 export class CodeGenerator {
     functions: Map<string, FunctionGenerator> = new Map();
@@ -359,6 +360,7 @@ export class CodeGenerator {
 
 export function generateCode(compiler: TypeC.TCCompiler) {
     let generator = new CodeGenerator();
+    Context.InferenceMode = "codegen";
 
     // it is import to perform the code generation in this order!
 

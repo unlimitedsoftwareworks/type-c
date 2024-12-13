@@ -115,6 +115,14 @@ This checklist containts only major changes and updates, for minor changes and u
     - Eytzinger layout for structs and variants and class methods
     - Variants now have a $tag field which is always UID 0 and variant field UIDs share same pool as struct fields.
 
+- 07/12/2024:
+    - Reverted back to binary search, after some benchmarking
+
+- 13/12/2024:
+    - Added `foreach` statement, which iterates over an array or a struct.
+    - Added `Context.InferenceMode` which refers to the mode of the compiler, whether it is in inference mode or code generation mode.
+      In `codegen` mode, some errors are skipped because the codegen will refactor the AST and might endup revisiting some var decls etc. 
+
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
 - Address the issue of non-inferred expressions suchas expressions as arguments to method call.

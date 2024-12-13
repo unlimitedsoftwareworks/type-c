@@ -46,6 +46,7 @@ export class ForeachStatement extends Statement {
     iteratorType: "coroutine" | "AbstractIterable" | "array" = "array";
     useConst: boolean;
 
+
     static iteratorId = 0;
     static tmpIteratorId = 0;
 
@@ -60,6 +61,13 @@ export class ForeachStatement extends Statement {
     }
 
     infer(ctx: Context){
+        /**
+         * .infer will be called again from the code generator when converting the foreach to for loop.
+         * When nesting foreach, this results in the inner foreach being re-inferred, so we back up
+         * the inference state to avoid re-inferring the same foreach, which results in redeclaring its
+         * variables
+         */
+
         // must declare iterators as variables, but first we infer the expression.
         let iterableType = this.iterableExpression.infer(ctx);
 
@@ -75,7 +83,7 @@ export class ForeachStatement extends Statement {
             this.inferArrayIterator(ctx, iterableType as ArrayType);
         }
 
-        this.body.infer(ctx);
+        this.body.infer(this.context);
     }
 
     inferArrayIterator(ctx: Context, iterableType: ArrayType){

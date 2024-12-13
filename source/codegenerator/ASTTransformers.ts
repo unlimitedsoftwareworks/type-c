@@ -48,9 +48,6 @@ export function convertForeachArrayToFor(stmt: ForeachStatement): ForStatement {
         "="
     )
 
-    // must disable const check
-    valueAssignment.ignoreConst();
-
     let newFor = new ForStatement(
         stmt.location,
         stmt.context,

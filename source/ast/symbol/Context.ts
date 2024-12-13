@@ -57,6 +57,18 @@ type ContextOwner =
 
 export class Context {
     /**
+     * a global flag to indicate if we are in inference mode
+     * or code generation mode
+     * 
+     * In regular mode, we throw errors on variables de-declaration or 
+     * assignment a constant variable some value.
+     * 
+     * In codegen mode, we do not throw such errors, because the code generator
+     * might create new AST elements, which might re-declare variables, or assign
+     * values to constant variables (such as foreach loops).
+     */
+    static InferenceMode: "regular" | "codegen" = "regular";
+    /**
      * The symbols in this table.
      */
     private symbols: Map<string, Symbol> = new Map();
@@ -215,9 +227,17 @@ export class Context {
                 return;
             }
             else {
+                if(Context.InferenceMode == "codegen") {
+                    // simply ignore the error
+                    // we treat it as the same symbol
+                    symbol.uid = v.uid;
+                    symbol.parentContext = this;
+                    return;
+                }
+                
                 throw this.parser.customError(
-                `Symbol ${symbol.name} already declared in this scope`,
-                symbol.location,
+                    `Symbol ${symbol.name} already declared in this scope`,
+                    symbol.location,
                 );
             }
         }

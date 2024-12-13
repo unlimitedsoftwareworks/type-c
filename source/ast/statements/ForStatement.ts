@@ -27,6 +27,7 @@ export class ForStatement extends Statement {
     body: BlockStatement;
     context: Context;
 
+
     constructor(location: SymbolLocation, context: Context, initializers: Statement[], condition: Expression | null, incrementors: Expression[], body: BlockStatement) {
         super(location, "for");
         this.initializers = initializers;

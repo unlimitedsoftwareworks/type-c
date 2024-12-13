@@ -1,127 +1,136 @@
-from std.io import println
-from std.string import String
+from std.collections.array import Array, AbstractArray
+from std.unit.test import TestUnit, UnitSet
 
-/*
-fn main() {
-    let x: {x: u32, y: u32} = do {
-        if true {
-            return {x: 1, y: 2}
-        }
-        return {x: 0, y: 0, z:3.14f}
+fn test_case_1(rn: TestUnit) {
+    let arr_1: f32[] = [1.0f, 2.0f, 3.0f, 4.0f, 6.0f]
+    let arr_1_idx: u64[] = [0, 1, 2, 3, 4]
+
+    foreach i, v in arr_1 {
+        rn.assert_eq(v, arr_1[i])
+        rn.assert_eq(i, arr_1_idx[i])
     }
 
-    return 0
-}
-*/
-/*
-from std.string import String
-from std.io import println
+    let counter = 0
+    foreach v in arr_1 {
+        rn.assert_eq(v, arr_1[counter])
+        counter += 1
+    }
 
-fn stuff(x: {name: String, age: u32}[]){
-    match x {
-        [{name: "John", ...johnData}, b, ...z] {
-            //println("Found a {"+a.name+", "+a.age+"} and b {"+b.name+", "+b.age+"}")
-            println("json is {"+johnData.age+"},  and b {"+b.name+", "+b.age+"}")
-            println("remainings are "+z.length+" elements long")
-            for let i: u64 = 0; i < z.length; i+= 1 {
-                println("element "+i+" is {"+z[i].name+", "+z[i].age+"}")
+    let arr_2 = new Array<String>(["hi", "hello", "world"])
+    let arr_2_idx: u64[] = [0, 1, 2]
+
+    foreach i, v in arr_2 {
+        rn.assert_obj_eq(v, arr_2[i])
+        rn.assert_eq(i, arr_2_idx[i])
+    }
+
+    // reset counter
+    counter = 0
+    foreach v in arr_2 {
+        rn.assert_obj_eq(v, arr_2[counter])
+        counter += 1
+    }
+
+
+    let arr_3: AbstractArray<String> = new Array<String>(["hi", "hello", "world"])
+    let arr_3_idx: u64[] = [0, 1, 2]
+
+    foreach i, v in arr_3 {
+        rn.assert_obj_eq(v, arr_3[i])
+        rn.assert_eq(i, arr_3_idx[i])
+    }
+
+    // reset counter
+    counter = 0
+    foreach v in arr_3 {
+        rn.assert_obj_eq(v, arr_3[counter])
+        counter += 1
+    }
+
+    let nestedArray: String[][] = [["le", "lo"], ["hi", "hello", "world"], ["ho", "ho .. ", "HO!"]]
+    let arr_4 = new Array<Array<String>>([
+        new Array<String>(["le", "lo"]),
+        new Array<String>(["hi", "hello", "world"]),
+        new Array<String>(["ho", "ho .. ", "HO!"])
+    ])
+
+    foreach i, v in arr_4 {
+        foreach j, w in v {
+            rn.assert_obj_eq(w, nestedArray[i][j])
+        }
+    }
+}
+
+fn test_case_2(rn: TestUnit) {
+    // tests matrix multiplication
+    let a = new Array<Array<f32>>([
+        new Array<f32>([1.0f, 2.0f, 3.0f]),
+        new Array<f32>([4.0f, 5.0f, 6.0f]),
+        new Array<f32>([7.0f, 8.0f, 9.0f])
+    ])
+
+    let b = new Array<Array<f32>>([
+        new Array<f32>([1.0f, 2.0f, 3.0f]),
+        new Array<f32>([4.0f, 5.0f, 6.0f]),
+        new Array<f32>([7.0f, 8.0f, 9.0f])
+    ])
+
+    let gt = new Array<Array<f32>>([
+        new Array<f32>([30.0f, 36.0f, 42.0f]),
+        new Array<f32>([66.0f, 81.0f, 96.0f]),
+        new Array<f32>([102.0f, 126.0f, 150.0f])
+    ])
+
+    let res = new Array<Array<f32>>([
+        new Array<f32>([0.0f, 0.0f, 0.0f]),
+        new Array<f32>([0.0f, 0.0f, 0.0f]),
+        new Array<f32>([0.0f, 0.0f, 0.0f])
+    ])
+
+    foreach i, v in a {
+        foreach j, w in b {
+            // intended to be a nested loop
+            let compute = fn() {
+                let sum = 0.0f
+                foreach k, x in v {
+                    sum += a[i][k] * b[k][j]
+                }
+                res[i][j] = sum
             }
+
+            compute()
         }
-        _ {
-            println("other")
+    }
+
+    foreach i, v in res {
+        foreach j, w in v {
+            rn.assert_eq(w, gt[i][j])
         }
     }
-}
 
-
-
-fn main() {
-    // so far there is an issue with upcasting array elements here, it should be fixed
-    // users :{name: String, age: u32}[] = ... works
-    // but the casting doesn't work when the array is fed into the function
-    let users = [{name: "John", age: 35}, {name: "Jane", age: 21}, {name: "Doe", age: 22, potato:-1}, {name: "John", age: 20, number: -1}]
-    stuff(users)
-}
-
-
-type Animal = interface {
-    fn quack() -> void
-    fn walk() -> void
-}
-
-type Duck = class Animal {
-    fn init(){
-        println("duck init")
+    foreach i, v in a {
+        foreach j, w in b {
+            let sum = 0.0f
+            foreach k, x in v {
+                sum += a[i][k] * b[k][j]
+            }
+            res[i][j] = sum
+        }
     }
 
-
-    fn quack() -> void {
-        println("quack")
-    }
-
-    fn walk() -> void {
-        println("walk")
-    }
-}
-
-type Dog = class Animal {
-    fn init(){
-        println("dog init")
-    }
-    
-    fn quack() -> void {
-        println("bark")
-    }
-
-    fn walk() -> void {
-        println("jug")
-    }
-
-}
-
-fn stuff(x: {instance: Animal, name: String}[]){
-    x[0].instance.quack()
-}
-
-fn main(){
-    let d = new Dog()
-    d.quack()
-    let I1: Animal = new Dog()
-    let I2: Animal = new Duck()
-    I1.quack()
-    I2.quack()
-    let animals = [{instance: I1, name: "Snoop"}, {instance: I2, name: "Scoop"}]
-
-    stuff(animals)
-
-    return 1
-}
-*/
-
-
-type Vector = class {
-    let x: u32
-    let y: u32
-
-    fn init(x: u32, y: u32){
-        this.x = x
-        this.y = y
-    }
-
-    fn init(params: {x: {a: u32, b: u32[]}, y: u32}){
-        this.y = params.y
-    }
-    
-    fn print(){
-        println("{x:"+this.x+", y:"+this.y+"}")
+    foreach i, v in res {
+        foreach j, w in v {
+            rn.assert_eq(w, gt[i][j])
+        }
     }
 }
 
 fn main() {
-    let x: u8 = 200, y: u8 = 100
-    let a: u8 = 10, b: u32[] = [20, 30, 40]
-    let z = new Vector({x: {a: a, b: b}, y: y})
-    z.print()
-    return z.x
+    let test_1 = new TestUnit("Foreach", "tests foreach regular and nested", test_case_1)
+    let test_2 = new TestUnit("Foreach Matmul", "tests matrix multiplication", test_case_2)
 
+    let set = new UnitSet("STD Test 0", "Tests foreach on basic arrays and abstract array", [test_1, test_2])
+    return set.run()
 }
+
+

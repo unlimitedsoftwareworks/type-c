@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "Tests coroutines",
+    "description": "Tests foreach loop",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"
