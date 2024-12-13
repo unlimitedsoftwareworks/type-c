@@ -18,6 +18,7 @@ import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { NullableType } from "../types/NullableType";
 import { unaryTypeCheckers } from "../../typechecking/UnaryExpressionInference";
+import { BinaryIntLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, LiteralExpression, OctIntLiteralExpression } from "./LiteralExpression";
 
 export type UnaryOperator = "-" | "!" | "!!" | "~" | "pre++" | "post++" | "pre--" | "post--"
 
@@ -46,6 +47,16 @@ export class UnaryExpression extends Expression {
             uhsType = this.expression.infer(ctx, new NullableType(this.location, hint));
         }
         else {
+            if(this.operator === "-") {
+                if(this.expression instanceof LiteralExpression) {
+                    if(this.expression instanceof OctIntLiteralExpression || 
+                       this.expression instanceof HexIntLiteralExpression || 
+                       this.expression instanceof BinaryIntLiteralExpression || 
+                       this.expression instanceof IntLiteralExpression) {
+                        this.expression.setNegative(true);
+                    }
+                }
+            }
             uhsType = this.expression.infer(ctx, hint);
         }
 

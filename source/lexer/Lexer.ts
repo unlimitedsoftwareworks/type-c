@@ -99,8 +99,9 @@ export class Lexer {
         [TokenType.TOK_BINARY_INT_LITERAL, /^0b[01]+/],
         [TokenType.TOK_OCT_INT_LITERAL, /^0o[0-7]+/],
         [TokenType.TOK_HEX_INT_LITERAL, /^0x[0-9A-Fa-f]+/],
-        [TokenType.TOK_FLOAT_LITERAL, /^[0-9]+\.[0-9]+f/],
-        [TokenType.TOK_DOUBLE_LITERAL, /^[0-9]+\.[0-9]+/],
+        [TokenType.TOK_FLOAT_LITERAL,  /^[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?f/],
+        [TokenType.TOK_DOUBLE_LITERAL, /^[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?/],
+        
         [TokenType.TOK_INT_LITERAL, /^[0-9]+/],
         [TokenType.TOK_IDENTIFIER, /^(?!_$)[a-zA-Z_][a-zA-Z0-9_]*/],
 

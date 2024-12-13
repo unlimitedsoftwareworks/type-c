@@ -80,42 +80,46 @@ function parseTCInt(number: string): number | bigint {
 
     return value;
 }
-
-function checkLiteralIntStorage(number: string, hint: BasicTypeKind): boolean {
-    // Convert the number from its string representation to an actual number
-    let value: number | bigint = parseTCInt(number);
+function checkLiteralIntStorage(
+    number: string,
+    hint: BasicTypeKind,
+    isNegative: boolean
+): boolean {
+    // Parse the input number as a BigInt for accurate representation
+    let value = BigInt(number);
+    if (isNegative) {
+        value = -value;
+    }
 
     // Check if the number fits in the given hint type
     switch (hint) {
         case "u8":
-            return 0 <= value && value <= 0xFF;
+            return 0n <= value && value <= 0xFFn;
         case "i8":
-            return -0x80 <= value && value <= 0x7F;
+            return -0x80n <= value && value <= 0x7Fn;
         case "u16":
-            return 0 <= value && value <= 0xFFFF;
+            return 0n <= value && value <= 0xFFFFn;
         case "i16":
-            return -0x8000 <= value && value <= 0x7FFF;
+            return -0x8000n <= value && value <= 0x7FFFn;
         case "u32":
-            return 0 <= value && value <= 0xFFFFFFFF;
+            return 0n <= value && value <= 0xFFFFFFFFn;
         case "i32":
-            return -0x80000000 <= value && value <= 0x7FFFFFFF;
+            return -0x80000000n <= value && value <= 0x7FFFFFFFn;
         case "u64":
-            // JavaScript does not support 64-bit integers natively, so we need to handle this differently
-            // Assuming BigInt could be used here for a more accurate check
-            return BigInt(value) >= BigInt(0) && BigInt(value) <= BigInt("0xFFFFFFFFFFFFFFFF");
+            return 0n <= value && value <= 0xFFFFFFFFFFFFFFFFn;
         case "i64":
-            // Similarly, using BigInt for 64-bit signed integer range
-            return BigInt(value) >= -BigInt("0x8000000000000000") && BigInt(value) <= BigInt("0x7FFFFFFFFFFFFFFF");
+            return -0x8000000000000000n <= value && value <= 0x7FFFFFFFFFFFFFFFn;
         case "f32":
-            // Check against the maximum and minimum values that a 32-bit float can represent
-            return Number.isFinite(value) && Math.fround(value as number) === value;
+            const f32Value = Number(value);
+            return Number.isFinite(f32Value) && Math.fround(f32Value) === f32Value;
         case "f64":
-            // For 64-bit float, we just check if it's a finite number since JS uses 64-bit floats by default
-            return Number.isFinite(value);
+            const f64Value = Number(value);
+            return Number.isFinite(f64Value);
         default:
             return false;
     }
 }
+
 
 function findLeastSufficientType(value: string): BasicTypeKind {
     // Helper to determine if a string represents a hexadecimal number
@@ -254,17 +258,22 @@ export class CharLiteralExpression extends LiteralExpression {
 
 export class IntLiteralExpression extends LiteralExpression {
     value: string;
+    isNegative: boolean = false;
 
     constructor(location: SymbolLocation, value: string){
         super(location, "int_literal");
         this.value = value;
     }
 
+    setNegative(isNegative: boolean){
+        this.isNegative = isNegative;
+    }
+
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
 
         if(hint && (hint.dereference() instanceof BasicType)) {
-            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind)){
+            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind, this.isNegative)){
                 ctx.parser.customError("Literal value does not fit in the given type", this.location);
             }
 
@@ -297,17 +306,21 @@ export class IntLiteralExpression extends LiteralExpression {
 
 export class BinaryIntLiteralExpression extends LiteralExpression {
     value: string;
-
+    isNegative: boolean = false;
     constructor(location: SymbolLocation, value: string){
         super(location, "binary_int_literal");
         this.value = value;
+    }
+
+    setNegative(isNegative: boolean){
+        this.isNegative = isNegative;
     }
 
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
 
         if(hint && (hint.dereference() instanceof BasicType)) {
-            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind)){
+            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind, this.isNegative)){
                 ctx.parser.customError("Literal value does not fit in the given type", this.location);
             }
 
@@ -332,18 +345,22 @@ export class BinaryIntLiteralExpression extends LiteralExpression {
 
 export class OctIntLiteralExpression extends LiteralExpression {
     value: string;
-
+    isNegative: boolean = false;
     constructor(location: SymbolLocation, value: string){
         super(location, "oct_int_literal");
         this.value = value;
     }
 
 
+    setNegative(isNegative: boolean){
+        this.isNegative = isNegative;
+    }
+
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
 
         if(hint && (hint.dereference() instanceof BasicType)) {
-            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind)){
+            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind, this.isNegative)){
                 ctx.parser.customError("Literal value does not fit in the given type", this.location);
             }
 
@@ -368,18 +385,21 @@ export class OctIntLiteralExpression extends LiteralExpression {
 
 export class HexIntLiteralExpression extends LiteralExpression {
     value: string;
-
+    isNegative: boolean = false;
     constructor(location: SymbolLocation, value: string){
         super(location, "hex_int_literal");
         this.value = value;
     }
 
+    setNegative(isNegative: boolean){
+        this.isNegative = isNegative;
+    }
 
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
 
         if(hint && (hint.dereference() instanceof BasicType)) {
-            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind)){
+            if(!checkLiteralIntStorage(this.value, (hint.dereference() as BasicType).kind as BasicTypeKind, this.isNegative)){
                 ctx.parser.customError("Literal value does not fit in the given type", this.location);
             }
 
