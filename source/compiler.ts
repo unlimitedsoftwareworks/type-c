@@ -327,7 +327,7 @@ export module TypeC {
             if (options.runOutput) {
                 let interpreterPath = process.env.TYPE_V_PATH!;
 
-                const command = `cd ${interpreterPath} && ./type_v /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv ${options.typevArgs.join(" ")}`;
+                const command = `cd ${interpreterPath} && ./typev /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv ${options.typevArgs.join(" ")}`;
 
                 const result = spawnSync(command, { shell: true });
 
