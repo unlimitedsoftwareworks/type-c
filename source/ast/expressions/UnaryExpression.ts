@@ -42,7 +42,7 @@ export class UnaryExpression extends Expression {
         let uhsType: DataType;
 
         // when we have a denull operator and a hint, we must infer the expression as a nullable
-        if((this.operator === "!!") && (hint !== null)) {
+        if((this.operator === "!!") && (hint != null)) {
             uhsType = this.expression.infer(ctx, new NullableType(this.location, hint));
         }
         else {
