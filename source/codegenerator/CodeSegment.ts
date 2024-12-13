@@ -514,16 +514,9 @@ export class CodeSegment {
                 this.writer.push_bytesNeeded(args[0]);
                 return this.writer.push_16(args[1]);
 
-            case BytecodeInstructionType.open_ffi:
-                return this.writer.push_16(args[0]);
-
-            case BytecodeInstructionType.ld_ffi:
-                this.writer.push_8(args[0]);
-                this.writer.push_16(args[1]);
-                return this.writer.push_8(args[2]);
-
             case BytecodeInstructionType.call_ffi:
-                return this.writer.push_8(args[0]);
+                this.writer.push_16(args[0]);
+                return this.writer.push_8(args[1]);
 
             case BytecodeInstructionType.close_ffi:
                 return this.writer.push_16(args[0]);

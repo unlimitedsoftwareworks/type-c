@@ -463,8 +463,8 @@ export type IRInstructionType =
     "debug" | // a debug instruction, meanless in bytecode generation
 
     "reg_ffi" | // reg_ffi id, name
-    "call_ffi" | // call_ffi id, method_id, arg_count
-    "ffi_get_method" | // dest:R, ffi_id, ffi_method_id as ffi_ld
+    "call_ffi" | // call_ffi id, method_id
+
 
     "promise_await" |
     "debug_reg" |
@@ -496,7 +496,6 @@ export type IRInstructionType =
     "coroutine_ret" |
     "coroutine_reset" |
     "coroutine_finish" |
-    
 
     "throw_rt" |
 

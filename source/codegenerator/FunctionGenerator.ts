@@ -1933,8 +1933,6 @@ export class FunctionGenerator {
         let ffi_id = baseFFI.ffiId;
         let method_id = baseFFI.getMethodIndex(lhsType.imethod.name);
 
-        let reg = this.generateTmp();
-        this.i("ffi_get_method", reg, ffi_id, method_id);
 
         let instructions: IRInstructionType[] = [];
         let regs: string[] = [];
@@ -1962,14 +1960,12 @@ export class FunctionGenerator {
 
         if (hasReturn) {
             let tmp = this.generateTmp();
-            this.i("call_ffi", reg);
-            this.destroyTmp(reg);
+            this.i("call_ffi", ffi_id, method_id);
             let pop = popStackType(expr.inferredType!);
             this.i(pop, tmp);
             return tmp;
         } else {
-            this.i("call_ffi", reg);
-            this.destroyTmp(reg);
+            this.i("call_ffi", ffi_id, method_id);
             return "";
         }
     }

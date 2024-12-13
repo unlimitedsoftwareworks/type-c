@@ -1828,13 +1828,8 @@ export class BytecodeGenerator {
             /**
              * FFI
              */
-            else if (instruction.type == "ffi_get_method") {
-                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.ld_ffi, dest, instruction.args[1] as number, instruction.args[2] as number);
-            }
             else if (instruction.type == "call_ffi") {
-                let reg = this.getRegisterForVariable(fn, instruction.args[0] as string);
-                this.emit(BytecodeInstructionType.call_ffi, reg)
+                this.emit(BytecodeInstructionType.call_ffi, instruction.args[0] as number, instruction.args[1] as number)
             }
 
             /*

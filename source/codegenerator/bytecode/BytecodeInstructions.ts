@@ -535,18 +535,6 @@ export enum BytecodeInstructionType{
     reg_ffi,
 
     /**
-     * open_ffi ffi-id: i (2 bytes)
-     * opens the ffi with the given id
-     */
-    open_ffi,
-
-    /**
-     * ld_ffi dest: r, ffi-id i (2 bytes), fn-id: i (1b)
-     * load an ffi method into dest register, from ffi-id and fn-id
-     */
-    ld_ffi,
-
-    /**
      * call_ffi reg: r
      * calls a ffi stored in reg
      */
