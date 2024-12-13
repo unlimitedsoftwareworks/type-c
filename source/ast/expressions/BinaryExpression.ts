@@ -204,7 +204,7 @@ export class BinaryExpression extends Expression {
             let ignoreConst = this.left.isConstant === 0;
 
             //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
-            if(!canAssign.success && !ignoreConst && Context.InferenceMode == "codegen") {
+            if(!canAssign.success && !ignoreConst && Context.InferenceMode != "codegen") {
                 ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
             }
         }

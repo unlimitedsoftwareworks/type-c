@@ -18,7 +18,7 @@ interface RunTestsOptions {
 
 function parseCompileOptions(args: string[]): TypeC.CompileOptions {
     const compileIndex = args.findIndex(
-        (arg) => arg === "--compile" || arg === "-c",
+        (arg) => arg === "--compile" || arg === "-c"
     );
     const dir =
         compileIndex !== -1 && args[compileIndex + 1]
@@ -28,14 +28,18 @@ function parseCompileOptions(args: string[]): TypeC.CompileOptions {
     const generateBinaries = !args.includes("--no-generate-binaries");
 
     const outputIndex = args.findIndex(
-        (arg) => arg === "--output" || arg === "-o",
+        (arg) => arg === "--output" || arg === "-o"
     );
     const outputFolder =
         outputIndex !== -1 && args[outputIndex + 1]
             ? args[outputIndex + 1]
             : "default_output_folder";
 
-    const runOutput = args.includes("--run") || args.includes("-r");
+    const runIndex = args.findIndex((arg) => arg === "--run" || arg === "-r");
+    const runOutput = runIndex !== -1;
+    
+    // Capture all arguments after --run or -r
+    const typevArgs = runIndex !== -1 ? args.slice(runIndex + 1) : [];
 
     const generateIR = args.includes("--generate-ir") || args.includes("-g");
 
@@ -48,8 +52,10 @@ function parseCompileOptions(args: string[]): TypeC.CompileOptions {
         runOutput,
         generateIR,
         noWarnings,
+        typevArgs, // Include the extracted arguments here
     };
 }
+
 
 function parseRunTestsOptions(args: string[]): RunTestsOptions {
     // Parse options specific to the run-tests command
