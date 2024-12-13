@@ -81,7 +81,7 @@ export class ForeachStatement extends Statement {
     inferArrayIterator(ctx: Context, iterableType: ArrayType){
         this.iteratorType = "array";
         let elementType = iterableType.arrayOf;
-        this.registerIteratorVariables(ctx, elementType);
+        this.registerIteratorVariables(ctx, elementType, new BasicType(this.location, "u64"));
     }
 
     inferCoroutineIterator(ctx: Context, iterableType: CoroutineType){
@@ -146,12 +146,10 @@ export class ForeachStatement extends Statement {
         this.context.addSymbol(this.indexIteratorVariable);
         this.indexIteratorVariable.inferWithoutAssignment(this.context);
 
-        if(this.iteratorType == "AbstractIterable"){
-            let iterableType = itertableTmpType!;
-            this.tmpIteratorVariable = new DeclaredVariable(this.location, "$fabsiter_" + ForeachStatement.tmpIteratorId++, null as any, iterableType, false, true, false);
-            this.context.addSymbol(this.tmpIteratorVariable);
-            this.tmpIteratorVariable.inferWithoutAssignment(this.context);
-        }
+        let iterableType = itertableTmpType!;
+        this.tmpIteratorVariable = new DeclaredVariable(this.location, "$fabsiter_" + ForeachStatement.tmpIteratorId++, null as any, iterableType, false, true, false);
+        this.context.addSymbol(this.tmpIteratorVariable);
+        this.tmpIteratorVariable.inferWithoutAssignment(this.context);
     }
 
     clone(typeMap: {[key: string]: DataType}, ctx: Context): ForeachStatement {

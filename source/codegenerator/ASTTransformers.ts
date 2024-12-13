@@ -23,6 +23,19 @@ import { ForeachStatement } from "../ast/statements/ForeachStatement";
 import { ForStatement } from "../ast/statements/ForStatement";
 
 export function convertForeachArrayToFor(stmt: ForeachStatement): ForStatement {
+
+
+    // let xxx = arr.length
+    let lengthExpression = new MemberAccessExpression(stmt.location, stmt.iterableExpression, new ElementExpression(stmt.location, "length"));
+    
+
+    let lengthVariable = new BinaryExpression(
+        stmt.location,
+        new ElementExpression(stmt.location, stmt.tmpIteratorVariable!.name),
+        lengthExpression,
+        "="
+    )
+
     // foreach i,v in arr -> for i = 0; i < arr.length; i++) { v = arr[i], ... }
     let valueAssignment = new BinaryExpression(
         stmt.location,
@@ -44,6 +57,10 @@ export function convertForeachArrayToFor(stmt: ForeachStatement): ForStatement {
         [
             new ExpressionStatement(
                 stmt.location,
+                lengthVariable
+            ),
+            new ExpressionStatement(
+                stmt.location,
                 new BinaryExpression(
                     stmt.location,
                     new ElementExpression(stmt.location, stmt.indexIteratorName),
@@ -55,7 +72,7 @@ export function convertForeachArrayToFor(stmt: ForeachStatement): ForStatement {
         new BinaryExpression(
             stmt.location,
             new ElementExpression(stmt.location, stmt.indexIteratorName),
-            new MemberAccessExpression(stmt.location, stmt.iterableExpression, new ElementExpression(stmt.location, "length")),
+            lengthVariable,
             "<"
         ),
         [
