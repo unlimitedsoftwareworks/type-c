@@ -1212,7 +1212,15 @@ export class FunctionGenerator {
         // add debug info
         this.i("debug", "binary expression " + expr.operator);
 
-        if (expr.operator == "=") {
+        if(expr.operator == "&&"){
+            return this.ir_generate_binary_expr_and(expr, ctx);
+        }
+        else if (expr.operator == "||"){
+            return this.ir_generate_binary_expr_or(expr, ctx);
+        }
+
+        else if (
+            expr.operator == "=") {
             return this.ir_generate_assignment(expr, ctx);
         } else if (["+=", "-=", "*=", "/=", "%="].includes(expr.operator)) {
             // generate the instruction
@@ -1245,6 +1253,35 @@ export class FunctionGenerator {
         // generate the left expression
         this.i("debug", "lhs of binary expression " + expr.operator);
         let left = this.visitExpression(expr.left, ctx);
+
+        if(expr.right instanceof NullLiteralExpression){
+            if(expr.operator == "=="){
+                let tmp = this.generateTmp();
+                let instruction = jCmpNullType(expr.left.inferredType!);
+                // assume null
+                this.i("const_u8", tmp, 1);
+                let isNullLabel = this.generateLabel();
+                this.i(instruction, left, isNullLabel);
+                // assume not null
+                this.i("const_u8", tmp, 0);
+                this.i("label", isNullLabel);
+                return tmp;
+            }
+            else if (expr.operator == "!=") {
+                let tmp = this.generateTmp();
+                // !=
+                let instruction = jCmpNullType(expr.left.inferredType!);
+                // assume null
+                this.i("const_u8", tmp, 0);
+                let isNullLabel = this.generateLabel();
+                this.i(instruction, left, isNullLabel);
+                // assume not null
+                this.i("const_u8", tmp, 1);
+                this.i("label", isNullLabel);
+                return tmp;
+            }
+        }
+
 
         /* TODO: speed up the case where we are comparing to null
         if((expr.right instanceof NullLiteralExpression) && (expr.operator == "==")){
@@ -1360,6 +1397,60 @@ export class FunctionGenerator {
         this.i("label", lblEnd);
         return tmp;
     }
+
+    ir_generate_binary_expr_and(expr: BinaryExpression, ctx: Context) {
+        // for and, if the LHS is false, we can skip the RHS
+
+        this.i("debug", "generating and expression");
+        let lblFalse = this.generateLabel();
+        let resTmp = this.generateTmp();
+
+        // assume false
+        this.i("const_u8", resTmp, 0);
+        let lhsTmp = this.visitExpression(expr.left, ctx);
+        this.i("j_eq_null_u8", lhsTmp, lblFalse);
+
+
+        let tmp2 = this.visitExpression(expr.right, ctx);
+        this.i("j_eq_null_u8", tmp2, lblFalse);
+
+        this.i("const_u8", resTmp, 1);
+        this.i("label", lblFalse);
+
+        return resTmp;
+    }
+
+    ir_generate_binary_expr_or(expr: BinaryExpression, ctx: Context) {
+        // Generate labels for true and false
+        let lblTrue = this.generateLabel();
+        let lblEnd = this.generateLabel();
+        let resTmp = this.generateTmp();
+        let lblContinue = this.generateLabel();
+    
+        // Assume result is false
+        this.i("const_u8", resTmp, 0);
+    
+        // Evaluate LHS
+        let lhsTmp = this.visitExpression(expr.left, ctx);
+        this.i("j_eq_null_u8", lhsTmp, lblContinue); // If LHS is null, evaluate RHS
+        this.i("j", lblTrue);                    // Otherwise, short-circuit to true
+    
+        // Evaluate RHS
+        this.i("label", lblContinue);
+        let rhsTmp = this.visitExpression(expr.right, ctx);
+        this.i("j_eq_null_u8", rhsTmp, lblEnd);     // If RHS is null, result remains false
+        this.i("j", lblTrue);                    // Otherwise, jump to true
+    
+        // Set result to true
+        this.i("label", lblTrue);
+        this.i("const_u8", resTmp, 1);
+    
+        // End
+        this.i("label", lblEnd);
+    
+        return resTmp;
+    }
+    
 
     ir_generate_assignment(expr: BinaryExpression, ctx: Context) {
         if (expr.left instanceof TupleConstructionExpression) {
