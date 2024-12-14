@@ -107,13 +107,13 @@ export module TypeC {
             let entryKey = normalizePath(entry);
             this.packageBaseContextMap.set(entryKey, this.basePackage);
 
-            this.importStringIfNeeded(this.basePackage)
 
             /**
              * Imports main transformer to load the arguments
              */
-            this.importMainArgsTransformers(this.basePackage)
-            this.importArrayIteratorInterfaceIfNeeded(this.basePackage)
+            this.importMainArgsTransformers(this.basePackage, entry)
+            this.importArrayIteratorInterfaceIfNeeded(this.basePackage, entry)
+            this.importStringIfNeeded(this.basePackage, entry)
 
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
@@ -155,10 +155,8 @@ export module TypeC {
              * The base String class is injected into the base package
              * as long as the package is not string.tc file itself!
              */
-            let searchString="std/string.tc"
-            if(!filepath.includes(searchString)){
-                this.importStringIfNeeded(basePackage)
-            }
+            this.importStringIfNeeded(basePackage, filepath)
+            this.importArrayIteratorInterfaceIfNeeded(basePackage, filepath)
 
             // resolve imports
             for (let imp of basePackage.imports) {
@@ -203,7 +201,10 @@ export module TypeC {
             return false;
         }
 
-        importStringIfNeeded(basePackage: BasePackage) {
+        importStringIfNeeded(basePackage: BasePackage, filepath: string) {
+            if(filepath.includes("std/string.tc")){
+                return;
+            }
             // check if std.string.String is imported:
             if(this.checkIfImportExists(basePackage, "std/string", "String", "String")){
                 return;
@@ -214,13 +215,16 @@ export module TypeC {
             basePackage.imports.push(BuiltinModules.stringImport);
         }
 
-        importMainArgsTransformers(basePackage: BasePackage) {
+        importMainArgsTransformers(basePackage: BasePackage, filepath: string) {
             BuiltinModules.getMainArgTransformer(this);
             basePackage.imports.push(BuiltinModules.argsTransformerImport);
         }
 
-        importArrayIteratorInterfaceIfNeeded(basePackage: BasePackage) {
-            if(this.checkIfImportExists(basePackage, "std/collections/array", "ArrayIterator", "ArrayIterator")){
+        importArrayIteratorInterfaceIfNeeded(basePackage: BasePackage, filepath: string) {
+            if(filepath.includes("std/collections/iterator.tc")){
+                return;
+            }
+            if(this.checkIfImportExists(basePackage, "std/collections/iterator", "ArrayIterator", "ArrayIterator")){
                 return;
             }
 

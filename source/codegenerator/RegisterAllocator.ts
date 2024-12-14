@@ -368,6 +368,10 @@ export class RegisterAllocator {
                 let id = instruction.args[3] as string;
                 this.processJump(id, position);
             }
+            else if (instruction.type.startsWith("j_eq_null_")) {
+                let id = instruction.args[1] as string;
+                this.processJump(id, position);
+            }
             else if (instruction.type == "label") {
                 let id = instruction.args[0] as string;
                 this.processLabel(id, position);
@@ -380,8 +384,8 @@ export class RegisterAllocator {
             
             if (instruction.args.length > 0) {
                 for (const arg of instruction.args) {
-                    if (typeof arg === "string") {
-                        if (!seen.includes(arg) && arg.startsWith("tmp_")) {
+                    if ((typeof arg === "string") && arg.startsWith("tmp_")) {
+                        if (!seen.includes(arg)) {
                             this.linkTmpToNewVReg(arg);
                             seen.push(arg);
                         }
