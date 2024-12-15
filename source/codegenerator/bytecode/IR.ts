@@ -319,10 +319,6 @@ export type IRInstructionType =
     "add_u64" |
     "add_f32" |
     "add_f64" |
-    "add_ptr_u8" |
-    "add_ptr_u16" |
-    "add_ptr_u32" |
-    "add_ptr_u64" |
 
     "sub_i8" |
     "sub_u8" |
@@ -334,10 +330,6 @@ export type IRInstructionType =
     "sub_u64" |
     "sub_f32" |
     "sub_f64" |
-    "sub_ptr_u8" |
-    "sub_ptr_u16" |
-    "sub_ptr_u32" |
-    "sub_ptr_u64" |
 
     "mul_i8" |
     "mul_u8" |

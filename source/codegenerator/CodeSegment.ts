@@ -390,10 +390,6 @@ export class CodeSegment {
             case BytecodeInstructionType.add_u64:
             case BytecodeInstructionType.add_f32:
             case BytecodeInstructionType.add_f64:
-            case BytecodeInstructionType.add_ptr_u8:
-            case BytecodeInstructionType.add_ptr_u16:
-            case BytecodeInstructionType.add_ptr_u32:
-            case BytecodeInstructionType.add_ptr_u64:
             case BytecodeInstructionType.sub_i8:
             case BytecodeInstructionType.sub_u8:
             case BytecodeInstructionType.sub_i16:
@@ -404,10 +400,6 @@ export class CodeSegment {
             case BytecodeInstructionType.sub_u64:
             case BytecodeInstructionType.sub_f32:
             case BytecodeInstructionType.sub_f64:
-            case BytecodeInstructionType.sub_ptr_u8:
-            case BytecodeInstructionType.sub_ptr_u16:
-            case BytecodeInstructionType.sub_ptr_u32:
-            case BytecodeInstructionType.sub_ptr_u64:
             case BytecodeInstructionType.mul_i8:
             case BytecodeInstructionType.mul_u8:
             case BytecodeInstructionType.mul_i16:
