@@ -33,7 +33,14 @@ export class DataWriter {
 
     push_8(value: number | bigint) {
         this.ensureCapacity(1);
-        this.buffer.writeUInt8(value as number, this.writePosition);
+        if (typeof value === "bigint") {
+            if (value < 0 || value > 0xFFn) {
+                throw new Error("Value out of range for UInt8");
+            }
+            this.buffer.writeUInt8(Number(value), this.writePosition);
+        } else {
+            this.buffer.writeUInt8(value, this.writePosition);
+        }
         this.writePosition += 1;
 
         return this.writePosition - 1;
@@ -41,10 +48,21 @@ export class DataWriter {
 
     push_16(value: number | bigint, littleEndian: boolean = true) {
         this.ensureCapacity(2);
-        if (littleEndian) {
-            this.buffer.writeUInt16LE(value as number, this.writePosition);
+        if (typeof value === "bigint") {
+            if (value < 0 || value > 0xFFFFn) {
+                throw new Error("Value out of range for UInt16");
+            }
+            if (littleEndian) {
+                this.buffer.writeUInt16LE(Number(value), this.writePosition);
+            } else {
+                this.buffer.writeUInt16BE(Number(value), this.writePosition);
+            }
         } else {
-            this.buffer.writeUInt16BE(value as number, this.writePosition);
+            if (littleEndian) {
+                this.buffer.writeUInt16LE(value, this.writePosition);
+            } else {
+                this.buffer.writeUInt16BE(value, this.writePosition);
+            }
         }
         this.writePosition += 2;
 
@@ -53,10 +71,21 @@ export class DataWriter {
 
     push_32(value: number | bigint, littleEndian: boolean = true) {
         this.ensureCapacity(4);
-        if (littleEndian) {
-            this.buffer.writeUInt32LE(value as number, this.writePosition);
+        if (typeof value === "bigint") {
+            if (value < 0 || value > 0xFFFFFFFFn) {
+                throw new Error("Value out of range for UInt32");
+            }
+            if (littleEndian) {
+                this.buffer.writeUInt32LE(Number(value), this.writePosition);
+            } else {
+                this.buffer.writeUInt32BE(Number(value), this.writePosition);
+            }
         } else {
-            this.buffer.writeUInt32BE(value as number, this.writePosition);
+            if (littleEndian) {
+                this.buffer.writeUInt32LE(value, this.writePosition);
+            } else {
+                this.buffer.writeUInt32BE(value, this.writePosition);
+            }
         }
         this.writePosition += 4;
 
@@ -64,12 +93,11 @@ export class DataWriter {
     }
 
     push_64(value: number | bigint, littleEndian: boolean = true) {
-        let v = BigInt(value);
         this.ensureCapacity(8);
         if (littleEndian) {
-            this.buffer.writeBigUint64LE(v, this.writePosition);
+            this.buffer.writeBigUint64LE(BigInt(value), this.writePosition);
         } else {
-            this.buffer.writeBigUint64BE(v, this.writePosition);
+            this.buffer.writeBigUint64BE(BigInt(value), this.writePosition);
         }
         this.writePosition += 8;
 

@@ -19,53 +19,60 @@ import { CodeSegment } from "./CodeSegment";
 import { FunctionGenerator } from "./FunctionGenerator";
 import { TemplateSegment } from "./TemplateSegment";
 
-function parseCStyleNumber(cNumberString: string): number {
+function parseCStyleNumber(cNumberString: string): number | bigint {
+    let isFloat = false;
     // Check if the string ends with 'f' or 'F' and remove it
     if (cNumberString.endsWith('f') || cNumberString.endsWith('F')) {
         cNumberString = cNumberString.slice(0, -1);
+        isFloat = true;
+    }
+    if(cNumberString.includes('.')){
+        isFloat = true;
     }
 
     // Parse the string as a number (float or integer, including exponent notation)
-    let numberValue = parseFloat(cNumberString);
-
-    // Check for parsing errors
-    if (isNaN(numberValue)) {
-        throw new Error("Invalid number format");
+    if(isFloat){
+        return parseFloat(cNumberString);
+    }
+    else {
+        return BigInt(cNumberString);
     }
 
-    return numberValue;
+    // Check for parsing errors
+    //if (isNaN(numberValue)) {
+    //    throw new Error("Invalid number format");
+    //}
+
+    // return numberValue;
 }
 
-function floatToUint32Bits(floatValue: number) {
+function floatToUint32Bits(floatValue: number | bigint) {
+    // Convert float to BigInt for consistency
     // Create an ArrayBuffer with 4 bytes to hold a 32-bit float
     const buffer = new ArrayBuffer(4);
-    // Create a DataView to manipulate the bits of the buffer
     const view = new DataView(buffer);
 
     // Set the float value at byte offset 0
-    view.setFloat32(0, floatValue);
+    view.setFloat32(0, Number(floatValue));
 
     // Read the bits as an unsigned 32-bit integer
-    return view.getUint32(0);
+    return BigInt(view.getUint32(0));
 }
 
-function doubleToUint64BitsLE(doubleValue: number) {
-    // Create an ArrayBuffer with 8 bytes to hold a 64-bit double
+function doubleToUint64BitsLE(doubleValue: number | bigint) {
+    // Convert double to BigInt for consistency
     const buffer = new ArrayBuffer(8);
-    // Create a DataView to manipulate the bits of the buffer
     const view = new DataView(buffer);
 
     // Set the double value at byte offset 0, little-endian
-    view.setFloat64(0, doubleValue, true); // true for little-endian
+    view.setFloat64(0, Number(doubleValue), true);
 
     // Read the bits as two 32-bit unsigned integers (low and high) in little-endian order
-    const low = view.getUint32(0, true);  // Little-endian
-    const high = view.getUint32(4, true); // Little-endian
+    const low = BigInt(view.getUint32(0, true));
+    const high = BigInt(view.getUint32(4, true));
 
     // Combine the high and low parts into a 64-bit BigInt representation
-    const combined = (BigInt(high) << 32n) | BigInt(low);
-
-    return combined;
+    return (high << 32n) | low;
 }
 
 
