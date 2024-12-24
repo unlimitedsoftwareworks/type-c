@@ -525,8 +525,7 @@ export enum BytecodeInstructionType{
     reg_ffi,
 
     /**
-     * call_ffi reg: r
-     * calls a ffi stored in reg
+     * call_ffi ffi_id: I(2b), fncId: I(2b)
      */
     call_ffi,
 

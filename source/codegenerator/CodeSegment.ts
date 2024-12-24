@@ -508,7 +508,7 @@ export class CodeSegment {
 
             case BytecodeInstructionType.call_ffi:
                 this.writer.push_16(args[0]);
-                return this.writer.push_8(args[1]);
+                return this.writer.push_16(args[1]);
 
             case BytecodeInstructionType.close_ffi:
                 return this.writer.push_16(args[0]);
