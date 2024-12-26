@@ -56,8 +56,16 @@ export module TypeC {
         packageBaseContextMap: Map<string, BasePackage> = new Map();
 
         static create(options: CompileOptions) {
-            let moduleFile = readFile(options.dir + "/module.json");
-            let config = JSON.parse(moduleFile);
+            let config: any = {};
+            try {
+                let moduleFile = readFile(options.dir + "/module.json");
+                config = JSON.parse(moduleFile);
+            }
+            catch(e){
+                console.log(colors.BgRed, "Error reading module.json", colors.Reset);
+                console.log(colors.BgRed, e, colors.Reset);
+                process.exit(1);
+            }
 
             let compilerConfig = new TCCompiler();
             compilerConfig.options = options;

@@ -14,9 +14,12 @@ import { ClassAttribute } from "../ast/other/ClassAttribute";
 import { ClassMethod } from "../ast/other/ClassMethod";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { DeclaredVariable } from "../ast/symbol/DeclaredVariable";
+import { StructField } from "../ast/types/StructType";
 import { BytecodeInstructionType } from "./bytecode/BytecodeInstructions";
 import { CodeSegment } from "./CodeSegment";
 import { FunctionGenerator } from "./FunctionGenerator";
+import { generatePerfectHash } from "./hashing/GenerateHash";
+import { ObjectKeysSegment } from "./ObjectKeysSegment";
 import { TemplateSegment } from "./TemplateSegment";
 
 function parseCStyleNumber(cNumberString: string): number | bigint {
@@ -262,6 +265,8 @@ export class BytecodeGenerator {
     constantSegment: ConstantSegment = new ConstantSegment();
     globalSegment: GlobalSegment = new GlobalSegment();
     templateSegment: TemplateSegment = new TemplateSegment();
+    objectKeysSegment: ObjectKeysSegment = new ObjectKeysSegment();
+    
     unresolvedOffsets: Map<string, number[]> = new Map();
     resolvedOffsets: Map<string, number> = new Map();
 
@@ -1993,55 +1998,53 @@ export class BytecodeGenerator {
         let globalSegmentSize = this.globalSegment.byteSize;
         let templateSegmentSize = this.templateSegment.getByteSize();
         let codeSegmentSize = this.codeSegment.getByteSize();
-
+        let objectKeysSegmentSize = this.objectKeysSegment.getByteSize();
         //console.log(`Program size:\n\tConstants: ${constantSegmentSize}b\n\tGlobals: ${globalSegmentSize}b\n\tTemplates:${templateSegmentSize}b\n\tCode: ${codeSegmentSize}b`);
 
         let constantBuffer = this.constantSegment.serialize();
         let globalBuffer = this.globalSegment.serialize();
         let templateBuffer = this.templateSegment.writer.buffer;
         let codeBuffer = this.codeSegment.writer.buffer;
+        let objectKeysBuffer = this.objectKeysSegment.serialize();
 
-        let programSize = 8 * 4 + constantSegmentSize + globalSegmentSize + templateSegmentSize + codeSegmentSize;
+        let programSize = 8 * 5 + constantSegmentSize + globalSegmentSize + templateSegmentSize + objectKeysSegmentSize + codeSegmentSize;
         let programBuffer = Buffer.alloc(programSize);
         let offset = 0;
         // write constant segment position
-        programBuffer.writeBigUInt64LE(BigInt(32), offset);
+        programBuffer.writeBigUInt64LE(BigInt(40), offset);
         offset += 8;
         // write global segment position
-        programBuffer.writeBigUInt64LE(BigInt(32 + constantSegmentSize), offset);
+        programBuffer.writeBigUInt64LE(BigInt(40 + constantSegmentSize), offset);
         offset += 8;
         // write template segment position
-        programBuffer.writeBigUInt64LE(BigInt(32 + constantSegmentSize + globalSegmentSize), offset);
+        programBuffer.writeBigUInt64LE(BigInt(40 + constantSegmentSize + globalSegmentSize), offset);
         offset += 8;
+        // write object keys segment position
+        programBuffer.writeBigUInt64LE(BigInt(40 + constantSegmentSize + globalSegmentSize + templateSegmentSize), offset);
+        offset += 8;    
         // write code segment position
-        programBuffer.writeBigUInt64LE(BigInt(32 + constantSegmentSize + globalSegmentSize + templateSegmentSize), offset);
+        programBuffer.writeBigUInt64LE(BigInt(40 + constantSegmentSize + globalSegmentSize + templateSegmentSize + objectKeysSegmentSize), offset);
         offset += 8;
 
         // Copy the constant segment data
         let constantSegmentBuffer = Buffer.from(constantBuffer);
-        constantSegmentBuffer.copy(programBuffer, 32, 0, constantSegmentBuffer.length);
+        constantSegmentBuffer.copy(programBuffer, 40, 0, constantSegmentBuffer.length);
 
         // Copy the global segment data
         let globalSegmentBuffer = Buffer.from(globalBuffer);
-        globalSegmentBuffer.copy(programBuffer, 32 + constantSegmentSize, 0, globalSegmentBuffer.length);
+        globalSegmentBuffer.copy(programBuffer, 40 + constantSegmentSize, 0, globalSegmentBuffer.length);
 
         // Copy the template segment data
         let templateSegmentBuffer = Buffer.from(templateBuffer);
-        templateSegmentBuffer.copy(programBuffer, 32 + constantSegmentSize + globalSegmentSize, 0, templateSegmentSize);
+        templateSegmentBuffer.copy(programBuffer, 40 + constantSegmentSize + globalSegmentSize, 0, templateSegmentSize);
+
+        // Copy the object keys segment data
+        let objectKeysSegmentBuffer = Buffer.from(objectKeysBuffer);
+        objectKeysSegmentBuffer.copy(programBuffer, 40 + constantSegmentSize + globalSegmentSize + templateSegmentSize, 0, objectKeysSegmentBuffer.length);
 
         // Copy the code segment data
         let codeSegmentBuffer = Buffer.from(codeBuffer);
-        codeSegmentBuffer.copy(programBuffer, 32 + constantSegmentSize + globalSegmentSize + templateSegmentSize, 0, codeSegmentBuffer.length);
-
-        let prog = {
-            constants: this.constantSegment.toJSON(),
-        }
-
-
-        let fs = require("fs");
-        //let dir = "./output/program.json";
-
-        //fs.writeFileSync(dir, JSON.stringify(prog, null, 4)+"\n"+formatInstructions(this.codeSegment.toJSON()));
+        codeSegmentBuffer.copy(programBuffer, 40 + constantSegmentSize + globalSegmentSize + templateSegmentSize + objectKeysSegmentSize, 0, codeSegmentBuffer.length);
 
 
         return programBuffer;
