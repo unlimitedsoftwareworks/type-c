@@ -203,6 +203,16 @@ export class Parser {
     }
 
     customError(message: string, location: SymbolLocation, length: number = 1): never {
+        if (this.mode == "intellisense"){
+            this.basePackage.logs.push({
+                type: "error",
+                message: message,
+                line: location.line,
+                column: location.col,
+                length: length,
+                file: location.file,
+            });
+        }
         throw this.error(
             message,
             {
