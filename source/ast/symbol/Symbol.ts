@@ -36,7 +36,6 @@ export class Symbol {
     kind: SymbolKind;
     name: string;
     parentContext: Context | null = null;
-    external: boolean = false;
     isLocal: boolean = false; // local to global scope or namespace
 
     annotations: Annotation[] = [];

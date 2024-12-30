@@ -74,6 +74,12 @@ export class Context {
     private symbols: Map<string, Symbol> = new Map();
 
     /**
+     * The symbols that are external to this context,
+     * i.e they are not owned by this context, but are imported from another context
+     */
+    private externalSymbols: string[] = [];
+
+    /**
      * The parent of this symbol table.
      * If this is null, then this is the root symbol table.
      */
@@ -293,7 +299,11 @@ export class Context {
     // adds a symbol to the current context, but does not set the parent context
     // i.e does not take ownership of the symbol
     addExternalSymbol(symbol: Symbol, name: string) {
-        symbol.external = true;
+        if(!symbol.uid){
+            throw this.parser.customError(`Symbol ${name} has no UID`, symbol.location);
+        }
+
+        this.externalSymbols.push(symbol.uid);
         let old = this.lookup(name);
         if (old !== null) {
             throw this.parser.customError(
@@ -311,6 +321,16 @@ export class Context {
      */
     overrideSymbol(symbol: Symbol) {
         this.symbols.set(symbol.name, symbol);
+    }
+
+    isSymbolExternal(uid: string, checkParent: boolean = true): boolean {
+        if(this.externalSymbols.includes(uid)){
+            return true;
+        }
+        if(this.parent && checkParent){
+            return this.parent.isSymbolExternal(uid, checkParent);
+        }
+        return false;
     }
 
     /**
@@ -409,7 +429,7 @@ export class Context {
                 // we are in the global scope
                 // register the global variable
 
-                if (!symbol.external) {
+                if (!this.isSymbolExternal(symbol.uid, false)) {
                     this.registerToGlobalContext(symbol);
                 }
 

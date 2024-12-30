@@ -308,7 +308,7 @@ export module TypeC {
             else if (imp.actualName === "*"){
                 // import all symbols
                 for(let sym of importBase.ctx.getSymbols()){
-                    if(sym.isLocal || sym.external){
+                    if(sym.isLocal || importBase.ctx.isSymbolExternal(sym.uid, false)){
                         continue;
                     }
                     basePackage.ctx.addExternalSymbol(sym, sym.name);
