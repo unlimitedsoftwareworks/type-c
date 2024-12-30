@@ -1,19 +1,12 @@
 {
     "name": "@unlimitedsoftwareworks/type-c",
     "version": "1.0.9-dev",
-    "type": "module",
     "description": "Type-C Programming Language Compiler",
-    "main": "./dist/compiler.js",
-    "types": "./dist/compiler.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/compiler.d.ts",
-            "import": "./dist/compiler.js"
-        }
-    },
+    "main": "dist/compiler.js",
+    "types": "dist/compiler.d.ts",
     "scripts": {
-        "start": "node --loader ts-node/esm source/index.ts",
-        "build": "rimraf ./dist && tsc",
+        "start": "node --loader ts-node/esm src/index.ts",
+        "build": "rimraf ./dist && tsc --outDir dist",
         "prepare": "npm run build"
     },
     "keywords": [
