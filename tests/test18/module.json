@@ -2,7 +2,7 @@
     "name": "Type-C Sample",
     "version": "1.0.0",
     "author": "praisethemoon",
-    "dependencies": [],
+    "dependencies": {},
     "description": "Tests let-in and other expressions",
     "compiler": {
         "target": "runnable",

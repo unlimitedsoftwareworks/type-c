@@ -1,7 +1,6 @@
 from std.io import println
 from std.string import String
 from std.unit.test import TestUnit, UnitSet
-
 from test_i8 import test_i8_operations
 from test_u8 import test_u8_operations
 from test_i16 import test_i16_operations
@@ -26,7 +25,6 @@ fn getErr(i: u64) -> Enum {
 
 
 fn test_stuff(runner: TestUnit) {
-
     runner.assert_eq(getErr(0), Enum.Err)
     runner.assert_eq(getErr(1), Enum.Ok)
     runner.assert_eq(getErr(2), Enum.Maybe)
@@ -73,7 +71,7 @@ fn test_stuff(runner: TestUnit) {
 
 }
 
-fn main() {
+fn main() -> u32 {
     let test_i8_ops = new TestUnit("test i8", "Tests i8 against all types", test_i8_operations)
     let test_u8_ops = new TestUnit("test u8", "Tests u8 against all types", test_u8_operations)
     let test_i16_ops = new TestUnit("test i16", "Tests i16 against all types", test_i16_operations)

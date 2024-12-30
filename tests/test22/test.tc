@@ -185,7 +185,7 @@ fn test_vec3_reverse_indexing(rn: TestUnit) {
 
 fn test_vec3_reverse_setting(rn: TestUnit) {
     let v = new Vec3(1.0f, 2.0f, 3.0f)
-    v[-(1 as u64)] = 10.0f
+    v[-1] = 10.0f
     rn.assert_f32_eq_pre(v.z, 10.0f, 0.00001f)
     v[-(2 as u64)] = 20.0f
     rn.assert_f32_eq_pre(v.y, 20.0f, 0.00001f)
