@@ -53,4 +53,8 @@ export class Symbol {
     setLocal(local: boolean){
         this.isLocal = local;
     }
+
+    getDescription(): string {
+        throw new Error("Not implemented");
+    }
 }

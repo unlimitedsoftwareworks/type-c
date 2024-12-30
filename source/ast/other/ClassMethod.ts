@@ -206,4 +206,8 @@ export class ClassMethod extends Symbol {
     isConstructor() {
         return this.imethod.name === "init";
     }
+
+    getDescription(): string {
+        return this.imethod.getShortName();
+    }
 }

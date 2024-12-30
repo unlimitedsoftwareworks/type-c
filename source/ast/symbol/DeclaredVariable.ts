@@ -113,4 +113,8 @@ export class DeclaredVariable extends Symbol {
 
         return newVar;
     }
+
+    getDescription(): string {
+        return this.name + ": " + this.annotation!.getShortName();
+    }
 }

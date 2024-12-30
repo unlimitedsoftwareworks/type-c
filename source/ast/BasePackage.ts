@@ -12,7 +12,7 @@
 
 import {Context} from "./symbol/Context";
 import {ImportNode} from "./ImportNode";
-import {Parser} from "../parser/Parser";
+import {CompilerLogs, Parser} from "../parser/Parser";
 import { SymbolLocation } from "./symbol/SymbolLocation";
 import { DeclaredFFI } from "./symbol/DeclaredFFI";
 import { DeclaredType } from "./symbol/DeclaredType";
@@ -26,6 +26,7 @@ export class BasePackage {
     ctx: Context;
     imports: ImportNode[] = [];
     statements: Statement[] = [];
+    logs: CompilerLogs[] = [];
 
     /**
      * Namespace statements are stored within namespaceStatements field,
@@ -45,6 +46,9 @@ export class BasePackage {
     globalCtx: GlobalContext = new GlobalContext();
 
     staticClassBlocks: BlockStatement[] = [];
+
+    // list of files on which this package depends on
+    dependencies: string[] = [];
 
     constructor(parser: Parser) {
         this.ctx = new Context(new SymbolLocation(parser.lexer.filepath, 0, 0, 0), parser);

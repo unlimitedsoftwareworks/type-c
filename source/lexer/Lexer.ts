@@ -12,6 +12,7 @@
 
 import { TokenType } from "./TokenType";
 import { Token } from "./Token";
+import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 
 export class Lexer {
     filepath: string;
@@ -22,6 +23,8 @@ export class Lexer {
     tokenStack: Token[];
     lineC: number;
     colC: number;
+
+    private limit: { line: number; col: number } | null = null;
 
     static tokenRegexArray: [TokenType, RegExp][] = [
         // Keywords
@@ -231,7 +234,44 @@ export class Lexer {
         }
     }
 
+    /**
+     * Sets a virtual EOF position for intellisense mode
+     * @param line Line number to stop at
+     * @param col Column number to stop at
+     */
+    setLimit(line: number, col: number) {
+        this.limit = { line, col };
+    }
+
+    /**
+     * Removes the virtual EOF limit
+     */
+    clearLimit() {
+        this.limit = null;
+    }
+
+    /**
+     * Check if we've hit the virtual limit
+     */
+    private isAtLimit(): boolean {
+        return this.limit !== null && 
+               (this.lineC > this.limit.line || 
+                (this.lineC === this.limit.line && this.colC >= this.limit.col));
+    }
+
     nextToken(): Token {
+        // Add limit check at start of nextToken
+        if (this.isAtLimit()) {
+            return new Token(
+                TokenType.TOK_EOF,
+                "",
+                this.dataIndex,
+                this.lineC,
+                this.colC,
+                this.filepath,
+            );
+        }
+
         this.skipWhitespaces();
 
         for (const [tokenType, regex] of Lexer.tokenRegexArray) {
@@ -286,5 +326,32 @@ export class Lexer {
             this.inc();
         }
         this.inc();
+    }
+
+    jumpTo(location: SymbolLocation) {
+        // Reset counters
+        this.lineC = 0;
+        this.colC = 0;
+        this.dataIndex = 0;
+
+        // Scan to target line
+        while (this.lineC < location.line && this.canLookAhead()) {
+            if (this.currentChar() === "\n") {
+                this.lineC++;
+                this.colC = 0;
+            } else {
+                this.colC++;
+            }
+            this.dataIndex++;
+        }
+
+        // Move to target column
+        while (this.colC < location.col && this.canLookAhead()) {
+            this.colC++;
+            this.dataIndex++;
+        }
+
+        // Clear token stack since we've moved
+        this.tokenStack = [];
     }
 }

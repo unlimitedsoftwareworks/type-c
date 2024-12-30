@@ -160,7 +160,7 @@ export class DataType {
         if(this._hash === null){
             this._hash = xxHash32(this.serialize()).toString(16);
         }
-        return this._hash;
+        return this._hash!;
     }
 
     isStrict(): boolean {

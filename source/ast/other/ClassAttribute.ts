@@ -44,4 +44,8 @@ export class ClassAttribute extends Symbol {
     clone(typeMap: { [key: string]: DataType; }): ClassAttribute {
         return new ClassAttribute(this.location, this.name, this.type.clone(typeMap), this.isStatic, this.isConst);
     }
+
+    getDescription(): string {
+        return this.name + ": " + this.type.getShortName();
+    }
 }

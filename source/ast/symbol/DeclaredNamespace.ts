@@ -72,4 +72,8 @@ export class DeclaredNamespace extends Symbol {
             basePackage.addNamespaceStatement(new BlockStatement(this.location, this.ctx, [stmt]));
         }
     }
+
+    getDescription(): string {
+        return this.ctx.getSymbolsList().map(s => s.getDescription()).join("\n");
+    }
 }

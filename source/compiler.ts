@@ -1,24 +1,42 @@
-import * as fs from "fs";
 import { Lexer } from "./lexer/Lexer";
-
-import * as path from "path";
 import { BasePackage } from "./ast/BasePackage";
 import { Parser, ParserMode } from "./parser/Parser";
 import { ImportNode } from "./ast/ImportNode";
 import { BuiltinModules } from "./BuiltinModules";
 import { generateCode } from "./codegenerator/CodeGenerator";
-import { spawnSync } from "child_process";
 import { colors } from "./utils/termcolors";
-import { getStdLibPath } from "./cli/stdlib";
+import { getStdLibPath, initStdLib } from "./cli/stdlib";
 import { DeclaredNamespace } from "./ast/symbol/DeclaredNamespace";
 import { Symbol } from "./ast/symbol/Symbol";
 
+/**
+ * Safely imports Node.js specific modules
+ */
+const nodeModules = {
+    fs: typeof window === "undefined" ? require("fs") : null,
+    path: typeof window === "undefined" ? require("path") : null,
+    spawnSync: typeof window === "undefined" ? require("child_process").spawnSync : null
+};
+
+/**
+ * Safe file reading that works in both Node.js and web
+ */
 export function readFile(filename: string): string {
-    return fs.readFileSync(filename, "utf-8");
+    if (!nodeModules.fs) {
+        throw new Error("File system operations are only available in Node.js environment");
+    }
+    return nodeModules.fs.readFileSync(filename, "utf-8");
 }
 
+/**
+ * Safe path normalization that works in both Node.js and web
+ */
 function normalizePath(filePath: string): string {
-    return path.resolve(filePath).toLowerCase();
+    if (!nodeModules.path) {
+        // Simple fallback for web
+        return filePath.toLowerCase();
+    }
+    return nodeModules.path.resolve(filePath).toLowerCase();
 }
 
 export module TypeC {
@@ -94,9 +112,11 @@ export module TypeC {
          * this is used by vscode extention to process unsaved file content
          */
         compile(mode: ParserMode = "compiler", content?: string) {
+            initStdLib();
+            
             console.log("Compiling ", this.dir);
             // start with index
-            let entry = path.join(this.dir, this.entry);
+            let entry = nodeModules.path.join(this.dir, this.entry);
             let entrySource = this.readPackage(entry);
             let lexer = new Lexer(
                 entry,
@@ -109,6 +129,7 @@ export module TypeC {
                 mode,
                 !this.options.noWarnings,
             );
+            
             this.basePackage = parser.basePackage;
             parser.parse();
 
@@ -125,7 +146,7 @@ export module TypeC {
 
             for (let imp of this.basePackage.imports) {
                 let base = this.resolveImport(imp);
-                TCCompiler.registerImport(base, imp, parser, this.basePackage);
+                TCCompiler.registerImport(base, imp, parser, this.basePackage, base.ctx.location.file);
             }
 
             this.basePackage.infer();
@@ -134,14 +155,14 @@ export module TypeC {
         resolveImport(imp: ImportNode) {
             let filepath: string | null = "";
             for (let base of imp.basePath) {
-                filepath = path.join(filepath, base);
+                filepath = nodeModules.path.join(filepath, base);
             }
             filepath += ".tc";
 
-            filepath = this.searchPackage(filepath);
+            filepath = this.searchPackage(filepath ?? "");
 
             if (filepath == null) {
-                throw new Error(`Could not find module '${filepath}'`);
+                throw new Error(`Could not find module ${imp.basePath.join("/")}`);
             }
 
             let key = normalizePath(filepath);
@@ -169,7 +190,7 @@ export module TypeC {
             // resolve imports
             for (let imp of basePackage.imports) {
                 let base = this.resolveImport(imp);
-                TCCompiler.registerImport(base, imp, parser, basePackage);
+                TCCompiler.registerImport(base, imp, parser, basePackage, filepath);
             }
 
             basePackage.infer();
@@ -181,18 +202,18 @@ export module TypeC {
             // if all fails, we look into deps folder
             // otherwise we check if it exists in the stdlib
 
-            let pathInModule = path.join(this.dir, filepath);
-            if (fs.existsSync(pathInModule)) {
+            let pathInModule = nodeModules.path.join(this.dir, filepath);
+            if (nodeModules.fs.existsSync(pathInModule)) {
                 return pathInModule;
             }
 
-            let pathInDeps = path.join(this.dir, "deps", filepath);
-            if (fs.existsSync(pathInDeps)) {
+            let pathInDeps = nodeModules.path.join(this.dir, "deps", filepath);
+            if (nodeModules.fs.existsSync(pathInDeps)) {
                 return pathInDeps;
             }
 
-            let pathInStdlib = path.join(TCCompiler.stdlibDir, filepath);
-            if (fs.existsSync(pathInStdlib)) {
+            let pathInStdlib = nodeModules.path.join(TCCompiler.stdlibDir, filepath);
+            if (nodeModules.fs.existsSync(pathInStdlib)) {
                 return pathInStdlib;
             }
 
@@ -244,7 +265,7 @@ export module TypeC {
             return generateCode(this);
         }
 
-        static registerImport(importBase: BasePackage, imp: ImportNode, parser: Parser, basePackage: BasePackage) {
+        static registerImport(importBase: BasePackage, imp: ImportNode, parser: Parser, basePackage: BasePackage, filepath: string) {
             if (!basePackage) {
                 parser.customError(
                     `Could not resolve import ${imp.basePath.join("/")}`,
@@ -311,6 +332,7 @@ export module TypeC {
                 parser.customError(`Cannot import local symbol. Attempting to import local symbol ${imp.actualName}.`, imp.location)
             }
 
+            basePackage.dependencies.push(filepath);
             basePackage.ctx.addExternalSymbol(sym!, imp.alias);
         }
     }
@@ -324,11 +346,24 @@ export module TypeC {
         }
 
         if (options.runOutput) {
-            if (process.env.TYPE_V_PATH == undefined) {
-                throw new Error(
-                    "--run argument requires TYPE_V_PATH environment variable to be set, please set it to the path of the type_v binary folder",
-                );
+            if (!nodeModules.spawnSync) {
+                throw new Error("Running output is only available in Node.js environment");
             }
+            let interpreterPath = process.env.TYPE_V_PATH!;
+
+            const command = `cd ${interpreterPath} && ./typev /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv ${options.typevArgs.join(" ")}`;
+
+            const result = nodeModules.spawnSync(command, { shell: true });
+
+            if (result.stdout) {
+                console.log(colors.BgBlue, "stdout: ", colors.Reset);
+                console.log(result.stdout.toString());
+            }
+            if (result.stderr) {
+                console.log(colors.BgRed, "stderr: ", colors.Reset);
+                console.log(result.stderr.toString());
+            }
+            process.exit(result.status || 0);
         }
 
         let compiler = TCCompiler.create(options);
@@ -341,7 +376,7 @@ export module TypeC {
 
                 const command = `cd ${interpreterPath} && ./typev /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv ${options.typevArgs.join(" ")}`;
 
-                const result = spawnSync(command, { shell: true });
+                const result = nodeModules.spawnSync(command, { shell: true });
 
                 if (result.stdout) {
                     console.log(colors.BgBlue, "stdout: ", colors.Reset);

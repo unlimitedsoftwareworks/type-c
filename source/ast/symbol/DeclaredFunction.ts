@@ -277,6 +277,10 @@ export class DeclaredFunction extends Symbol {
         }
         return concrete;
     }
+
+    getDescription(): string {
+        return "fn " + this.name + "(" + this.prototype.header.parameters.map(p => p.name+" : "+p.type.getShortName()).join(", ") + ")";
+    }
 }
 
 export class DeclaredOverloadedFunction extends Symbol {
@@ -323,5 +327,9 @@ export class DeclaredOverloadedFunction extends Symbol {
             newM.addFunction(value.clone(typeMap, ctx), ctx);
         }
         return newM;
+    }
+
+    getDescription(): string {
+        return Array.from(this.overloadedFunctions.values()).map(f => f.getDescription()).join("\n");
     }
 }

@@ -695,4 +695,8 @@ export class Context {
         }
         return this.endLocation;
     }
+
+    getSymbolsList(): Symbol[] {
+        return Array.from(this.symbols.values());
+    }
 }

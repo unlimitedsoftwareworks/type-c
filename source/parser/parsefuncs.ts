@@ -1774,7 +1774,16 @@ function parseExpression(
 ): Expression {
     let expr = parseExpressionLet(parser, ctx, opts);
     if (expr == null && !opts.allowNullable) {
-        ctx.parser.customError("Invalid expression!", parser.loc());
+        // Log error instead of throwing
+        parser.basePackage.logs.push({
+            type: "error",
+            message: "Invalid expression!",
+            line: parser.loc().line,
+            column: parser.loc().col,
+            file: parser.loc().file,
+            length: 1,
+        });
+        // Return a placeholder node
         return new UnreachableExpression(parser.loc());
     }
     return expr;

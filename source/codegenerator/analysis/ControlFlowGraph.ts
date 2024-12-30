@@ -13,7 +13,6 @@
 import { digraph, attribute as _, toDot, Node, Edge, Subgraph, EdgeAttributesObject, RootGraphModel } from 'ts-graphviz';
 import { FunctionGenerator, FunctionGenType } from '../FunctionGenerator';
 import { IRInstruction, IRInstructionType } from '../bytecode/IR';
-import { FunctionCodegenProps } from '../FunctionCodegenProps';
 import { ClassMethod } from '../../ast/other/ClassMethod';
 
 function escapeHtml(str: string): string {

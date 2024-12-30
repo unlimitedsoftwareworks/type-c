@@ -51,4 +51,8 @@ export class DeclaredType extends Symbol {
     clone(): DeclaredType {
         return new DeclaredType(this.location, this.parentContext, this.name, this.type, this.genericParameters, this.parentPackage);
     }
+
+    getDescription(): string {
+        return this.name + " : " + this.type.getShortName();
+    }
 }

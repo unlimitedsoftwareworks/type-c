@@ -5,6 +5,7 @@ import { initProject } from "./cli/init";
 import {
     downloadAndInstallStdLib,
     getStdLibPath,
+    initStdLib,
     updateStdLib,
 } from "./cli/stdlib";
 
@@ -102,6 +103,7 @@ if (args.includes("--help") || args.includes("-h")) {
     //exit(code)
     throw new Error("Not implemented yet");
 } else if (args.includes("--compile") || args.includes("-c")) {
+    initStdLib();
     const options = parseCompileOptions(args);
     TypeC.compile(options);
 } else {

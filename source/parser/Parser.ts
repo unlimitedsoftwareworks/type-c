@@ -53,7 +53,6 @@ export class Parser {
     pendingAnnotations: Annotation[] = [];
 
     mode: ParserMode = "compiler";
-    logs: CompilerLogs[] = [];
 
     lastReadToken: Token | null = null;
     lastSeenToken: Token | null = null;
@@ -151,7 +150,7 @@ export class Parser {
             );
         } else {
             if (!t.includes(token.type)) {
-                this.logs.push({
+                this.basePackage.logs.push({
                     type: "error",
                     message: `Expected '${type}' but got '${token.type}'`,
                     line: token.location.line,
@@ -182,7 +181,7 @@ export class Parser {
             );
         } else {
             if (!regex.test(token.value)) {
-                this.logs.push({
+                this.basePackage.logs.push({
                     type: "error",
                     message: `Expected package name but got '${token.type}'`,
                     line: token.location.line,
@@ -242,7 +241,7 @@ export class Parser {
             coordinates = coords;
         }
 
-        this.logs.push({
+        this.basePackage.logs.push({
             type: "error",
             message: message,
             line: coordinates?.line,
@@ -318,7 +317,7 @@ export class Parser {
             coordinates = coords;
         }
 
-        this.logs.push({
+        this.basePackage.logs.push({
             type: "warning",
             file: this.lexer.filepath || "<stdin>",
             message: message,
@@ -450,5 +449,13 @@ export class Parser {
             }
             token = this.peek();
         }
+    }
+
+    jumpTo(location: SymbolLocation){
+        this.lexer.jumpTo(location);
+        this.tokenStack = [];
+        this.stackIndex = 0;
+        this.lastSeenToken = null;
+        this.lastReadToken = null;
     }
 }

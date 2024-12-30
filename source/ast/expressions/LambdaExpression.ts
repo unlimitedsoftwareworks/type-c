@@ -60,6 +60,10 @@ export class LambdaDefinition extends Symbol {
         this.context = expression.context;
         this.codeGenProps = expression.codeGenProps;
     }
+
+    getDescription(): string {
+        return "fn " + this.name + "(" + this.header.parameters.map(p => p.name+" : "+p.type.getShortName()).join(", ") + ")";
+    }
 }
 
 

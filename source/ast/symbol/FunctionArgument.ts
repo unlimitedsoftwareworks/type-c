@@ -34,4 +34,8 @@ export class FunctionArgument extends Symbol {
     clone(typeMap: {[key: string]: DataType}): FunctionArgument {
         return new FunctionArgument(this.location, this.name, this.type.clone(typeMap), this.isMutable);
     }
+
+    getDescription(): string {
+        return this.name + ": " + this.type.getShortName();
+    }
 }

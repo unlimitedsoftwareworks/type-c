@@ -10,9 +10,14 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+/**
+ * Safe imports for Node.js specific modules
+ */
+const nodeModules = {
+    fs: typeof window === "undefined" ? require("fs") : null,
+    path: typeof window === "undefined" ? require("path") : null
+};
 
-import fs from "fs";
-import path from "path";
 import {
     checkForStdLibUpdate,
     downloadAndInstallStdLib,
@@ -20,12 +25,16 @@ import {
 } from "./stdlib";
 
 export async function initProject(folder: string) {
-    const folderPath = path.resolve(folder);
+    if (!nodeModules.fs || !nodeModules.path) {
+        throw new Error("Project initialization requires Node.js environment");
+    }
+
+    const folderPath = nodeModules.path.resolve(folder);
 
     // Check if the folder already exists
-    if (fs.existsSync(folderPath)) {
+    if (nodeModules.fs.existsSync(folderPath)) {
         // Check if the folder is empty
-        const isEmpty = fs.readdirSync(folderPath).length === 0;
+        const isEmpty = nodeModules.fs.readdirSync(folderPath).length === 0;
         if (!isEmpty) {
             console.error(
                 `Error: The folder '${folderPath}' is not empty. Aborting project initialization.`,
@@ -34,7 +43,7 @@ export async function initProject(folder: string) {
         }
     } else {
         // Create the folder recursively if it does not exist
-        fs.mkdirSync(folderPath, { recursive: true });
+        nodeModules.fs.mkdirSync(folderPath, { recursive: true });
     }
 
     // Check if the standard library is installed
@@ -47,7 +56,7 @@ export async function initProject(folder: string) {
     }
 
     // Folder is either newly created or empty, proceed with initialization
-    let folderName = path.basename(folderPath);
+    let folderName = nodeModules.path.basename(folderPath);
 
     // Create 'module.json' with the specified contents
     let moduleContent = {
@@ -62,8 +71,8 @@ export async function initProject(folder: string) {
         },
     };
 
-    fs.writeFileSync(
-        path.join(folderPath, "module.json"),
+    nodeModules.fs.writeFileSync(
+        nodeModules.path.join(folderPath, "module.json"),
         JSON.stringify(moduleContent, null, 2), // Pretty print JSON
         "utf-8",
     );
@@ -76,8 +85,8 @@ fn main() -> u32 {
    println("hello, world!")
    return 0
 }`;
-    fs.writeFileSync(
-        path.join(folderPath, "main.tc"),
+    nodeModules.fs.writeFileSync(
+        nodeModules.path.join(folderPath, "main.tc"),
         mainTcContent.trim(),
         "utf-8",
     );

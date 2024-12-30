@@ -167,4 +167,8 @@ export class ImplementationMethod extends Symbol {
         return fn;
     }
 
+    getDescription(): string {
+        return this.imethod.getShortName();
+    }
+
 }

@@ -10,7 +10,6 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import exp from "constants";
 import { findCompatibleTypes } from "../../typechecking/TypeInference";
 import { PatternExpression } from "../matching/PatternExpression";
 import { BlockStatement } from "../statements/BlockStatement";

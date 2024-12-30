@@ -29,4 +29,8 @@ export class VariablePattern extends Symbol {
     clone(typeMap: {[key: string]: DataType}): VariablePattern {
         return new VariablePattern(this.location, this.name, this.type.clone(typeMap));
     }
+
+    getDescription(): string {
+        return this.name + " : " + this.type.getShortName();
+    }
 }
