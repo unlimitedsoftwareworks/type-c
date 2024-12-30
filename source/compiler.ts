@@ -55,6 +55,7 @@ export module TypeC {
         entry: string = "index.tc";
         dir: string = "";
         static stdlibDir: string = getStdLibPath();
+
         rawConfig: any = {};
         options: CompileOptions = {
             dir: "",
@@ -338,6 +339,7 @@ export module TypeC {
     }
 
     export const compile = (options: CompileOptions) => {
+        initStdLib();
         // make sure all env variables are set
         if (!TCCompiler.stdlibDir) {
             throw new Error(
