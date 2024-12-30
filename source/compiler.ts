@@ -132,6 +132,7 @@ export module TypeC {
             );
             
             this.basePackage = parser.basePackage;
+            console.log("Parsing...");
             parser.parse();
 
             let entryKey = normalizePath(entry);
@@ -150,7 +151,9 @@ export module TypeC {
                 TCCompiler.registerImport(base, imp, parser, this.basePackage, base.ctx.location.file);
             }
 
+            console.log("Infer...");
             this.basePackage.infer();
+            console.log("Infer done");
         }
 
         resolveImport(imp: ImportNode) {
