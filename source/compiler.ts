@@ -347,27 +347,6 @@ export module TypeC {
             );
         }
 
-        if (options.runOutput) {
-            if (!nodeModules.spawnSync) {
-                throw new Error("Running output is only available in Node.js environment");
-            }
-            let interpreterPath = process.env.TYPE_V_PATH!;
-
-            const command = `cd ${interpreterPath} && ./typev /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv ${options.typevArgs.join(" ")}`;
-
-            const result = nodeModules.spawnSync(command, { shell: true });
-
-            if (result.stdout) {
-                console.log(colors.BgBlue, "stdout: ", colors.Reset);
-                console.log(result.stdout.toString());
-            }
-            if (result.stderr) {
-                console.log(colors.BgRed, "stderr: ", colors.Reset);
-                console.log(result.stderr.toString());
-            }
-            process.exit(result.status || 0);
-        }
-
         let compiler = TCCompiler.create(options);
         compiler.compile();
 
