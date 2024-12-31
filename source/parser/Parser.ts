@@ -459,6 +459,9 @@ export class Parser {
             }
             token = this.peek();
         }
+
+        // mark the end location of the context
+        ctx.endLocation = this.loc();
     }
 
     jumpTo(location: SymbolLocation){
