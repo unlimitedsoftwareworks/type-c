@@ -75,11 +75,11 @@ export class InterfaceMethod extends FunctionPrototype {
     }
 
     getShortName() {
-        return this.name+"("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+        return this.name+"("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
     }
 
     getHeadlessDescription() {
-        return "("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+        return "("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
     }
 
     serialize(unpack: boolean = false): string {
