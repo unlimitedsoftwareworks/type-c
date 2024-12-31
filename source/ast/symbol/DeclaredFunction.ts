@@ -279,7 +279,11 @@ export class DeclaredFunction extends Symbol {
     }
 
     getDescription(): string {
-        return "fn " + this.name + "(" + this.prototype.header.parameters.map(p => p.name+" : "+p.type.getShortName()).join(", ") + ")";
+        return "fn " + this.name + "(" + this.prototype.header.parameters.map(p => ((p.isMutable?"mut ":"")+p.name+" : "+p.type.getShortName())).join(", ") + ")";
+    }
+
+    getHeadlessDescription(): string {
+        return "fn (" + this.prototype.header.parameters.map(p => ((p.isMutable?"mut ":"")+p.name+" : "+p.type.getShortName())).join(", ") + ")";
     }
 }
 

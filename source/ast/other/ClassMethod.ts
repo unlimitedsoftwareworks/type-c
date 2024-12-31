@@ -210,4 +210,9 @@ export class ClassMethod extends Symbol {
     getDescription(): string {
         return this.imethod.getShortName();
     }
+
+    // returns the description without the method name
+    getHeadlessDescription(): string {
+        return this.imethod.getHeadlessDescription();
+    }
 }
