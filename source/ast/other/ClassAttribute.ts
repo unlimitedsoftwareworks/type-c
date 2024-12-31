@@ -24,6 +24,10 @@ export class ClassAttribute extends Symbol {
 
     static uidCounter: number = 0;
 
+    static reset() {
+        ClassAttribute.uidCounter = 0;
+    }
+
 
     constructor(location: SymbolLocation, name: string, type: DataType, isStatic: boolean, isConst: boolean=false){
         super(location, "class_attribute", name);

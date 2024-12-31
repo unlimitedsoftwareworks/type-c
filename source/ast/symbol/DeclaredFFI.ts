@@ -23,6 +23,10 @@ export class DeclaredFFI extends Symbol {
 
     static ffiIdCounter: number = 0;
 
+    static reset() {
+        DeclaredFFI.ffiIdCounter = 0;
+    }
+
     constructor(location: SymbolLocation, name: string, sharedObjectName: string, methods: FFIMethodType[]) {
         super(location, "ffi", name);
         this.name = name;

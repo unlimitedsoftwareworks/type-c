@@ -77,6 +77,11 @@ export class DataType {
     // when resolving types .resolve()
     private static _recursiveTypeResolution: string[] = [];
 
+    static reset() {
+        DataType._recursiveGenericRecursion = [];
+        DataType._recursiveTypeResolution = [];
+    }
+
     // the original type, i.e its definition reference
     private _originalType: DataType | null = null   ;
 

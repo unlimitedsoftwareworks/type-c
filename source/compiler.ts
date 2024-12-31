@@ -8,6 +8,19 @@ import { colors } from "./utils/termcolors";
 import { getStdLibPath, initStdLib } from "./cli/stdlib";
 import { DeclaredNamespace } from "./ast/symbol/DeclaredNamespace";
 import { Symbol } from "./ast/symbol/Symbol";
+import { ClassType, DataType, InterfaceType, StructField } from "./ast/types";
+import { Expression } from "./ast/expressions/Expression";
+import { IfElseExpression } from "./ast/expressions/IfElseExpression";
+import { LambdaExpression } from "./ast/expressions/LambdaExpression";
+import { ClassAttribute } from "./ast/other/ClassAttribute";
+import { InterfaceMethod } from "./ast/other/InterfaceMethod";
+import { ForeachStatement } from "./ast/statements/ForeachStatement";
+import { IfStatement } from "./ast/statements/IfStatement";
+import { Context } from "./ast/symbol/Context";
+import { DeclaredFFI } from "./ast/symbol/DeclaredFFI";
+import { FunctionGenerator } from "./codegenerator/FunctionGenerator";
+import { FunctionInferenceCache } from "./typechecking/FunctionInference";
+import { TypeMatchCache } from "./typechecking/TypeChecking";
 
 /**
  * Safely imports Node.js specific modules
@@ -74,6 +87,25 @@ export module TypeC {
         // map from package to the baseRoot of the package
         packageBaseContextMap: Map<string, BasePackage> = new Map();
 
+        static resetCompilerState() {
+            BuiltinModules.reset();
+            Expression.reset();
+            IfElseExpression.reset();
+            LambdaExpression.reset();
+            ClassAttribute.reset();
+            InterfaceMethod.reset();
+            ForeachStatement.reset();
+            IfStatement.reset();
+            Context.reset();
+            DeclaredFFI.reset();
+            ClassType.reset();
+            DataType.reset();
+            StructField.reset();
+            FunctionGenerator.reset();
+            FunctionInferenceCache.reset();
+            TypeMatchCache.reset();
+        }
+
         static create(options: CompileOptions) {
             let config: any = {};
             try {
@@ -132,7 +164,6 @@ export module TypeC {
             );
             
             this.basePackage = parser.basePackage;
-            console.log("Parsing...");
             parser.parse();
 
             let entryKey = normalizePath(entry);
@@ -151,9 +182,7 @@ export module TypeC {
                 TCCompiler.registerImport(base, imp, parser, this.basePackage, base.ctx.location.file);
             }
 
-            console.log("Infer...");
             this.basePackage.infer();
-            console.log("Infer done");
         }
 
         resolveImport(imp: ImportNode) {
@@ -370,9 +399,9 @@ export module TypeC {
                     console.log(colors.BgRed, "stderr: ", colors.Reset);
                     console.log(result.stderr.toString());
                 }
-                process.exit(result.status || 0);
+                //process.exit(result.status || 0);
             }
         }
-        process.exit(0);
+        //process.exit(0);
     };
 }

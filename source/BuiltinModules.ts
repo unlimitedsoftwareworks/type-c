@@ -83,4 +83,10 @@ export class BuiltinModules {
         BuiltinModules.ArrayIterator = new ReferenceType(sym.location, ["ArrayIterator"], [], base.ctx);
         return BuiltinModules.ArrayIterator;
     }
+
+    static reset() {
+        BuiltinModules.String = null;
+        BuiltinModules.transformArgs = null;
+        BuiltinModules.ArrayIterator = null;
+    }
 }

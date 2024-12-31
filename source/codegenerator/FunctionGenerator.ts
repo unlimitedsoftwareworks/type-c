@@ -228,6 +228,9 @@ export class FunctionGenerator {
 
     // tmp variables counter
     static tmpCounter = 0;
+    static reset() {
+        FunctionGenerator.tmpCounter = 0;
+    }
 
     // labels counter
     lblCounter = 0;

@@ -30,6 +30,11 @@ import { YieldExpression } from "./YieldExpression";
  */
 export class LambdaDefinition extends Symbol {
     static counter: number = 0;
+
+    static reset() {
+        LambdaDefinition.counter = 0;
+    }
+
     lambdaExpression: LambdaExpression;
 
 

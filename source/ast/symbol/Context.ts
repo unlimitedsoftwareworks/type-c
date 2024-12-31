@@ -116,6 +116,10 @@ export class Context {
      * A unique identifier for this context
      */
     static contextCount = 0;
+    static reset() {
+        Context.contextCount = 0;
+    }
+    
     uuid = "ctx_" + Context.contextCount++; // Math.random().toString(36).substring(7);
 
     //static _contextMap = new Map<string, Context>();

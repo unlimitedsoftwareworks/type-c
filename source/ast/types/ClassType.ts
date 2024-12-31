@@ -61,7 +61,10 @@ export class ClassType extends DataType {
      * If two classes do not have the same ID, they are different.
      */
     static classCounter = 0;
-    
+
+    static reset() {
+        ClassType.classCounter = 0;
+    }
 
     // used after parsing and analysis and prior to code gen
     // contains all methods, with all concrete types etc

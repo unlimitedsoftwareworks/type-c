@@ -39,6 +39,11 @@ export class InterfaceMethod extends FunctionPrototype {
     static methodUIDGenerator: Map<string, number> = new Map();
     static methodUIDCounter: number = 0;
 
+    static reset() {
+        InterfaceMethod.methodUIDGenerator = new Map();
+        InterfaceMethod.methodUIDCounter = 0;
+    }
+
     /**
      * Generates a unique identifier for a method prototype, used by the code generator
      * @param proto 

@@ -26,6 +26,11 @@ export class IfStatement extends Statement {
 
     // code generation
     static _endOfBlockLabelCounter: number = 0;
+
+    static reset() {
+        IfStatement._endOfBlockLabelCounter = 0;
+    }
+
     _endOfBlockLabel: string = `eoif-${IfStatement._endOfBlockLabelCounter++}`;
 
 

@@ -50,6 +50,11 @@ export class ForeachStatement extends Statement {
     static iteratorId = 0;
     static tmpIteratorId = 0;
 
+    static reset() {
+        ForeachStatement.iteratorId = 0;
+        ForeachStatement.tmpIteratorId = 0;
+    }
+
     constructor(location: SymbolLocation, context: Context, useConst: boolean, valueIteratorName: string, indexIteratorName: string | null, iterableExpression: Expression, body: BlockStatement) {
         super(location, "foreach");
         this.valueIteratorName = valueIteratorName;

@@ -28,6 +28,13 @@ export class StructField {
         "$tag": 0
     };
 
+    static reset() {
+        StructField.globalFieldID = 1;
+        StructField.fieldIdMap = {
+            "$tag": 0
+        };
+    }
+
     static getFieldID(name: string): number {
         if (StructField.fieldIdMap[name] == undefined) {
             throw new Error(`Field ${name} does not exist`);

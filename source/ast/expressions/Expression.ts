@@ -109,6 +109,10 @@ export class Expression {
     static _expressionCounter: number = 0;
     id: number = Expression._expressionCounter++;
 
+    static reset() {
+        Expression._expressionCounter = 0;
+    }
+
     constructor(location: SymbolLocation, kind: ExpressionKind){
         this.location = location;
         this.kind = kind;

@@ -61,10 +61,15 @@ function generateTypeKey(t1: DataType, t2: DataType, strict: boolean): string {
     return `${t1.hash()}-${t2.hash()}-${strict}`;
 }
 
+export class TypeMatchCache {
+    static typeMatchCache = new WeakMap<Context, Map<string, TypeMatchResult>>();
+    static globalMatchingStack: string[] = [];
 
-const typeMatchCache = new WeakMap<Context, Map<string, TypeMatchResult>>();
-
-let globalMatchingStack: string[] = [];
+    static reset() {
+        TypeMatchCache.typeMatchCache = new WeakMap<Context, Map<string, TypeMatchResult>>();
+        TypeMatchCache.globalMatchingStack = [];
+    }
+}
 
 /**
  * Checks if `et` is (or compatible with `t2`).
@@ -77,13 +82,13 @@ let globalMatchingStack: string[] = [];
  * @returns true if et is compatible with dt, i.e et is or a subtype of dt
  */
 export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict: boolean = true): TypeMatchResult {
-    if (globalMatchingStack.includes(generateTypeKey(et, dt, strict))) {
+    if (TypeMatchCache.globalMatchingStack.includes(generateTypeKey(et, dt, strict))) {
         return Ok();
     }
-    globalMatchingStack.push(generateTypeKey(et, dt, strict));
+    TypeMatchCache.globalMatchingStack.push(generateTypeKey(et, dt, strict));
 
     let res = matchDataTypesRecursive(ctx, et, dt, et.isStrict() || strict, []);
-    globalMatchingStack.pop();
+    TypeMatchCache.globalMatchingStack.pop();
     return res;
 }
 
@@ -107,10 +112,10 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         return Ok();
     }
 
-    let scopeCache = typeMatchCache.get(ctx);
+    let scopeCache = TypeMatchCache.typeMatchCache.get(ctx);
     if (!scopeCache) {
         scopeCache = new Map<string, TypeMatchResult>();
-        typeMatchCache.set(ctx, scopeCache);
+        TypeMatchCache.typeMatchCache.set(ctx, scopeCache);
     }
 
     if (scopeCache.has(typeKey)) {
