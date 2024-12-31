@@ -283,7 +283,7 @@ export class DeclaredFunction extends Symbol {
     }
 
     getHeadlessDescription(): string {
-        return "fn (" + this.prototype.header.parameters.map(p => ((p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName())).join(", ") + ")";
+        return "(" + this.prototype.header.parameters.map(p => ((p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName())).join(", ") + ")";
     }
 }
 
