@@ -371,6 +371,8 @@ export module TypeC {
     }
 
     export const compile = (options: CompileOptions) => {
+        // reset compiler state
+        TCCompiler.resetCompilerState();
         initStdLib();
         // make sure all env variables are set
         if (!TCCompiler.stdlibDir) {
