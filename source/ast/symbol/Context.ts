@@ -118,6 +118,7 @@ export class Context {
     static contextCount = 0;
     static reset() {
         Context.contextCount = 0;
+        Context.InferenceMode = "regular";
     }
     
     uuid = "ctx_" + Context.contextCount++; // Math.random().toString(36).substring(7);
