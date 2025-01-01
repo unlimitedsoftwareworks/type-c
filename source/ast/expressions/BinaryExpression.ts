@@ -203,10 +203,6 @@ export class BinaryExpression extends Expression {
              */
             let ignoreConst = this.left.isConstant === 0;
 
-            if(!this.location.file.includes("/string.tc")){
-                console.log(this.location.toString(), "ignoring constant", "left.isConstant", this.left.isConstant, "meta.ignoreConst", meta?.ignoreConst, "canAssignLHSRHS", canAssign.success);
-            }
-
             //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
             if(!canAssign.success && !ignoreConst && Context.InferenceMode != "codegen") {
                 ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
