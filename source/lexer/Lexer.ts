@@ -13,6 +13,7 @@
 import { TokenType } from "./TokenType";
 import { Token } from "./Token";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
+import { ParseMethods } from "../parser/parsefuncs";
 
 export class Lexer {
     filepath: string;
@@ -25,6 +26,12 @@ export class Lexer {
     colC: number;
 
     private limit: { line: number; col: number } | null = null;
+    private stateCapturePosition : {
+        file: string;
+        line: number;
+        col: number;
+        callback: (stack: string[]) => void;
+    } | null = null;
 
     static tokenRegexArray: [TokenType, RegExp][] = [
         // Keywords
@@ -244,6 +251,17 @@ export class Lexer {
     }
 
     /**
+     * Sets a marker at which to capture the state of the parser
+     */
+    setStateCapturePosition(file: string, line: number, col: number, callback: (stack: string[]) => void) {
+        if(file != this.filepath){
+            return;
+        }
+
+        this.stateCapturePosition = { file, line, col, callback };
+    }
+
+    /**
      * Removes the virtual EOF limit
      */
     clearLimit() {
@@ -259,7 +277,19 @@ export class Lexer {
                 (this.lineC === this.limit.line && this.colC >= this.limit.col));
     }
 
+    private isAtStateCapturePosition(): boolean {
+        return this.stateCapturePosition !== null && 
+               (this.lineC > this.stateCapturePosition.line || 
+                (this.lineC === this.stateCapturePosition.line && this.colC > this.stateCapturePosition.col));
+    }
+
     nextToken(): Token {
+        if(this.isAtStateCapturePosition()){
+            this.stateCapturePosition!.callback(ParseMethods.state);
+            // clear the state capture position to continue as normal
+            this.stateCapturePosition = null;
+        }
+
         // Add limit check at start of nextToken
         if (this.isAtLimit()) {
             return new Token(

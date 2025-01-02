@@ -15,7 +15,7 @@ import { BasePackage } from "../ast/BasePackage";
 import { Lexer } from "../lexer/Lexer";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { colors } from "../utils/termcolors";
-import * as parsefuncs from "./parsefuncs";
+import { ParseMethods } from "./parsefuncs";
 import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarationStatement";
 import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarationStatement";
 import { Context } from "../ast/symbol/Context";
@@ -44,6 +44,8 @@ export class Parser {
     // e.g std.io
     package: string;
 
+    stateStack: string[] = [];
+
     tokenStack: Token[] = [];
     stackIndex: number = 0;
 
@@ -66,6 +68,13 @@ export class Parser {
         this.warn = warn;
     }
 
+    pushState(state: string) {
+        this.stateStack.push(state);
+    }
+
+    popState() {
+        this.stateStack.pop();
+    }
 
     /**
      * Compares the last token with the current one to see if they are on the same line
@@ -411,7 +420,7 @@ export class Parser {
                         this.customError("Imports are only allowed on global context", token.location)
                     }
                     this.reject();
-                    parsefuncs.parseImport(this);
+                    ParseMethods.parseImport(this);
                     break;
                 case "from":
                     // from only allowed in the global scope
@@ -419,33 +428,33 @@ export class Parser {
                         this.customError("Imports are only allowed on global context", token.location)
                     }
                     this.reject();
-                    parsefuncs.parseFrom(this);
+                    ParseMethods.parseFrom(this);
                     break;
 
                 case "namespace":
                     this.reject();
-                    let ns = parsefuncs.parseNamespace(this, ctx);
+                    let ns = ParseMethods.parseNamespace(this, ctx);
                     ns.setLocal(local)
                     ctx.addSymbol(ns);
                     local = false;
                     break;
                 case "type":
                     this.reject();
-                    let dt = parsefuncs.parseTypeDecl(this, this.basePackage.ctx);
+                    let dt = ParseMethods.parseTypeDecl(this, this.basePackage.ctx);
                     dt.setLocal(local)
                     ctx.addSymbol(dt)
                     local = false;
                     break;
                 case "extern":
                     this.reject();
-                    let ffi = parsefuncs.parseFFI(this, this.basePackage.ctx);
+                    let ffi = ParseMethods.parseFFI(this, this.basePackage.ctx);
                     ffi.setLocal(local)
                     ctx.addSymbol(ffi)
                     local = false;
                     break;
                 default:
                     this.reject();
-                    let e = parsefuncs.parseStatement(this, this.basePackage.ctx);
+                    let e = ParseMethods.parseStatement(this, this.basePackage.ctx);
                     if (!(e instanceof FunctionDeclarationStatement) && !(e instanceof VariableDeclarationStatement)) {
                         this.customError("Invalid global statement, only function/variable declarations are allowed globally", e.location)
                     }

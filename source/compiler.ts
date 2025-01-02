@@ -21,6 +21,7 @@ import { DeclaredFFI } from "./ast/symbol/DeclaredFFI";
 import { FunctionGenerator } from "./codegenerator/FunctionGenerator";
 import { FunctionInferenceCache } from "./typechecking/FunctionInference";
 import { TypeMatchCache } from "./typechecking/TypeChecking";
+import { ParseMethods } from "./parser/parsefuncs";
 
 /**
  * Safely imports Node.js specific modules
@@ -68,6 +69,13 @@ export module TypeC {
         entry: string = "index.tc";
         dir: string = "";
         static stdlibDir: string = getStdLibPath();
+        
+        stateCapturePosition: {
+            file: string;
+            line: number;
+            col: number;
+            capturedState: string[];
+        } | null = null;
 
         rawConfig: any = {};
         options: CompileOptions = {
@@ -104,6 +112,7 @@ export module TypeC {
             FunctionGenerator.reset();
             FunctionInferenceCache.reset();
             TypeMatchCache.reset();
+            ParseMethods.reset();
         }
 
         static create(options: CompileOptions) {
@@ -140,6 +149,11 @@ export module TypeC {
             return data;
         }
 
+        setStateCapturePosition(file: string, line: number, col: number, ) {
+            console.log("Setting state capture position", file, line, col);
+            this.stateCapturePosition = { file, line, col, capturedState: [] };
+        }
+
         /*
          * if mode is intellisense and content is set, it used over the file,
          * this is used by vscode extention to process unsaved file content
@@ -155,6 +169,20 @@ export module TypeC {
                 entry,
                 mode == "intellisense" && content ? content : entrySource,
             );
+
+            this.setStateCapturePosition(entry, 12, 21)
+
+            if(this.stateCapturePosition){
+                lexer.setStateCapturePosition(
+                    this.stateCapturePosition.file, 
+                    this.stateCapturePosition.line, 
+                    this.stateCapturePosition.col,
+                    (stack) => {
+                        this.stateCapturePosition!.capturedState = stack;
+                    }
+                );
+            }
+            
             lexer.filepath = entry;
             let parser = new Parser(
                 lexer,
@@ -206,6 +234,18 @@ export module TypeC {
             let data = this.readPackage(filepath);
             let lexer = new Lexer(filepath, data);
             lexer.filepath = filepath;
+
+            if(this.stateCapturePosition){
+                lexer.setStateCapturePosition(
+                    this.stateCapturePosition.file, 
+                    this.stateCapturePosition.line, 
+                    this.stateCapturePosition.col,
+                    (stack) => {
+                        this.stateCapturePosition!.capturedState = stack;
+                    }
+                );
+            }
+            
             let parser = new Parser(lexer, filepath);
             let basePackage = parser.basePackage;
             key = normalizePath(filepath);
