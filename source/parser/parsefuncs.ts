@@ -190,8 +190,6 @@ export function trackState(): MethodDecorator {
             ParseMethods.pushState(String(propertyKey)); // Use the function's name as the state
             try {
                 return originalFunction.apply(this, args);
-            } finally {
-                ParseMethods.popState();
             }
         };
     };
