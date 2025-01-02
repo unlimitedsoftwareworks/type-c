@@ -170,8 +170,6 @@ export module TypeC {
                 mode == "intellisense" && content ? content : entrySource,
             );
 
-            this.setStateCapturePosition(entry, 12, 21)
-
             if(this.stateCapturePosition){
                 lexer.setStateCapturePosition(
                     this.stateCapturePosition.file, 
