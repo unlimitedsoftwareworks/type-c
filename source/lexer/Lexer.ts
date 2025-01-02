@@ -26,7 +26,7 @@ export class Lexer {
     colC: number;
 
     private limit: { line: number; col: number } | null = null;
-    private stateCapturePosition : {
+    stateCapturePosition : {
         file: string;
         line: number;
         col: number;
@@ -239,14 +239,6 @@ export class Lexer {
         if (reskip) {
             this.skipWhitespaces();
         }
-
-
-        if(this.isAtStateCapturePosition()){
-            this.stateCapturePosition!.callback(ParseMethods.state);
-            // clear the state capture position to continue as normal
-            this.stateCapturePosition = null;
-        }
-
     }
 
     /**
@@ -285,10 +277,14 @@ export class Lexer {
                 (this.lineC === this.limit.line && this.colC >= this.limit.col));
     }
 
-    private isAtStateCapturePosition(): boolean {
+    isAtStateCapturePosition(line: number, col: number): boolean {
         return (this.stateCapturePosition !== null) && 
                (this.lineC > this.stateCapturePosition.line || 
                 (this.lineC === this.stateCapturePosition.line && this.colC > this.stateCapturePosition.col));
+    }
+
+    hasCaptureStateEvent(): boolean {
+        return this.stateCapturePosition !== null;
     }
 
     nextToken(): Token {

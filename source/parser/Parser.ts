@@ -98,6 +98,16 @@ export class Parser {
     }
 
     accept() {
+        if(this.lexer.hasCaptureStateEvent()){
+            for(let i = 0; i < this.tokenStack.length; i++){
+                if(this.lexer.isAtStateCapturePosition(this.tokenStack[i].location.line, this.tokenStack[i].location.col)){
+                    this.lexer.stateCapturePosition!.callback(ParseMethods.state);
+                    // clear the state capture position to continue as normal
+                    this.lexer.stateCapturePosition = null;
+                }
+            }
+        }
+        
         this.lastReadToken = this.tokenStack[this.stackIndex - 1];
         this.lastSeenToken = null;
         this.tokenStack.splice(0, this.stackIndex);
