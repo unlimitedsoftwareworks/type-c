@@ -176,7 +176,8 @@ export module TypeC {
                     this.stateCapturePosition.line, 
                     this.stateCapturePosition.col,
                     (stack) => {
-                        this.stateCapturePosition!.capturedState = stack;
+                        console.log("Captured state", stack);
+                        this.stateCapturePosition!.capturedState = [...stack];
                     }
                 );
             }

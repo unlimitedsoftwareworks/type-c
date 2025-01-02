@@ -239,6 +239,14 @@ export class Lexer {
         if (reskip) {
             this.skipWhitespaces();
         }
+
+
+        if(this.isAtStateCapturePosition()){
+            this.stateCapturePosition!.callback(ParseMethods.state);
+            // clear the state capture position to continue as normal
+            this.stateCapturePosition = null;
+        }
+
     }
 
     /**
@@ -278,18 +286,12 @@ export class Lexer {
     }
 
     private isAtStateCapturePosition(): boolean {
-        return this.stateCapturePosition !== null && 
+        return (this.stateCapturePosition !== null) && 
                (this.lineC > this.stateCapturePosition.line || 
                 (this.lineC === this.stateCapturePosition.line && this.colC > this.stateCapturePosition.col));
     }
 
     nextToken(): Token {
-        if(this.isAtStateCapturePosition()){
-            this.stateCapturePosition!.callback(ParseMethods.state);
-            // clear the state capture position to continue as normal
-            this.stateCapturePosition = null;
-        }
-
         // Add limit check at start of nextToken
         if (this.isAtLimit()) {
             return new Token(
