@@ -164,10 +164,10 @@ export module TypeC {
             );
             
             this.basePackage = parser.basePackage;
-            parser.parse();
-
             let entryKey = normalizePath(entry);
             this.packageBaseContextMap.set(entryKey, this.basePackage);
+            
+            parser.parse();
 
 
             /**
@@ -208,10 +208,10 @@ export module TypeC {
             lexer.filepath = filepath;
             let parser = new Parser(lexer, filepath);
             let basePackage = parser.basePackage;
-            parser.parse();
-
             key = normalizePath(filepath);
             this.packageBaseContextMap.set(key, basePackage);
+
+            parser.parse();
 
             /*
              * The base String class is injected into the base package
