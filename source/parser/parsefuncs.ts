@@ -188,9 +188,7 @@ export function trackState(): MethodDecorator {
 
         descriptor.value = function (...args: any[]): any {
             ParseMethods.pushState(String(propertyKey)); // Use the function's name as the state
-            try {
-                return originalFunction.apply(this, args);
-            }
+            return originalFunction.apply(this, args);
         };
     };
 }
