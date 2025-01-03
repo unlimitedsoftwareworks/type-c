@@ -207,6 +207,10 @@ export class ClassMethod extends Symbol {
         return this.imethod.name === "init";
     }
 
+    getDetails(): string {
+        return this.imethod.getDetails();
+    }
+
     getDescription(): string {
         return this.imethod.getShortName();
     }

@@ -82,6 +82,10 @@ export class InterfaceMethod extends FunctionPrototype {
         return "("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
     }
 
+    getDetails(): string {
+        return this.name+"("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+    }
+
     serialize(unpack: boolean = false): string {
         return `@method{${this.name}:${this.header.serialize(unpack)},static:${this.isStatic},generics:[${this.generics.map(g => g.serialize(unpack)).join(",")}]`
     }
