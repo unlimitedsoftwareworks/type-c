@@ -2660,6 +2660,15 @@ export class ParseMethods {
             ParseMethods.setState({"op": [lexeme.type]});
             ParseMethods.setState({"left": lhs});
             parser.accept();
+            // this often throws an error, so we manually assert that the rhs is an identifier
+            let tok = parser.peek();
+            if(tok.type != "identifier") {
+                parser.customError("Expected identifier after member access.", tok.location);
+            }
+            parser.reject();
+
+            // we need to reject because we could also have type arguments etc. hence, we
+            // go through the rest of the process, though we could optimize this and just crea
             let rhs = ParseMethods.parseExpressionPrimary(parser, ctx, opts);
             if (!(rhs instanceof ElementExpression)) {
                 parser.customError("Expected identifier", rhs.location);
