@@ -178,7 +178,14 @@ export type MethodOperatorName = "+"
                         | "~"
                         | "++"
                         | "--";
-export function trackState(): MethodDecorator {
+
+
+const methodOperators = ["+", "-", "*", "/", "%", "<", ">", "<=", ">=", ">>", "<<", "&", "|", "^", "&&", "||", "!", "~", "&", "|", "^", "&&", "||", "-", "!"];
+/**
+ * A decorator that tracks the state of the parser
+ * Pushes the current function on call and pops it on return
+ */
+function trackState(): MethodDecorator {
     return function (
         _: any,
         propertyKey: string | symbol,
@@ -195,15 +202,24 @@ export function trackState(): MethodDecorator {
     };
 }
 
+export type ParseState = {
+    name: string;
+    metadata: {[key: string]: any};
+}
+
 export class ParseMethods {
-    static state: string[] = [];
+    static state: ParseState[] = [];
 
     static pushState(state: string) {
-        this.state.push(state);
+        this.state.push({name: state, metadata: {}});
     }
 
     static popState() {
         this.state.pop();
+    }
+
+    static setState(props: {[key: string]: any}) {
+        this.state[this.state.length - 1].metadata = {...this.state[this.state.length - 1].metadata, ...props};
     }
 
     static reset() {
@@ -213,7 +229,7 @@ export class ParseMethods {
     @trackState()
     static parseMethodOperatorName(parser: Parser): MethodOperatorName {
         let tok = parser.peek();
-        if (["+", "-", "*", "/", "%", "<", ">", "<=", ">=", ">>", "<<", "&", "|", "^", "&&", "||", "!", "~", "&", "|", "^", "&&", "||", "-", "!"].includes(tok.value)) {
+        if (methodOperators.includes(tok.value)) {
             parser.accept();
             return tok.value as MethodOperatorName;
         }
@@ -277,10 +293,12 @@ export class ParseMethods {
 
         while (loop) {
             let loc = parser.loc();
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             let token = parser.expect("identifier");
             let next = parser.peek();
             if (next.type === ":") {
                 parser.accept();
+                ParseMethods.setState({"expectedTokens": ["$type"]});
                 let type = ParseMethods.parseTypeUnion(parser, ctx);
                 generics.push(
                     new GenericType(
@@ -353,8 +371,11 @@ export class ParseMethods {
         let fields: StructField[] = [];
         while (canLoop) {
             let loc = parser.loc();
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             let id = parser.expect("identifier");
+            ParseMethods.setState({"expectedTokens": [":"]});
             parser.expect(":");
+            ParseMethods.setState({"expectedTokens": ["$type"]});
             let type = ParseMethods.parseType(parser, ctx);
             // make sure no fields are duplicated
             if (!allowDuplicatedNames) {
@@ -404,8 +425,11 @@ export class ParseMethods {
         let fields: VariantParameter[] = [];
         while (canLoop) {
             let loc = parser.loc();
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             let id = parser.expect("identifier");
+            ParseMethods.setState({"expectedTokens": [":"]});
             parser.expect(":");
+            ParseMethods.setState({"expectedTokens": ["$type"]});
             let type = ParseMethods.parseType(parser, ctx);
             // make sure no fields are duplicated
             if (!allowDuplicatedNames) {
@@ -420,6 +444,7 @@ export class ParseMethods {
             fields.push(new VariantParameter(loc, id.value, type));
             let token = parser.peek();
             canLoop = token.type === ",";
+
             if (canLoop) {
                 parser.accept();
             } else {
@@ -440,8 +465,10 @@ export class ParseMethods {
 
         while (canLoop) {
             let loc = parser.loc();
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             const constructorTok = parser.expect("identifier");
             const constructorName = constructorTok.value;
+            ParseMethods.setState({"expectedTokens": ["("]});
             parser.expect("(");
             let fields: VariantParameter[] = [];
             let lexeme = parser.peek();
@@ -488,13 +515,16 @@ export class ParseMethods {
         ctx: Context,
     ): FunctionPrototype {
         let loc = parser.loc();
+        ParseMethods.setState({"expectedTokens": ["fn", "cfn"]});
         let tok = parser.expect(["fn", "cfn"]);
+        ParseMethods.setState({"expectedTokens": ["$identifier"]});
         let name = parser.expect("identifier").value;
         let generics: GenericType[] = [];
 
         let lexeme = parser.peek();
         parser.reject();
         if (lexeme.type === "<") {
+            ParseMethods.setState({"expectedTokens": ["$genericArgDecl"]});
             generics = ParseMethods.parseGenericArgDecl(parser, ctx);
         }
 
@@ -509,6 +539,7 @@ export class ParseMethods {
         ctx: Context,
     ): {fnProto: FunctionPrototype, altNames: string[]} {
         let loc = parser.loc();
+        ParseMethods.setState({"expectedTokens": ["fn"]});
         let tok = parser.expect("fn");
         tok = parser.peek();
         let name: string | null = null;
@@ -518,6 +549,7 @@ export class ParseMethods {
 
         let canLoop = true;
         while(canLoop){
+            ParseMethods.setState({"expectedTokens": ["$identifier", "$methodOperatorName"]});
             let tok = parser.peek();
             if(tok.type === "identifier"){
                 parser.accept();
@@ -555,6 +587,7 @@ export class ParseMethods {
         let lexeme = parser.peek();
         parser.reject();
         if (lexeme.type === "<") {
+            ParseMethods.setState({"expectedTokens": ["$genericArgDecl"]});
             generics = ParseMethods.parseGenericArgDecl(parser, ctx);
         }
 
@@ -591,6 +624,7 @@ export class ParseMethods {
         let loc = parser.loc();
         let isStatic = false;
         let token = parser.peek();
+        ParseMethods.setState({"expectedTokens": ["fn", "static"]});
         if (token.type === "static") {
             parser.accept();
             isStatic = true;
@@ -633,8 +667,10 @@ export class ParseMethods {
     @trackState()
     static parseFnTypeBody(parser: Parser, ctx: Context): FunctionType {
         let fnLoc = parser.loc();
+        ParseMethods.setState({"expectedTokens": ["("]});
         parser.expect("(");
         let lexeme = parser.peek();
+        ParseMethods.setState({"expectedTokens": ["$identifier", "mut"]});
         let canLoop = lexeme.type === "identifier" || lexeme.type === "mut";
         parser.reject();
         let parameters: FunctionArgument[] = [];
@@ -650,8 +686,11 @@ export class ParseMethods {
                 parser.reject();
             }
             let loc = parser.loc();
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             let id = parser.expect("identifier");
+            ParseMethods.setState({"expectedTokens": [":"]});
             parser.expect(":");
+            ParseMethods.setState({"expectedTokens": ["$type"]});
             let type = ParseMethods.parseType(parser, ctx);
             // make sure  parameter doesnt exist already
             if (parameters.find((p) => p.name == id.value)) {
@@ -670,10 +709,12 @@ export class ParseMethods {
                 parser.reject();
             }
         }
+        ParseMethods.setState({"expectedTokens": [")"]});
         parser.expect(")");
 
         lexeme = parser.peek();
         if (lexeme.type === "->") {
+            ParseMethods.setState({"expectedTokens": ["$type"]});
             parser.accept();
             returnType = ParseMethods.parseType(parser, ctx);
         } else {
@@ -693,12 +734,14 @@ export class ParseMethods {
     // parses <id>(.<id>)*
     @trackState()
     static parsePackageReference(parser: Parser, ctx: Context): string[] {
+        ParseMethods.setState({"expectedTokens": ["$identifier"]});
         let id = parser.expect("identifier");
         let basePath = [id.value];
 
         let token = parser.peek();
         while (token.type === ".") {
             parser.accept();
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             token = parser.expect("identifier");
             basePath.push(token.value);
             token = parser.peek();
@@ -754,12 +797,14 @@ export class ParseMethods {
         let loc = parser.loc();
         parser.expect("from");
         // now we expect an identifier
+        ParseMethods.setState({"expectedTokens": ["$identifier"]});
         let id = parser.expectPackageName();
 
         const basePath = [id.value];
 
         let token = parser.peek();
         while (token.type === ".") {
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             parser.accept();
             token = parser.expectPackageName();
             basePath.push(token.value);
@@ -788,7 +833,7 @@ export class ParseMethods {
             else{
                 parser.reject();
             }
-
+            ParseMethods.setState({"expectedTokens": ["$identifier"]});
             const id = parser.expectPackageName();
             const postPath = [id.value];
             let canLoop = parser.peek().type === ".";
@@ -805,6 +850,7 @@ export class ParseMethods {
 
             const tok = parser.peek();
             if (tok.type === "as") {
+                ParseMethods.setState({"expectedTokens": ["$identifier"]});
                 parser.accept();
                 alias = parser.expectPackageName().value;
             } else {
@@ -882,6 +928,7 @@ export class ParseMethods {
         let isLocal = false;
 
         while (canLoop) {
+            ParseMethods.setState({"expectedTokens": ["local", "let", "type", "namespace", "fn", "cfn"]});
             if (token.type === "local") {
                 isLocal = true;
                 parser.expect("local");
@@ -915,7 +962,8 @@ export class ParseMethods {
                     isLocal = false;
                     break;
                 }
-                case "fn": {
+                case "fn":
+                case "cfn": {
                     let fn = ParseMethods.parseStatementFn(parser, ns.ctx);
                     // the symbol is added within parseStatementFn
                     ns.addStatement(fn);
@@ -944,7 +992,7 @@ export class ParseMethods {
     @trackState()
     static parseTypeDecl(parser: Parser, ctx: Context) {
         let loc = parser.loc();
-        let typeToken = parser.expect("type");
+        parser.expect("type");
 
         const name = parser.expect("identifier").value;
         let generics: GenericType[] = [];
@@ -1022,6 +1070,7 @@ export class ParseMethods {
         let left = ParseMethods.parseTypeArray(parser, ctx);
         let lexeme = parser.peek();
         if (lexeme.type === "&") {
+            ParseMethods.setState({"step": ["$join"]});
             parser.accept();
             let right = ParseMethods.parseType(parser, ctx);
             let type = new JoinType(loc, left, right);
@@ -1089,6 +1138,7 @@ export class ParseMethods {
     static parseTypePrimary(parser: Parser, ctx: Context): DataType {
         let loc = parser.loc();
         let lexeme = parser.peek();
+        ParseMethods.setState({"step": [lexeme.type]});
         if (lexeme.type === "identifier") {
             parser.reject();
             return ParseMethods.parseTypeReference(parser, ctx);
@@ -1180,6 +1230,7 @@ export class ParseMethods {
         let loc = parser.loc();
         parser.expect("coroutine");
         parser.expect("<");
+        ParseMethods.setState({"step": ["$type"]});
         let fnType = ParseMethods.parseTypeFunction(parser, ctx);
         parser.expect(">");
         return new CoroutineType(loc, fnType as FunctionType);
@@ -1189,6 +1240,7 @@ export class ParseMethods {
     static parseTypeEnum(parser: Parser, ctx: Context): DataType {
         let loc = parser.loc();
         parser.expect("enum");
+        ParseMethods.setState({"step": ["$enumBaseType"]});
         let lexeme = parser.peek();
         let base: EnumTargetType = "unset";
 
@@ -1212,13 +1264,16 @@ export class ParseMethods {
         }
 
         parser.expect("{");
+        ParseMethods.setState({"step": ["$enumValues"]});
         let canLoop = true;
         let values: EnumField[] = [];
         while (canLoop) {
+            ParseMethods.setState({"step": ["$enumFieldName"]});
             let id = parser.expect("identifier");
             lexeme = parser.peek();
 
             if (lexeme.type === "=") {
+                ParseMethods.setState({"step": ["$enumFieldValue"]});
                 parser.accept();
                 let vtok = parser.peek();
                 if (
@@ -1278,9 +1333,11 @@ export class ParseMethods {
     static parseTypeReference(parser: Parser, ctx: Context): DataType {
         //const refName = parser.expect("identifier").value;
         let loc = parser.loc();
+        ParseMethods.setState({"step": ["package"]});
         let ref = ParseMethods.parsePackageReference(parser, ctx);
         let lexeme = parser.peek();
         if (lexeme.type === "<") {
+            ParseMethods.setState({"step": ["$genericArgDecl"]});
             parser.accept();
             const types = ParseMethods.parseTypeList(parser, ctx);
             parser.expect(">");
@@ -1301,6 +1358,7 @@ export class ParseMethods {
             parser.expect("struct");
         }
         parser.expect("{");
+        ParseMethods.setState({"step": ["$structFields"]});
         let fields = ParseMethods.parseStructFields(parser, ctx);
         let type = new StructType(loc, fields);
         parser.expect("}");
@@ -1311,6 +1369,7 @@ export class ParseMethods {
     static parseTypeVariant(parser: Parser, ctx: Context): DataType {
         let loc = parser.loc();
         parser.expect("variant");
+        ParseMethods.setState({"step": ["$variantConstructors"]});
         parser.expect("{");
         let constructors = ParseMethods.parseVariantConstructor(parser, ctx);
         parser.expect("}");
@@ -1322,6 +1381,7 @@ export class ParseMethods {
     static parseTypeInterface(parser: Parser, ctx: Context): DataType {
         let loc = parser.loc();
         parser.expect("interface");
+        ParseMethods.setState({"step": ["$interfaceSuperTypes"]});
         let superTypes: DataType[] = [];
         let lexeme = parser.peek();
         if (lexeme.type != "{") {
@@ -1332,6 +1392,7 @@ export class ParseMethods {
         }
 
         parser.expect("{");
+        ParseMethods.setState({"step": ["$interfaceMethods"]});
         let canLoop = true;
         let methods: InterfaceMethod[] = [];
 
@@ -1388,7 +1449,6 @@ export class ParseMethods {
     // format 'impl' <reference type> '(' attribute_names* ')'
     @trackState()
     static parseClassImplementation(parser: Parser, ctx: Context): ClassImplementation {
-        let loc = parser.loc();
         parser.expect("impl");
         let type = ParseMethods.parseTypeReference(parser, ctx);
         parser.expect("(");
@@ -1427,6 +1487,7 @@ export class ParseMethods {
         let lexeme = parser.peek();
         if (lexeme.type != "{") {
             parser.reject();
+            ParseMethods.setState({"step": ["superTypes"]});
             superTypes = ParseMethods.parseTypeList(parser, ctx);
         } else {
             parser.reject();
@@ -1442,6 +1503,7 @@ export class ParseMethods {
 
         while (canLoop) {
             let tok = parser.peek();
+            ParseMethods.setState({"expectedTokens": ["let", "static", "impl"]});
             if (tok.type === "let") {
                 parser.accept();
 
@@ -1580,6 +1642,7 @@ export class ParseMethods {
         // check if we have `for` next
         let tok = parser.peek();
         if (tok.type === "for") {
+            ParseMethods.setState({"step": ["superType"]});
             parser.accept();
             forType = ParseMethods.parseType(parser, ctx);
         }
@@ -1616,7 +1679,8 @@ export class ParseMethods {
         let loc = parser.loc();
 
         let tok = parser.peek();
-
+        ParseMethods.setState({"step": ["modifiers"]});
+        ParseMethods.setState({"expectedTokens": ["static", "const", "identifier"]});
         // we have const, static, static const or const static
         let isStatic = tok.type === "static";
         let isConst = tok.type === "const";
@@ -1642,9 +1706,10 @@ export class ParseMethods {
         } else {
             parser.reject();
         }
-
+        ParseMethods.setState({"step": ["name"]});
         let id = parser.expect("identifier");
         parser.expect(":");
+        ParseMethods.setState({"step": ["$type"]});
         let type = ParseMethods.parseType(parser, ctx);
         return new ClassAttribute(loc, id.value, type, isStatic, isConst);
     }
@@ -1680,6 +1745,9 @@ export class ParseMethods {
     static parseImplementationAttribute(parser: Parser, ctx: Context): ImplementationAttribute {
         let loc = parser.loc();
         let tok = parser.peek();
+
+        ParseMethods.setState({"step": ["modifiers"]});
+        ParseMethods.setState({"expectedTokens": ["static", "const", "identifier"]});
 
         // we have const, static, static const or const static
         let isStatic = tok.type === "static";
@@ -1720,6 +1788,7 @@ export class ParseMethods {
     ): ClassMethod[] {
         let loc = parser.loc();
 
+        ParseMethods.setState({"step": ["fnHeader"]});
         let {imethod, altNames} = ParseMethods.parseClassMethodInterface(parser, ctx);
         let body: BlockStatement | null = null;
         let expression: Expression | null = null;
@@ -1737,11 +1806,13 @@ export class ParseMethods {
 
         if (parser.peek().type === "=") {
             parser.accept();
+            ParseMethods.setState({"step": ["$expression"]});
             expression = ParseMethods.parseExpression(parser, methodScope, {
                 allowNullable: false,
             });
         } else {
             parser.reject();
+            ParseMethods.setState({"step": ["$body"]});
             body = ParseMethods.parseStatementBlock(parser, methodScope);
         }
 
@@ -1790,6 +1861,7 @@ export class ParseMethods {
     ): ImplementationMethod[] {
         let loc = parser.loc();
 
+        ParseMethods.setState({"step": ["fnHeader"]});
         let fnProtos = ParseMethods.parseMethodInterface(parser, ctx);
         let body: BlockStatement | null = null;
         let expression: Expression | null = null;
@@ -1806,11 +1878,13 @@ export class ParseMethods {
 
         if (parser.peek().type === "=") {
             parser.accept();
+            ParseMethods.setState({"step": ["$expression"]});
             expression = ParseMethods.parseExpression(parser, methodScope, {
                 allowNullable: false,
             });
         } else {
             parser.reject();
+            ParseMethods.setState({"step": ["$body"]});
             body = ParseMethods.parseStatementBlock(parser, methodScope);
         }
 
@@ -1846,18 +1920,25 @@ export class ParseMethods {
     ): Expression {
         let expr = ParseMethods.parseExpressionLet(parser, ctx, opts);
         if (expr == null && !opts.allowNullable) {
-            // Log error instead of throwing
-            parser.basePackage.logs.push({
-                type: "error",
-                message: "Invalid expression!",
-                line: parser.loc().line,
-                column: parser.loc().col,
-                file: parser.loc().file,
-                length: 1,
-            });
-            // Return a placeholder node
-            return new UnreachableExpression(parser.loc());
+            /*
+
+            if (expr == null && !opts.allowNullable) {
+                // Log error instead of throwing
+                parser.basePackage.logs.push({
+                    type: "error",
+                    message: "Invalid expression!",
+                    line: parser.loc().line,
+                    column: parser.loc().col,
+                    file: parser.loc().file,
+                    length: 1,
+                });
+                // Return a placeholder node
+                return new UnreachableExpression(parser.loc());
+            }
+            */
+            parser.customError("Invalid expression!", parser.loc());
         }
+
         return expr;
     }
 
@@ -1895,9 +1976,12 @@ export class ParseMethods {
         let loc = parser.loc();
         let lexeme = parser.peek();
         if (lexeme.type === "match") {
+            ParseMethods.setState({"step": ["expression"]});
             parser.accept();
             let expression = ParseMethods.parseExpression(parser, ctx, opts);
+            ParseMethods.setState({"expression": expression});
             parser.expect("{");
+            ParseMethods.setState({"step": ["cases"]});
             let cases: MatchCaseExpression[] = ParseMethods.parseMatchCases(parser, ctx, "expr");
 
             // make sure we have at least one case
@@ -1944,14 +2028,18 @@ export class ParseMethods {
             lexeme.type === "%="
         ) {
             parser.accept();
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
             let right = ParseMethods.parseExpressionOpAssign(parser, ctx, opts);
 
             if(lexeme.type === "+=" && left instanceof ThisExpression && (right instanceof UnnamedStructConstructionExpression || right instanceof NamedStructConstructionExpression)) {
+                ParseMethods.setState({"step": ["thisDistributedAssign"]});
                 return new ThisDistributedAssignExpression(loc, left, right);
             }
 
             if (lexeme.type === "=") {
                 if (left.kind === "index_access") {
+                    ParseMethods.setState({"step": ["indexSet"]});
                     let indexAccess = left as IndexAccessExpression;
                     return new IndexSetExpression(
                         loc,
@@ -1961,6 +2049,7 @@ export class ParseMethods {
                     );
                 }
                 if(left.kind === "reverse_index_access") {
+                    ParseMethods.setState({"step": ["reverseIndexSet"]});
                     let reverseIndexAccess = left as ReverseIndexAccessExpression;
                     return new ReverseIndexSetExpression(
                         loc,
@@ -1971,6 +2060,7 @@ export class ParseMethods {
                 }
             }
 
+            ParseMethods.setState({"step": ["binaryExpression"]});
             return new BinaryExpression(
                 loc,
                 left,
@@ -1993,7 +2083,7 @@ export class ParseMethods {
         if (lexeme.type === "if") {
             let loc = parser.loc();
             parser.accept();
-
+            ParseMethods.setState({"step": ["ifs"]});
             let ifs: Expression[] = [];
             let bodies: Expression[] = [];
 
@@ -2001,10 +2091,11 @@ export class ParseMethods {
             while (canLoop) {
                 let loc = parser.loc();
                 let condition = ParseMethods.parseExpression(parser, ctx, opts);
-
+                ParseMethods.setState({"step": ["condition"]});
+                ParseMethods.setState({"condition": condition});
                 ifs.push(condition);
                 parser.expect("=>");
-
+                ParseMethods.setState({"step": ["body"]});
                 let body = ParseMethods.parseExpression(parser, ctx, opts);
                 bodies.push(body);
 
@@ -2039,6 +2130,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "??") {
+            ParseMethods.setState({"op": ["??"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionLogicalOr(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2066,6 +2159,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "||") {
+            ParseMethods.setState({"op": ["||"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionLogicalAnd(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2093,6 +2188,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "&&") {
+            ParseMethods.setState({"op": ["&&"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionBitwiseInclusiveOr(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2120,6 +2217,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "|") {
+            ParseMethods.setState({"op": ["|"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionBitwiseXOR(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2147,6 +2246,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "^") {
+            ParseMethods.setState({"op": ["^"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionBitwiseAND(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2173,6 +2274,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "&") {
+            ParseMethods.setState({"op": ["&"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionEquality(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2200,6 +2303,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "==" || lexeme.type === "!=") {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionRelational(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2233,6 +2338,8 @@ export class ParseMethods {
             lexeme.type === ">" ||
             lexeme.type === ">="
         ) {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionShift(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2260,6 +2367,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "<<" || lexeme.type === ">>") {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionAdditive(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2286,6 +2395,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "+" || lexeme.type === "-") {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionMultiplicative(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2311,6 +2422,8 @@ export class ParseMethods {
         let lexeme = parser.peek();
 
         while (lexeme.type === "*" || lexeme.type === "/" || lexeme.type === "%") {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseExpressionInstance(parser, ctx, opts);
             left = new BinaryExpression(
@@ -2336,6 +2449,8 @@ export class ParseMethods {
         let left = ParseMethods.parseExpressionUnary(parser, ctx, opts);
         let lexeme = parser.peek();
         if (lexeme.type === "is") {
+            ParseMethods.setState({"op": ["is"]});
+            ParseMethods.setState({"left": left});
             parser.accept();
             let right = ParseMethods.parseType(parser, ctx);
             return new (
@@ -2347,6 +2462,9 @@ export class ParseMethods {
             lexeme.type === "as!" ||
             lexeme.type === "as?"
         ) {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": left});
+            parser.accept();
             let loop = true;
             while (loop) {
                 parser.accept();
@@ -2395,7 +2513,9 @@ export class ParseMethods {
             lexeme.type === "~"
         ) {
             parser.accept();
+            ParseMethods.setState({"op": [lexeme.type]});
             let expression = ParseMethods.parseExpressionUnary(parser, ctx, opts);
+            ParseMethods.setState({"unary": expression});
             if (lexeme.type === "++" || lexeme.type === "--") {
                 return new UnaryExpression(
                     loc,
@@ -2409,14 +2529,17 @@ export class ParseMethods {
                 lexeme.type as unknown as UnaryOperator,
             );
         } else if (lexeme.type === "new") {
+            ParseMethods.setState({"op": ["new"]});
             parser.accept();
             let type = ParseMethods.parseType(parser, ctx);
+            ParseMethods.setState({"type": type});
             parser.expect("(");
             lexeme = parser.peek();
             parser.reject();
             let args =
                 lexeme.type == ")" ? [] : ParseMethods. parseExpressionList(parser, ctx, opts);
             parser.expect(")");
+            ParseMethods.setState({"args": args});
             return new NewExpression(loc, type, args);
         } else if (lexeme.type === "yield" || lexeme.type === "yield!") {
             parser.accept();
@@ -2482,6 +2605,8 @@ export class ParseMethods {
         let expression = ParseMethods.parseExpressionPrimary(parser, ctx, opts);
         let lexeme = parser.peek();
         if (lexeme.type === "++" || lexeme.type === "--") {
+            ParseMethods.setState({"unary": expression});
+            ParseMethods.setState({"op": [lexeme.type]});
             parser.accept();
             return new UnaryExpression(
                 loc,
@@ -2513,11 +2638,15 @@ export class ParseMethods {
         }
 
         if (lexeme.type === "!") {
+            ParseMethods.setState({"op": ["!!"]});
+            ParseMethods.setState({"unary": lhs});
             parser.accept();
             let newLHS = new UnaryExpression(loc, lhs, "!!");
             return ParseMethods.parseExpressionMemberSelection(parser, ctx, newLHS, opts);
         }
         if (lexeme.type === "." || lexeme.type === "?.") {
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": lhs});
             parser.accept();
             let rhs = ParseMethods.parseExpressionPrimary(parser, ctx, opts);
             if (!(rhs instanceof ElementExpression)) {
@@ -2545,6 +2674,8 @@ export class ParseMethods {
             );
         }
         if (lexeme.type === "(") {
+            ParseMethods.setState({"op": ["()"]});
+            ParseMethods.setState({"left": lhs});
             parser.accept();
             lexeme = parser.peek();
             parser.reject();
@@ -2559,6 +2690,8 @@ export class ParseMethods {
             );
         }
         if (lexeme.type === "[") {
+            ParseMethods.setState({"op": ["[]"]});
+            ParseMethods.setState({"left": lhs});
             parser.accept();
             lexeme = parser.peek();
             parser.reject();
@@ -2597,6 +2730,7 @@ export class ParseMethods {
 
         // parenthesis
         if (lexeme.type === "(") {
+            ParseMethods.setState({"step": ["expressionList"]});
             parser.accept();
             let expressionList = ParseMethods.parseExpressionList(parser, ctx, opts);
             parser.expect(")");
@@ -2609,16 +2743,19 @@ export class ParseMethods {
         }
 
         if (lexeme.type === "[") {
+            ParseMethods.setState({"step": ["arrayConstruction"]});
             parser.reject();
             return ParseMethods.parseArrayConstruction(parser, ctx, opts);
         }
 
         if (lexeme.type === "{") {
+            ParseMethods.setState({"step": ["structConstruction"]});
             parser.reject();
             return ParseMethods.parseStructConstruction(parser, ctx, opts);
         }
 
         if (lexeme.type === "fn" || lexeme.type === "cfn") {
+            ParseMethods.setState({"step": ["lambda"]});
             parser.accept();
             let header = ParseMethods.parseFnTypeBody(parser, ctx);
             header.isCoroutine = lexeme.type === "cfn";
@@ -2629,12 +2766,14 @@ export class ParseMethods {
 
             lexeme = parser.peek();
             if (lexeme.type === "{") {
+                ParseMethods.setState({"step": ["lambda_body"]});
                 parser.reject();
                 let body = ParseMethods.parseStatementBlock(parser, newScope);
                 fn.body = body;
                 newScope.endLocation = parser.loc();
                 return fn;
             } else {
+                ParseMethods.setState({"step": ["lambda_expression"]});
                 parser.reject();
                 parser.expect("=");
                 let fnBody = ParseMethods.parseExpression(parser, newScope, opts);
@@ -2644,20 +2783,24 @@ export class ParseMethods {
             }
         }
         if (lexeme.type === "this") {
+            ParseMethods.setState({"step": ["this"]});
             parser.accept();
             return new ThisExpression(loc);
         }
 
         if (lexeme.isLiteral()) {
+            ParseMethods.setState({"step": ["literal"]});
             parser.accept();
             return lexeme.toLiteral();
         }
 
         if (lexeme.type === "identifier") {
+            ParseMethods.setState({"step": ["identifier"]});
             parser.accept();
             let hasG = ParseMethods.parserElementHasGenerics(parser, ctx);
             let genericArgs: DataType[] = [];
             if (hasG) {
+                ParseMethods.setState({"step": ["identifier_generics"]});
                 parser.expect("<");
                 genericArgs = ParseMethods.parseTypeList(parser, ctx);
                 parser.expect(">");
@@ -2665,6 +2808,7 @@ export class ParseMethods {
 
             return new ElementExpression(loc, lexeme.value, genericArgs);
         } else if (lexeme.type === "do") {
+            ParseMethods.setState({"step": ["do_expression"]});
             parser.accept();
             let newCtx = new Context(loc, parser, ctx, {
                 withinDoExpression: true,
@@ -2870,6 +3014,9 @@ export class ParseMethods {
         let isConst = false;
         let isLocal = false;
         let token = parser.peek();
+
+        ParseMethods.setState({"step": ["modifiers"]});
+        ParseMethods.setState({"expectedTokens": ["local", "const", "$identifier"]});
 
         // Loop to check for "local" and "const" in any order, but only once each
         while (token.type === "local" || token.type === "const") {
@@ -3207,6 +3354,7 @@ export class ParseMethods {
         isLocal: boolean
     ): DeclaredVariable[] {
         var loc = parser.loc();
+        ParseMethods.setState({"step": ["name"]});
         var token = parser.expect("identifier");
         parser.accept();
         let name = token.value;
@@ -3216,6 +3364,7 @@ export class ParseMethods {
         // let x = someFunc2()
         token = parser.peek();
         if (token.type === ":") {
+            ParseMethods.setState({"step": ["type"]});
             parser.accept();
             type = ParseMethods.parseType(parser, ctx);
         } else {
@@ -3223,6 +3372,7 @@ export class ParseMethods {
         }
 
         parser.expect("=");
+        ParseMethods.setState({"step": ["initializer"]});
         // TODO: make sure code gen doesn"t generate this expression multipe times for deconstructed variables
         let initializer = ParseMethods.parseExpression(parser, ctx, {
             allowNullable: false,
@@ -3307,6 +3457,7 @@ export class ParseMethods {
         let cloc = parser.loc();
         let canLoop = true;
         let cases: MatchCaseExpression[] = [];
+        ParseMethods.setState({"step": ["cases"]});
         while (canLoop) {
             let newScope = new Context(cloc, parser, ctx);
             newScope.location = parser.loc();
@@ -3315,6 +3466,7 @@ export class ParseMethods {
             let loc = parser.loc();
             let ifGuard: Expression | null = null;
             if (lexeme.type === "if") {
+                ParseMethods.setState({"step": ["ifGuard"]});
                 parser.accept();
                 ifGuard = ParseMethods.parseExpression(parser, newScope, {
                     allowNullable: false,
@@ -3324,6 +3476,7 @@ export class ParseMethods {
             }
 
             if (form == "expr") {
+                ParseMethods.setState({"step": ["match_expression"]});
                 parser.expect("=>");
                 let body = ParseMethods.parseExpression(parser, newScope, {
                     allowNullable: false,
@@ -3340,6 +3493,7 @@ export class ParseMethods {
                     ),
                 );
             } else {
+                ParseMethods.setState({"step": ["match_block"]});
                 let body = ParseMethods.parseStatementBlock(parser, newScope);
                 cases.push(
                     new MatchCaseExpression(
@@ -3355,6 +3509,7 @@ export class ParseMethods {
             }
 
             if (form == "expr") {
+                ParseMethods.setState({"step": ["match_cases"]});
                 lexeme = parser.peek();
                 if (lexeme.type === ",") {
                     parser.accept();

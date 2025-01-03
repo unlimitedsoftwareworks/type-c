@@ -13,7 +13,7 @@
 import { TokenType } from "./TokenType";
 import { Token } from "./Token";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
-import { ParseMethods } from "../parser/parsefuncs";
+import { ParseState } from "../parser/parsefuncs";
 
 export class Lexer {
     filepath: string;
@@ -30,7 +30,7 @@ export class Lexer {
         file: string;
         line: number;
         col: number;
-        callback: (stack: string[]) => void;
+        callback: (stack: ParseState[]) => void;
     } | null = null;
 
     static tokenRegexArray: [TokenType, RegExp][] = [
@@ -253,7 +253,7 @@ export class Lexer {
     /**
      * Sets a marker at which to capture the state of the parser
      */
-    setStateCapturePosition(file: string, line: number, col: number, callback: (stack: string[]) => void) {
+    setStateCapturePosition(file: string, line: number, col: number, callback: (stack: ParseState[]) => void) {
         if(file != this.filepath){
             return;
         }

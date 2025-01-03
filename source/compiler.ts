@@ -21,7 +21,7 @@ import { DeclaredFFI } from "./ast/symbol/DeclaredFFI";
 import { FunctionGenerator } from "./codegenerator/FunctionGenerator";
 import { FunctionInferenceCache } from "./typechecking/FunctionInference";
 import { TypeMatchCache } from "./typechecking/TypeChecking";
-import { ParseMethods } from "./parser/parsefuncs";
+import { ParseMethods, ParseState } from "./parser/parsefuncs";
 
 /**
  * Safely imports Node.js specific modules
@@ -74,7 +74,7 @@ export module TypeC {
             file: string;
             line: number;
             col: number;
-            capturedState: string[];
+            capturedState: ParseState[];
         } | null = null;
 
         rawConfig: any = {};

@@ -100,7 +100,7 @@ export class Parser {
     accept() {
         if(this.lexer.hasCaptureStateEvent()){
             for(let i = 0; i < this.tokenStack.length; i++){
-                if(this.lexer.isAtStateCapturePosition(this.tokenStack[i].location.line, this.tokenStack[i].location.col)){
+                if(this.lexer.isAtStateCapturePosition(this.tokenStack[i].location.line, this.tokenStack[i].location.col + this.tokenStack[i].value.length)){
                     this.lexer.stateCapturePosition!.callback(ParseMethods.state);
                     // clear the state capture position to continue as normal
                     this.lexer.stateCapturePosition = null;
@@ -144,6 +144,7 @@ export class Parser {
      * @returns
      */
     expect(type: string | string[]): Token {
+        ParseMethods.setState({"expectedTokens": typeof type === "string" ? [type] : type});
         let t = typeof type === "string" ? [type] : type;
         let token = this.peek();
 
