@@ -30,7 +30,12 @@ export class VariablePattern extends Symbol {
         return new VariablePattern(this.location, this.name, this.type.clone(typeMap));
     }
 
+
     getDescription(): string {
+        return this.type.kind !== "reference" ? this.type.kind : this.type.getShortName();
+    }
+
+    getDetails(): string {
         return this.name + " : " + this.type.getShortName();
     }
 }

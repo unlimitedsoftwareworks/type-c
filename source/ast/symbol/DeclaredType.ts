@@ -53,6 +53,10 @@ export class DeclaredType extends Symbol {
     }
 
     getDescription(): string {
+        return this.type.kind !== "reference" ? this.type.kind : this.type.getShortName();
+    }
+
+    getDetails(): string {
         return this.name + " : " + this.type.getShortName();
     }
 }

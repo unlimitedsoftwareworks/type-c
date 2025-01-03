@@ -115,6 +115,10 @@ export class DeclaredVariable extends Symbol {
     }
 
     getDescription(): string {
+        return this.annotation!.kind !== "reference" ? this.annotation!.kind : this.annotation!.getShortName();
+    }
+
+    getDetails(): string {
         return this.name + ": " + this.annotation!.getShortName();
     }
 }

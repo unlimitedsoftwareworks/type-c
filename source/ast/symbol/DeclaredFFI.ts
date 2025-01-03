@@ -42,6 +42,10 @@ export class DeclaredFFI extends Symbol {
         return this.methods.findIndex((method) => method.imethod.name === methodName);
     }
 
+    getDetails(): string {
+        return `FFI ${this.name}`;
+    }
+
     getDescription(): string {
         return this.methods.map(m => m.getShortName()).join("\n");
     }

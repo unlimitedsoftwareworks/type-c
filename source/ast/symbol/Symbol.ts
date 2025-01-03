@@ -56,4 +56,8 @@ export class Symbol {
     getDescription(): string {
         throw new Error("Not implemented");
     }
+
+    getDetails(): string {
+        throw new Error("Not implemented");
+    }
 }
