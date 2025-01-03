@@ -1138,7 +1138,19 @@ export class ParseMethods {
     static parseTypePrimary(parser: Parser, ctx: Context): DataType {
         let loc = parser.loc();
         let lexeme = parser.peek();
-        ParseMethods.setState({"step": [lexeme.type]});
+        ParseMethods.setState({"expectedTokens": [
+            "$identifier",
+            "enum",
+            "struct",
+            "variant",
+            "interface",
+            "fn",
+            "cfn",
+            "class",
+            "impl",
+            "coroutine",
+            "$basicType",
+        ]});
         if (lexeme.type === "identifier") {
             parser.reject();
             return ParseMethods.parseTypeReference(parser, ctx);
