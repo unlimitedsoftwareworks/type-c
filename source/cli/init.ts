@@ -82,8 +82,8 @@ export async function initProject(folder: string) {
 from std.io import println
 
 fn main() -> u32 {
-   println("hello, world!")
-   return 0
+    println("hello, world!")
+    return 0
 }`;
     nodeModules.fs.writeFileSync(
         nodeModules.path.join(folderPath, "main.tc"),
