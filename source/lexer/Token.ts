@@ -13,17 +13,25 @@
 import { TokenType } from "./TokenType";
 import {SymbolLocation} from "../ast/symbol/SymbolLocation";
 import { BinaryIntLiteralExpression, BinaryStringLiteralExpression, CharLiteralExpression, DoubleLiteralExpression, FalseLiteralExpression, FloatLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, LiteralExpression, NullLiteralExpression, OctIntLiteralExpression, StringLiteralExpression, TrueLiteralExpression } from "../ast/expressions/LiteralExpression";
+import { Documentation } from "./Documentation";
 
 export class Token {
     value: string;
     type: TokenType;
     location: SymbolLocation;
+    documentation: Documentation | null = null;
+    
 
     constructor(type: TokenType, value: string, pos: number, line: number, column: number, file?: string) {
         this.type = type;
         this.value = value;
 
         this.location = new SymbolLocation(file || "<unknown>", line, column, pos);
+    }
+
+    setDocumentation(doc: Documentation | null): Token {
+        this.documentation = doc;
+        return this;
     }
 
     toString(): string {

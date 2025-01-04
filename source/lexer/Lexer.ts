@@ -14,6 +14,7 @@ import { TokenType } from "./TokenType";
 import { Token } from "./Token";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { ParseState } from "../parser/parsefuncs";
+import { Documentation } from "./Documentation";
 
 export class Lexer {
     filepath: string;
@@ -32,6 +33,11 @@ export class Lexer {
         col: number;
         callback: (stack: ParseState[]) => void;
     } | null = null;
+
+    private currentDocumentation: Documentation | null = null;
+
+    private lastSeenTag: "brief" | "prop" | null = null;
+    private lastPropName: string | null = null;
 
     static tokenRegexArray: [TokenType, RegExp][] = [
         // Keywords
@@ -231,11 +237,24 @@ export class Lexer {
             }
             reskip = true;
         } else if (this.compare("/*")) {
-            while (this.canLookAhead() && !this.compare("*/")) {
-                this.inc();
+            // Check if this is a documentation comment
+            if (this.currentChar() === "*") {
+                const startLocation = new SymbolLocation(
+                    this.filepath,
+                    this.lineC,
+                    this.colC - 2, // Account for /* characters
+                    this.dataIndex - 2
+                );
+                this.currentDocumentation = this.parseDocumentation(startLocation);
+            } else {
+                // Regular multi-line comment
+                while (this.canLookAhead() && !this.compare("*/")) {
+                    this.inc();
+                }
             }
             reskip = true;
         }
+
         if (reskip) {
             this.skipWhitespaces();
         }
@@ -328,7 +347,9 @@ export class Lexer {
                     this.lineC,
                     this.colC,
                     this.filepath,
-                );
+                ).setDocumentation(this.currentDocumentation);
+                
+
                 if (res.type == "identifier" && res.value == "_") {
                     res = new Token(
                         TokenType.TOK_WILDCARD,
@@ -337,9 +358,15 @@ export class Lexer {
                         this.lineC,
                         this.colC,
                         this.filepath,
-                    );
+                    ).setDocumentation(this.currentDocumentation);
                 }
                 this.colC += lexeme.length;
+                this.currentDocumentation = null;
+
+                if(res.documentation){
+                    console.log(res.documentation);
+                }
+
                 return res;
             }
         }
@@ -393,5 +420,91 @@ export class Lexer {
 
         // Clear token stack since we've moved
         this.tokenStack = [];
+    }
+
+    private parseDocumentation(startLocation: SymbolLocation) {
+        // Create new documentation object
+        const doc = new Documentation(startLocation);
+        
+        // Skip the initial /**
+        this.inc();
+        this.inc();
+        this.inc();
+
+        let currentLine = "";
+        
+        while (this.canLookAhead()) {
+            if (this.currentChar() === "*" && this.data[this.dataIndex + 1] === "/") {
+                // Process the last line before ending
+                this.processDocLine(currentLine.trim(), doc);
+                this.inc(); // Skip *
+                this.inc(); // Skip /
+                break;
+            }
+
+            if (this.currentChar() === "\n") {
+                this.processDocLine(currentLine.trim(), doc);
+                currentLine = "";
+                this.inc();
+                continue;
+            }
+
+            currentLine += this.currentChar();
+            this.inc();
+        }
+
+        return doc;
+    }
+
+    private processDocLine(line: string, doc: Documentation) {
+        // Remove leading * and whitespace if present
+        line = line.replace(/^\s*\*\s*/, "");
+        
+        if (!line) return;
+
+        // Handle @brief
+        if (line.startsWith("@brief")) {
+            doc.brief = line.substring(6).trim();
+            this.lastSeenTag = "brief";
+            return;
+        }
+
+        // Handle @extraComments
+        if (line.startsWith("@extraComments")) {
+            doc.extraComments = line.substring(13).trim();
+            this.lastSeenTag = null;
+            return;
+        }
+
+        // Handle @param or @prop
+        if (line.startsWith("@param") || line.startsWith("@prop")) {
+            const matches = line.match(/@(?:param|prop)\s+(\w+)\s*:\s*(.+)/);
+            if (matches) {
+                const [, prop, value] = matches;
+                doc.props[prop] = value.trim();
+                this.lastSeenTag = "prop";
+                this.lastPropName = prop;
+            }
+            return;
+        }
+
+        // Handle other @props
+        if (line.startsWith("@")) {
+            const matches = line.match(/@(\w+)\s+(.+)/);
+            if (matches) {
+                const [, prop, value] = matches;
+                doc.props[prop] = value.trim();
+                this.lastSeenTag = "prop";
+                this.lastPropName = prop;
+            }
+            return;
+        }
+
+        // If no @ tag, append to the last seen property
+        if (this.lastSeenTag === "brief" && doc.brief) {
+            doc.brief += " " + line;
+        } else if (this.lastSeenTag === "prop" && this.lastPropName) {
+            doc.props[this.lastPropName] += " " + line;
+        }
     }
 }
