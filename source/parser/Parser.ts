@@ -170,7 +170,7 @@ export class Parser {
             );
         } else {
             if (!t.includes(token.type)) {
-                this.basePackage.logs.push({
+                this.basePackage.pushLog({
                     type: "error",
                     message: `Expected '${type}' but got '${token.type}'`,
                     line: token.location.line,
@@ -201,7 +201,7 @@ export class Parser {
             );
         } else {
             if (!regex.test(token.value)) {
-                this.basePackage.logs.push({
+                this.basePackage.pushLog({
                     type: "error",
                     message: `Expected package name but got '${token.type}'`,
                     line: token.location.line,
@@ -224,7 +224,7 @@ export class Parser {
 
     customError(message: string, location: SymbolLocation, length: number = 1): never {
         if (this.mode == "intellisense"){
-            this.basePackage.logs.push({
+            this.basePackage.pushLog({
                 type: "error",
                 message: message,
                 line: location.line,
@@ -271,7 +271,7 @@ export class Parser {
             coordinates = coords;
         }
 
-        this.basePackage.logs.push({
+        this.basePackage.pushLog({
             type: "error",
             message: message,
             line: coordinates?.line,
@@ -347,7 +347,7 @@ export class Parser {
             coordinates = coords;
         }
 
-        this.basePackage.logs.push({
+        this.basePackage.pushLog({
             type: "warning",
             file: this.lexer.filepath || "<stdin>",
             message: message,

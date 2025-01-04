@@ -8,5 +8,5 @@
         "target": "runnable",
         "entry": "test.tc"
     },
-    "_compilerAssertions": []
+    "outputDirectory": "${workspaceDir}/output"
 }

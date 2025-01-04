@@ -1936,7 +1936,7 @@ export class ParseMethods {
 
             if (expr == null && !opts.allowNullable) {
                 // Log error instead of throwing
-                parser.basePackage.logs.push({
+                parser.basePackage.addLog({
                     type: "error",
                     message: "Invalid expression!",
                     line: parser.loc().line,
