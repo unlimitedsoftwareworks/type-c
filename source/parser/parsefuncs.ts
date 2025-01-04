@@ -2910,10 +2910,10 @@ export class ParseMethods {
                     return false;
                 }
 
-                canLoop = stack.length > 0
+                canLoop = stack.length > 0 || lexeme.type != "EOF";
 
                 if(lexeme.type == "EOF"){
-                    return false;
+                    break
                 }
             }
         }
