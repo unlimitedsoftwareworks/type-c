@@ -11,6 +11,7 @@
  */
 
 import { Annotation } from "../../annotations/Annotation";
+import { Documentation } from "../../lexer/Documentation";
 import { Context } from "./Context";
 import {SymbolLocation} from "./SymbolLocation";
 
@@ -37,6 +38,7 @@ export class Symbol {
     name: string;
     parentContext: Context | null = null;
     isLocal: boolean = false; // local to global scope or namespace
+    documentation: Documentation | null = null;
 
     annotations: Annotation[] = [];
 
@@ -59,5 +61,9 @@ export class Symbol {
 
     getDetails(): string {
         throw new Error("Not implemented");
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 }

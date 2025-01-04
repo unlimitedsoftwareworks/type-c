@@ -15,6 +15,7 @@
  */
 
 import { getDataTypeByteSize } from "../../codegenerator/utils";
+import { Documentation } from "../../lexer/Documentation";
 import { Context } from "../symbol/Context";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { BasicType } from "./BasicType";
@@ -59,7 +60,7 @@ export class VariantParameter {
 export class VariantConstructorType  extends DataType{
     name: string;
     parameters: VariantParameter[];
-
+    documentation: Documentation | null = null;
     _parent: VariantType | null = null;
     _id: number | null = null;
 
@@ -162,6 +163,10 @@ export class VariantConstructorType  extends DataType{
     getParameterOffset(fieldNum: number): number {
         let alignment = this.getAlignment();
         return fieldNum*alignment;
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 }
 

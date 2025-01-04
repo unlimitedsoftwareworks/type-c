@@ -16,12 +16,14 @@ import { Context } from "../symbol/Context";
 import { GenericType } from "./GenericType";
 import { getDataTypeByteSize } from "../../codegenerator/utils";
 import { isPointer } from "../../codegenerator/CodeGenTypes";
+import { Documentation } from "../../lexer/Documentation";
 
 
 export class StructField {
     name: string;
     type: DataType;
     location: SymbolLocation;
+    documentation: Documentation | null = null;
 
     static globalFieldID = 1;
     static fieldIdMap: { [key: string]: number } = {
@@ -66,6 +68,10 @@ export class StructField {
 
     getFieldID(): number {
         return StructField.getFieldID(this.name);
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 }
 

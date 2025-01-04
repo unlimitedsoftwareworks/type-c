@@ -361,10 +361,9 @@ export class Lexer {
                     ).setDocumentation(this.currentDocumentation);
                 }
                 this.colC += lexeme.length;
-                this.currentDocumentation = null;
 
                 if(res.documentation){
-                    console.log(res.documentation);
+                    this.currentDocumentation = null;
                 }
 
                 return res;
@@ -478,24 +477,27 @@ export class Lexer {
 
         // Handle @param or @prop
         if (line.startsWith("@param") || line.startsWith("@prop")) {
-            const matches = line.match(/@(?:param|prop)\s+(\w+)\s*:\s*(.+)/);
+            // Fix: Improve regex to handle multi-line descriptions
+            const matches = line.match(/@(?:param|prop)\s+(\w+)(?:\s*:\s*(.+))?/);
             if (matches) {
                 const [, prop, value] = matches;
-                doc.props[prop] = value.trim();
+                doc.props[prop] = value ? value.trim() : "";  // Initialize empty string if no description
                 this.lastSeenTag = "prop";
                 this.lastPropName = prop;
             }
             return;
         }
 
-        // Handle other @props
+        // Handle other @tags
         if (line.startsWith("@")) {
-            const matches = line.match(/@(\w+)\s+(.+)/);
+            // Fix: Don't treat everything as a prop
+            const matches = line.match(/@(\w+)(?:\s*:\s*(.+))?/);
             if (matches) {
-                const [, prop, value] = matches;
-                doc.props[prop] = value.trim();
+                const [, tag, value] = matches;
+                // Don't prefix with "undefined"
+                doc.props[tag] = value ? value.trim() : "";
                 this.lastSeenTag = "prop";
-                this.lastPropName = prop;
+                this.lastPropName = tag;
             }
             return;
         }
@@ -504,6 +506,10 @@ export class Lexer {
         if (this.lastSeenTag === "brief" && doc.brief) {
             doc.brief += " " + line;
         } else if (this.lastSeenTag === "prop" && this.lastPropName) {
+            // Ensure the property exists before appending
+            if (!doc.props[this.lastPropName]) {
+                doc.props[this.lastPropName] = "";
+            }
             doc.props[this.lastPropName] += " " + line;
         }
     }

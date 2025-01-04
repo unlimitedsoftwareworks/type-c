@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { Documentation } from "../../lexer/Documentation";
 import { Context } from "../symbol/Context";
 import { DeclaredFFI } from "../symbol/DeclaredFFI";
 import { DeclaredNamespace } from "../symbol/DeclaredNamespace";
@@ -20,7 +21,8 @@ import { GenericType } from "./GenericType";
 
 export class NamespaceType extends DataType {
     ns: DeclaredNamespace;
-
+    documentation: Documentation | null = null;
+    
     constructor(location: SymbolLocation, ns: DeclaredNamespace) {
         super(location, "namespace_type");
         this.ns = ns;
@@ -62,5 +64,9 @@ export class NamespaceType extends DataType {
 
     getContext(): Context {
         return this.ns.ctx;
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 }

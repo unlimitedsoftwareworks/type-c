@@ -188,7 +188,6 @@ export module TypeC {
                 mode,
                 !this.options.noWarnings,
             );
-            this.setStateCapturePosition(entry, 8, 7);
             
             this.basePackage = parser.basePackage;
             let entryKey = normalizePath(entry);

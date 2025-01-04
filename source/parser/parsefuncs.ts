@@ -387,7 +387,10 @@ export class ParseMethods {
                 }
             }
 
-            fields.push(new StructField(loc, id.value, type));
+            let field = new StructField(loc, id.value, type);
+            field.setDocumentation(id.documentation);
+            fields.push(field);
+
             let token = parser.peek();
             canLoop = token.type === ",";
 
@@ -420,7 +423,7 @@ export class ParseMethods {
         parser: Parser,
         ctx: Context,
         allowDuplicatedNames = false,
-    ): StructField[] {
+    ): VariantParameter[] {
         let canLoop = true;
         let fields: VariantParameter[] = [];
         while (canLoop) {
@@ -487,9 +490,10 @@ export class ParseMethods {
                     constructorTok.location,
                 );
             }
-            constructors.push(
-                new VariantConstructorType(loc, constructorName, fields),
-            );
+            let constructor = new VariantConstructorType(loc, constructorName, fields);
+            constructor.setDocumentation(constructorTok.documentation);
+            constructors.push(constructor);
+
             const token = parser.peek();
             canLoop = token.type === ",";
             if (canLoop) {
@@ -530,7 +534,9 @@ export class ParseMethods {
 
         let header = ParseMethods.parseFnTypeBody(parser, ctx);
         header.isCoroutine = tok.type === "cfn";
-        return new FunctionPrototype(loc, name, header, generics);
+        const proto = new FunctionPrototype(loc, name, header, generics);
+        proto.setDocumentation(tok.documentation);
+        return proto;
     }
 
     @trackState()
@@ -918,7 +924,7 @@ export class ParseMethods {
     @trackState()
     static parseNamespace(parser: Parser, ctx: Context) {
         let loc = parser.loc();
-        parser.expect("namespace");
+        let nsTok = parser.expect("namespace");
         let name = parser.expect("identifier").value;
         let ns = new DeclaredNamespace(loc, ctx, name);
         parser.expect("{");
@@ -982,6 +988,8 @@ export class ParseMethods {
         }
         parser.expect("}");
 
+        ns.setDocumentation(nsTok.documentation);
+
         return ns;
     }
 
@@ -992,7 +1000,7 @@ export class ParseMethods {
     @trackState()
     static parseTypeDecl(parser: Parser, ctx: Context) {
         let loc = parser.loc();
-        parser.expect("type");
+        let typeTok = parser.expect("type");
 
         const name = parser.expect("identifier").value;
         let generics: GenericType[] = [];
@@ -1029,6 +1037,7 @@ export class ParseMethods {
         }
         */
 
+        declaredType.setDocumentation(typeTok.documentation);
         return declaredType;
     }
 
@@ -1523,6 +1532,7 @@ export class ParseMethods {
                 while (loop) {
                     parser.reject();
                     let attribute = ParseMethods.parseClassAttribute(parser, ctx);
+                    attribute.setDocumentation(tok.documentation);
                     if (methods.find((m) => m.imethod.name == attribute.name)) {
                         parser.customError(
                             `Duplicate attribute "${attribute.name}" in class`,

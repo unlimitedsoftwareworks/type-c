@@ -10,6 +10,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { Documentation } from "../../lexer/Documentation";
 import {SymbolLocation} from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import {FunctionType} from "../types/FunctionType";
@@ -20,6 +21,7 @@ export class FunctionPrototype {
     generics: GenericType[]
     name: string;
     location: SymbolLocation;
+    documentation: Documentation | null = null;
 
     constructor(location: SymbolLocation, name: string, header: FunctionType, generics: GenericType[] = []){
         this.location = location;
@@ -38,5 +40,9 @@ export class FunctionPrototype {
 
     toString() {
         return this.serialize();
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 }
