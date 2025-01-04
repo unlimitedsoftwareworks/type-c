@@ -302,6 +302,18 @@ export class Lexer {
 
         this.skipWhitespaces();
 
+        // check for EOF
+        if(!this.canLookAhead()){
+            return new Token(
+                TokenType.TOK_EOF,
+                "",
+                this.dataIndex,
+                this.lineC,
+                this.colC,
+                this.filepath,
+            );
+        }
+
         for (const [tokenType, regex] of Lexer.tokenRegexArray) {
             const match = this.data.substring(this.dataIndex).match(regex);
             if (match && match[0]) {

@@ -2910,7 +2910,11 @@ export class ParseMethods {
                     return false;
                 }
 
-                canLoop = stack.length > 0 || lexeme.type != "EOF";
+                canLoop = stack.length > 0
+
+                if(lexeme.type == "EOF"){
+                    return false;
+                }
             }
         }
         parser.reject();
