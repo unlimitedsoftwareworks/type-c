@@ -167,7 +167,7 @@ export module TypeC {
             let entrySource = this.readPackage(entry);
             let lexer = new Lexer(
                 entry,
-                mode == "intellisense" && content ? content : entrySource,
+                content != undefined ? content : entrySource,
             );
 
             if(this.stateCapturePosition){
@@ -188,6 +188,7 @@ export module TypeC {
                 mode,
                 !this.options.noWarnings,
             );
+            this.setStateCapturePosition(entry, 8, 7);
             
             this.basePackage = parser.basePackage;
             let entryKey = normalizePath(entry);

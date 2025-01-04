@@ -39,7 +39,7 @@ export async function initProject(folder: string) {
             console.error(
                 `Error: The folder '${folderPath}' is not empty. Aborting project initialization.`,
             );
-            process.exit(1);
+            throw new Error("Folder is not empty");
         }
     } else {
         // Create the folder recursively if it does not exist
