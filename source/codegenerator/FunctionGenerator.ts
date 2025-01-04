@@ -1508,6 +1508,16 @@ export class FunctionGenerator {
                     element,
                     nullableAccess,
                 );
+            } else if (baseType.is(ctx, VariantConstructorType)) {
+                return this.ir_generate_variant_constructor_field_assignment(
+                    expr,
+                    ctx,
+                    left,
+                    right,
+                    baseType.to(ctx, VariantConstructorType) as VariantConstructorType,
+                    element,
+                    nullableAccess,
+                );
             } else if (baseType.is(ctx, ClassType)) {
                 return this.ir_generate_class_field_assignment(
                     expr,
@@ -1633,6 +1643,57 @@ export class FunctionGenerator {
         this.i(instr, structExpr, field!.getFieldID(), right);
         this.destroyTmp(structExpr);
         //this.i("s_set_field_f32", "struct field assignment, struct member");
+
+        if(nullableAccess){
+            this.i("j", endLabel);
+            this.i("label", assignNullLabel);
+            this.i("const_ptr", right, 0);
+            this.i("label", endLabel);
+        }
+        return right;
+    }
+
+
+    ir_generate_variant_constructor_field_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        left: MemberAccessExpression,
+        right: string,
+        baseType: VariantConstructorType,
+        element: ElementExpression,
+        nullableAccess: boolean,
+    ) {
+        let variantType = baseType as VariantConstructorType;
+        // we will assign the value to the struct's field
+        this.i("debug", "struct field assignment, struct expression");
+        let variantExpr = this.visitExpression(left.left, ctx);
+        this.i(
+            "debug",
+            "struct field assignment, struct member " + element.name,
+        );
+
+        let endLabel = ""
+        let assignNullLabel = ""
+        // check if the field is null
+        if(nullableAccess){
+            endLabel = this.generateLabel();
+            assignNullLabel = this.generateLabel();
+            this.i("j_eq_null_ptr", variantExpr, assignNullLabel);
+        }
+
+
+        // now we need to get the variant ID
+        let variantID = variantType.getId();
+
+        let parameters = VariantParameter.sortParameters([...variantType.parameters], expr.location);
+
+  
+        const field = parameters.find(x => x.name == element.name)!;
+
+
+        let instr = structSetFieldType(field?.type);
+        this.i(instr, variantExpr, field!.getFieldID(), right);
+        this.destroyTmp(variantExpr);
 
         if(nullableAccess){
             this.i("j", endLabel);
