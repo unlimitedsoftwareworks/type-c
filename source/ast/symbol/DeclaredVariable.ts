@@ -54,7 +54,9 @@ export class DeclaredVariable extends Symbol {
             this.annotation.resolve(ctx);
         }
 
+        ctx.hideSymbol(this.name);
         let inferredType = this.initializer.infer(ctx, this.annotation);
+        ctx.unhideSymbol(this.name);
 
         // TODO: handle strictness
         // TODO: handle constant (cannot assign constant expression to non-constant variable)
