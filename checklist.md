@@ -125,6 +125,7 @@ This checklist containts only major changes and updates, for minor changes and u
 
 - 17/01/2025:
     - Added hideSymbol and unhideSymbol within VariableDeclaration.infer to avoid referencing a variable in its initializer
+    - Foreach statement now infers the iterator class method if is not implemented
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.

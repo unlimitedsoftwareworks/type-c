@@ -154,8 +154,8 @@ export class ForeachStatement extends Statement {
          *     The combination of lack of hint for getIterable and the fact that we are iterating over the same array class
          *     Results in toIteratorMethod being unresolved/uninferred, so we need to infer it here
          */
-        if(!toIteratorMethod!._sourceMethod!.inferred()){
-            toIteratorMethod!._sourceMethod!.infer(toIteratorMethod!._sourceMethod!.context);
+        if(toIteratorMethod?._sourceMethod?.inferred() === false){
+            toIteratorMethod?._sourceMethod?.infer(toIteratorMethod?._sourceMethod?.context);
         }
 
         // extract generic parameters, name must match the definition
