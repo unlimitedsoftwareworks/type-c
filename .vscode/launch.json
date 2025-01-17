@@ -9,7 +9,7 @@
         "program": "${workspaceFolder}/source/index.ts",
         "outFiles": ["${workspaceFolder}/dist/**/*.js"],
         "sourceMaps": true,
-        "args": ["-c", "./tests/raylib-test", "-o", "./output", "-r", "--generate-ir"],//, "--run-tests"]
+        "args": ["-c", "./tests/template", "-o", "./output", "-r", "--generate-ir"],//, "--run-tests"]
         "env": {
           "TYPE_V_PATH": "/Users/praisethemoon/projects/type-c/type-v/cmake-build-debug"
         }
