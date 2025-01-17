@@ -2422,6 +2422,9 @@ export class FunctionGenerator {
         if(expr._isNullableCall){
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
+            if(!hasReturn){
+                resultTMP = this.generateTmp();
+            }
             this.i("const_ptr", resultTMP, 0);
             this.i("label", endLabel);
         }
@@ -2800,7 +2803,7 @@ export class FunctionGenerator {
 
                 let tmpZero = this.generateTmp();
                 this.i("const_u8", tmpZero, 0);
-                this.i("j_cmp_u8", instanceCheckRes, tmpZero, 1, jmpFail);
+                this.i("j_cmp_u8", instanceCheckRes, tmpZero, 0, jmpFail);
 
                 this.destroyTmp(tmpZero);
                 this.destroyTmp(instanceCheckRes);
