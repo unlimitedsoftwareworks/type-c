@@ -219,4 +219,8 @@ export class ClassMethod extends Symbol {
     getHeadlessDescription(): string {
         return this.imethod.getHeadlessDescription();
     }
+
+    inferred(): boolean {
+        return this._wasInferred;
+    }
 }

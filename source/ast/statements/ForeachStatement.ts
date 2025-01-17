@@ -139,6 +139,25 @@ export class ForeachStatement extends Statement {
             toIteratorMethod = candidates[0];
         }
         
+        /**
+         * This case happens when the method is defined later in array, and a previous method uses foreach such as:
+         *     fn push(array: Array<T>) {
+         *         this.extendIfNeeded(array.length())
+         *         foreach v in array {
+         *             this.push(v)
+         *         }
+         *     }
+         *     ..
+         * 
+         *     fn getIterable() = new ArrayIterator<T>(this)
+         * 
+         *     The combination of lack of hint for getIterable and the fact that we are iterating over the same array class
+         *     Results in toIteratorMethod being unresolved/uninferred, so we need to infer it here
+         */
+        if(!toIteratorMethod!._sourceMethod!.inferred()){
+            toIteratorMethod!._sourceMethod!.infer(toIteratorMethod!._sourceMethod!.context);
+        }
+
         // extract generic parameters, name must match the definition
         let genericMap = {"T": new GenericType(this.location, "T", new GenericTypeConstraint(null))};
         let genericParam = BuiltinModules.ArrayIterator!.getGenericParameters(ctx, toIteratorMethod!.header.returnType, genericMap);
