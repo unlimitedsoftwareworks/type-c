@@ -65,7 +65,11 @@ export class CastExpression extends Expression {
 
         // post process this.target
         if(this.castType === 'safe') {
-            this.target = new NullableType(this.location, this.target);
+            // when reinferring same expression, it can create nested nullable types
+            // which is inacceptable, so we check if the target is already nullable
+            if(!this.target.is(ctx, NullableType)) {
+                this.target = new NullableType(this.location, this.target);
+            }
         }
 
         // we do not use internal checkHint since we need to check based on the castType
