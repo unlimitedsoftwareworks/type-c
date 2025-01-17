@@ -24,7 +24,6 @@ import { CoroutineType } from "../types/CoroutineType";
 import { DataType } from "../types/DataType";
 import { GenericType, GenericTypeConstraint } from "../types/GenericType";
 import { InterfaceType } from "../types/InterfaceType";
-import { ReferenceType } from "../types/ReferenceType";
 import { BlockStatement } from "./BlockStatement";
 import { Statement } from "./Statement";
 
