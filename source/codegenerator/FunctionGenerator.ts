@@ -3579,9 +3579,6 @@ export class FunctionGenerator {
     }
 
     visitThrowExpression(expr: ThrowExpression, ctx: Context): string {
-        let tmp = this.generateTmp();
-        //const messageReg = this.visitExpression(expr.message, ctx);
-
         let callToCString = new FunctionCallExpression(
             expr.location, 
             new MemberAccessExpression(
@@ -3597,7 +3594,7 @@ export class FunctionGenerator {
         this.i("throw_user_rt", messageReg);
         this.destroyTmp(messageReg);
 
-        return tmp;
+        return "";
     }
 
     visitThisDistributedAssignExpression(expr: ThisDistributedAssignExpression, ctx: Context): string {
