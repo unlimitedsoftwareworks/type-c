@@ -570,6 +570,9 @@ export class CodeSegment {
             case BytecodeInstructionType.throw_rt:
                 return this.writer.push_8(args[0]);
 
+            case BytecodeInstructionType.throw_user_rt:
+                return this.writer.push_8(args[0]);
+
             default:
                 throw new Error(
                     `Unsupported instruction: ${BytecodeInstructionType[instruction]}`,

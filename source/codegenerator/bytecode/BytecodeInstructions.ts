@@ -577,4 +577,5 @@ export enum BytecodeInstructionType{
      * throw_rt code: i (1 byte)
      */
     throw_rt,
+    throw_user_rt,
 }

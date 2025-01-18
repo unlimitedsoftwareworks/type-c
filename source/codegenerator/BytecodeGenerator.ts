@@ -1984,6 +1984,10 @@ export class BytecodeGenerator {
                 this.emit(BytecodeInstructionType.throw_rt, instruction.args[0] as number);
             }
 
+            else if (instruction.type == "throw_user_rt") {
+                this.emit(BytecodeInstructionType.throw_user_rt, instruction.args[0] as number);
+            }
+
 
 
             else {

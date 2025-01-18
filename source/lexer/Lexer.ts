@@ -86,6 +86,7 @@ export class Lexer {
         [TokenType.TOK_YIELD, /^yield\b/],
         [TokenType.TOK_UNREACHABLE, /^unreachable\b/],
         [TokenType.TOK_OVERRIDE, /^override\b/],
+        [TokenType.TOK_THROW, /^throw\b/],
 
         // Special types
         [TokenType.TOK_I8, /^i8\b/],

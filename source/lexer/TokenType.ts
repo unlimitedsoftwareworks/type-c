@@ -58,7 +58,7 @@ export enum TokenType {
     TOK_STRING = "string",
     TOK_CHAR = "char",
     TOK_NULLABLE = "?",
-
+    TOK_THROW = "throw",
     TOK_LET = "let",
     TOK_NEW = "new",
     TOK_NULL = "null",

@@ -75,6 +75,7 @@ export type ExpressionKind =
     "yield"  | // yield x
     "mutate" | // mutate x
     "unreachable" | // unreachable
+    "throw" | // throw x
     "this_distributed_assign" // this += {x, y, z}
 ;
 

@@ -127,6 +127,7 @@ import { ThisDistributedAssignExpression } from "../ast/expressions/ThisDistribu
 import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAccessExpression";
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 import { getOperatorOverloadName } from "../typechecking/OperatorOverload";
+import { ThrowExpression } from "../ast/expressions/ThrowExpression";
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -2610,7 +2611,13 @@ export class ParseMethods {
         } else if (lexeme.type === "unreachable") {
             parser.accept();
             return new UnreachableExpression(loc);
-        } else {
+        } else if (lexeme.type === "throw") {
+            parser.accept();
+            let message = ParseMethods.parseExpression(parser, ctx, opts);
+            let code = null; // TODO: add code
+            return new ThrowExpression(loc, message, code);
+        }
+        else {
             parser.reject();
             return ParseMethods.parseExpressionPostfix(parser, ctx, opts);
         }

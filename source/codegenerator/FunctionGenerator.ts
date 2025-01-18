@@ -151,6 +151,7 @@ import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExp
 import { NullType } from "../ast/types/NullType";
 import { BuiltinModules } from "../BuiltinModules";
 import { convertForeachAbstractIterableToFor, convertForeachArrayToFor } from "./ASTTransformers";
+import { ThrowExpression } from "../ast/expressions/ThrowExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -557,6 +558,8 @@ export class FunctionGenerator {
             tmp = this.visitMutateExpression(expr, ctx);
         else if (expr instanceof UnreachableExpression)
             tmp = this.visitUnreachableExpression(expr, ctx);
+        else if (expr instanceof ThrowExpression)
+            tmp = this.visitThrowExpression(expr, ctx);
         else if (expr instanceof ThisDistributedAssignExpression)
             tmp = this.visitThisDistributedAssignExpression(expr, ctx);
         else throw new Error("Invalid expression!" + expr.toString());
@@ -3572,6 +3575,28 @@ export class FunctionGenerator {
         this.i("throw_rt", 0);
         let tmp = this.generateTmp();
         this.i("const_u8", tmp, 0);
+        return tmp;
+    }
+
+    visitThrowExpression(expr: ThrowExpression, ctx: Context): string {
+        let tmp = this.generateTmp();
+        //const messageReg = this.visitExpression(expr.message, ctx);
+
+        let callToCString = new FunctionCallExpression(
+            expr.location, 
+            new MemberAccessExpression(
+                expr.location, 
+                expr.message, 
+                new ElementExpression(expr.location, "toCString")), 
+            []);
+
+        callToCString.infer(ctx, new ArrayType(expr.location, new BasicType(expr.location, "u8")));
+
+        let messageReg = this.visitExpression(callToCString, ctx);
+        
+        this.i("throw_user_rt", messageReg);
+        this.destroyTmp(messageReg);
+
         return tmp;
     }
 
