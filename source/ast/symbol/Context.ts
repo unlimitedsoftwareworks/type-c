@@ -738,7 +738,7 @@ export class Context {
             this.symbols.delete(name);
         }
         else {
-            throw new Error("Symbol not found");
+            throw new Error(`Symbol ${name} not found`);
         }
     }
 
@@ -749,7 +749,7 @@ export class Context {
             this.hiddenSymbols.delete(name);
         }
         else {
-            throw new Error("Symbol not found");
+            throw new Error(`Symbol ${name} not found`);
         }
     }
 }
