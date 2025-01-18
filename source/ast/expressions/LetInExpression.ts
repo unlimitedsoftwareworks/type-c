@@ -37,7 +37,7 @@ export class LetInExpression extends Expression {
         this.setHint(hint);
 
         // infer the variables
-        this.variables.forEach(v => v.infer(ctx));
+        this.variables.forEach(v => v.infer(this.context));
         this.inferredType = this.inExpression.infer(this.context, hint);
 
         this.checkHint(this.context);
