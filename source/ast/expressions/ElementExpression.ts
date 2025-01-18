@@ -104,6 +104,10 @@ export class ElementExpression extends Expression {
                 // inherit variable constantness
             this.isConstant = variable.isConst;
 
+            if(this.inferredType!.is(ctx, BasicType) && hint?.is(ctx, BasicType)){
+                // to promote the type
+                return hint;
+            }
             return this.inferredType!;
         }
         else if (variable instanceof DeclaredFunction) {

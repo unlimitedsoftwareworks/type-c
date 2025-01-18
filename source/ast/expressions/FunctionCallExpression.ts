@@ -303,7 +303,7 @@ export class FunctionCallExpression extends Expression {
             let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
-                ctx.parser.customError(`Method ${memberExpr.name}(${inferredArgTypes.map(e => e.getShortName()).join(", ")}) not found in class ${baseExprType.getShortName()}`, this.location);
+                ctx.parser.customError(`Method ${memberExpr.name}(${inferredArgTypes.map(e => e.getShortName()).join(", ")}) ${hint?"-> "+hint.getShortName():""} not found in class ${baseExprType.getShortName()}`, this.location);
             }
             if (candidateMethods.length > 1) {
                 ctx.parser.customError(`Ambiguous method ${memberExpr.name} in class ${baseExprType.getShortName()}`, this.location);

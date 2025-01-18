@@ -535,13 +535,16 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
         }
     }
 
+    const is32bitsOrSmaller = (t: string) => (t === "u32" || t === "i32" || t === "f32" || t === "u16" || t === "i16" || t === "f16" || t === "u8" || t === "i8");
+    const is64bitsOrSmaller = (t: string) => (t === "u64" || t === "i64" || t === "f64" || is32bitsOrSmaller(t));
+
     // allow casting from f32 to u32 or i32
-    if(t1.kind === "f32" && (t2.kind === "u32" || t2.kind === "i32")) {
+    if(t1.kind === "f32" && is32bitsOrSmaller(t2.kind)) {
         return Ok();
     }
 
     // allow casting from f64 to u64 or i64
-    if(t1.kind === "f64" && (t2.kind === "u64" || t2.kind === "i64")) {
+    if(t1.kind === "f64" && is64bitsOrSmaller(t2.kind)) {
         return Ok();
     }
 
