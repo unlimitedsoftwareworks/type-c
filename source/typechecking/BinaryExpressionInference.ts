@@ -162,7 +162,7 @@ export function preCheckEnums(ctx: Context, lhs: DataType, rhs: DataType): DataT
 
 // addition(+), addition assignment(+=) requires two numeric inputs and returns a numeric output
 function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
         let res = basicTypePromotionMap[lhs.kind][rhs.kind];
@@ -197,7 +197,7 @@ function inferAddition(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
 // subtraction(-), substraction assignment (-=) requires two numeric inputs and returns a numeric output
 function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
 
@@ -224,7 +224,7 @@ function inferSubtraction(ctx: Context, lhs: DataType, rhs: DataType, expr: Bina
 
 // multiplication(*), multiplication assignment(*=) requires two numeric inputs and returns a numeric output
 function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
 
@@ -251,7 +251,7 @@ function inferMultiplication(ctx: Context, lhs: DataType, rhs: DataType, expr: B
 
 // division(/), division assignment requires two numeric inputs and returns a numeric output
 function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
 
@@ -278,7 +278,7 @@ function inferDivision(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
 
 // modulo(%) requires two numeric inputs and returns a numeric output
 function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
 
@@ -305,7 +305,7 @@ function inferModulo(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExp
 
 // less than(<), less or equal(<=), greater than(>), greater or tequal(>=) requires two numeric inputs and returns a bool
 function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
 
@@ -423,7 +423,7 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
         }
     }
 
-    if (lhs.is(ctx, BasicType) && rhs.is(ctx, BasicType)) {
+    if ((lhs.is(ctx, BasicType) || lhs.is(ctx, EnumType)) && (rhs.is(ctx, BasicType) || rhs.is(ctx, EnumType))) {
         lhs = lhs.to(ctx, BasicType) as BasicType;
         rhs = rhs.to(ctx, BasicType) as BasicType;
 
