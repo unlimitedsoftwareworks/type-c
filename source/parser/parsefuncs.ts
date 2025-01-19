@@ -3185,27 +3185,29 @@ export class ParseMethods {
             allowNullable: false,
         });
 
-        return elements
-            .filter((e) => e !== null)
-            .map((name, index) => {
-                let tupleDeconstruction = new TupleDeconstructionExpression(
-                    loc,
-                    tupleExpression,
-                    index,
-                );
+        return elements.map((name, index) => {
+            if(name === null) {
+                return null;
+            }
 
-                let d = new DeclaredVariable(
-                    loc,
-                    name as string,
-                    tupleDeconstruction,
-                    null, // type will be inferred later
-                    isConst,
-                    false,
-                    false
-                );
+            let tupleDeconstruction = new TupleDeconstructionExpression(
+                loc,
+                tupleExpression,
+                index,
+            );
 
-                return d;
-            });
+            let d = new DeclaredVariable(
+                loc,
+                name as string,
+                tupleDeconstruction,
+                null, // type will be inferred later
+                isConst,
+                false,
+                false
+            );
+
+            return d;
+        }).filter((e) => e !== null)
     }
 
     @trackState()
