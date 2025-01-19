@@ -4065,7 +4065,11 @@ export class FunctionGenerator {
 
         let initializer = group[0].initializer as TupleDeconstructionExpression
 
-        if((initializer.tupleExpression instanceof FunctionCallExpression) && (initializer.tupleExpression as FunctionCallExpression)._calledFFIMethod && (initializer.tupleExpression as FunctionCallExpression).inferredType!.is(ctx, TupleType)){
+        if(
+            (initializer.tupleExpression instanceof FunctionCallExpression) && 
+            (initializer.tupleExpression as FunctionCallExpression)._calledFFIMethod && 
+            (initializer.tupleExpression as FunctionCallExpression).inferredType!.is(ctx, TupleType)
+        ){
             let ret =  (initializer.tupleExpression as FunctionCallExpression).inferredType!.to(ctx, TupleType) as TupleType;
 
             let usedTmps: string[] = [];
