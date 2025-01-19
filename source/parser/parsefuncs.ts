@@ -778,6 +778,7 @@ export class ParseMethods {
             basePath.push(token.value);
             token = parser.peek();
         }
+        parser.reject();
 
         parser.basePackage.addImport(
             new ImportNode(loc, basePath, '*', '*', []),
