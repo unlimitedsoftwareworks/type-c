@@ -279,7 +279,11 @@ export class DeclaredFunction extends Symbol {
     }
 
     getDescription(): string {
-        return "fn " + this.name + "(" + this.prototype.header.parameters.map(p => p.name+" : "+p.type.getShortName()).join(", ") + ")";
+        return "(" + this.prototype.header.parameters.map(p => ((p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName())).join(", ") + ") -> " + this.prototype.header.returnType.getShortName();
+    }
+
+    getDetails(): string {
+        return "fn " + this.name + "(" + this.prototype.header.parameters.map(p => ((p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName())).join(", ") + ")";
     }
 }
 
@@ -330,6 +334,10 @@ export class DeclaredOverloadedFunction extends Symbol {
     }
 
     getDescription(): string {
-        return Array.from(this.overloadedFunctions.values()).map(f => f.getDescription()).join("\n");
+        return Array.from(this.overloadedFunctions.values()).map(f => f.getDescription()).join(", ");
+    }
+
+    getDetails(): string {
+        return Array.from(this.overloadedFunctions.values()).map(f => f.getDetails()).join("\n");
     }
 }

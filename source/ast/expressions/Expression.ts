@@ -75,6 +75,7 @@ export type ExpressionKind =
     "yield"  | // yield x
     "mutate" | // mutate x
     "unreachable" | // unreachable
+    "throw" | // throw x
     "this_distributed_assign" // this += {x, y, z}
 ;
 
@@ -108,6 +109,10 @@ export class Expression {
 
     static _expressionCounter: number = 0;
     id: number = Expression._expressionCounter++;
+
+    static reset() {
+        Expression._expressionCounter = 0;
+    }
 
     constructor(location: SymbolLocation, kind: ExpressionKind){
         this.location = location;

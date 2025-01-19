@@ -73,7 +73,11 @@ export class DeclaredNamespace extends Symbol {
         }
     }
 
+
     getDescription(): string {
+        return "namespace"
+    }
+    getDetails(): string {
         return this.ctx.getSymbolsList().map(s => s.getDescription()).join("\n");
     }
 }

@@ -17,10 +17,10 @@ import {GenericType} from "../types/GenericType";
 import {FunctionType} from "../types/FunctionType";
 import { DataType } from "../types/DataType";
 import { ClassMethod } from "./ClassMethod";
+import { Documentation } from "../../lexer/Documentation";
 
 export class InterfaceMethod extends FunctionPrototype {
     isStatic: boolean;
-
 
     /**
      * A cache of the method in case it belongs to a class method,
@@ -35,9 +35,15 @@ export class InterfaceMethod extends FunctionPrototype {
 
 
     alternativeName: string[] = [];
+    documentation: Documentation | null = null;
 
     static methodUIDGenerator: Map<string, number> = new Map();
     static methodUIDCounter: number = 0;
+
+    static reset() {
+        InterfaceMethod.methodUIDGenerator = new Map();
+        InterfaceMethod.methodUIDCounter = 0;
+    }
 
     /**
      * Generates a unique identifier for a method prototype, used by the code generator
@@ -70,7 +76,19 @@ export class InterfaceMethod extends FunctionPrototype {
     }
 
     getShortName() {
-        return this.name+"("+this.header.parameters.map(p => p.isMutable?"mut ":""+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+        return this.name+"("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+    }
+
+    getHeadlessDescription() {
+        return "("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+    }
+
+    getDetails(): string {
+        return this.name+"("+this.header.parameters.map(p => (p.isMutable?"mut ":"")+p.name+": "+p.type.getShortName()).join(",")+") -> "+this.header.returnType.getShortName();
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 
     serialize(unpack: boolean = false): string {

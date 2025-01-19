@@ -24,7 +24,6 @@ import { CoroutineType } from "../types/CoroutineType";
 import { DataType } from "../types/DataType";
 import { GenericType, GenericTypeConstraint } from "../types/GenericType";
 import { InterfaceType } from "../types/InterfaceType";
-import { ReferenceType } from "../types/ReferenceType";
 import { BlockStatement } from "./BlockStatement";
 import { Statement } from "./Statement";
 
@@ -49,6 +48,11 @@ export class ForeachStatement extends Statement {
 
     static iteratorId = 0;
     static tmpIteratorId = 0;
+
+    static reset() {
+        ForeachStatement.iteratorId = 0;
+        ForeachStatement.tmpIteratorId = 0;
+    }
 
     constructor(location: SymbolLocation, context: Context, useConst: boolean, valueIteratorName: string, indexIteratorName: string | null, iterableExpression: Expression, body: BlockStatement) {
         super(location, "foreach");
@@ -134,6 +138,25 @@ export class ForeachStatement extends Statement {
             toIteratorMethod = candidates[0];
         }
         
+        /**
+         * This case happens when the method is defined later in array, and a previous method uses foreach such as:
+         *     fn push(array: Array<T>) {
+         *         this.extendIfNeeded(array.length())
+         *         foreach v in array {
+         *             this.push(v)
+         *         }
+         *     }
+         *     ..
+         * 
+         *     fn getIterable() = new ArrayIterator<T>(this)
+         * 
+         *     The combination of lack of hint for getIterable and the fact that we are iterating over the same array class
+         *     Results in toIteratorMethod being unresolved/uninferred, so we need to infer it here
+         */
+        if(toIteratorMethod?._sourceMethod?.inferred() === false){
+            toIteratorMethod?._sourceMethod?.infer(toIteratorMethod?._sourceMethod?.context);
+        }
+
         // extract generic parameters, name must match the definition
         let genericMap = {"T": new GenericType(this.location, "T", new GenericTypeConstraint(null))};
         let genericParam = BuiltinModules.ArrayIterator!.getGenericParameters(ctx, toIteratorMethod!.header.returnType, genericMap);

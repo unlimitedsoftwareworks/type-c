@@ -27,4 +27,8 @@ export class FunctionInferenceCache {
     static has(fn: DeclaredFunction) {
         return this.cache[fn.hash()] != undefined;
     }
+
+    static reset() {
+        FunctionInferenceCache.cache = {};
+    }
 }

@@ -26,3 +26,5 @@ tests/template2/test/fib.tc
 tests/test18/module.json
 tests/test18/test.tc
 tests/test18/module.json
+tests/demos
+.type-ide

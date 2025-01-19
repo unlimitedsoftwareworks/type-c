@@ -13,6 +13,7 @@
 import { DataType } from "../types/DataType";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Symbol } from "../symbol/Symbol";
+import { Documentation } from "../../lexer/Documentation";
 
 
 export class ClassAttribute extends Symbol {
@@ -21,8 +22,13 @@ export class ClassAttribute extends Symbol {
     isStatic: boolean;
     location: SymbolLocation;
     isConst: boolean;
+    documentation: Documentation | null = null;
 
     static uidCounter: number = 0;
+
+    static reset() {
+        ClassAttribute.uidCounter = 0;
+    }
 
 
     constructor(location: SymbolLocation, name: string, type: DataType, isStatic: boolean, isConst: boolean=false){
@@ -47,5 +53,9 @@ export class ClassAttribute extends Symbol {
 
     getDescription(): string {
         return this.name + ": " + this.type.getShortName();
+    }
+
+    setDocumentation(doc: Documentation | null) {
+        this.documentation = doc;
     }
 }

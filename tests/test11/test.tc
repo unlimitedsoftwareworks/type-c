@@ -4,6 +4,7 @@ from std.io import println
 fn doStuff(x: u32) -> (u32, u32) = (x+1, x+2)
 fn doStuff2<T>(x: T) = (x+1, x+2)
 fn doStuff3<T>(x: T) -> (T, T) { return doStuff2<T>(x) }
+fn get() -> (u32, u32) = (0, 1)
 
 type Z<T> = class {
     let x: T
@@ -119,6 +120,16 @@ fn test_case_3(rn: TestUnit) {
     let (yy, zz) = doStuff3<f32>(3.14f)
     rn.assert_f32_eq_pre(yy, 4.14f, 0.0001f)
     rn.assert_f32_eq_pre(zz, 5.14f, 0.0001f)
+
+    let (value_1, value_2) = get()
+    rn.assert_eq(value_1, 0)
+    rn.assert_eq(value_2, 1)
+
+    let (_, value_22) = get()
+    rn.assert_eq(value_22, 1)
+
+    let (value_11, _) = get()
+    rn.assert_eq(value_11, 0)
 }
 
 fn main() {

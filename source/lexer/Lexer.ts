@@ -13,6 +13,8 @@
 import { TokenType } from "./TokenType";
 import { Token } from "./Token";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
+import { ParseState } from "../parser/parsefuncs";
+import { Documentation } from "./Documentation";
 
 export class Lexer {
     filepath: string;
@@ -25,6 +27,17 @@ export class Lexer {
     colC: number;
 
     private limit: { line: number; col: number } | null = null;
+    stateCapturePosition : {
+        file: string;
+        line: number;
+        col: number;
+        callback: (stack: ParseState[]) => void;
+    } | null = null;
+
+    private currentDocumentation: Documentation | null = null;
+
+    private lastSeenTag: "brief" | "prop" | null = null;
+    private lastPropName: string | null = null;
 
     static tokenRegexArray: [TokenType, RegExp][] = [
         // Keywords
@@ -73,6 +86,7 @@ export class Lexer {
         [TokenType.TOK_YIELD, /^yield\b/],
         [TokenType.TOK_UNREACHABLE, /^unreachable\b/],
         [TokenType.TOK_OVERRIDE, /^override\b/],
+        [TokenType.TOK_THROW, /^throw\b/],
 
         // Special types
         [TokenType.TOK_I8, /^i8\b/],
@@ -224,11 +238,24 @@ export class Lexer {
             }
             reskip = true;
         } else if (this.compare("/*")) {
-            while (this.canLookAhead() && !this.compare("*/")) {
-                this.inc();
+            // Check if this is a documentation comment
+            if (this.currentChar() === "*") {
+                const startLocation = new SymbolLocation(
+                    this.filepath,
+                    this.lineC,
+                    this.colC - 2, // Account for /* characters
+                    this.dataIndex - 2
+                );
+                this.currentDocumentation = this.parseDocumentation(startLocation);
+            } else {
+                // Regular multi-line comment
+                while (this.canLookAhead() && !this.compare("*/")) {
+                    this.inc();
+                }
             }
             reskip = true;
         }
+
         if (reskip) {
             this.skipWhitespaces();
         }
@@ -241,6 +268,17 @@ export class Lexer {
      */
     setLimit(line: number, col: number) {
         this.limit = { line, col };
+    }
+
+    /**
+     * Sets a marker at which to capture the state of the parser
+     */
+    setStateCapturePosition(file: string, line: number, col: number, callback: (stack: ParseState[]) => void) {
+        if(file != this.filepath){
+            return;
+        }
+
+        this.stateCapturePosition = { file, line, col, callback };
     }
 
     /**
@@ -259,6 +297,16 @@ export class Lexer {
                 (this.lineC === this.limit.line && this.colC >= this.limit.col));
     }
 
+    isAtStateCapturePosition(line: number, col: number): boolean {
+        return (this.stateCapturePosition !== null) && 
+               (this.lineC > this.stateCapturePosition.line || 
+                (this.lineC === this.stateCapturePosition.line && this.colC > this.stateCapturePosition.col));
+    }
+
+    hasCaptureStateEvent(): boolean {
+        return this.stateCapturePosition !== null;
+    }
+
     nextToken(): Token {
         // Add limit check at start of nextToken
         if (this.isAtLimit()) {
@@ -274,6 +322,18 @@ export class Lexer {
 
         this.skipWhitespaces();
 
+        // check for EOF
+        if(!this.canLookAhead()){
+            return new Token(
+                TokenType.TOK_EOF,
+                "",
+                this.dataIndex,
+                this.lineC,
+                this.colC,
+                this.filepath,
+            );
+        }
+
         for (const [tokenType, regex] of Lexer.tokenRegexArray) {
             const match = this.data.substring(this.dataIndex).match(regex);
             if (match && match[0]) {
@@ -288,7 +348,9 @@ export class Lexer {
                     this.lineC,
                     this.colC,
                     this.filepath,
-                );
+                ).setDocumentation(this.currentDocumentation);
+                
+
                 if (res.type == "identifier" && res.value == "_") {
                     res = new Token(
                         TokenType.TOK_WILDCARD,
@@ -297,9 +359,14 @@ export class Lexer {
                         this.lineC,
                         this.colC,
                         this.filepath,
-                    );
+                    ).setDocumentation(this.currentDocumentation);
                 }
                 this.colC += lexeme.length;
+
+                if(res.documentation){
+                    this.currentDocumentation = null;
+                }
+
                 return res;
             }
         }
@@ -353,5 +420,98 @@ export class Lexer {
 
         // Clear token stack since we've moved
         this.tokenStack = [];
+    }
+
+    private parseDocumentation(startLocation: SymbolLocation) {
+        // Create new documentation object
+        const doc = new Documentation(startLocation);
+        
+        // Skip the initial /**
+        this.inc();
+        this.inc();
+        this.inc();
+
+        let currentLine = "";
+        
+        while (this.canLookAhead()) {
+            if (this.currentChar() === "*" && this.data[this.dataIndex + 1] === "/") {
+                // Process the last line before ending
+                this.processDocLine(currentLine.trim(), doc);
+                this.inc(); // Skip *
+                this.inc(); // Skip /
+                break;
+            }
+
+            if (this.currentChar() === "\n") {
+                this.processDocLine(currentLine.trim(), doc);
+                currentLine = "";
+                this.inc();
+                continue;
+            }
+
+            currentLine += this.currentChar();
+            this.inc();
+        }
+
+        return doc;
+    }
+
+    private processDocLine(line: string, doc: Documentation) {
+        // Remove leading * and whitespace if present
+        line = line.replace(/^\s*\*\s*/, "");
+        
+        if (!line) return;
+
+        // Handle @brief
+        if (line.startsWith("@brief")) {
+            doc.brief = line.substring(6).trim();
+            this.lastSeenTag = "brief";
+            return;
+        }
+
+        // Handle @extraComments
+        if (line.startsWith("@extraComments")) {
+            doc.extraComments = line.substring(13).trim();
+            this.lastSeenTag = null;
+            return;
+        }
+
+        // Handle @param or @prop
+        if (line.startsWith("@param") || line.startsWith("@prop")) {
+            // Fix: Improve regex to handle multi-line descriptions
+            const matches = line.match(/@(?:param|prop)\s+(\w+)(?:\s*:\s*(.+))?/);
+            if (matches) {
+                const [, prop, value] = matches;
+                doc.props[prop] = value ? value.trim() : "";  // Initialize empty string if no description
+                this.lastSeenTag = "prop";
+                this.lastPropName = prop;
+            }
+            return;
+        }
+
+        // Handle other @tags
+        if (line.startsWith("@")) {
+            // Fix: Don't treat everything as a prop
+            const matches = line.match(/@(\w+)(?:\s*:\s*(.+))?/);
+            if (matches) {
+                const [, tag, value] = matches;
+                // Don't prefix with "undefined"
+                doc.props[tag] = value ? value.trim() : "";
+                this.lastSeenTag = "prop";
+                this.lastPropName = tag;
+            }
+            return;
+        }
+
+        // If no @ tag, append to the last seen property
+        if (this.lastSeenTag === "brief" && doc.brief) {
+            doc.brief += " " + line;
+        } else if (this.lastSeenTag === "prop" && this.lastPropName) {
+            // Ensure the property exists before appending
+            if (!doc.props[this.lastPropName]) {
+                doc.props[this.lastPropName] = "";
+            }
+            doc.props[this.lastPropName] += " " + line;
+        }
     }
 }

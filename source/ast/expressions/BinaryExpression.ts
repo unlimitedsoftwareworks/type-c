@@ -178,6 +178,10 @@ export class BinaryExpression extends Expression {
         }
         else {
             lhsType = this.left.infer(ctx, null);
+            if(lhsType.is(ctx, BasicType) && (hint?.is(ctx, BasicType))){
+                // reinfer to apply any promotion
+                lhsType = this.left.infer(ctx, hint);
+            }
         }
 
         let rhsType: DataType | null = null;

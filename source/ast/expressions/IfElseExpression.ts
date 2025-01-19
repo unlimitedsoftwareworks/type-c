@@ -33,6 +33,10 @@ export class IfElseExpression extends Expression {
     // static counter for the unique identifiers of the conditions labels
     static conditionsUIDCounter: number = 0;
 
+    static reset() {
+        IfElseExpression.conditionsUIDCounter = 0;
+    }
+
     constructor(location: SymbolLocation, conditions: Expression[], bodies: Expression[], elseBody: Expression) {
         super(location, "if_else");
         this.conditions = conditions;

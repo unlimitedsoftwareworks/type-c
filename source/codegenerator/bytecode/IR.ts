@@ -490,6 +490,7 @@ export type IRInstructionType =
     "coroutine_finish" |
 
     "throw_rt" |
+    "throw_user_rt" |
 
     // source map instructions
     "srcmap_push_loc" |

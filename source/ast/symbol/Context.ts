@@ -74,6 +74,12 @@ export class Context {
     private symbols: Map<string, Symbol> = new Map();
 
     /**
+     * Hidden symbols are hidden and cannot be fetched temporarily,
+     * this is used to avoid using a declared variable within its own initializer
+     */
+    private hiddenSymbols: Map<string, Symbol> = new Map();
+
+    /**
      * The symbols that are external to this context,
      * i.e they are not owned by this context, but are imported from another context
      */
@@ -116,6 +122,11 @@ export class Context {
      * A unique identifier for this context
      */
     static contextCount = 0;
+    static reset() {
+        Context.contextCount = 0;
+        Context.InferenceMode = "regular";
+    }
+    
     uuid = "ctx_" + Context.contextCount++; // Math.random().toString(36).substring(7);
 
     //static _contextMap = new Map<string, Context>();
@@ -718,5 +729,27 @@ export class Context {
 
     getSymbolsList(): Symbol[] {
         return Array.from(this.symbols.values());
+    }
+
+    hideSymbol(name: string){
+        let symbol = this.symbols.get(name);
+        if(symbol){
+            this.hiddenSymbols.set(name, symbol);
+            this.symbols.delete(name);
+        }
+        else {
+            throw new Error(`Symbol ${name} not found`);
+        }
+    }
+
+    unhideSymbol(name: string){
+        let symbol = this.hiddenSymbols.get(name);
+        if(symbol){
+            this.symbols.set(name, symbol);
+            this.hiddenSymbols.delete(name);
+        }
+        else {
+            throw new Error(`Symbol ${name} not found`);
+        }
     }
 }

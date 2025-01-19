@@ -151,6 +151,7 @@ import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExp
 import { NullType } from "../ast/types/NullType";
 import { BuiltinModules } from "../BuiltinModules";
 import { convertForeachAbstractIterableToFor, convertForeachArrayToFor } from "./ASTTransformers";
+import { ThrowExpression } from "../ast/expressions/ThrowExpression";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -228,6 +229,9 @@ export class FunctionGenerator {
 
     // tmp variables counter
     static tmpCounter = 0;
+    static reset() {
+        FunctionGenerator.tmpCounter = 0;
+    }
 
     // labels counter
     lblCounter = 0;
@@ -554,6 +558,8 @@ export class FunctionGenerator {
             tmp = this.visitMutateExpression(expr, ctx);
         else if (expr instanceof UnreachableExpression)
             tmp = this.visitUnreachableExpression(expr, ctx);
+        else if (expr instanceof ThrowExpression)
+            tmp = this.visitThrowExpression(expr, ctx);
         else if (expr instanceof ThisDistributedAssignExpression)
             tmp = this.visitThisDistributedAssignExpression(expr, ctx);
         else throw new Error("Invalid expression!" + expr.toString());
@@ -1505,6 +1511,16 @@ export class FunctionGenerator {
                     element,
                     nullableAccess,
                 );
+            } else if (baseType.is(ctx, VariantConstructorType)) {
+                return this.ir_generate_variant_constructor_field_assignment(
+                    expr,
+                    ctx,
+                    left,
+                    right,
+                    baseType.to(ctx, VariantConstructorType) as VariantConstructorType,
+                    element,
+                    nullableAccess,
+                );
             } else if (baseType.is(ctx, ClassType)) {
                 return this.ir_generate_class_field_assignment(
                     expr,
@@ -1630,6 +1646,57 @@ export class FunctionGenerator {
         this.i(instr, structExpr, field!.getFieldID(), right);
         this.destroyTmp(structExpr);
         //this.i("s_set_field_f32", "struct field assignment, struct member");
+
+        if(nullableAccess){
+            this.i("j", endLabel);
+            this.i("label", assignNullLabel);
+            this.i("const_ptr", right, 0);
+            this.i("label", endLabel);
+        }
+        return right;
+    }
+
+
+    ir_generate_variant_constructor_field_assignment(
+        expr: BinaryExpression,
+        ctx: Context,
+        left: MemberAccessExpression,
+        right: string,
+        baseType: VariantConstructorType,
+        element: ElementExpression,
+        nullableAccess: boolean,
+    ) {
+        let variantType = baseType as VariantConstructorType;
+        // we will assign the value to the struct's field
+        this.i("debug", "struct field assignment, struct expression");
+        let variantExpr = this.visitExpression(left.left, ctx);
+        this.i(
+            "debug",
+            "struct field assignment, struct member " + element.name,
+        );
+
+        let endLabel = ""
+        let assignNullLabel = ""
+        // check if the field is null
+        if(nullableAccess){
+            endLabel = this.generateLabel();
+            assignNullLabel = this.generateLabel();
+            this.i("j_eq_null_ptr", variantExpr, assignNullLabel);
+        }
+
+
+        // now we need to get the variant ID
+        let variantID = variantType.getId();
+
+        let parameters = VariantParameter.sortParameters([...variantType.parameters], expr.location);
+
+  
+        const field = parameters.find(x => x.name == element.name)!;
+
+
+        let instr = structSetFieldType(field?.type);
+        this.i(instr, variantExpr, field!.getFieldID(), right);
+        this.destroyTmp(variantExpr);
 
         if(nullableAccess){
             this.i("j", endLabel);
@@ -2358,6 +2425,9 @@ export class FunctionGenerator {
         if(expr._isNullableCall){
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
+            if(!hasReturn){
+                resultTMP = this.generateTmp();
+            }
             this.i("const_ptr", resultTMP, 0);
             this.i("label", endLabel);
         }
@@ -2736,7 +2806,7 @@ export class FunctionGenerator {
 
                 let tmpZero = this.generateTmp();
                 this.i("const_u8", tmpZero, 0);
-                this.i("j_cmp_u8", instanceCheckRes, tmpZero, 1, jmpFail);
+                this.i("j_cmp_u8", instanceCheckRes, tmpZero, 0, jmpFail);
 
                 this.destroyTmp(tmpZero);
                 this.destroyTmp(instanceCheckRes);
@@ -3508,6 +3578,25 @@ export class FunctionGenerator {
         return tmp;
     }
 
+    visitThrowExpression(expr: ThrowExpression, ctx: Context): string {
+        let callToCString = new FunctionCallExpression(
+            expr.location, 
+            new MemberAccessExpression(
+                expr.location, 
+                expr.message, 
+                new ElementExpression(expr.location, "toCString")), 
+            []);
+
+        callToCString.infer(ctx, new ArrayType(expr.location, new BasicType(expr.location, "u8")));
+
+        let messageReg = this.visitExpression(callToCString, ctx);
+        
+        this.i("throw_user_rt", messageReg);
+        this.destroyTmp(messageReg);
+
+        return "";
+    }
+
     visitThisDistributedAssignExpression(expr: ThisDistributedAssignExpression, ctx: Context): string {
         let exprs = expr.buildExpressions(ctx);
         for(let e of exprs) {
@@ -3976,7 +4065,11 @@ export class FunctionGenerator {
 
         let initializer = group[0].initializer as TupleDeconstructionExpression
 
-        if((initializer.tupleExpression instanceof FunctionCallExpression) && (initializer.tupleExpression as FunctionCallExpression)._calledFFIMethod && (initializer.tupleExpression as FunctionCallExpression).inferredType!.is(ctx, TupleType)){
+        if(
+            (initializer.tupleExpression instanceof FunctionCallExpression) && 
+            (initializer.tupleExpression as FunctionCallExpression)._calledFFIMethod && 
+            (initializer.tupleExpression as FunctionCallExpression).inferredType!.is(ctx, TupleType)
+        ){
             let ret =  (initializer.tupleExpression as FunctionCallExpression).inferredType!.to(ctx, TupleType) as TupleType;
 
             let usedTmps: string[] = [];

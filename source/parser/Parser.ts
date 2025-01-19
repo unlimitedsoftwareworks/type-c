@@ -15,7 +15,7 @@ import { BasePackage } from "../ast/BasePackage";
 import { Lexer } from "../lexer/Lexer";
 import { SymbolLocation } from "../ast/symbol/SymbolLocation";
 import { colors } from "../utils/termcolors";
-import * as parsefuncs from "./parsefuncs";
+import { ParseMethods } from "./parsefuncs";
 import { FunctionDeclarationStatement } from "../ast/statements/FunctionDeclarationStatement";
 import { VariableDeclarationStatement } from "../ast/statements/VariableDeclarationStatement";
 import { Context } from "../ast/symbol/Context";
@@ -44,6 +44,8 @@ export class Parser {
     // e.g std.io
     package: string;
 
+    stateStack: string[] = [];
+
     tokenStack: Token[] = [];
     stackIndex: number = 0;
 
@@ -66,6 +68,13 @@ export class Parser {
         this.warn = warn;
     }
 
+    pushState(state: string) {
+        this.stateStack.push(state);
+    }
+
+    popState() {
+        this.stateStack.pop();
+    }
 
     /**
      * Compares the last token with the current one to see if they are on the same line
@@ -89,6 +98,16 @@ export class Parser {
     }
 
     accept() {
+        if(this.lexer.hasCaptureStateEvent()){
+            for(let i = 0; i < this.tokenStack.length; i++){
+                if(this.lexer.isAtStateCapturePosition(this.tokenStack[i].location.line, this.tokenStack[i].location.col + this.tokenStack[i].value.length)){
+                    this.lexer.stateCapturePosition!.callback(ParseMethods.state);
+                    // clear the state capture position to continue as normal
+                    this.lexer.stateCapturePosition = null;
+                }
+            }
+        }
+        
         this.lastReadToken = this.tokenStack[this.stackIndex - 1];
         this.lastSeenToken = null;
         this.tokenStack.splice(0, this.stackIndex);
@@ -125,6 +144,7 @@ export class Parser {
      * @returns
      */
     expect(type: string | string[]): Token {
+        ParseMethods.setState({"expectedTokens": typeof type === "string" ? [type] : type});
         let t = typeof type === "string" ? [type] : type;
         let token = this.peek();
 
@@ -150,7 +170,7 @@ export class Parser {
             );
         } else {
             if (!t.includes(token.type)) {
-                this.basePackage.logs.push({
+                this.basePackage.pushLog({
                     type: "error",
                     message: `Expected '${type}' but got '${token.type}'`,
                     line: token.location.line,
@@ -181,7 +201,7 @@ export class Parser {
             );
         } else {
             if (!regex.test(token.value)) {
-                this.basePackage.logs.push({
+                this.basePackage.pushLog({
                     type: "error",
                     message: `Expected package name but got '${token.type}'`,
                     line: token.location.line,
@@ -204,7 +224,7 @@ export class Parser {
 
     customError(message: string, location: SymbolLocation, length: number = 1): never {
         if (this.mode == "intellisense"){
-            this.basePackage.logs.push({
+            this.basePackage.pushLog({
                 type: "error",
                 message: message,
                 line: location.line,
@@ -251,7 +271,7 @@ export class Parser {
             coordinates = coords;
         }
 
-        this.basePackage.logs.push({
+        this.basePackage.pushLog({
             type: "error",
             message: message,
             line: coordinates?.line,
@@ -327,7 +347,7 @@ export class Parser {
             coordinates = coords;
         }
 
-        this.basePackage.logs.push({
+        this.basePackage.pushLog({
             type: "warning",
             file: this.lexer.filepath || "<stdin>",
             message: message,
@@ -411,7 +431,7 @@ export class Parser {
                         this.customError("Imports are only allowed on global context", token.location)
                     }
                     this.reject();
-                    parsefuncs.parseImport(this);
+                    ParseMethods.parseImport(this);
                     break;
                 case "from":
                     // from only allowed in the global scope
@@ -419,33 +439,33 @@ export class Parser {
                         this.customError("Imports are only allowed on global context", token.location)
                     }
                     this.reject();
-                    parsefuncs.parseFrom(this);
+                    ParseMethods.parseFrom(this);
                     break;
 
                 case "namespace":
                     this.reject();
-                    let ns = parsefuncs.parseNamespace(this, ctx);
+                    let ns = ParseMethods.parseNamespace(this, ctx);
                     ns.setLocal(local)
                     ctx.addSymbol(ns);
                     local = false;
                     break;
                 case "type":
                     this.reject();
-                    let dt = parsefuncs.parseTypeDecl(this, this.basePackage.ctx);
+                    let dt = ParseMethods.parseTypeDecl(this, this.basePackage.ctx);
                     dt.setLocal(local)
                     ctx.addSymbol(dt)
                     local = false;
                     break;
                 case "extern":
                     this.reject();
-                    let ffi = parsefuncs.parseFFI(this, this.basePackage.ctx);
+                    let ffi = ParseMethods.parseFFI(this, this.basePackage.ctx);
                     ffi.setLocal(local)
                     ctx.addSymbol(ffi)
                     local = false;
                     break;
                 default:
                     this.reject();
-                    let e = parsefuncs.parseStatement(this, this.basePackage.ctx);
+                    let e = ParseMethods.parseStatement(this, this.basePackage.ctx);
                     if (!(e instanceof FunctionDeclarationStatement) && !(e instanceof VariableDeclarationStatement)) {
                         this.customError("Invalid global statement, only function/variable declarations are allowed globally", e.location)
                     }
@@ -459,6 +479,9 @@ export class Parser {
             }
             token = this.peek();
         }
+
+        // mark the end location of the context
+        ctx.endLocation = this.loc();
     }
 
     jumpTo(location: SymbolLocation){

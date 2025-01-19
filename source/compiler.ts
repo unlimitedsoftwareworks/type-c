@@ -8,6 +8,20 @@ import { colors } from "./utils/termcolors";
 import { getStdLibPath, initStdLib } from "./cli/stdlib";
 import { DeclaredNamespace } from "./ast/symbol/DeclaredNamespace";
 import { Symbol } from "./ast/symbol/Symbol";
+import { ClassType, DataType, InterfaceType, StructField } from "./ast/types";
+import { Expression } from "./ast/expressions/Expression";
+import { IfElseExpression } from "./ast/expressions/IfElseExpression";
+import { LambdaExpression } from "./ast/expressions/LambdaExpression";
+import { ClassAttribute } from "./ast/other/ClassAttribute";
+import { InterfaceMethod } from "./ast/other/InterfaceMethod";
+import { ForeachStatement } from "./ast/statements/ForeachStatement";
+import { IfStatement } from "./ast/statements/IfStatement";
+import { Context } from "./ast/symbol/Context";
+import { DeclaredFFI } from "./ast/symbol/DeclaredFFI";
+import { FunctionGenerator } from "./codegenerator/FunctionGenerator";
+import { FunctionInferenceCache } from "./typechecking/FunctionInference";
+import { TypeMatchCache } from "./typechecking/TypeChecking";
+import { ParseMethods, ParseState } from "./parser/parsefuncs";
 
 /**
  * Safely imports Node.js specific modules
@@ -55,6 +69,13 @@ export module TypeC {
         entry: string = "index.tc";
         dir: string = "";
         static stdlibDir: string = getStdLibPath();
+        
+        stateCapturePosition: {
+            file: string;
+            line: number;
+            col: number;
+            capturedState: ParseState[];
+        } | null = null;
 
         rawConfig: any = {};
         options: CompileOptions = {
@@ -73,6 +94,26 @@ export module TypeC {
 
         // map from package to the baseRoot of the package
         packageBaseContextMap: Map<string, BasePackage> = new Map();
+
+        static resetCompilerState() {
+            BuiltinModules.reset();
+            Expression.reset();
+            IfElseExpression.reset();
+            LambdaExpression.reset();
+            ClassAttribute.reset();
+            InterfaceMethod.reset();
+            ForeachStatement.reset();
+            IfStatement.reset();
+            Context.reset();
+            DeclaredFFI.reset();
+            ClassType.reset();
+            DataType.reset();
+            StructField.reset();
+            FunctionGenerator.reset();
+            FunctionInferenceCache.reset();
+            TypeMatchCache.reset();
+            ParseMethods.reset();
+        }
 
         static create(options: CompileOptions) {
             let config: any = {};
@@ -108,6 +149,11 @@ export module TypeC {
             return data;
         }
 
+        setStateCapturePosition(file: string, line: number, col: number, ) {
+            console.log("Setting state capture position", file, line, col);
+            this.stateCapturePosition = { file, line, col, capturedState: [] };
+        }
+
         /*
          * if mode is intellisense and content is set, it used over the file,
          * this is used by vscode extention to process unsaved file content
@@ -121,8 +167,20 @@ export module TypeC {
             let entrySource = this.readPackage(entry);
             let lexer = new Lexer(
                 entry,
-                mode == "intellisense" && content ? content : entrySource,
+                content != undefined ? content : entrySource,
             );
+
+            if(this.stateCapturePosition){
+                lexer.setStateCapturePosition(
+                    this.stateCapturePosition.file, 
+                    this.stateCapturePosition.line, 
+                    this.stateCapturePosition.col,
+                    (stack) => {
+                        this.stateCapturePosition!.capturedState = [...stack];
+                    }
+                );
+            }
+            
             lexer.filepath = entry;
             let parser = new Parser(
                 lexer,
@@ -132,10 +190,10 @@ export module TypeC {
             );
             
             this.basePackage = parser.basePackage;
-            parser.parse();
-
             let entryKey = normalizePath(entry);
             this.packageBaseContextMap.set(entryKey, this.basePackage);
+            
+            parser.parse();
 
 
             /**
@@ -174,12 +232,24 @@ export module TypeC {
             let data = this.readPackage(filepath);
             let lexer = new Lexer(filepath, data);
             lexer.filepath = filepath;
+
+            if(this.stateCapturePosition){
+                lexer.setStateCapturePosition(
+                    this.stateCapturePosition.file, 
+                    this.stateCapturePosition.line, 
+                    this.stateCapturePosition.col,
+                    (stack) => {
+                        this.stateCapturePosition!.capturedState = stack;
+                    }
+                );
+            }
+            
             let parser = new Parser(lexer, filepath);
             let basePackage = parser.basePackage;
-            parser.parse();
-
             key = normalizePath(filepath);
             this.packageBaseContextMap.set(key, basePackage);
+
+            parser.parse();
 
             /*
              * The base String class is injected into the base package
@@ -339,6 +409,8 @@ export module TypeC {
     }
 
     export const compile = (options: CompileOptions) => {
+        // reset compiler state
+        TCCompiler.resetCompilerState();
         initStdLib();
         // make sure all env variables are set
         if (!TCCompiler.stdlibDir) {
@@ -367,9 +439,9 @@ export module TypeC {
                     console.log(colors.BgRed, "stderr: ", colors.Reset);
                     console.log(result.stderr.toString());
                 }
-                process.exit(result.status || 0);
+                //process.exit(result.status || 0);
             }
         }
-        process.exit(0);
+        //process.exit(0);
     };
 }

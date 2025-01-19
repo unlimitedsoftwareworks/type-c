@@ -61,7 +61,10 @@ export class ClassType extends DataType {
      * If two classes do not have the same ID, they are different.
      */
     static classCounter = 0;
-    
+
+    static reset() {
+        ClassType.classCounter = 0;
+    }
 
     // used after parsing and analysis and prior to code gen
     // contains all methods, with all concrete types etc
@@ -275,8 +278,10 @@ export class ClassType extends DataType {
         return "class {" + this.methods.map(e => e.shortname()).join(",") + "}";
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@class{@attributes[${this.attributes.map(e => e.serialize(unpack))}],@methods[${this.methods.map(e => e.serialize(unpack)).join(",")}],@superTypes[${this.superTypes.map(e => e.serialize(unpack))}]`
+    serialize(_unpack: boolean = false): string {
+        return `@class{${this.classId}}`;
+        // would cause infinit loop if the class depends on itself such as fn getThis() = this with explicit return type
+        //return `@class{@attributes[${this.attributes.map(e => e.serialize(unpack))}],@methods[${this.methods.map(e => e.serialize(unpack)).join(",")}],@superTypes[${this.superTypes.map(e => e.serialize(unpack))}]}`
     }
 
     /**

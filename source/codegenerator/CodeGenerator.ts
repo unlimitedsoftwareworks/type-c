@@ -331,9 +331,9 @@ export class CodeGenerator {
         return cfg.generateDotGraph();
     }
 
-    dump(save_debug = false) {
+    dump(save_debug = false, outputFolder: string) {
         // save the instructions to a file
-        let dir = "./output/ir.txt";
+        let dir = path.join(outputFolder, "ir.txt");
 
         // join all functions into one array
         let all: IRInstruction[] = [];
@@ -387,8 +387,8 @@ export function generateCode(compiler: TypeC.TCCompiler) {
         generator.generateFunctions(value);
     }
 
-    if (compiler.options.generateIR) {
-        generator.dump(true);
+    if (compiler.options.generateIR && compiler.options.outputFolder) {
+        generator.dump(true, compiler.options.outputFolder);
         let data = generator.generateCFG();
         //toFile(data, path.join(compiler.options.outputFolder || ".",'graph.png'), { format: 'png' });
 
