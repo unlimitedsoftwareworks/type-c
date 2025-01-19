@@ -759,7 +759,7 @@ export class ParseMethods {
     }
 
     /**
-     * <import> ::= "import" <id> ("." <id>)* ("as" <id>)?
+     * <import> ::= "import" <id> ("." <id>)* 
      */
     @trackState()
     static parseImport(parser: Parser) {
@@ -779,20 +779,8 @@ export class ParseMethods {
             token = parser.peek();
         }
 
-        let actualName = basePath.pop() as string;
-        let alias = actualName;
-
-        if (token.type === "as") {
-            parser.accept();
-            token = parser.expectPackageName();
-            alias = token.value;
-            parser.accept();
-        } else {
-            parser.reject();
-        }
-
         parser.basePackage.addImport(
-            new ImportNode(loc, basePath, actualName, alias, []),
+            new ImportNode(loc, basePath, '*', '*', []),
         );
     }
 
