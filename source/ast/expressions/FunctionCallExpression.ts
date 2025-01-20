@@ -347,7 +347,6 @@ export class FunctionCallExpression extends Expression {
     }
 
     private inferFunction(ctx: Context, lhsType: DataType) {
-
         let lhsT = lhsType as FunctionType;
 
         if (lhsT.isCoroutine) {
@@ -633,7 +632,6 @@ export class FunctionCallExpression extends Expression {
                 ctx.parser.customError(`The result of an expression following a nullable access ?. should always be a type that can be null or void.`, this.location)
             }
         }
-
     }
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): FunctionCallExpression {
