@@ -59,7 +59,7 @@ export class NewExpression extends Expression {
                     ctx.parser.customError(`Class ${this.type.getShortName()} has an init method, but it does not match the expected signature`, this.location);
                 }
                 else {
-                    if(classType.hasNonStatocAttributes()){
+                    if(classType.hasNonStaticAttributes()){
                         ctx.parser.customWarning(`Class ${this.type.getShortName()} has non-static attributes, but no init method. Consider adding an init method to initialize your class.`, this.location);
                     }
                 }

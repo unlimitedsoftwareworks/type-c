@@ -890,7 +890,7 @@ export class ClassType extends DataType {
     }
 
     // used in NewExpression to show errors if class has fields but no init method
-    hasNonStatocAttributes() {
+    hasNonStaticAttributes() {
         return this.attributes.some(e => !e.isStatic);
     }
 
