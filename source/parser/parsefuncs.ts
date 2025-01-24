@@ -3167,15 +3167,26 @@ export class ParseMethods {
         parser.expect("(");
         let elements: (string | null)[] = [];
         let tupleExpression: Expression;
+        let nullableList: boolean[] = [];
 
         while (1) {
             if (parser.peek().type == "_") {
                 parser.accept();
                 elements.push(null);
+                nullableList.push(false);
             } else {
                 parser.reject();
                 let name = parser.expect("identifier").value;
                 elements.push(name);
+                let tok = parser.peek();
+                if(tok.type === "?") {
+                    parser.accept();
+                    nullableList.push(true);
+                } else {
+                    parser.reject();
+                    nullableList.push(false);
+                }
+
             }
             if (parser.peek().type != ")") {
                 parser.reject();
@@ -3210,7 +3221,8 @@ export class ParseMethods {
                 null, // type will be inferred later
                 isConst,
                 false,
-                false
+                false,
+                nullableList[index]
             );
 
             return d;
@@ -3231,14 +3243,22 @@ export class ParseMethods {
             field: string | null;
         }[] = [];
         let readFields: string[] = [];
-
         while (1) {
             let isRemaining = false;
+            let isNullable = false;
 
             if (parser.is("...")) {
                 isRemaining = true;
                 parser.accept();
                 let variableName = parser.expect("identifier").value;
+                let tok = parser.peek();
+                if(tok.type === "?") {
+                    parser.accept();
+                    isNullable = true;
+                } else {
+                    parser.reject();
+                    isNullable = false;
+                }
 
                 elements.push({
                     variable: new DeclaredVariable(
@@ -3248,7 +3268,8 @@ export class ParseMethods {
                         null,
                         isConst,
                         false,
-                        false
+                        false,
+                        isNullable
                     ),
                     field: null,
                     isRemaining: isRemaining,
@@ -3268,6 +3289,15 @@ export class ParseMethods {
                     parser.reject();
                 }
 
+                let tok = parser.peek();
+                if(tok.type === "?") {
+                    parser.accept();
+                    isNullable = true;
+                } else {
+                    parser.reject();
+                    isNullable = false;
+                }
+
                 elements.push({
                     variable: new DeclaredVariable(
                         parser.loc(),
@@ -3276,7 +3306,8 @@ export class ParseMethods {
                         null,
                         isConst,
                         false,
-                        false
+                        false,
+                        isNullable
                     ),
                     field: propertyName,
                     isRemaining: isRemaining,
@@ -3328,7 +3359,7 @@ export class ParseMethods {
 
         while (1) {
             let isRemaining = false;
-
+            let isNullable = false;
             if (parser.peek().type == "_") {
                 parser.accept();
                 elements.push({
@@ -3346,6 +3377,14 @@ export class ParseMethods {
                 parser.reject();
                 let name = parser.expect("identifier").value;
                 parser.reject();
+                let tok = parser.peek();
+                if(tok.type === "?") {
+                    parser.accept();
+                    isNullable = true;
+                } else {
+                    parser.reject();
+                    isNullable = false;
+                }
                 elements.push({
                     // the initializer is a dummy value, the actual initializer will be set later
                     variable: new DeclaredVariable(
@@ -3355,7 +3394,8 @@ export class ParseMethods {
                         null,
                         isConst,
                         false,
-                        false
+                        false,
+                        isNullable
                     ),
                     isIgnored: false,
                     isRemaining: isRemaining,
@@ -3408,6 +3448,7 @@ export class ParseMethods {
         ParseMethods.setState({"step": ["name"]});
         var token = parser.expect("identifier");
         parser.accept();
+        let isNullable = false;
         let name = token.value;
         let type: DataType | null = null;
         // let x: strict i32 = 1
@@ -3418,6 +3459,9 @@ export class ParseMethods {
             ParseMethods.setState({"step": ["type"]});
             parser.accept();
             type = ParseMethods.parseType(parser, ctx);
+        } else if (token.type === "?") {
+            parser.accept();
+            isNullable = true;
         } else {
             parser.reject();
         }
@@ -3428,7 +3472,7 @@ export class ParseMethods {
         let initializer = ParseMethods.parseExpression(parser, ctx, {
             allowNullable: false,
         });
-        let v = new DeclaredVariable(loc, name, initializer, type, isConst, isLocal, false);
+        let v = new DeclaredVariable(loc, name, initializer, type, isConst, isLocal, false, isNullable);
         return [v];
     }
 
