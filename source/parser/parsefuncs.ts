@@ -128,6 +128,7 @@ import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAcc
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 import { getOperatorOverloadName } from "../typechecking/OperatorOverload";
 import { ThrowExpression } from "../ast/expressions/ThrowExpression";
+import { StringEnumType } from "../ast/types/StringEnumType";
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -1232,8 +1233,25 @@ export class ParseMethods {
             parser.accept();
             return new NullType(loc);
         }
+        if (lexeme.type === "string_literal") {
+            let values: string[] = [lexeme.value]
+            parser.accept();
+            let loop = true;
+            while(loop) {
+                let tok = parser.peek();
+                if(tok.type === "|") {
+                    parser.accept();
+                    values.push(parser.expect("string_literal").value);
+                }
+                else {
+                    loop = false;
+                }
+                parser.reject();
+            }
+            return new StringEnumType(loc, values);
+        }
 
-        parser.customError(`Unexpected token "${lexeme.type}"`, loc);
+        parser.customError(`Unexpected token "${lexeme.type}" when parsing type`, loc);
     }
 
     @trackState()

@@ -10,11 +10,13 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { canCastTypes, matchDataTypes } from "../../typechecking/TypeChecking";
+import { canCastTypes, isStringClass, matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
+import { BasicType, ClassType, InterfaceType } from "../types";
 import { DataType } from "../types/DataType";
 import { NullableType } from "../types/NullableType";
+import { StringEnumType } from "../types/StringEnumType";
 import { Expression } from "./Expression";
 
 export class CastExpression extends Expression {
@@ -32,6 +34,10 @@ export class CastExpression extends Expression {
 
     isCastUnnecessary: boolean = false;
 
+    _alwaysNull: boolean = false;
+    _alwaysTrue: boolean = false;
+    _castingStringToEnum: boolean = false;
+
     constructor(location: SymbolLocation, expression: Expression, target: DataType, castType: "safe" | "regular" | "force" = "regular") {
         super(location, "cast_op");
         this.target = target;
@@ -42,8 +48,22 @@ export class CastExpression extends Expression {
     infer(ctx: Context, hint: DataType | null): DataType {
         this.setHint(hint);
 
-        // 1. infer base expression without a hint
-        let expressionType = this.expression.infer(ctx, null);
+        let expressionType: DataType;
+        // 1. infer base expression without a hint?
+        if(this.castType === "regular") {
+            // we do not infer with hint if it is a basic type
+            // because basic types are incompatible with each other, 
+            // and `as` is used to make is as such
+            if (!this.target.is(ctx, BasicType)) {
+                expressionType = this.expression.infer(ctx, this.target);
+            }
+            else {
+                expressionType = this.expression.infer(ctx, null);
+            }
+        }
+        else {
+            expressionType = this.expression.infer(ctx, null);
+        }
         
         // 2. Check if we can cast to the target type
         let r = canCastTypes(ctx, this.target, expressionType);
@@ -68,30 +88,53 @@ export class CastExpression extends Expression {
             // when reinferring same expression, it can create nested nullable types
             // which is inacceptable, so we check if the target is already nullable
             if(!this.target.is(ctx, NullableType)) {
+                // make sure that the target can be nullable
+                if(!this.target.allowedNullable(ctx)) {
+                    ctx.parser.customError("Cannot cast to a non-nullable type", this.target.location);
+                }
                 this.target = new NullableType(this.location, this.target);
+            }
+
+            // an additional check here is to make sure our casting makes sense.
+            // i.e we have expression of type class and we want to cast it to an interface
+
+            let nonNullTarget = this.target.denull();
+
+            let res = matchDataTypes(ctx, nonNullTarget, expressionType);
+            if(res.success) {
+                this._alwaysTrue = true;
+            }
+            else if (nonNullTarget.is(ctx, InterfaceType) && expressionType.is(ctx, ClassType)) {
+                // we are casting a class to an interface, so we need to check if the class implements the interface
+                let res = matchDataTypes(ctx, nonNullTarget, expressionType);
+                if(!res.success) {
+                    ctx.parser.customWarning(`Safe cast guarenteed to fail from ${expressionType.getShortName()} to ${this.target.getShortName()}`, this.location);
+                    this._alwaysNull = true;
+                }
+            }
+            else if (isStringClass(ctx, expressionType) && (nonNullTarget.is(ctx, StringEnumType))) {
+                // we are casting a string to a string enum, so we need to check if the string is a valid enum value
+                this._castingStringToEnum = true;
             }
         }
 
         // we do not use internal checkHint since we need to check based on the castType
-        if(!hint) {
+        //if(!hint) {
+        if(hint) {
             this.inferredType = this.target;
-        }
-        else {
             let res = matchDataTypes(ctx, this.target, hint);
             if(!res.success && (this.castType !== 'force')) {
                 ctx.parser.customError(`Cannot cast ${this.target.getShortName()} to ${hint.getShortName()}: ${res.message}`, this.location);
             }
             else if (!res.success && (this.castType === 'force')) {
                 ctx.parser.customWarning(`Dangerous forced cast from ${this.target.getShortName()} to ${hint.getShortName()}: ${res.message}`, this.location);
-                this.inferredType = hint;
-            }
-            else {
-                this.inferredType = hint;
             }
         }
 
-        this.isConstant = this.expression.isConstant;
+        this.inferredType = this.target;
 
+        this.isConstant = this.expression.isConstant;
+        this.checkHint(ctx);
         return this.inferredType;
     }
 

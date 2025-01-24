@@ -22,6 +22,7 @@ import { BooleanType } from "../types/BooleanType";
 import { DataType } from "../types/DataType";
 import { NullType } from "../types/NullType";
 import { NullableType } from "../types/NullableType";
+import { StringEnumType } from "../types/StringEnumType";
 import { Expression } from "./Expression";
 
 export type LiteralKind = 
@@ -39,7 +40,7 @@ export type LiteralKind =
     "null" // null
 ;
 
-function unescapeCString(input: string): string {
+export function unescapeCString(input: string): string {
     // Remove surrounding double quotes if they exist
     if (input.startsWith('"') && input.endsWith('"')) {
         input = input.substring(1, input.length - 1);
@@ -192,13 +193,21 @@ export class StringLiteralExpression extends LiteralExpression {
     infer(ctx: Context, hint: DataType | null = null): DataType {
         this.setHint(hint);
     
-        if(BuiltinModules.String == undefined){
-            ctx.parser.customError("Default String class is not defined.", this.location);
+        if(hint && hint.is(ctx, StringEnumType)) {
+            let enumType = hint.to(ctx, StringEnumType) as StringEnumType;
+            if(enumType.values.includes(this.value)) {
+                this.inferredType = hint;
+            }
+            else {
+                ctx.parser.customError(`Expected a value from ${hint.getShortName()} but found ${this.value}`, this.location);
+            }
         }
 
-        this.inferredType = BuiltinModules.String;
-        this.checkHint(ctx, false);
+        else {
+            this.inferredType = BuiltinModules.String!;
+        }
 
+        this.checkHint(ctx, false);
         return this.inferredType;
     }
 

@@ -31,6 +31,8 @@ import { CoroutineType } from "../types/CoroutineType";
 import { UnaryExpression } from "./UnaryExpression";
 import { BinaryIntLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, OctIntLiteralExpression } from "./LiteralExpression";
 import { BooleanType } from "../types/BooleanType";
+import { StringEnumType } from "../types/StringEnumType";
+import { BuiltinModules } from "../../BuiltinModules";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -223,6 +225,9 @@ export class BinaryExpression extends Expression {
             rhsType = this.left.inferredType!;
         }
 
+        if(isArithmeticOperator(this.operator) && (lhsType.is(ctx, StringEnumType))){
+            lhsType = BuiltinModules.String!;
+        }
 
         let promotionType = binaryTypeCheckers[this.operator](ctx, lhsType, rhsType, this);
         this.promotedType = promotionType;

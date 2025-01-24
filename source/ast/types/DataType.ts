@@ -21,6 +21,7 @@ export type DataTypeKind =
     "class" | // ClassType
     "array" | // ArrayType
     "enum" | // EnumType
+    "string_enum" | // StringEnumType
     "variant" | // VariantType
     "variant_constructor" | // VariantConstructorType
     "promise" | // PromiseType
