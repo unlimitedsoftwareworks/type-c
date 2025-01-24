@@ -13,6 +13,7 @@
 
 import { isLHSAssignable, isRHSConstSafe } from "../expressions/BinaryExpression";
 import { Expression } from "../expressions/Expression";
+import { NullableType } from "../types";
 import { DataType } from "../types/DataType";
 import { LiteralIntType } from "../types/LiteralNumberType";
 import { TupleType } from "../types/TupleType";
@@ -28,6 +29,9 @@ export class DeclaredVariable extends Symbol {
     isConst: boolean;
     isStrict: boolean;
 
+    // when declared as let x? = V
+    isNullable: boolean;
+
     isFromTuple: boolean = false;
     isFromArray: boolean = false;
     isFromStruct: boolean = false;
@@ -39,7 +43,7 @@ export class DeclaredVariable extends Symbol {
     // used to identify the field name of the variable in a deconstructed struct
     deconstructedFieldName: string | null = null;
 
-    constructor(location: SymbolLocation, name: string, initializer: Expression, annotation: DataType | null, isConst: boolean, isLocal: boolean, isStrict: boolean){
+    constructor(location: SymbolLocation, name: string, initializer: Expression, annotation: DataType | null, isConst: boolean, isLocal: boolean = false, isStrict: boolean = false, isNullable: boolean = false){
         super(location, "variable_declaration", name);
         this.name = name;
         this.initializer = initializer;
@@ -47,6 +51,7 @@ export class DeclaredVariable extends Symbol {
         this.isConst = isConst;
         this.isStrict = isStrict;
         this.isLocal = isLocal;
+        this.isNullable = isNullable;
     }
 
     infer(ctx: Context){
@@ -57,6 +62,20 @@ export class DeclaredVariable extends Symbol {
         ctx.hideSymbol(this.name);
         let inferredType = this.initializer.infer(ctx, this.annotation);
         ctx.unhideSymbol(this.name);
+
+        // normally this is unreachable, as the parser expects either a `:` or a `?` after identifier during var decl
+        if(this.isNullable && (this.annotation !== null)){
+            ctx.parser.customError("Cannot declare a nullable variable when a type hint is provided", this.location);
+        }
+
+        // handle nullable
+        if(this.isNullable && inferredType.is(ctx, NullableType)){
+            ctx.parser.customError("Variable initializer is already nullable, please remove the nullable hint from the variable declaration", this.location);
+        }
+
+        if(this.isNullable){
+            inferredType = new NullableType(this.location, inferredType);
+        }
 
         // TODO: handle strictness
         // TODO: handle constant (cannot assign constant expression to non-constant variable)
