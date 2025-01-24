@@ -39,6 +39,8 @@ import { CoroutineType } from "../ast/types/CoroutineType";
 import { getDataTypeByteSize } from "../codegenerator/utils";
 import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { UnreachableType } from "../ast/types/UnreachableType";
+import { BuiltinModules } from "../BuiltinModules";
+import { StringEnumType } from "../ast/types/StringEnumType";
 
 
 export type TypeMatchResult = {
@@ -269,6 +271,20 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         return res
     }
 
+    if(t1.is(ctx, StringEnumType)) {
+        if(t2.is(ctx, StringEnumType)) {
+            res = matchStringEnumTypes(ctx, t1.to(ctx, StringEnumType) as StringEnumType, t2.to(ctx, StringEnumType) as StringEnumType, strict);
+            scopeCache.set(typeKey, res);
+            return res;
+        }
+        else {
+            res = Err(`Type mismatch, expected string enum, got ${t2.getShortName()}`);
+            scopeCache.set(typeKey, res);
+            return res;
+        }
+    }
+
+
     /**
      * case 7: FFIMethodType
      * we should not be performing type matching on FFI methods
@@ -343,6 +359,14 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
      * a class is only compatible with another class with the exact same structure both attributes and methods
      */
     if (t1.is(ctx, ClassType)) {
+        if(isStringClass(ctx, t1)) {
+            if(t2.is(ctx, StringEnumType)) {
+                // its a match!
+                scopeCache.set(typeKey, res);
+                return res;
+            }
+        }
+
         if (!t2.is(ctx, ClassType)) {
             res = Err(`Type mismatch, expected class, got ${t2.getShortName()}`);
             scopeCache.set(typeKey, res);
@@ -562,6 +586,23 @@ function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boo
     return Err(`Type mismatch, unexpected combination of ${t1.getShortName()} and ${t2.getShortName()}`);
 }
 
+function matchStringEnumTypes(ctx: Context, t1: StringEnumType, t2: StringEnumType, strict: boolean): TypeMatchResult {
+    let fields1 = t1.values;
+    let fields2 = t2.values;
+
+    if(fields1.length < fields2.length) {
+        return Err(`Type mismatch, expected string enum with ${fields1.length} fields, got ${fields2.length}`);
+    }
+
+    // make sure all fields of t2 are in t1
+    for(let field of fields2) {
+        if(!fields1.includes(field)) {
+            return Err(`Type mismatch, field ${field} present in ${t2.getShortName()} not found in ${t1.getShortName()}`);
+        }
+    }
+
+    return Ok();
+}
 
 function matchEnumTypes(ctx: Context, t1: EnumType, t2: EnumType, strict: boolean): TypeMatchResult {
     // if strict is enabled, the types must be the same and not just compatible
@@ -1118,4 +1159,24 @@ export function getSubStruct(struct: StructType, fields: string[]): StructType {
         }
     }
     return new StructType(struct.location, newFields);
+}
+
+/**
+ * Checks if a type is a string class
+ * by comparing it with the BuiltinStringType
+ */
+export function isStringClass(ctx: Context, type: DataType): boolean {
+    // string is a class, so this is a quick check
+    if(!type.is(ctx, ClassType)) {
+        return false;
+    }
+
+    // check if the string class is loaded
+    if(BuiltinModules.String === null) {
+        throw new Error("String class not found");
+    }
+
+    // check if the type is the string class
+    let res = matchDataTypes(ctx, type, BuiltinModules.String!, true);
+    return res.success;
 }

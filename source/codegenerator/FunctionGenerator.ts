@@ -107,7 +107,7 @@ import { TupleType } from "../ast/types/TupleType";
 import { VariantConstructorType, VariantParameter } from "../ast/types/VariantConstructorType";
 import { VariantType } from "../ast/types/VariantType";
 import { VoidType } from "../ast/types/VoidType";
-import { canCastTypes, getLargestStruct, matchDataTypes } from "../typechecking/TypeChecking";
+import { canCastTypes, getLargestStruct, isStringClass, matchDataTypes } from "../typechecking/TypeChecking";
 import { signatureFromGenerics } from "../typechecking/TypeInference";
 import { IRInstruction, IRInstructionType } from "./bytecode/IR";
 import { CastType, generateCastInstruction } from "./CastAPI";
@@ -150,8 +150,9 @@ import { ReverseIndexAccessExpression } from "../ast/expressions/ReverseIndexAcc
 import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExpression";
 import { NullType } from "../ast/types/NullType";
 import { BuiltinModules } from "../BuiltinModules";
-import { convertForeachAbstractIterableToFor, convertForeachArrayToFor } from "./ASTTransformers";
+import { compareStringToEnum, convertForeachAbstractIterableToFor, convertForeachArrayToFor, convertStringEq, convertStringNotEq } from "./ASTTransformers";
 import { ThrowExpression } from "../ast/expressions/ThrowExpression";
+import { StringEnumType } from "../ast/types/StringEnumType";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -1225,8 +1226,7 @@ export class FunctionGenerator {
             return this.ir_generate_binary_expr_or(expr, ctx);
         }
 
-        else if (
-            expr.operator == "=") {
+        else if (expr.operator == "=") {
             return this.ir_generate_assignment(expr, ctx);
         } else if (["+=", "-=", "*=", "/=", "%="].includes(expr.operator)) {
             // generate the instruction
@@ -1254,6 +1254,27 @@ export class FunctionGenerator {
                     expr.inferredType?.getShortName(),
                 expr.location,
             );
+        }
+
+
+        if(
+            (expr.operator == "==" || expr.operator == "!=") && 
+            (isStringClass(ctx, expr.left.inferredType!)) && 
+            (!expr.left.inferredType!.is(ctx, NullableType)) && 
+            (!expr.left.inferredType!.is(ctx, NullType)) &&
+            (!expr.right.inferredType!.is(ctx, NullableType)) &&
+            (!expr.right.inferredType!.is(ctx, NullType))
+        ) {
+            // special case for string enum
+            // replace == with lhs.eq(rhs) and  != with !lhs.eq(rhs)
+            if(expr.operator == "=="){
+                const fnCall = convertStringEq(ctx, expr.left, expr.right);
+                return this.visitExpression(fnCall, ctx);
+            }
+            else {
+                const fnCall = convertStringNotEq(ctx, expr.left, expr.right);
+                return this.visitExpression(fnCall, ctx);
+            }
         }
 
         // generate the left expression
@@ -2764,6 +2785,24 @@ export class FunctionGenerator {
         ctx: Context,
         argReg?: string,
     ): string {
+
+        // first check the preset obvious cases
+        if (expr._alwaysNull) {
+            // if the cast is always null, return null
+            let tmp = this.generateTmp();
+            this.i("const_ptr", tmp, 0);
+            return tmp;
+        }
+
+        if (expr._alwaysTrue) {
+            // if the cast is always true, return the expression
+            return this.visitExpression(expr.expression, ctx);
+        }
+
+        if(expr._castingStringToEnum){
+            return this.ir_generate_string_to_enum(ctx, expr);
+        }
+
         let castReg = argReg || this.visitExpression(expr.expression, ctx);
         let inferredType = expr.expression.inferredType?.dereference();
         let hintType = expr.target.dereference();
@@ -2782,6 +2821,7 @@ export class FunctionGenerator {
              * Safe casts yields a nullable.
              * Safe cast is done to cast an interface to a base class or an interface to another interface
              */
+
             let nonNullType = (hintType as NullableType).type.dereference();
             if (
                 nonNullType instanceof ClassType &&
@@ -2826,32 +2866,6 @@ export class FunctionGenerator {
                 this.i("label", jmpEnd);
 
                 return castReg;
-            } else if (
-                nonNullType.is(ctx, InterfaceType) &&
-                inferredType instanceof ClassType
-            ) {
-                // usually this happens when an interface is declared nullable and we want to assign a class to it
-                // the type checker already checked that the class implements the interface, so we just
-                // check if the class is null, else we change this cast to a regular one
-
-                let failLabel = this.generateLabel();
-                let endLabel = this.generateLabel();
-                this.i("j_eq_null_ptr", castReg, failLabel);
-                // if everything alright we cast normally
-                let newCast = new CastExpression(
-                    expr.location,
-                    expr.expression,
-                    nonNullType,
-                    "regular",
-                );
-                //newCast.infer(ctx, nonNullType);
-                let casted = this.visitCastExpression(newCast, ctx, castReg);
-                this.destroyTmp(castReg);
-                this.i("j", endLabel);
-                this.i("label", failLabel);
-                this.i("const_ptr", casted, 0);
-                this.i("label", endLabel);
-                return casted;
             } else if (
                 nonNullType.is(ctx, InterfaceType) &&
                 inferredType instanceof NullableType
@@ -3039,6 +3053,68 @@ export class FunctionGenerator {
         }
 
         return castReg;
+    }
+
+    ir_generate_string_to_enum(ctx: Context, expr: CastExpression): string {
+        let inferredType = expr.inferredType;
+        if(inferredType == null){
+            throw new Error("Inferred type is null");
+        }
+
+        /**
+         * Casting a string to an enum involves checking if the string is a valid enum value
+         */
+
+        // first create a new variable to hold the result of the expression
+        let subContext = new Context(ctx.location, ctx.parser, ctx, ctx.env);
+        // @ts-ignore, empty variable
+        let variable = new DeclaredVariable(ctx.location, "$castRes", null, BuiltinModules.String!, false, false, false);
+        subContext.addSymbol(variable);
+
+        // first assign the string to the variable
+        // and generate bytecode for it
+        const element = new ElementExpression(ctx.location, "$castRes")
+        let assignment = new BinaryExpression(ctx.location, element, expr.expression, "=");
+        assignment.infer(subContext, BuiltinModules.String!);
+        this.ir_generate_assignment(assignment, subContext);
+        
+
+        // initiate checking
+        let stringEnumType = inferredType!.to(ctx, StringEnumType) as StringEnumType;
+        let resTmp = this.generateTmp();
+
+        let endLabel = this.generateLabel();
+        let failLabel = this.generateLabel();
+
+        let labels: string[] = [];
+        for(let i = 0; i < stringEnumType.values.length-1; i++){
+            labels.push(this.generateLabel());
+        }
+
+        for(let i = 0; i < stringEnumType.values.length; i++){
+            if(i > 0){
+                this.i("label", labels[i-1]);
+            }
+            
+            let value = stringEnumType.values[i];
+            let cmp = compareStringToEnum(subContext, element, value);
+            let res = this.visitExpression(cmp, subContext);
+            this.i("j_eq_null_u8", res, i < stringEnumType.values.length-1 ? labels[i] : failLabel);
+            
+            const assignExpr = new BinaryExpression(ctx.location, element, new StringLiteralExpression(ctx.location, value), "=");
+            assignExpr.infer(subContext, BuiltinModules.String!);
+            this.ir_generate_assignment(assignExpr, subContext);
+            this.i("j", endLabel);
+        }
+
+        this.i("j", failLabel);
+
+        // emit fail label
+        this.i("label", failLabel);
+        this.i("const_ptr", resTmp, 0);
+        this.i("label", endLabel);
+
+        return resTmp;
     }
 
     visitIfElseExpression(expr: IfElseExpression, ctx: Context): string {
@@ -3262,7 +3338,8 @@ export class FunctionGenerator {
                 [exprBin],
             );
 
-            fromBytes.infer(ctx, expr.inferredType);
+            // we have to force the type to be string because of the string enum
+            fromBytes.infer(ctx, BuiltinModules.String!/*expr.inferredType*/);
             let res = this.visitFunctionCallExpression(fromBytes, ctx);
             //expr.inferredType = fromBytes.inferredType;
             return res;

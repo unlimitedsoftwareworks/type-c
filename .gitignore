@@ -28,3 +28,4 @@ tests/test18/test.tc
 tests/test18/module.json
 tests/demos
 .type-ide
+tests/stdtest

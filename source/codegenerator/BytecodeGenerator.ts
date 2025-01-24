@@ -412,7 +412,7 @@ export class BytecodeGenerator {
         if (mainReturnSize != 0) {
             // TODO: cast if needed!
             this.emit(BytecodeInstructionType.fn_get_ret_reg, 255, 255, mainReturnSize);
-            this.emit(BytecodeInstructionType.debug_reg, 255);
+            //this.emit(BytecodeInstructionType.debug_reg, 255);
         }
         //for(let i = 0; i < 21 ; i++) {
         //this.emit(BytecodeInstructionType.debug_reg, i);

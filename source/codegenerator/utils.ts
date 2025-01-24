@@ -88,6 +88,10 @@ export function getDataTypeByteSize(type: DataType): number {
             return 8;
         }
 
+        case "string_enum": {
+            return 8;
+        }
+        
         default : {
             throw new Error(`${type.getShortName()} aka ${type.kind} number types should not be used in the code generator`);
         }

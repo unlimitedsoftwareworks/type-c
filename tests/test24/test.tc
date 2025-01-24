@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2023-present Samsung Electronics Co., Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ /**
+  * @file test.c
+  * A string enums data type unit test.
+  */
+
+from std.unit.test import TestUnit, UnitSet
+from std.io import println
+type FileOpenMode = "read" | "write" | "execute"
+
+fn printMode(m: FileOpenMode) {
+
+}
+
+fn test_case_1(rn: TestUnit) {
+    let modes2: FileOpenMode[] = ["read", "execute"] // should pass
+    let modes4 = ["read", "write"] as FileOpenMode[] // should pass
+    
+    rn.assert_eq(modes2[0], "read")
+    rn.assert_eq(modes2[1], "execute")
+
+    let mode3: FileOpenMode = modes2[0]
+
+    // should be possible to convert a FileOpenMode to a string
+    let str1: String = mode3
+    rn.assert_eq(mode3, "read")
+
+    // otherway around is not possible
+    let mode5: FileOpenMode = str1 as! FileOpenMode
+    rn.assert_eq(mode5, "read")
+
+    let mode6 = "executes"
+    let mode7 = mode6 as? FileOpenMode
+
+    rn.assert_obj_null(mode7)
+
+    let mode8 = ("read" as? FileOpenMode)!
+    rn.assert_obj_eq(mode8, "read" as FileOpenMode)
+    let mode9 = ("write" as? FileOpenMode)!
+    rn.assert_obj_eq(mode9, "write" as FileOpenMode)
+    let mode10 = ("execute" as? FileOpenMode)!
+    rn.assert_obj_eq(mode10, "execute" as FileOpenMode)
+}
+
+fn main() {
+    let test_1 = new TestUnit("Test 1", "tests String Enum", test_case_1)
+    let set = new UnitSet("STD Test 24", "Tests String Enum Data Type", [test_1])
+    return set.run()
+}

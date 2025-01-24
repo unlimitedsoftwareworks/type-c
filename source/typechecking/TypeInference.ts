@@ -17,11 +17,13 @@ import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { BlockStatement } from "../ast/statements/BlockStatement";
 import { ReturnStatement } from "../ast/statements/ReturnStatement";
 import { Context } from "../ast/symbol/Context";
+import { NullableType } from "../ast/types";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { FunctionType } from "../ast/types/FunctionType";
 import { GenericType } from "../ast/types/GenericType";
 import { InterfaceType } from "../ast/types/InterfaceType";
+import { StringEnumType } from "../ast/types/StringEnumType";
 import { StructField, StructType } from "../ast/types/StructType";
 import { UnreachableType } from "../ast/types/UnreachableType";
 import { UnsetType } from "../ast/types/UnsetType";
@@ -309,6 +311,16 @@ export function findCompatibleTypes(ctx: Context, types: DataType[]): DataType |
     let t = types.filter(t => !(t instanceof UnreachableType));
 
     function findCommonSupertypeOrCompatibleType(ctx: Context, t1: DataType, t2: DataType): DataType | null {
+
+        if(t1.is(ctx, StringEnumType) && t2.is(ctx, StringEnumType)) {
+            // return a new common type combining the two
+            let e1 = t1.to(ctx, StringEnumType) as StringEnumType;
+            let e2 = t2.to(ctx, StringEnumType) as StringEnumType;
+            const values = [...e1.values, ...e2.values];
+            // remove duplicates
+            const uniqueValues = [...new Set(values)];
+            return new StringEnumType(ctx.location, uniqueValues, false);
+        }
         // case 1: two variant constructors, make sure they have the same parent and return the parent
         if (t1.is(ctx, VariantConstructorType) && t2.is(ctx, VariantConstructorType)) {
             let e1 = t1.to(ctx, VariantConstructorType) as VariantConstructorType;
@@ -429,6 +441,12 @@ export function findCompatibleTypes(ctx: Context, types: DataType[]): DataType |
         return t[0];
     }
 
+    // first check if we have any nullable type
+    let hasNullable = t.some(t => t.is(ctx, NullableType));
+
+    // strip any nullable type from its nullabe layer
+    t = t.map(t => t.is(ctx, NullableType) ? (t.to(ctx, NullableType)! as NullableType).type : t);
+
     // Start with the assumption that the first type could be compatible with all
     let baseType = t[0];
 
@@ -468,7 +486,12 @@ export function findCompatibleTypes(ctx: Context, types: DataType[]): DataType |
     }
 
     // After checking all types, baseType is the most specific common compatible type
-    return baseType;
+    if(hasNullable){
+        return new NullableType(t[0].location, baseType);
+    }
+    else {
+        return baseType;
+    }
 }
 
 

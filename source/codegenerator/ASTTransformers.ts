@@ -12,19 +12,21 @@
 
 import { BinaryExpression } from "../ast/expressions/BinaryExpression";
 import { ElementExpression } from "../ast/expressions/ElementExpression";
+import { Expression } from "../ast/expressions/Expression";
 import { FunctionCallExpression } from "../ast/expressions/FunctionCallExpression";
 import { IndexAccessExpression } from "../ast/expressions/IndexAccessExpression";
-import { IntLiteralExpression } from "../ast/expressions/LiteralExpression";
+import { IntLiteralExpression, StringLiteralExpression } from "../ast/expressions/LiteralExpression";
 import { MemberAccessExpression } from "../ast/expressions/MemberAccessExpression";
 import { TupleConstructionExpression } from "../ast/expressions/TupleConstructionExpression";
+import { UnaryExpression } from "../ast/expressions/UnaryExpression";
 import { BlockStatement } from "../ast/statements/BlockStatement";
 import { ExpressionStatement } from "../ast/statements/ExpressionStatement";
 import { ForeachStatement } from "../ast/statements/ForeachStatement";
 import { ForStatement } from "../ast/statements/ForStatement";
+import { Context } from "../ast/symbol/Context";
+import { BooleanType } from "../ast/types";
 
 export function convertForeachArrayToFor(stmt: ForeachStatement): ForStatement {
-
-
     // let xxx = arr.length
     let lengthExpression = new MemberAccessExpression(stmt.location, stmt.iterableExpression, new ElementExpression(stmt.location, "length"));
     
@@ -165,4 +167,23 @@ export function convertForeachAbstractIterableToFor(stmt: ForeachStatement): For
     )
 
     return forStatement;
+}
+
+export function convertStringEq(ctx: Context, lhs: Expression, rhs: Expression): Expression {
+    let expression = new FunctionCallExpression(lhs.location, new MemberAccessExpression(lhs.location, lhs, new ElementExpression(lhs.location, "eq")), [rhs]);
+    expression.infer(ctx, new BooleanType(lhs.location));
+    return expression;
+}
+
+export function convertStringNotEq(ctx: Context, lhs: Expression, rhs: Expression): Expression {
+    let baseExpression = new FunctionCallExpression(lhs.location, new MemberAccessExpression(lhs.location, lhs, new ElementExpression(lhs.location, "eq")), [rhs]);
+    let expression = new UnaryExpression(lhs.location, baseExpression, "!");
+    expression.infer(ctx, new BooleanType(lhs.location));
+    return expression;
+}
+
+export function compareStringToEnum(ctx: Context, lhs: Expression, value: string): Expression {
+    let cmp = new BinaryExpression(lhs.location, lhs, new StringLiteralExpression(lhs.location, value), "==");
+    cmp.infer(ctx, new BooleanType(lhs.location));
+    return cmp;
 }

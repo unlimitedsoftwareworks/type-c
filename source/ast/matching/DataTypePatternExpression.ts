@@ -172,7 +172,7 @@ export class DataTypePatternExpression extends PatternExpression {
                     this.location,
                     baseExpression,
                     new MemberAccessExpression(this.location, new ElementExpression(this.location, referenceType.pkg[0]), new ElementExpression(this.location, referenceType.pkg[1])),
-                    '=='
+                    "=="
                 ),
                 variableAssignments: []
             }
