@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-present Sulaymen Chouri
+ * Copyright (c) 2023-present Soulaymen Chouri
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,15 @@ fn test_case_1(rn: TestUnit) {
     rn.assert_eq(length2, 4)
 
     // test 4, short-circuit, nullable access
-    let e2 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) as Array<{x: u32}>? |> ?pop()
+    let e2 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) as Array<{x: u32}>? |>? pop()
     rn.assert_eq(e2?.x ?? 10, 3)
 }
 
 fn test_case_2(rn: TestUnit) {
     let e1 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) |> pop() |> x
-    
     rn.assert_eq(e1, 3)
+    let e2 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) |> [0] |> x
+    rn.assert_eq(e2, 1)
 }
 
 fn main() {
