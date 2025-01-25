@@ -16,12 +16,39 @@
 
  /**
   * @file test.c
-  * An empty test for now
+  * Tests Pipe Operator
   */
 
 from std.unit.test import TestUnit, UnitSet
+import std.collections.array 
+
+fn test_case_1(rn: TestUnit) {
+    // test 1, no short-circuit, direct access
+    let length = new Array<u32>([1,2,3]) |> .length()
+    rn.assert_eq(length, 3)
+
+    // test 2, no short-circuit, nullable access
+    let e1 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) as Array<{x: u32}>? |> ?. pop()
+    rn.assert_eq(e1?.x ?? 10, 3)
+
+    // test 3, short-circuit, direct access
+    let length2 = new Array<u32>([1,2,3,4])  |> length()
+    rn.assert_eq(length2, 4)
+
+    // test 4, short-circuit, nullable access
+    let e2 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) as Array<{x: u32}>? |> ?pop()
+    rn.assert_eq(e2?.x ?? 10, 3)
+}
+
+fn test_case_2(rn: TestUnit) {
+    let e1 = new Array<{x: u32}>([{x: 1}, {x: 2}, {x: 3}]) |> pop() |> x
+    
+    rn.assert_eq(e1, 3)
+}
 
 fn main() {
-    let set = new UnitSet("STD Test 26", "empty test", [])
+    let test_1 = new TestUnit("Test 1", "tests pipe operator", test_case_1)
+    let test_2 = new TestUnit("Test 2", "tests pipe operator chaining", test_case_2)
+    let set = new UnitSet("STD Test 26", "Tests pipe Operator", [test_1, test_2])
     return set.run()
 }

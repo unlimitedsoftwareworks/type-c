@@ -133,7 +133,10 @@ import { StringEnumType } from "../ast/types/StringEnumType";
 let INTIALIZER_GROUP_ID = 1;
 
 type ExpressionParseOptions = {
+    // allow an expression to be nullable
     allowNullable: boolean;
+    // special parsing right after |> operator
+    afterPipeMode?: boolean;
 };
 
 export type MethodOperatorName = "+" 
@@ -1948,7 +1951,7 @@ export class ParseMethods {
         ctx: Context,
         opts: ExpressionParseOptions,
     ): Expression {
-        let expr = ParseMethods.parseExpressionLet(parser, ctx, opts);
+        let expr = ParseMethods.parseExpressionPipe(parser, ctx, opts);
         if (expr == null && !opts.allowNullable) {
             /*
 
@@ -1969,6 +1972,19 @@ export class ParseMethods {
             parser.customError("Invalid expression!", parser.loc());
         }
 
+        return expr;
+    }
+
+    @trackState()
+    static parseExpressionPipe(parser: Parser, ctx: Context, opts: ExpressionParseOptions): Expression {
+        let expr = ParseMethods.parseExpressionLet(parser, ctx, opts);
+        let lexeme = parser.peek();
+        while(lexeme.type === "|>") {
+            parser.accept();
+            expr = ParseMethods.parseExpressionMemberSelection(parser, ctx, expr, {...opts, afterPipeMode: true});
+            lexeme = parser.peek();
+        }
+        parser.reject();
         return expr;
     }
 
@@ -2666,6 +2682,8 @@ export class ParseMethods {
         lhs: Expression,
         opts: ExpressionParseOptions,
     ): Expression {
+        const isAfterPipe = opts.afterPipeMode === true;
+        opts.afterPipeMode = false;
         let loc = parser.loc();
         let lexeme = parser.peek();
         if (parser.isOnANewLine()) {
@@ -2680,7 +2698,7 @@ export class ParseMethods {
             let newLHS = new UnaryExpression(loc, lhs, "!!");
             return ParseMethods.parseExpressionMemberSelection(parser, ctx, newLHS, opts);
         }
-        if (lexeme.type === "." || lexeme.type === "?.") {
+        if ((lexeme.type === "." || lexeme.type === "?.")) {
             ParseMethods.setState({"op": [lexeme.type]});
             ParseMethods.setState({"left": lhs});
             parser.accept();
@@ -2699,6 +2717,58 @@ export class ParseMethods {
             }
 
             let memberAccess = new MemberAccessExpression(loc, lhs, rhs, lexeme.type === "?.");
+
+            if(ctx.env.withinImplementation) {
+                // we need to register the member access expression as a thisMemberAccessExpression
+                // for the current implementation method
+                let implMethod = ctx.getActiveImplementationMethod();
+                // sanity check
+                if(!(implMethod instanceof ImplementationMethod)) {
+                    throw new Error("Unreachable");
+                }
+                implMethod.thisMemberAccessExpression.push(memberAccess);
+            }
+            
+            return ParseMethods.parseExpressionMemberSelection(
+                parser,
+                ctx,
+                memberAccess,
+                opts,
+            );
+        }
+
+        // pipe |> followed by an identifier or ? acts as a member access or optional access 
+        // X |> f() -> X.f() 
+        // X |> ?f() -> X?.f()
+        if(((lexeme.type === "identifier" || lexeme.type === "?") && (isAfterPipe))) {
+
+            let isOptional = false;
+            if(lexeme.type === "?") {
+                parser.accept();
+                isOptional = true;
+            }
+            else {
+                parser.reject();
+            }
+            
+            ParseMethods.setState({"op": [lexeme.type]});
+            ParseMethods.setState({"left": lhs});
+            
+            // this often throws an error, so we manually assert that the rhs is an identifier
+            let tok = parser.peek();
+            if(tok.type != "identifier") {
+                parser.customError("Expected identifier after member access.", tok.location);
+            }
+            parser.reject();
+
+            // we need to reject because we could also have type arguments etc. hence, we
+            // go through the rest of the process, though we could optimize this and just crea
+            let rhs = ParseMethods.parseExpressionPrimary(parser, ctx, opts);
+            if (!(rhs instanceof ElementExpression)) {
+                parser.customError("Expected identifier", rhs.location);
+            }
+
+            let memberAccess = new MemberAccessExpression(loc, lhs, rhs, isOptional);
 
             if(ctx.env.withinImplementation) {
                 // we need to register the member access expression as a thisMemberAccessExpression

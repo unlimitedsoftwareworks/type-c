@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "author": "praisethemoon",
     "dependencies": [],
-    "description": "empty test",
+    "description": "Pipe Operator Testing",
     "compiler": {
         "target": "runnable",
         "entry": "test.tc"

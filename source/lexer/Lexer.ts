@@ -134,6 +134,7 @@ export class Lexer {
         [TokenType.TOK_RIGHT_SHIFT, /^>>/],
         [TokenType.TOK_EQUAL_EQUAL, /^==/],
         [TokenType.TOK_NOT_EQUAL, /^!=/],
+        [TokenType.TOK_PIPE, /^\|\>/],
         [TokenType.TOK_LOGICAL_OR, /^\|\|/],
         [TokenType.TOK_LOGICAL_AND, /^&&/],
         [TokenType.TOK_BITWISE_OR, /^\|/],

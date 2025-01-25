@@ -36,6 +36,7 @@ import { StructType } from "../types/StructType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
 import { VoidType } from "../types/VoidType";
+import { BinaryExpression } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
 import { Expression } from "./Expression";
 import { ThisExpression } from "./ThisExpression";
@@ -466,11 +467,11 @@ export class MemberAccessExpression extends Expression {
     checkNullableAndReturn(ctx: Context){
         if(this.isNullable) {
             // we need to make sure that the type is nullable
-            if(!this.inferredType?.allowedNullable(ctx)){
+            if(!this.inferredType?.allowedNullable(ctx) && !BinaryExpression.isWithinNullishCoalescing){
                 ctx.parser.customError(`Nullable member access only usuable when the access result is nullable`, this.location)
             }
 
-            if(!this.inferredType?.is(ctx, NullableType)){
+            if(!this.inferredType?.is(ctx, NullableType) && !BinaryExpression.isWithinNullishCoalescing){
                 this.inferredType = new NullableType(this.location, this.inferredType!);
             }
         }

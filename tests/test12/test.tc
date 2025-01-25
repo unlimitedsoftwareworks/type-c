@@ -1,6 +1,7 @@
 from std.string import String
 from std.io import println
 from std.unit.test import TestUnit, UnitSet
+from std.collections.array import Array
 
 fn test_case_1(rn: TestUnit) {
 
@@ -352,6 +353,14 @@ fn test_case_nullable_function_calls(rn: TestUnit) {
     let bb = (r2.x ?? [10])[0]
 
     rn.assert_eq<u32>(bb, 10)
+
+
+
+    let length1 = (new Array<u32>([1,2,3,4]) as Array<u32>? )?.length() ?? 10
+    let length2 = (null as Array<u32>?)?.length() ?? 10
+
+    rn.assert_eq(length1, 4)
+    rn.assert_eq(length2, 10)
 }
 
 

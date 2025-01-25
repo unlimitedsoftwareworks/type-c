@@ -33,6 +33,7 @@ import { BinaryIntLiteralExpression, HexIntLiteralExpression, IntLiteralExpressi
 import { BooleanType } from "../types/BooleanType";
 import { StringEnumType } from "../types/StringEnumType";
 import { BuiltinModules } from "../../BuiltinModules";
+import { FunctionCallExpression } from "./FunctionCallExpression";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |
@@ -76,6 +77,15 @@ export class BinaryExpression extends Expression {
     operatorOverloadState: OperatorOverloadState = new OperatorOverloadState();
 
     promotedType: DataType | null = null;
+
+
+    /**
+     * A global flag to indicate if we are within nullish coalescing operator
+     * to help with type checking, since outside nullish coalescing, nullable 
+     * member access is not allowed to return non-nullable types, but within
+     * nullish coalescing, it is allowed
+     */
+    static isWithinNullishCoalescing: boolean = false;
 
     // set by the bytecode generator when transforming expressions into others,
     // to ignore constness of the left hand side
@@ -126,6 +136,7 @@ export class BinaryExpression extends Expression {
          * 
          */
         if(this.operator === "??"){
+            BinaryExpression.isWithinNullishCoalescing = true;
             if(meta === undefined){
                 // first infer the right hand side
 
@@ -136,10 +147,21 @@ export class BinaryExpression extends Expression {
                 // infer the left hand side
                 let leftType = this.left.infer(ctx, null, meta);
 
+                // if we have a non-null type, then at least the left must be a nullable member access
+                // we can have x?.y or x?.y()
                 if(!(leftType.is(ctx, NullableType))){
-                    ctx.parser.customError(`Cannot apply operator ?? to non-nullable LHS type ${leftType.getShortName()}: LHS Must be nullable, if not, remove the ?? operator`, this.location);
+                    let baseExpr = this.left;
+                    if(baseExpr instanceof FunctionCallExpression){
+                        baseExpr = (baseExpr as FunctionCallExpression).lhs;
+                    }
+                    if(!((baseExpr instanceof MemberAccessExpression) && (baseExpr.isNullable)) ){
+                        ctx.parser.customError(`Cannot apply operator ?? to non-nullable LHS type ${leftType.getShortName()}: LHS Must be nullable, if not, remove the ?? operator`, this.location);
+                    }
                 }
 
+                // now we need to be safe, hence we disable nullish coalescing,
+                // it will re-enabled if we encounter another nested ?? operator
+                BinaryExpression.isWithinNullishCoalescing = false;
 
                 let rhsType = this.right.infer(ctx, leftType);
                 // rhs can be nullable, if the hint is nullable or no hint is present
@@ -168,8 +190,11 @@ export class BinaryExpression extends Expression {
 
                 this.inferredType = rightType;
                 this.checkHint(ctx);
+                BinaryExpression.isWithinNullishCoalescing = false;
                 return rightType;
             }
+
+            BinaryExpression.isWithinNullishCoalescing = false;
         }
 
 
