@@ -34,8 +34,8 @@ export class FunctionPrototype {
         return new FunctionPrototype(this.location, this.name, this.header.clone(typeMap), this.generics);
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@functionprototype{name:${this.name},header:${this.header.serialize(unpack)},generics:[${this.generics.map(g => g.serialize(unpack)).join(",")}]`
+    serialize(): string {
+        return `@functionprototype{name:${this.name},header:${this.header.serialize()},generics:[${this.generics.map(g => g.serialize()).join(",")}]`
     }
 
     toString() {

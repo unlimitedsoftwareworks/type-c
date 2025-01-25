@@ -28,7 +28,7 @@ export class VoidType extends DataType {
         return "void"
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return "@void"
     }
 

@@ -71,7 +71,7 @@ export class GenericType extends DataType {
         return "^"+this.name;
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return `@generic{${this.name},@constraint{${this.constraint.types.map(e => e.serialize()).join(",")}}}`
     }
 

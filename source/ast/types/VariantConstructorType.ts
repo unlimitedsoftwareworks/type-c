@@ -91,8 +91,8 @@ export class VariantConstructorType  extends DataType{
         return this.name+"("+this.parameters.map(f => f.name+":"+f.type.getShortName()).join(",")+")"
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@variant_constructor{name:${this.name},parameters:[${this.parameters.map(f => `${f.name}:${f.type.serialize(unpack)}`).join(",")}]}`;
+    serializeCircular(): string {
+        return `@variant_constructor{name:${this.name},parameters:[${this.parameters.map(f => `${f.name}:${f.type.serialize()}`).join(",")}]}`;
     }
 
     allowedNullable(ctx: Context): boolean {

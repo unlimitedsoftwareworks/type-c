@@ -84,6 +84,9 @@ export class TypeMatchCache {
  * @returns true if et is compatible with dt, i.e et is or a subtype of dt
  */
 export function matchDataTypes(ctx: Context, et: DataType, dt: DataType, strict: boolean = true): TypeMatchResult {
+    et.resolve(ctx);
+    dt.resolve(ctx);
+
     if (TypeMatchCache.globalMatchingStack.includes(generateTypeKey(et, dt, strict))) {
         return Ok();
     }
@@ -126,9 +129,6 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
 
     stack.push(typeKey);
 
-
-    t1.resolve(ctx);
-    t2.resolve(ctx);
 
     /**
      * 3. We check if the types are the same
@@ -876,7 +876,8 @@ function matchStructs(ctx: Context, t1: StructType, t2: StructType, strict: bool
 
 
     if (t1Fields.length > t2Fields.length) {
-        return Err(`Type mismatch, expected struct with at most ${t1Fields.length} fields, got ${t2Fields.length}`);
+        let res = reduceStructFields(ctx, t2Fields, strict, stack);
+        return Err(`Type mismatch, expected struct with at least ${t1Fields.length} fields, got ${t2Fields.length}`);
     }
 
 

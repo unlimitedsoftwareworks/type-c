@@ -283,6 +283,7 @@ export class FunctionCallExpression extends Expression {
     private inferClassMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null) {
 
         let baseClass = baseExprType.to(ctx, ClassType) as ClassType;
+        baseClass.resolve(ctx);
 
         /**
          * Check if it an attribute call, if it is not an attribute, it is a method call

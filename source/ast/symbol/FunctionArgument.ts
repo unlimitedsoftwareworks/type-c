@@ -27,8 +27,8 @@ export class FunctionArgument extends Symbol {
         this.isMutable = isMutable;
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@argument{${this.name}:${this.type.serialize(unpack)},isMut:${this.isMutable}}`
+    serialize(): string {
+        return `@argument{${this.name}:${this.type.serialize()},isMut:${this.isMutable}}`
     }
 
     clone(typeMap: {[key: string]: DataType}): FunctionArgument {

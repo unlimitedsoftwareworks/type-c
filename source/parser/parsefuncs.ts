@@ -1126,14 +1126,6 @@ export class ParseMethods {
             type = ParseMethods.parseTypePrimary(parser, ctx);
         }
 
-        lexeme = parser.peek();
-        if (lexeme.type === "?") {
-            parser.accept();
-            type = new NullableType(loc, type);
-        } else {
-            parser.reject();
-        }
-
         return type;
     }
 

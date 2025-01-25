@@ -45,8 +45,8 @@ export class VariantType extends DataType {
         this.postResolveRecursion()
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@variant{`+this.constructors.map((c) => c.serialize(unpack)).join(",")+`}`;
+    serializeCircular(): string {
+        return `@variant{`+this.constructors.map((c) => c.serialize()).join(",")+`}`;
     }
 
     toString(): string {

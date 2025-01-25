@@ -42,8 +42,8 @@ export class CoroutineType extends DataType {
         return `@coroutine{${this.fnType.getShortName()}}`;
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@coroutine{${this.fnType.serialize(unpack)}}`;
+    serializeCircular(): string {
+        return `@coroutine{${this.fnType.serialize()}}`;
     }
 
     allowedNullable(ctx: Context): boolean {

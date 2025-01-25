@@ -33,7 +33,7 @@ export class BasicType extends DataType {
         return this.kind
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return `@basic:${this.kind}`
     }
 

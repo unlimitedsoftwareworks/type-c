@@ -45,8 +45,8 @@ export class ArrayType extends DataType {
         return this.arrayOf.getShortName() + "[]";
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@array{${this.arrayOf.serialize(unpack)}}`;
+    serializeCircular(): string {
+        return `@array{${this.arrayOf.serialize()}}`;
     }
 
     allowedNullable(ctx: Context): boolean {

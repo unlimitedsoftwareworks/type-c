@@ -57,7 +57,7 @@ export class InterfaceMethod extends FunctionPrototype {
         }*/
         
         // TODO: double check this, might cause issues with types that are not unpacked, i.e String vs {class ....}
-        let serial = proto.serialize(false)
+        let serial = proto.serialize()
         let uid = InterfaceMethod.methodUIDGenerator.get(serial);
         if(uid == undefined){
             uid = InterfaceMethod.methodUIDCounter++;
@@ -91,8 +91,8 @@ export class InterfaceMethod extends FunctionPrototype {
         this.documentation = doc;
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@method{${this.name}:${this.header.serialize(unpack)},static:${this.isStatic},generics:[${this.generics.map(g => g.serialize(unpack)).join(",")}]`
+    serialize(): string {
+        return `@method{${this.name}:${this.header.serialize()},static:${this.isStatic},generics:[${this.generics.map(g => g.serialize()).join(",")}]`
     }
 
     /**

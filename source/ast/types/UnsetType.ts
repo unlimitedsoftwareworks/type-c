@@ -36,7 +36,7 @@ export class UnsetType extends DataType {
         return "unset"
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return "@unset"
     }
 
