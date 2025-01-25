@@ -467,6 +467,7 @@ export class MemberAccessExpression extends Expression {
     checkNullableAndReturn(ctx: Context){
         if(this.isNullable) {
             // we need to make sure that the type is nullable
+            // except when we are within a nullish coalescing operator, the inferred type will not be nullable
             if(!this.inferredType?.allowedNullable(ctx) && !BinaryExpression.isWithinNullishCoalescing){
                 ctx.parser.customError(`Nullable member access only usuable when the access result is nullable`, this.location)
             }
