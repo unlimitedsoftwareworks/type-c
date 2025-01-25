@@ -126,6 +126,13 @@ This checklist containts only major changes and updates, for minor changes and u
 - 17/01/2025:
     - Added hideSymbol and unhideSymbol within VariableDeclaration.infer to avoid referencing a variable in its initializer
     - Foreach statement now infers the iterator class method if is not implemented
+- 25/01/2025:
+    - Each data type now has a unique ID called `weakId`, which is used to avoid infinit loop, previously `hash` method was used for the same purpose,
+      but it required the type to be resolved. And resolving a type pushes its hash to stack -> fail.
+      `hash` is now exclusively used where the exact type hashing is needed, otherwise weakId and `getWeakHash` (a string version of weak id) are to be used
+
+
+
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.
