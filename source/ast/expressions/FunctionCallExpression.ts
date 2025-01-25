@@ -38,6 +38,7 @@ import { NullableType } from "../types/NullableType";
 import { MutateExpression } from "./MutateExpression";
 import { VoidType } from "../types/VoidType";
 import { GenericType } from "../types/GenericType";
+import { BinaryExpression } from "./BinaryExpression";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -627,10 +628,18 @@ export class FunctionCallExpression extends Expression {
     }
 
     checkNullability(ctx: Context){
-        if(this._isNullableCall){
+        if(this._isNullableCall && !BinaryExpression.isWithinNullishCoalescing){
             if(!this.inferredType?.allowedNullable(ctx) && !this.inferredType?.is(ctx, VoidType)) {
                 ctx.parser.customError(`The result of an expression following a nullable access ?. should always be a type that can be null or void.`, this.location)
             }
+        }
+
+
+        // if are withing a nullish coalescing operator, we do not need to wrap the type in a nullable type
+        // in case it is not nullable (say a basic type), because ?? will alwasy have a fallback expression
+        // same logic as MemberAccessExpression.checkNullability()
+        if(!this.inferredType?.is(ctx, NullableType) && !BinaryExpression.isWithinNullishCoalescing && this._isNullableCall){
+            this.inferredType = new NullableType(this.location, this.inferredType!);
         }
     }
 

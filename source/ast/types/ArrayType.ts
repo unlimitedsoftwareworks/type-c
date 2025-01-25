@@ -50,7 +50,7 @@ export class ArrayType extends DataType {
     }
 
     allowedNullable(ctx: Context): boolean {
-        return false;
+        return true;
     }
 
     clone(genericsTypeMap: {[key: string]: DataType}): ArrayType{
