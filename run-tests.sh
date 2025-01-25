@@ -2,7 +2,7 @@
 
 set -e 
 
-for i in {0..26}
+for i in {0..27}
 do
    node dist/index.js -c tests/test$i -o ./output  --generate-ir --run --no-warnings
 done

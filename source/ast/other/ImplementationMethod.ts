@@ -63,8 +63,8 @@ export class ImplementationMethod extends Symbol {
         return "impl{"+this.imethod.getShortName()+"}";
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@impl{method{${this.imethod.serialize(unpack)}}}`
+    serialize(): string {
+        return `@impl{method{${this.imethod.serialize()}}}`
     }
 
     infer(ctx: Context) {

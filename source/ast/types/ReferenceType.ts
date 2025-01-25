@@ -203,13 +203,16 @@ export class ReferenceType extends DataType{
         return this.pkg.join(".") + (this.typeArgs.length > 0 ? "<" + this.typeArgs.map(t => t.getShortName()).join(", ") + ">" : "");
     }
 
-    serialize(unpack: boolean = false): string {
-        if(unpack){
-            return this.baseType!.serialize(unpack);
+    serializeCircular(): string {
+        if(this.baseType == null){
+            this.resolveIfNeeded(this._usageContext!);
         }
-        else {
-            return `@reference{pkg:${this.pkg.join(".")},typeArgs:${this.typeArgs.map(t => t.serialize()).join(",")}}`
-        }
+        //if(unpack){
+            return this.baseType!.serialize();
+        //}
+        //else {
+        //    return `@reference{pkg:${this.pkg.join(".")},typeArgs:${this.typeArgs.map(t => t.serialize()).join(",")}}`
+        //}
     }
 
     /**

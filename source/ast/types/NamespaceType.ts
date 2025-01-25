@@ -33,7 +33,7 @@ export class NamespaceType extends DataType {
         this.ns.infer();
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return `@namespace_type{id:${this.ns.uid}}`
     }
 

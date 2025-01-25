@@ -41,7 +41,7 @@ export class StringEnumType extends DataType {
         return "("+this.values.map(e =>`"${e}"`).join(" | ")+")";
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return `@stringEnum{${this.values.join(" | ")}}`;
     }
 

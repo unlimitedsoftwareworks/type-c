@@ -93,23 +93,23 @@ export class ClassMethod extends Symbol {
             // OR DO WE?? TAN TAN DAAAAAAA!
             //this.context.addSymbol(arg);
         }
-
-        /**
-         * While being a symbol, a class method is actually not added to any Context, hence its ID is not set
-         */
-        this.uid = 'm-'+InterfaceMethod.getMethodUID(imethod);
         this.imethod._sourceMethod = this;
+
     }
 
     shortname(): string {
         return this.imethod.getShortName();
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@method{${this.imethod.serialize(unpack)}}`
+    serializeCircular(): string {
+        return `@method{${this.imethod.serialize()}}`
     }
 
     infer(ctx: Context) {
+        /**
+         * While being a symbol, a class method is actually not added to any Context, hence its ID is not set
+         */
+
         //if(this._wasInferred) return;
         
         /** removed in favor of location base type checking for classes
@@ -124,7 +124,8 @@ export class ClassMethod extends Symbol {
             return ;
         }
 
-        inferFunctionReturnFromHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);   
+        inferFunctionReturnFromHeader(this.context, "method", this.returnStatements, this.imethod.header, this.body, this.expression);  
+        this.uid = 'm-'+InterfaceMethod.getMethodUID(this.imethod); 
         this.codeGenProps.reportUnusedSymbols(ctx, this.imethod.header);
         this._wasInferred = true
     }

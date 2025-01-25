@@ -74,17 +74,26 @@ export class DataType {
 
     // when extracting generics .getGenericParametersRecursive
     private static _recursiveGenericRecursion: string[] = [];
+    private static _recursiveTypeSerialization: DataType[] = [];
 
     // when resolving types .resolve()
     private static _recursiveTypeResolution: string[] = [];
 
+    private static ID_COUNTER: number = 0;
+    // used for setting breakpoint condition to avoid infinite loops
+    // when resolving/serializing/.. types
+    weakId = DataType.ID_COUNTER++;
+
+    // when serializing types .serialize()
     static reset() {
         DataType._recursiveGenericRecursion = [];
         DataType._recursiveTypeResolution = [];
+        DataType._recursiveTypeSerialization = [];
     }
 
     // the original type, i.e its definition reference
-    private _originalType: DataType | null = null   ;
+    private _originalType: DataType | null = null;
+    
 
     constructor(location: SymbolLocation, kind: DataTypeKind){
         this.kind = kind;
@@ -104,6 +113,10 @@ export class DataType {
      */
     resolve(ctx: Context): void {
         throw new Error("Method not implemented.");
+    }
+
+    getWeakHash(): string {
+        return `#<${this.weakId}>`
     }
 
     /**
@@ -158,7 +171,7 @@ export class DataType {
     /**
      * Serializes the type to a string
      */
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         throw new Error("Method not implemented.");
     }
 
@@ -283,7 +296,7 @@ export class DataType {
      * within `getGenericParametersRecursive`
      */
     preGenericExtractionRecursion(){
-        let key = this.hash();
+        let key = this.getWeakHash();
         if(DataType._recursiveGenericRecursion.includes(key)){
             return true;
         }
@@ -296,14 +309,14 @@ export class DataType {
     postGenericExtractionRecursion(){
         // just pop
         //DataType._recursiveGenericRecursion.pop();
-        let pos = DataType._recursiveGenericRecursion.indexOf(this.hash());
+        let pos = DataType._recursiveGenericRecursion.indexOf(this.getWeakHash());
         if(pos !== -1){
             DataType._recursiveGenericRecursion.splice(pos, 1);
         }
     }
 
     preResolveRecursion(){
-        let key = this.hash();
+        let key = this.getWeakHash();
         if(DataType._recursiveTypeResolution.includes(key)){
             return true;
         }
@@ -335,5 +348,31 @@ export class DataType {
         let typeMap: {[key: string]: DataType} = {}
         this.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
         return typeMap;
+    }
+
+    serialize(): string {
+        let v = this.preTypeSerializationRecursion();
+        if(v !== null){
+            return v;
+        }
+
+        let res = this.serializeCircular();
+        this.postTypeSerializationRecursion();
+        return res;
+    }
+
+    preTypeSerializationRecursion(){
+        if(DataType._recursiveTypeSerialization.includes(this)){
+            let index = DataType._recursiveTypeSerialization.indexOf(this);
+            return `@circular{#${index}}`
+        }
+
+        DataType._recursiveTypeSerialization.push(this);
+
+        return null;
+    }
+
+    postTypeSerializationRecursion(){
+        DataType._recursiveTypeSerialization.pop();
     }
 }

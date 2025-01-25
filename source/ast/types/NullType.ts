@@ -28,7 +28,7 @@ export class NullType extends DataType {
         return "null"
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return "@null"
     }
 

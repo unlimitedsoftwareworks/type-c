@@ -80,8 +80,8 @@ export class ImplementationType extends DataType {
         return `implementation ${this.requiredInterface?("for " + this.requiredInterface.getShortName()):""}(${this.requiredAttributes.map(a => a.name).join(", ")}){${this.implementedMethods.map(m => m.shortname()).join(", ")}}`
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@impl{for{${this.requiredInterface?.serialize(unpack)}}, attrs{${this.requiredAttributes.map(a => a.serialize(unpack)).join(", ")}}, methods{${this.implementedMethods.map(m => m.serialize(unpack)).join(", ")}}}`
+    serializeCircular(): string {
+        return `@impl{for{${this.requiredInterface?.serialize()}}, attrs{${this.requiredAttributes.map(a => a.serialize()).join(", ")}}, methods{${this.implementedMethods.map(m => m.serialize()).join(", ")}}}`
     }
 
     isAssignable(): boolean {

@@ -248,7 +248,7 @@ export class ClassType extends DataType {
             for (let j = i + 1; j < this.methods.length; j++) {
                 if (this.methods[i].imethod.name === this.methods[j].imethod.name) {
                     if (areSignaturesIdentical(ctx, this.methods[i].imethod, this.methods[j].imethod)) {
-                        ctx.parser.customError(`Method ${this.methods[i].shortname()} is overloaded`, this.methods[i].location);
+                        ctx.parser.customError(`Method ${this.methods[i].shortname()} is overloaded but invalid due to identical signatures`, this.methods[i].location);
                     }
                 }
             }
@@ -278,10 +278,15 @@ export class ClassType extends DataType {
         return "class {" + this.methods.map(e => e.shortname()).join(",") + "}";
     }
 
+    // because class serialization is based on name.
+    serializeCircular(): string {
+        return `@class{${this.classId}}`
+    }
+
     serialize(_unpack: boolean = false): string {
         return `@class{${this.classId}}`;
         // would cause infinit loop if the class depends on itself such as fn getThis() = this with explicit return type
-        //return `@class{@attributes[${this.attributes.map(e => e.serialize(unpack))}],@methods[${this.methods.map(e => e.serialize(unpack)).join(",")}],@superTypes[${this.superTypes.map(e => e.serialize(unpack))}]}`
+        //return `@class{@attributes[${this.attributes.map(e => e.serialize())}],@methods[${this.methods.map(e => e.serialize()).join(",")}],@superTypes[${this.superTypes.map(e => e.serialize())}]}`
     }
 
     /**

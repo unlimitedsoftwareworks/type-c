@@ -49,8 +49,8 @@ export class FFIMethodType extends DataType {
         return "ffi_method";
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@ffi_method{${this.imethod.serialize(unpack)}}`
+    serializeCircular(): string {
+        return `@ffi_method{${this.imethod.serialize()}}`
     }
 
     /**

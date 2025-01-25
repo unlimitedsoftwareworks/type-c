@@ -45,8 +45,8 @@ export class TupleType extends DataType {
         return `(${this.types.map(t => t.getShortName()).join(", ")})`;
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@tuple{${this.types.map(t => t.serialize(unpack)).join(", ")}}`;
+    serializeCircular(): string {
+        return `@tuple{${this.types.map(t => t.serialize()).join(", ")}}`;
     }
 
     allowedNullable(ctx: Context): boolean {

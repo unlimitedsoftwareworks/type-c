@@ -36,7 +36,7 @@ export class LiteralIntType extends DataType {
         return "literal_number"
     }
 
-    serialize(unpack: boolean = false): string {
+    serializeCircular(): string {
         return "@literal_number"
     }
 

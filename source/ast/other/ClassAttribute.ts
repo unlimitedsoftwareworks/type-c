@@ -43,8 +43,8 @@ export class ClassAttribute extends Symbol {
         this.uid = `ca_${ClassAttribute.uidCounter++}`;
     }
 
-    serialize(unpack: boolean = false): string {
-        return `@attribute{static:${this.isStatic},${this.name}:${this.type.serialize(unpack)}}`
+    serialize(): string {
+        return `@attribute{static:${this.isStatic},${this.name}:${this.type.serialize()}}`
     }
 
     clone(typeMap: { [key: string]: DataType; }): ClassAttribute {
