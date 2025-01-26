@@ -102,6 +102,6 @@ fn test_case_2(rn: TestUnit) {
 fn main() {
     let test_1 = new TestUnit("Test 1", "tests struct join type", test_case_1)
     let test_2 = new TestUnit("Test 1", "tests interface join type", test_case_2)
-    let set = new UnitSet("STD Test 26", "Tests Join types", [test_1, test_2])
+    let set = new UnitSet("STD Test 27", "Tests Join types", [test_1, test_2])
     return set.run()
 }
