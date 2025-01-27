@@ -66,8 +66,11 @@ fn test_case_2(rn: TestUnit) {
 
     let p3: Point4D = {0,0,0,0}
     p3 << p1
-    rn.assert_f32_eq_pre(p3.x ?? 0.0f, 1.0f, 0.0001f)
+    rn.assert_f32_eq_pre(p3.x, 1.0f, 0.0001f)
     rn.assert_f32_eq_pre(p3.y, 2.0f, 0.0001f)
+    rn.assert_f32_eq_pre(p3.z, 0.0f, 0.0001f)
+    rn.assert_eq(p3.t, 0)
+    
     
 }
 
