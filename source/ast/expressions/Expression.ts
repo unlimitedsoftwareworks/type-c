@@ -24,8 +24,31 @@ import { BasicType } from "../types/BasicType";
  * fallbackDataType is the type that the expression should fallback to if the expression is null.
  */
 export type InferenceMeta = {
+    /**
+     * isWithinNullishCoalescing: is true if the expression is within a nullish coalescing expression, 
+     * this is used to allow the access of nullable members.
+     */
     isWithinNullishCoalescing?: boolean;
-    ignoreConst?: boolean; // from code generator
+
+    /**
+     * isBeingAssigned: is true if the expression is being assigned to,
+     * this is used to allow the assignment of partial structs, because normally accessing
+     * a partial struct without nullish coalescing will result in an error
+     */
+    isBeingAssigned?: boolean;
+
+    /**
+     * ignoreConst: used by code generator to ignore constness of the expression,
+     * because during the code gen the AST can be rewritten to be more efficient,
+     * and we can safely ignore constness of the expression.
+     */
+    ignoreConst?: boolean; 
+
+    /**
+     * Used to infer element expression, which is potentially a function call.
+     * When overloading functions, we need to find a function with the element name
+     * but also which can accept specific arguments, which are passed as an array.
+     */
     args?: Expression[];
 }
 

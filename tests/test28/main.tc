@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2023-present Soulaymen Chouri
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ /**
+  * @file test.c
+  * Tests Partial Structs
+  * 
+  * Partial structs have their fields set at runtime
+  * Access to partial structs required nullish coalescing operator
+  * i.e p1.x ?? 10 and they can be merged with regular structs using
+  * >> and << operators
+  */
+
+from std.unit.test import TestUnit, UnitSet
+from std.io import println
+
+fn test_case_1(rn: TestUnit) {
+    let p1 = {x: 1.0f, y: 2.0f, z: 3.0f}
+    let p2: partial<{x: f32, y: f32, a: u32}> = {x: 4.0f, y: 5.0f}
+    let p3: partial<{a: u32}> = p2
+    let data: { name: String, coords: partial<{x: f32, y: f32, z: f32}>? } = {"hello, world!", null}
+    //data.coords = {x: 0.0f}
+    println("setting field y")
+    
+    println("field y set")
+    let x1 = data.coords?.x ?? 10.0f
+    let y1 = data.coords?.y ?? 2.0f
+
+    println("y =" +y1)
+    println("x =" +x1)
+}
+
+fn main() {
+    let test_1 = new TestUnit("Test 1", "tests partial structs", test_case_1)
+    let set = new UnitSet("STD Test 28", "Tests Partial Structs", [test_1])
+    return set.run()
+}

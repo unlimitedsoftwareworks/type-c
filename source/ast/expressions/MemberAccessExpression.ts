@@ -32,13 +32,14 @@ import {
 } from "../types/MetaTypes";
 import { NamespaceType } from "../types/NamespaceType";
 import { NullableType } from "../types/NullableType";
+import { PartialStructType } from "../types/PartialStruct";
 import { StructType } from "../types/StructType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
 import { VoidType } from "../types/VoidType";
 import { BinaryExpression } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { ThisExpression } from "./ThisExpression";
 
 export class MemberAccessExpression extends Expression {
@@ -60,7 +61,7 @@ export class MemberAccessExpression extends Expression {
         this.isNullable = isNullable;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.checkNullableAndReturn(ctx)
         this.setHint(hint);
 
@@ -112,7 +113,7 @@ export class MemberAccessExpression extends Expression {
                 this.inferredType = new BasicType(this.location, "u64");
                 this.isConstant = false;
                 this.checkHint(ctx);
-                return this.checkNullableAndReturn(ctx)
+                return this.checkNullableAndReturn(ctx, meta)
             }
 
             /**
@@ -134,7 +135,7 @@ export class MemberAccessExpression extends Expression {
                 // inherit constness from lhs
                 this.isConstant = this.left.isConstant;
                 this.checkHint(ctx);
-                return this.checkNullableAndReturn(ctx)
+                return this.checkNullableAndReturn(ctx, meta)
             }
 
             if (this.right.name === "slice") {
@@ -157,7 +158,7 @@ export class MemberAccessExpression extends Expression {
                 // a new array inherits the constness of the original array
                 this.isConstant = this.left.isConstant;
                 this.checkHint(ctx);
-                return this.checkNullableAndReturn(ctx)
+                return this.checkNullableAndReturn(ctx, meta)
             }
 
             ctx.parser.customError(
@@ -186,7 +187,7 @@ export class MemberAccessExpression extends Expression {
             // inherit constness from lhs
             this.isConstant = this.left.isConstant;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
         // case 3: class field
         if (lhsType.is(ctx, ClassType)) {
@@ -216,7 +217,7 @@ export class MemberAccessExpression extends Expression {
             let withinConstructor = ctx.env.withinClass && ctx.getActiveMethod()?.isConstructor();
             this.isConstant = ((this.left instanceof ThisExpression) && field.isConst && withinConstructor)?0:this.right.isConstant||field.isConst;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
 
         // case 4: FFI method
@@ -235,7 +236,7 @@ export class MemberAccessExpression extends Expression {
             // ffi methods are not constant
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
 
         // case 5: VariantConstructor parameter
@@ -260,7 +261,7 @@ export class MemberAccessExpression extends Expression {
             // inherit constness from lhs
             this.isConstant = this.left.isConstant;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
 
         // the rest of the cases are under MetaType
@@ -302,7 +303,7 @@ export class MemberAccessExpression extends Expression {
             // TODO: allow constant fields within class
             
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
 
         if (lhsType.is(ctx, MetaVariantType)) {
@@ -359,7 +360,7 @@ export class MemberAccessExpression extends Expression {
             );
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
 
         if (lhsType.is(ctx, MetaEnumType)) {
@@ -384,7 +385,7 @@ export class MemberAccessExpression extends Expression {
             this.inferredType = enumType;
             this.isConstant = false;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
         }
         if(lhsType.is(ctx, CoroutineType)) {
              /**
@@ -394,14 +395,14 @@ export class MemberAccessExpression extends Expression {
                 this.inferredType = new BasicType(this.location, "u8");
                 this.isConstant = false;
                 this.checkHint(ctx);
-                return this.checkNullableAndReturn(ctx)
+                return this.checkNullableAndReturn(ctx, meta)
             }
 
             if (this.right.name === "alive") {
                 this.inferredType = new BooleanType(this.location);
                 this.isConstant = false;
                 this.checkHint(ctx);
-                return this.checkNullableAndReturn(ctx)
+                return this.checkNullableAndReturn(ctx, meta)
             }
 
            
@@ -415,7 +416,7 @@ export class MemberAccessExpression extends Expression {
                 // inherit constness from lhs
                 this.isConstant = this.left.isConstant;
                 this.checkHint(ctx);
-                return this.checkNullableAndReturn(ctx)
+                return this.checkNullableAndReturn(ctx, meta)
             }
         }
         
@@ -455,7 +456,39 @@ export class MemberAccessExpression extends Expression {
             this.inferredType = e_expr.inferredType;
             this.isConstant = e_expr.isConstant;
             this.checkHint(ctx);
-            return this.checkNullableAndReturn(ctx)
+            return this.checkNullableAndReturn(ctx, meta)
+        }
+
+        else if (lhsType.is(ctx, PartialStructType)) {
+            // first make sure we are allowed to access the field
+            if (meta?.isBeingAssigned) {
+                ctx.parser.customError(`Partial struct access is readonly`, this.location);
+            }
+                
+            if(!meta?.isWithinNullishCoalescing) {
+                ctx.parser.customError(`Cannot access field ${this.right.name} on partial struct ${lhsType.getShortName()} outside a nullish coalescing operator`, this.location);
+            }
+
+            let partialStructType = lhsType.to(ctx, PartialStructType) as PartialStructType;
+            let structType = partialStructType.structType.to(ctx, StructType) as StructType;
+
+            // make sure field exists
+            let field = structType.fields.find(
+                (f) => f.name === this.right.name,
+            );
+            if (!field) {
+                ctx.parser.customError(
+                    `Field ${this.right.name} not found on struct ${structType.getShortName()}`,
+                    this.location,
+                );
+            }
+
+            this.inferredType = field.type;
+
+            // inherit constness from lhs
+            this.isConstant = this.left.isConstant;
+            this.checkHint(ctx);
+            return this.checkNullableAndReturn(ctx, meta)
         }
 
         ctx.parser.customError(
@@ -464,15 +497,15 @@ export class MemberAccessExpression extends Expression {
         );
     }
 
-    checkNullableAndReturn(ctx: Context){
+    checkNullableAndReturn(ctx: Context, meta?: InferenceMeta){
         if(this.isNullable) {
             // we need to make sure that the type is nullable
             // except when we are within a nullish coalescing operator, the inferred type will not be nullable
-            if(!this.inferredType?.allowedNullable(ctx) && !BinaryExpression.isWithinNullishCoalescing){
+            if(!this.inferredType?.allowedNullable(ctx) && !meta?.isWithinNullishCoalescing){
                 ctx.parser.customError(`Nullable member access only usuable when the access result is nullable`, this.location)
             }
 
-            if(!this.inferredType?.is(ctx, NullableType) && !BinaryExpression.isWithinNullishCoalescing){
+            if(!this.inferredType?.is(ctx, NullableType) && !meta?.isWithinNullishCoalescing){
                 this.inferredType = new NullableType(this.location, this.inferredType!);
             }
         }

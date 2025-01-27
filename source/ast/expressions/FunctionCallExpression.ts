@@ -145,16 +145,16 @@ export class FunctionCallExpression extends Expression {
             let memberExpr = left.right;
 
             if (baseExprType.is(ctx, ClassType)) {
-                let returnType = this.inferClassMethod(ctx, baseExprType, memberExpr, hint);
+                let returnType = this.inferClassMethod(ctx, baseExprType, memberExpr, hint, meta);
                 if (returnType) {
                     return returnType;
                 }
             }
             else if (baseExprType.is(ctx, InterfaceType)) {
-                return this.inferInterfaceMethod(ctx, baseExprType, memberExpr, hint);
+                return this.inferInterfaceMethod(ctx, baseExprType, memberExpr, hint, meta);
             }
             else if (baseExprType.is(ctx, MetaType)) {
-                let returnType = this.inferMetaType(ctx, baseExprType, memberExpr, hint);
+                let returnType = this.inferMetaType(ctx, baseExprType, memberExpr, hint, meta);
                 if (returnType) {
                     return returnType;
                 }
@@ -193,16 +193,16 @@ export class FunctionCallExpression extends Expression {
          */
 
         if (lhsType.is(ctx, FunctionType)) {
-            return this.inferFunction(ctx, lhsType);
+            return this.inferFunction(ctx, lhsType, meta);
         }
         // Callable instance
         else if (lhsType.is(ctx, ClassType) || lhsType.is(ctx, InterfaceType)) {
-            return this.inferCallable(ctx, lhsType);
+            return this.inferCallable(ctx, lhsType, meta);
         }
 
         // FFI Method
         else if (lhsType.is(ctx, FFIMethodType)) {
-            return this.inferFFIMethod(ctx, lhsType);
+            return this.inferFFIMethod(ctx, lhsType, meta);
         }
         // Variant Constructor
         else if (lhsType.is(ctx, VariantConstructorType)) {
@@ -210,13 +210,13 @@ export class FunctionCallExpression extends Expression {
             ctx.parser.error("Unreachable");
         }
         else if (lhsType.is(ctx, CoroutineType)) {
-            return this.inferCoroutine(ctx, lhsType);
+            return this.inferCoroutine(ctx, lhsType, meta);
         }
 
         ctx.parser.customError(`Invalid function call`, this.location);
     }
 
-    private inferCallable(ctx: Context, lhsType: DataType) {
+    private inferCallable(ctx: Context, lhsType: DataType, meta?: InferenceMeta) {
         let lhsT = lhsType as ClassType | InterfaceType;
         let iscallable = isCallable(ctx, lhsT);
 
@@ -243,7 +243,7 @@ export class FunctionCallExpression extends Expression {
         return this.inferredType;
     }
 
-    private inferFFIMethod(ctx: Context, lhsType: DataType) {
+    private inferFFIMethod(ctx: Context, lhsType: DataType, meta?: InferenceMeta) {
         lhsType.resolve(ctx);
         if(this._isNullableCall){
             ctx.parser.customError("Cannot call a FFI method with a nullable member access ?.", this.location)
@@ -280,7 +280,7 @@ export class FunctionCallExpression extends Expression {
         return this.inferredType;
     }
 
-    private inferClassMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null) {
+    private inferClassMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null, meta?: InferenceMeta) {
 
         let baseClass = baseExprType.to(ctx, ClassType) as ClassType;
         baseClass.resolve(ctx);
@@ -338,7 +338,7 @@ export class FunctionCallExpression extends Expression {
 
             this.inferredType = method.header.returnType;
             this.checkHint(ctx);
-            this.checkNullability(ctx);
+            this.checkNullability(ctx, meta);
             return this.inferredType;
         }
         else {
@@ -348,7 +348,7 @@ export class FunctionCallExpression extends Expression {
         }
     }
 
-    private inferFunction(ctx: Context, lhsType: DataType) {
+    private inferFunction(ctx: Context, lhsType: DataType, meta?: InferenceMeta) {
         let lhsT = lhsType as FunctionType;
 
         if (lhsT.isCoroutine) {
@@ -373,12 +373,12 @@ export class FunctionCallExpression extends Expression {
 
         this.inferredType = lhsT.returnType;
         this.checkMutability(ctx, lhsT);
-        this.checkNullability(ctx)
+        this.checkNullability(ctx, meta);
         this.checkHint(ctx);
         return this.inferredType;
     }
 
-    private inferInterfaceMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null) {
+    private inferInterfaceMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null, meta?: InferenceMeta) {
         let baseInterface = baseExprType.to(ctx, InterfaceType) as InterfaceType;
 
         /**
@@ -420,11 +420,11 @@ export class FunctionCallExpression extends Expression {
 
         this.inferredType = method.header.returnType;
         this.checkHint(ctx);
-        this.checkNullability(ctx);
+        this.checkNullability(ctx, meta);
         return this.inferredType;
     }
 
-    private inferMetaType(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null) {
+    private inferMetaType(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null, meta?: InferenceMeta) {
         /**
          * If we have a metatype, we face the following 2 cases:
          * 1. Static method call from a class
@@ -476,7 +476,7 @@ export class FunctionCallExpression extends Expression {
 
             this.inferredType = method.header.returnType;
             this.checkHint(ctx);
-            this.checkNullability(ctx);
+            this.checkNullability(ctx, meta);
             return this.inferredType;
         }
 
@@ -486,12 +486,12 @@ export class FunctionCallExpression extends Expression {
                 ctx.parser.customError("Cannot call a variant constructor with a nullable member access ?.", this.location)
             }
 
-            let meta = this.lhs.infer(ctx, null);
-            if (!meta.is(ctx, MetaVariantConstructorType)) {
+            let metaType = this.lhs.infer(ctx, null);
+            if (!metaType.is(ctx, MetaVariantConstructorType)) {
                 throw "Unreachable";
             }
 
-            let variantConstructorMeta: MetaVariantConstructorType = meta.to(ctx, MetaVariantConstructorType) as MetaVariantConstructorType;
+            let variantConstructorMeta: MetaVariantConstructorType = metaType.to(ctx, MetaVariantConstructorType) as MetaVariantConstructorType;
 
 
             let metaVariantConstructor = variantConstructorMeta.to(ctx, MetaVariantConstructorType) as MetaVariantConstructorType;
@@ -597,7 +597,7 @@ export class FunctionCallExpression extends Expression {
             // set the inferred type
             this.inferredType = variantConstructor;
             this.checkHint(ctx);
-            this.checkNullability(ctx);
+            this.checkNullability(ctx, meta);
             return this.inferredType;
         }
         else {
@@ -606,7 +606,7 @@ export class FunctionCallExpression extends Expression {
         }
     }
 
-    inferCoroutine(ctx: Context, lhsType: DataType): DataType {
+    inferCoroutine(ctx: Context, lhsType: DataType, meta?: InferenceMeta): DataType {
         this._isCoroutineCall = true;
         let coroutineType = lhsType.to(ctx, CoroutineType) as CoroutineType;
 
@@ -624,12 +624,12 @@ export class FunctionCallExpression extends Expression {
         this.inferredType = coroutineType.fnType.returnType;
         this.checkMutability(ctx, coroutineType.fnType);
         this.checkHint(ctx);
-        this.checkNullability(ctx);
+        this.checkNullability(ctx, meta);
         return this.inferredType;
     }
 
-    checkNullability(ctx: Context){
-        if(this._isNullableCall && !BinaryExpression.isWithinNullishCoalescing){
+    checkNullability(ctx: Context, meta?: InferenceMeta){
+        if(this._isNullableCall && !meta?.isWithinNullishCoalescing){
             if(!this.inferredType?.allowedNullable(ctx) && !this.inferredType?.is(ctx, VoidType)) {
                 ctx.parser.customError(`The result of an expression following a nullable access ?. should always be a type that can be null or void.`, this.location)
             }
@@ -639,7 +639,7 @@ export class FunctionCallExpression extends Expression {
         // if are withing a nullish coalescing operator, we do not need to wrap the type in a nullable type
         // in case it is not nullable (say a basic type), because ?? will alwasy have a fallback expression
         // same logic as MemberAccessExpression.checkNullability()
-        if(!this.inferredType?.is(ctx, NullableType) && !BinaryExpression.isWithinNullishCoalescing && this._isNullableCall){
+        if(!this.inferredType?.is(ctx, NullableType) && !meta?.isWithinNullishCoalescing && this._isNullableCall){
             this.inferredType = new NullableType(this.location, this.inferredType!);
         }
     }

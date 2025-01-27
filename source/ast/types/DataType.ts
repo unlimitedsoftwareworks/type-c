@@ -18,6 +18,7 @@ import { GenericType } from "./GenericType";
 export type DataTypeKind =
     "interface" | // InterfaceType
     "struct" | // StructType
+    "partial_struct" | // PartialStructType
     "class" | // ClassType
     "array" | // ArrayType
     "enum" | // EnumType

@@ -129,6 +129,7 @@ import { ReverseIndexSetExpression } from "../ast/expressions/ReverseIndexSetExp
 import { getOperatorOverloadName } from "../typechecking/OperatorOverload";
 import { ThrowExpression } from "../ast/expressions/ThrowExpression";
 import { StringEnumType } from "../ast/types/StringEnumType";
+import { PartialStructType } from "../ast/types/PartialStruct";
 
 let INTIALIZER_GROUP_ID = 1;
 
@@ -1144,6 +1145,7 @@ export class ParseMethods {
             "class",
             "impl",
             "coroutine",
+            "partial",
             "$basicType",
         ]});
         if (lexeme.type === "identifier") {
@@ -1189,12 +1191,10 @@ export class ParseMethods {
             return ParseMethods.parseTypeCoroutine(parser, ctx);
         }
 
-        /*
-        if(lexeme.type === "process") {
+        if (lexeme.type === "partial") {
             parser.reject();
-            return parseTypeProcess(parser, ctx);
+            return ParseMethods.parseTypePartial(parser, ctx);
         }
-        */
 
         if (
             [
@@ -1258,6 +1258,16 @@ export class ParseMethods {
         let fnType = ParseMethods.parseTypeFunction(parser, ctx);
         parser.expect(">");
         return new CoroutineType(loc, fnType as FunctionType);
+    }
+
+    @trackState()
+    static parseTypePartial(parser: Parser, ctx: Context): DataType {
+        let loc = parser.loc();
+        parser.expect("partial");
+        parser.expect("<");
+        let structType = ParseMethods.parseType(parser, ctx);
+        parser.expect(">");
+        return new PartialStructType(loc, structType);
     }
 
     @trackState()
@@ -3288,7 +3298,7 @@ export class ParseMethods {
             );
 
             return d;
-        }).filter((e) => e !== null)
+        }).filter((e) => e !== null) as DeclaredVariable[];
     }
 
     @trackState()

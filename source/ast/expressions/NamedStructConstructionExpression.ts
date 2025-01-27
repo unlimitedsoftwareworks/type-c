@@ -15,6 +15,7 @@ import { getSubStruct, matchDataTypes, mergeStructs, reduceStructFields } from "
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
+import { PartialStructType } from "../types/PartialStruct";
 import { StructField, StructType } from "../types/StructType";
 import { isRHSConstSafe } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
@@ -77,12 +78,17 @@ export class NamedStructConstructionExpression extends Expression {
         let structHint: StructType | null = null;
         if (hint) {
             // make sure the hint is a struct
-            if (!hint.is(ctx, StructType)) {
+            if (!hint.is(ctx, StructType) && !hint.is(ctx, PartialStructType)) {
                 ctx.parser.customError(`Cannot create a named struct from a non-struct type ${hint.getShortName()}`, this.location);
             }
 
             // the hint may not contain all the fields present in the name struct construction
-            structHint = hint.to(ctx, StructType) as StructType;
+            if(hint.is(ctx, PartialStructType)){
+                structHint = (hint.to(ctx, PartialStructType) as PartialStructType).getStructType(ctx);
+            }
+            else {
+                structHint = hint.to(ctx, StructType) as StructType;
+            }
         }
 
         let hasUnpacked = false;

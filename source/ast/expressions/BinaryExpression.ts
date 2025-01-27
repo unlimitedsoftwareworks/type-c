@@ -78,15 +78,6 @@ export class BinaryExpression extends Expression {
 
     promotedType: DataType | null = null;
 
-
-    /**
-     * A global flag to indicate if we are within nullish coalescing operator
-     * to help with type checking, since outside nullish coalescing, nullable 
-     * member access is not allowed to return non-nullable types, but within
-     * nullish coalescing, it is allowed
-     */
-    static isWithinNullishCoalescing: boolean = false;
-
     // set by the bytecode generator when transforming expressions into others,
     // to ignore constness of the left hand side
     // one is use example is foreach -> for
@@ -136,16 +127,16 @@ export class BinaryExpression extends Expression {
          * 
          */
         if(this.operator === "??"){
-            BinaryExpression.isWithinNullishCoalescing = true;
-            if(meta === undefined){
+            if(!meta?.isWithinNullishCoalescing){
                 // first infer the right hand side
 
-                let meta: InferenceMeta = {
+                let newMeta: InferenceMeta = {
+                    ...meta,
                     isWithinNullishCoalescing: true
                 }
 
                 // infer the left hand side
-                let leftType = this.left.infer(ctx, null, meta);
+                let leftType = this.left.infer(ctx, null, newMeta);
 
                 // if we have a non-null type, then at least the left must be a nullable member access
                 // we can have x?.y or x?.y()
@@ -159,9 +150,6 @@ export class BinaryExpression extends Expression {
                     }
                 }
 
-                // now we need to be safe, hence we disable nullish coalescing,
-                // it will re-enabled if we encounter another nested ?? operator
-                BinaryExpression.isWithinNullishCoalescing = false;
 
                 let rhsType = this.right.infer(ctx, leftType);
                 // rhs can be nullable, if the hint is nullable or no hint is present
@@ -179,8 +167,8 @@ export class BinaryExpression extends Expression {
             }
             else {
                 // we are within a coalescing operator
-                let leftType = this.left.infer(ctx, null, meta);
-                let rightType = this.right.infer(ctx, null, meta);
+                let leftType = this.left.infer(ctx, null, {...meta, isWithinNullishCoalescing: true});
+                let rightType = this.right.infer(ctx, null, {...meta, isWithinNullishCoalescing: true});
 
                 // make sure the types are compatible
                 let res = matchDataTypes(ctx, leftType, rightType);
@@ -190,21 +178,22 @@ export class BinaryExpression extends Expression {
 
                 this.inferredType = rightType;
                 this.checkHint(ctx);
-                BinaryExpression.isWithinNullishCoalescing = false;
                 return rightType;
             }
-
-            BinaryExpression.isWithinNullishCoalescing = false;
         }
 
 
         let lhsType: DataType
 
         if((this.operator == "=") && (this.left instanceof TupleConstructionExpression)){
-            lhsType =(this.left as TupleConstructionExpression).inferLHSAssginment(ctx, lhsHint);
+            lhsType = (this.left as TupleConstructionExpression).inferLHSAssginment(ctx, lhsHint);
         }
         else {
-            lhsType = this.left.infer(ctx, null);
+            let inferenceMeta: InferenceMeta = {
+                ...meta,
+                isBeingAssigned: this.operator === "="
+            }
+            lhsType = this.left.infer(ctx, null, inferenceMeta);
             if(lhsType.is(ctx, BasicType) && (hint?.is(ctx, BasicType))){
                 // reinfer to apply any promotion
                 lhsType = this.left.infer(ctx, hint);
@@ -222,7 +211,7 @@ export class BinaryExpression extends Expression {
         /**
          * Check if we are allowed to use the operator =
          */
-        if(this.operator === '=') {
+        if(this.operator === "=") {
             if (this.left instanceof ThisExpression) {
                 ctx.parser.customError("Cannot assign to this", this.location);
             }
