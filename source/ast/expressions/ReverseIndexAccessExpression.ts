@@ -12,7 +12,7 @@
 
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { Context } from "../symbol/Context";
 import { ClassType } from "../types/ClassType";
 import { InterfaceType } from "../types/InterfaceType";
@@ -36,11 +36,11 @@ export class ReverseIndexAccessExpression extends Expression {
         this.index = index;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
-        let lhsType = this.lhs.infer(ctx, null);
+        let lhsType = this.lhs.infer(ctx, null, meta);
 
         if(lhsType.is(ctx, NullableType)) {
             ctx.parser.customError(`Cannot apply index access to nullable type ${lhsType.getShortName()}, please denull the expression first`, this.location);
@@ -54,9 +54,9 @@ export class ReverseIndexAccessExpression extends Expression {
                 ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access`, this.location);
             }
 
-            let m = getOperatorOverloadType(ctx, "__reverse_index__", lhsT, [this.index.infer(ctx, null)]);
+            let m = getOperatorOverloadType(ctx, "__reverse_index__", lhsT, [this.index.infer(ctx, null, meta)]);
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __reverse_index__(${this.index.infer(ctx, null).getShortName()})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __reverse_index__(${this.index.infer(ctx, null, meta).getShortName()})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -66,7 +66,7 @@ export class ReverseIndexAccessExpression extends Expression {
             let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
             
 
-            this.index.infer(ctx, new BasicType(this.location, "u64"));
+            this.index.infer(ctx, new BasicType(this.location, "u64"), meta);
             this.inferredType = arrayType.arrayOf;
         }
         else {

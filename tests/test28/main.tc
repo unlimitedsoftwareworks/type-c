@@ -31,16 +31,22 @@ fn test_case_1(rn: TestUnit) {
     let p1 = {x: 1.0f, y: 2.0f, z: 3.0f}
     let p2: partial<{x: f32, y: f32, a: u32}> = {x: 4.0f, y: 5.0f}
     let p3: partial<{a: u32}> = p2
-    let data: { name: String, coords: partial<{x: f32, y: f32, z: f32}>? } = {"hello, world!", null}
-    //data.coords = {x: 0.0f}
+    let data: { name: String, coords: partial<{x: f32, y: f32, z: {
+        x: u32, y: u32
+    }}>? } = {"hello, world!", null}
+    data.coords = {x: 0.0f}
     println("setting field y")
     
     println("field y set")
     let x1 = data.coords?.x ?? 10.0f
     let y1 = data.coords?.y ?? 2.0f
 
+    // should result in `Compiler Error: Partial struct access is readonly`
+    // data.coords?.z.x = 1
+
     println("y =" +y1)
     println("x =" +x1)
+    println("z = "+(data.coords?.z.x ?? 2))
 }
 
 fn main() {

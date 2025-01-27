@@ -23,7 +23,7 @@ import { NullableType } from "../types/NullableType";
 import { NullType } from "../types/NullType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 
 export class InstanceCheckExpression extends Expression {
@@ -36,7 +36,7 @@ export class InstanceCheckExpression extends Expression {
         this.type = type;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -72,7 +72,7 @@ export class InstanceCheckExpression extends Expression {
          * - lhs is variant and rhs is interface
          */
         
-        let lhsType = this.expression.infer(ctx, null); // we use null bc lhs doesn't depend on hint
+        let lhsType = this.expression.infer(ctx, null, meta); // we use null bc lhs doesn't depend on hint
   
         if(lhsType.is(ctx, NullableType) && this.type.is(ctx, NullType)) {
             // we just directly return true

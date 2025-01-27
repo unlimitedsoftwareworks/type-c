@@ -13,7 +13,7 @@
 
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { NullableType } from "../types/NullableType";
@@ -36,7 +36,7 @@ export class UnaryExpression extends Expression {
         this.operator = operator;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -44,7 +44,7 @@ export class UnaryExpression extends Expression {
 
         // when we have a denull operator and a hint, we must infer the expression as a nullable
         if((this.operator === "!!") && (hint != null)) {
-            uhsType = this.expression.infer(ctx, new NullableType(this.location, hint));
+            uhsType = this.expression.infer(ctx, new NullableType(this.location, hint), meta);
         }
         else {
             if(this.operator === "-") {
@@ -57,7 +57,7 @@ export class UnaryExpression extends Expression {
                     }
                 }
             }
-            uhsType = this.expression.infer(ctx, hint);
+            uhsType = this.expression.infer(ctx, hint, meta);
         }
 
         this.inferredType = unaryTypeCheckers[this.operator](ctx, uhsType, this);

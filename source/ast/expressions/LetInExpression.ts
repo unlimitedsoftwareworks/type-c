@@ -13,9 +13,8 @@
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DeclaredVariable } from "../symbol/DeclaredVariable";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { DataType } from "../types/DataType";
-import { matchDataTypes } from "../../typechecking/TypeChecking";
 
 export class LetInExpression extends Expression {
     // multiple variables can be declared in a let binding
@@ -32,19 +31,18 @@ export class LetInExpression extends Expression {
         this.variables.forEach(v => this.context.addSymbol(v));
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         // infer the variables
         this.variables.forEach(v => v.infer(this.context));
-        this.inferredType = this.inExpression.infer(this.context, hint);
+        this.inferredType = this.inExpression.infer(this.context, hint, meta);
 
         this.checkHint(this.context);
         this.isConstant = this.inExpression.isConstant;
         return this.inferredType;
     }
-
 
     clone(typeMap: { [key: string]: DataType; }, ctx: Context): LetInExpression{
         return new LetInExpression(this.location, ctx, this.variables.map(v => v.clone(typeMap, ctx)), this.inExpression.clone(typeMap, ctx));

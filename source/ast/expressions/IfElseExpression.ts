@@ -17,7 +17,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BooleanType } from "../types/BooleanType";
 import { DataType } from "../types/DataType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class IfElseExpression extends Expression {
     conditions: Expression[];
@@ -48,19 +48,19 @@ export class IfElseExpression extends Expression {
         });
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         // step 1: infer the conditions, as boolean
-        this.conditions.forEach((condition) => condition.infer(ctx, null));
+        this.conditions.forEach((condition) => condition.infer(ctx, null, meta));
         this.conditions.forEach((condition) => condition.setHint(new BooleanType(condition.location)));
 
         // step 2: infer the expressions of each if expression
-        let typesCombined: DataType[] = this.bodies.map((body) => body.infer(ctx, hint));
+        let typesCombined: DataType[] = this.bodies.map((body) => body.infer(ctx, hint, meta));
 
         // step 3: infer the else expression
-        typesCombined.push(this.elseBody.infer(ctx, hint));
+        typesCombined.push(this.elseBody.infer(ctx, hint, meta));
 
         // if no hint was present, we will have to infer the common type
         if(!hint) {

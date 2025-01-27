@@ -140,6 +140,7 @@ export class BinaryExpression extends Expression {
 
                 // if we have a non-null type, then at least the left must be a nullable member access
                 // we can have x?.y or x?.y()
+                /*
                 if(!(leftType.is(ctx, NullableType))){
                     let baseExpr = this.left;
                     if(baseExpr instanceof FunctionCallExpression){
@@ -149,9 +150,10 @@ export class BinaryExpression extends Expression {
                         ctx.parser.customError(`Cannot apply operator ?? to non-nullable LHS type ${leftType.getShortName()}: LHS Must be nullable, if not, remove the ?? operator`, this.location);
                     }
                 }
+                */
 
 
-                let rhsType = this.right.infer(ctx, leftType);
+                let rhsType = this.right.infer(ctx, leftType, meta);
                 // rhs can be nullable, if the hint is nullable or no hint is present
 
 
@@ -196,16 +198,16 @@ export class BinaryExpression extends Expression {
             lhsType = this.left.infer(ctx, null, inferenceMeta);
             if(lhsType.is(ctx, BasicType) && (hint?.is(ctx, BasicType))){
                 // reinfer to apply any promotion
-                lhsType = this.left.infer(ctx, hint);
+                lhsType = this.left.infer(ctx, hint, meta);
             }
         }
 
         let rhsType: DataType | null = null;
 
         if(this.operator == "="){
-            rhsType = this.right.infer(ctx, lhsType);
+            rhsType = this.right.infer(ctx, lhsType, meta);
         } else {
-            rhsType = this.right.infer(ctx, null);   
+            rhsType = this.right.infer(ctx, null, meta);   
         }
 
         /**

@@ -17,7 +17,7 @@ import { BasicType, ClassType, InterfaceType } from "../types";
 import { DataType } from "../types/DataType";
 import { NullableType } from "../types/NullableType";
 import { StringEnumType } from "../types/StringEnumType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class CastExpression extends Expression {
     target: DataType;
@@ -45,7 +45,7 @@ export class CastExpression extends Expression {
         this.castType = castType;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
         let expressionType: DataType;
@@ -55,14 +55,14 @@ export class CastExpression extends Expression {
             // because basic types are incompatible with each other, 
             // and `as` is used to make is as such
             if (!this.target.is(ctx, BasicType)) {
-                expressionType = this.expression.infer(ctx, this.target);
+                expressionType = this.expression.infer(ctx, this.target, meta);
             }
             else {
-                expressionType = this.expression.infer(ctx, null);
+                expressionType = this.expression.infer(ctx, null, meta);
             }
         }
         else {
-            expressionType = this.expression.infer(ctx, null);
+            expressionType = this.expression.infer(ctx, null, meta);
         }
         
         // 2. Check if we can cast to the target type

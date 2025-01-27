@@ -14,7 +14,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { UnreachableType } from "../types/UnreachableType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 
 export class UnreachableExpression extends Expression {
@@ -22,7 +22,7 @@ export class UnreachableExpression extends Expression {
         super(location, "unreachable");
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.inferredType = new UnreachableType(this.location);
         return this.inferredType;
     }

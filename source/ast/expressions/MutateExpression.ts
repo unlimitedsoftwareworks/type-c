@@ -10,12 +10,10 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { canCastTypes, matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
-import { NullableType } from "../types/NullableType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { LiteralExpression } from "./LiteralExpression";
 import { ThisExpression } from "./ThisExpression";
 
@@ -28,7 +26,7 @@ export class MutateExpression extends Expression {
         this.expression = expression;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
         if(this.expression instanceof ThisExpression) {
@@ -40,7 +38,7 @@ export class MutateExpression extends Expression {
         }
 
         // 1. infer base expression without a hint
-        let expressionType = this.expression.infer(ctx, hint);
+        let expressionType = this.expression.infer(ctx, hint, meta);
 
         if(!this.expression.isConstant) {
             ctx.parser.customWarning(`Unnecessary mutate expression, target is not constant.`, this.location);

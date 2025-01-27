@@ -13,12 +13,12 @@
 
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { InterfaceType } from "../types/InterfaceType";
 import { ClassType } from "../types/ClassType";
-import { getOperatorOverloadType, isReverseIndexSettable, setIndexesSetHint, setReverseIndexesSetHint } from "../../typechecking/OperatorOverload";
+import { getOperatorOverloadType, isReverseIndexSettable, setReverseIndexesSetHint } from "../../typechecking/OperatorOverload";
 import { ArrayType } from "../types/ArrayType";
 import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { BasicType } from "../types/BasicType";
@@ -39,11 +39,11 @@ export class ReverseIndexSetExpression extends Expression {
         this.value = value;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
-        let lhsType = this.lhs.infer(ctx, null);
+        let lhsType = this.lhs.infer(ctx, null, meta);
 
         /**
          * Make sure we are not assigning to a constant
@@ -62,10 +62,10 @@ export class ReverseIndexSetExpression extends Expression {
                 ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index set`, this.location);
             }
 
-            let valueType = this.value.infer(ctx, null);
-            let m = getOperatorOverloadType(ctx, "__reverse_index_set__", lhsT, [this.index.infer(ctx, null), valueType]);
+            let valueType = this.value.infer(ctx, null, meta);
+            let m = getOperatorOverloadType(ctx, "__reverse_index_set__", lhsT, [this.index.infer(ctx, null, meta), valueType]);
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __reverse_index_set__(${this.index.infer(ctx, null).getShortName()})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __reverse_index_set__(${this.index.infer(ctx, null, meta).getShortName()})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -74,7 +74,7 @@ export class ReverseIndexSetExpression extends Expression {
         }
         else if (lhsType.is(ctx, ArrayType)) {
             let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
-            let valueType = this.value.infer(ctx, arrayType.arrayOf);
+            let valueType = this.value.infer(ctx, arrayType.arrayOf, meta);
             this.inferredType = valueType;
 
             // make sure the value type matches the array type
@@ -84,7 +84,7 @@ export class ReverseIndexSetExpression extends Expression {
             }
 
             // infer the type of the index
-            let indexType = this.index.infer(ctx, null);
+            let indexType = this.index.infer(ctx, null, meta);
             if(!indexType.is(ctx, BasicType)) {
                 ctx.parser.customError(`Array index must be of type int, got ${indexType.getShortName()}`, this.location);
             }

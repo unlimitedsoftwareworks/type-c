@@ -14,7 +14,7 @@
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class ThisExpression extends Expression {
     parentClass: DataType | null = null;
@@ -23,7 +23,7 @@ export class ThisExpression extends Expression {
         super(location, "this");
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
         this.isConstant = false;

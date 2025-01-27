@@ -13,7 +13,7 @@
  */
 
 
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
@@ -30,10 +30,10 @@ export class ArrayDeconstructionExpression extends Expression {
         super(location, "array_deconstruction");
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
-        let arrayType = this.arrayExpression.infer(ctx, null);
+        let arrayType = this.arrayExpression.infer(ctx, null, meta);
 
         if (!arrayType.is(ctx, ArrayType)) {
             ctx.parser.customError(`Expected tuple type, got ${arrayType.getShortName()}`, this.location);

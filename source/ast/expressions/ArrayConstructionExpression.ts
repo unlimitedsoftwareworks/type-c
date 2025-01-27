@@ -18,7 +18,7 @@ import { ArrayType } from "../types/ArrayType";
 import { DataType } from "../types/DataType";
 import { UnreachableType } from "../types/UnreachableType";
 import { isRHSConstSafe } from "./BinaryExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class ArrayUnpackingExpression extends Expression {
     expression: Expression;
@@ -28,9 +28,9 @@ export class ArrayUnpackingExpression extends Expression {
         this.expression = expression;
     }
 
-    infer(ctx: Context, hint: DataType | null = null): DataType {
+    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
-        this.inferredType = this.expression.infer(ctx, hint?new ArrayType(this.location, hint):null);
+        this.inferredType = this.expression.infer(ctx, hint?new ArrayType(this.location, hint):null, meta);
         // make sure the expression is an array
         if(!this.inferredType.is(ctx, ArrayType)){
             ctx.parser.customError(`Expected an array, but ${this.inferredType.getShortName()} found`, this.location);
@@ -56,7 +56,7 @@ export class ArrayConstructionExpression extends Expression {
     }
 
 
-    infer(ctx: Context, hint: DataType | null = null): DataType{
+    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType{
         this.setHint(hint);
 
         if((this.elements.length == 0) && (hint == null)){
@@ -77,7 +77,7 @@ export class ArrayConstructionExpression extends Expression {
         let consts = []
         for(const element of this.elements){
             this.containsUnpackedArray = this.containsUnpackedArray || element instanceof ArrayUnpackingExpression;
-            elementTypes.push(element.infer(ctx, baseHint?.arrayOf || null));
+            elementTypes.push(element.infer(ctx, baseHint?.arrayOf || null, meta));
             consts.push(element.isConstant && !isRHSConstSafe(ctx, element));
         }
         

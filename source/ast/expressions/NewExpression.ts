@@ -19,7 +19,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { UnsetType } from "../types/UnsetType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class NewExpression extends Expression {
     type: DataType;
@@ -40,7 +40,7 @@ export class NewExpression extends Expression {
         this.arguments = arguments_;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -51,7 +51,8 @@ export class NewExpression extends Expression {
             // now we need to find init method matching the arguments given
             let classType = this.type.to(ctx, ClassType) as ClassType;
 
-            let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null)), null, []);
+            // TODO: first try and see if maybe only one init method exists
+            let initMethod = classType.getMethodBySignature(ctx, "init", this.arguments.map(a => a.infer(ctx, null, meta)), null, []);
 
             if(initMethod.length === 0) {
 
@@ -75,7 +76,7 @@ export class NewExpression extends Expression {
                 // init methods are already checked for sanity whithin the ClassType class.
                 // set the hint for our args
                 for(let i = 0; i < this.arguments.length; i++) {
-                    this.arguments[i].infer(ctx,this._calledInitMethod.header.parameters[i].type);
+                    this.arguments[i].infer(ctx,this._calledInitMethod.header.parameters[i].type, meta);
                 }
             }
 

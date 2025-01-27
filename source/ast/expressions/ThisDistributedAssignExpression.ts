@@ -17,7 +17,7 @@ import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { BinaryExpression } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 import { NamedStructConstructionExpression, StructKeyValueExpressionPair } from "./NamedStructConstructionExpression";
 import { ThisExpression } from "./ThisExpression";
@@ -33,8 +33,8 @@ export class ThisDistributedAssignExpression extends Expression {
         this.right = right;
     }
 
-    infer(ctx: Context, hintType: DataType): DataType {
-        let lhsType = this.left.infer(ctx, hintType);
+    infer(ctx: Context, hintType: DataType, meta?: InferenceMeta): DataType {
+        let lhsType = this.left.infer(ctx, hintType, meta);
 
         if(!lhsType.is(ctx, ClassType)) {
             ctx.parser.customError(`Cannot use += operator with non-class type ${lhsType.getShortName()}`, this.location);
@@ -58,7 +58,7 @@ export class ThisDistributedAssignExpression extends Expression {
                     ctx.parser.customError(`Cannot assign to static attribute ${field.name} of class ${classType.getShortName()} using \`this\``, field.location);
                 }
 
-                let elementType = field.infer(ctx, attr.type);
+                let elementType = field.infer(ctx, attr.type, meta);
             }
         }
         else {
@@ -78,7 +78,7 @@ export class ThisDistributedAssignExpression extends Expression {
                     ctx.parser.customError(`Cannot assign to static attribute ${field.name} of class ${classType.getShortName()} using \`this\``, field.location);
                 }
 
-                let elementType = field.value.infer(ctx, attr.type);
+                let elementType = field.value.infer(ctx, attr.type, meta);
             }
         }
 

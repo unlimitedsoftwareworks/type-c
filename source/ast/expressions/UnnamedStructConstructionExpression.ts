@@ -16,7 +16,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { StructType } from "../types/StructType";
 import { isRHSConstSafe } from "./BinaryExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class UnnamedStructConstructionExpression extends Expression {
     elements: Expression[];
@@ -26,7 +26,7 @@ export class UnnamedStructConstructionExpression extends Expression {
         this.elements = elements;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
@@ -49,7 +49,7 @@ export class UnnamedStructConstructionExpression extends Expression {
             let field = structType.fields[i];
             let element = this.elements[i];
             let fieldType = field.type;
-            let elementType = element.infer(ctx, fieldType);
+            let elementType = element.infer(ctx, fieldType, meta);
             consts.push(element.isConstant && !isRHSConstSafe(ctx, element));
         }
 

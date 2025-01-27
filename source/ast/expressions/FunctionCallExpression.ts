@@ -125,7 +125,7 @@ export class FunctionCallExpression extends Expression {
             let baseExpr = left.left;
             this._isNullableCall = left.isNullable;
 
-            let baseExprType = baseExpr.infer(ctx, null);
+            let baseExprType = baseExpr.infer(ctx, null, meta);
 
             if(this._isNullableCall){
                 /**
@@ -163,7 +163,7 @@ export class FunctionCallExpression extends Expression {
         }
 
         if ((left instanceof ElementExpression) && (left.typeArguments.length === 0) && (left.isGenericFunction(ctx))) {
-            left.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null));
+            left.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null, meta));
         }
 
         if (left instanceof ElementExpression) {
@@ -174,10 +174,10 @@ export class FunctionCallExpression extends Expression {
 
 
         if (left instanceof ElementExpression) {
-            lhsType = this.lhs.infer(ctx, null, {args: this.args});
+            lhsType = this.lhs.infer(ctx, null, {...meta,args: this.args});
         }
         else {
-            lhsType = left.infer(ctx, null);
+            lhsType = left.infer(ctx, null, {...meta,args: this.args});
         }
 
         if (lhsType.is(ctx, NullableType)) {
@@ -224,7 +224,7 @@ export class FunctionCallExpression extends Expression {
             ctx.parser.customError(`Type ${lhsT.getShortName()} is not callable`, this.location);
         }
 
-        let method = getOperatorOverloadType(ctx, "__call__", lhsT, this.args.map(e => e.infer(ctx, null)));
+        let method = getOperatorOverloadType(ctx, "__call__", lhsT, this.args.map(e => e.infer(ctx, null, meta)));
 
         if (!method) {
             ctx.parser.customError(`Method __call__ not found in ${lhsT.getShortName()}`, this.location);
@@ -259,7 +259,7 @@ export class FunctionCallExpression extends Expression {
 
         for (let i = 0; i < this.args.length; i++) {
             let paramType = interfaceMethod.header.parameters[i].type;
-            let argType = this.args[i].infer(ctx, paramType);
+            let argType = this.args[i].infer(ctx, paramType, meta);
 
             let res = matchDataTypes(ctx, paramType, argType);
             if (!res.success) {
@@ -302,7 +302,7 @@ export class FunctionCallExpression extends Expression {
             // check if we have only one method with the given name, then we infer arguments based on the method's parameters
             // else we use the regular logic
 
-            let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
+            let inferredArgTypes = this.args.map(e => e.infer(ctx, null, meta));
             let candidateMethods = baseClass.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
             if (candidateMethods.length === 0) {
                 ctx.parser.customError(`Method ${memberExpr.name}(${inferredArgTypes.map(e => e.getShortName()).join(", ")}) ${hint?"-> "+hint.getShortName():""} not found in class ${baseExprType.getShortName()}`, this.location);
@@ -318,7 +318,7 @@ export class FunctionCallExpression extends Expression {
             for (let i = 0; i < this.args.length; i++) {
                 // we do not always use the hint, for cases like "hi" + ("world" - "!")
                 //                                               would infer ("world" - "!") as a i64, hence inferring string literal as i64 which is wrong
-                this.args[i].infer(ctx, method.header.parameters[i].type);
+                this.args[i].infer(ctx, method.header.parameters[i].type, meta);
                 if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
                     ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
@@ -363,7 +363,7 @@ export class FunctionCallExpression extends Expression {
 
         for (let i = 0; i < this.args.length; i++) {
             let paramType = lhsT.parameters[i].type;
-            let argType = this.args[i].infer(ctx, paramType);
+            let argType = this.args[i].infer(ctx, paramType, meta);
 
             let res = matchDataTypes(ctx, paramType, argType);
             if (!res.success) {
@@ -384,7 +384,7 @@ export class FunctionCallExpression extends Expression {
         /**
          * similar to classes, interfaces ccan have method overloads but no generics
          */
-        let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
+        let inferredArgTypes = this.args.map(e => e.infer(ctx, null, meta));
         // TODO:
         // check if we have only one method with the given name, then we infer arguments based on the method's parameters
         // else we use the regular logic
@@ -402,7 +402,7 @@ export class FunctionCallExpression extends Expression {
         for (let i = 0; i < this.args.length; i++) {
             let type = method.header.parameters[i].type;
             type.resolve(ctx);
-            this.args[i].infer(ctx, type);
+            this.args[i].infer(ctx, type, meta);
             if (!checkExpressionArgConst(this.args[i], type, method.header.parameters[i], method.header)) {
                 ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
             }
@@ -441,7 +441,7 @@ export class FunctionCallExpression extends Expression {
             let classType = metaClass.classType.to(ctx, ClassType) as ClassType;
 
             // find the method
-            let inferredArgTypes = this.args.map(e => e.infer(ctx, null));
+            let inferredArgTypes = this.args.map(e => e.infer(ctx, null, meta));
             let candidateMethods = classType.getMethodBySignature(ctx, memberExpr.name, inferredArgTypes, hint, memberExpr.typeArguments);
 
             if (candidateMethods.length === 0) {
@@ -454,7 +454,7 @@ export class FunctionCallExpression extends Expression {
 
             let method = candidateMethods[0];
             for (let i = 0; i < this.args.length; i++) {
-                this.args[i].infer(ctx, method.header.parameters[i].type);
+                this.args[i].infer(ctx, method.header.parameters[i].type, meta);
                 if (!checkExpressionArgConst(this.args[i], method.header.parameters[i].type, method.header.parameters[i], method.header)) {
                     ctx.parser.customError(`Argument ${i} is not assignable to parameter ${i}, mutability missmatch`, this.args[i].location);
                 }
@@ -486,7 +486,7 @@ export class FunctionCallExpression extends Expression {
                 ctx.parser.customError("Cannot call a variant constructor with a nullable member access ?.", this.location)
             }
 
-            let metaType = this.lhs.infer(ctx, null);
+            let metaType = this.lhs.infer(ctx, null, meta);
             if (!metaType.is(ctx, MetaVariantConstructorType)) {
                 throw "Unreachable";
             }
@@ -564,7 +564,7 @@ export class FunctionCallExpression extends Expression {
                 }
 
                 for(let i = 0; i < this.args.length; i++){
-                    variantConstructor.parameters[i].type.getGenericParametersRecursive(ctx, this.args[i].infer(ctx, hasHint ? paramsHint[i] : null), genericParams, res);
+                    variantConstructor.parameters[i].type.getGenericParametersRecursive(ctx, this.args[i].infer(ctx, hasHint ? paramsHint[i] : null, meta), genericParams, res);
                 }
 
                 //variantConstructor.getGenericParametersRecursive(ctx, variantConstructorMeta.variantConstructorType, genericParams, res);
@@ -591,7 +591,7 @@ export class FunctionCallExpression extends Expression {
 
             // infer the arguments
             for (let i = 0; i < this.args.length; i++) {
-                this.args[i].infer(ctx, variantConstructor!.parameters[i].type);
+                this.args[i].infer(ctx, variantConstructor!.parameters[i].type, meta);
             }
 
             // set the inferred type
@@ -617,7 +617,7 @@ export class FunctionCallExpression extends Expression {
 
         // infer the arguments
         for (let i = 0; i < this.args.length; i++) {
-            this.args[i].infer(ctx, coroutineType.fnType.parameters[i].type);
+            this.args[i].infer(ctx, coroutineType.fnType.parameters[i].type, meta);
         }
 
         // set the inferred type

@@ -23,7 +23,7 @@ import { DataType } from "../types/DataType";
 import { NullType } from "../types/NullType";
 import { NullableType } from "../types/NullableType";
 import { StringEnumType } from "../types/StringEnumType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export type LiteralKind = 
     "string_literal" |  // "hello"
@@ -278,7 +278,7 @@ export class IntLiteralExpression extends LiteralExpression {
         this.isNegative = isNegative;
     }
 
-    infer(ctx: Context, hint: DataType | null = null): DataType {
+    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
         if(hint && (hint.dereference() instanceof BasicType)) {

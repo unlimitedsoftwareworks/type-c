@@ -80,7 +80,7 @@ export class MemberAccessExpression extends Expression {
          */
 
         // lhs has nothing to do with hint, hence we do not use it
-        let lhsType = this.left.infer(ctx, null);
+        let lhsType = this.left.infer(ctx, null, meta);
 
         if(this.isNullable){
             /**
@@ -451,7 +451,7 @@ export class MemberAccessExpression extends Expression {
             this._nsAccessedSymbol = element;
 
             let e_expr = new ElementExpression(this.location, this.right.name, this.right.typeArguments);
-            e_expr.infer(namespaceType.getContext(), hint);
+            e_expr.infer(namespaceType.getContext(), hint, meta);
 
             this.inferredType = e_expr.inferredType;
             this.isConstant = e_expr.isConstant;

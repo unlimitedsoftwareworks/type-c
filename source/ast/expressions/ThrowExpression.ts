@@ -21,7 +21,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BasicType, UnreachableType } from "../types";
 import { DataType } from "../types/DataType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class ThrowExpression extends Expression {
     message: Expression;
@@ -33,7 +33,7 @@ export class ThrowExpression extends Expression {
         this.code = code;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         // check that message is a string
         if(BuiltinModules.String == undefined){
             ctx.parser.customError("Default String class is not defined.", this.location);

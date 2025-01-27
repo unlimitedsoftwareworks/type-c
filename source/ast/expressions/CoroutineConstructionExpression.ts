@@ -14,7 +14,7 @@
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { Statement } from "../statements/Statement";
 import { CoroutineType } from "../types/CoroutineType";
 import { FunctionType } from "../types/FunctionType";
@@ -28,9 +28,9 @@ export class CoroutineConstructionExpression extends Expression {
         this.baseFn = fn;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         // hint is ignored for coroutine construction
-        this.baseFn.infer(ctx, null);
+        this.baseFn.infer(ctx, null, meta);
 
         // make sure baseFn is a function
         if(!this.baseFn.inferredType!.is(ctx, FunctionType)) {
