@@ -90,6 +90,7 @@ export class DataType {
         DataType._recursiveGenericRecursion = [];
         DataType._recursiveTypeResolution = [];
         DataType._recursiveTypeSerialization = [];
+        DataType.ID_COUNTER = 0;
     }
 
     // the original type, i.e its definition reference
