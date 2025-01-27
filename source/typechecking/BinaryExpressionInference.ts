@@ -17,9 +17,10 @@ import { BooleanType } from "../ast/types/BooleanType";
 import { ClassType } from "../ast/types/ClassType";
 import { DataType } from "../ast/types/DataType";
 import { EnumType } from "../ast/types/EnumType";
+import { StructType } from "../ast/types/StructType";
 import { InterfaceType } from "../ast/types/InterfaceType";
 import { NullableType } from "../ast/types/NullableType";
-import { ReferenceType } from "../ast/types/ReferenceType";
+import { PartialStructType } from "../ast/types/PartialStruct";
 import { isAddable, getOperatorOverloadType, setBinaryOverrideMethodHint, isSubable, isMultiplicable, isDivisible, isModable, isLt, isLte, isGt, isGte, isOr, isAnd, isLShift, isRShift, isBAnd, isBOr, isXor, OverridableMethodType } from "./OperatorOverload";
 import { matchDataTypes } from "./TypeChecking";
 
@@ -305,25 +306,25 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
     }
 
     if (lhs.is(ctx, ClassType) || lhs.is(ctx, InterfaceType)) {
-        if (isLt(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === "<")) {
+        if (isLt(ctx, lhs as ClassType | InterfaceType) && (expr.operator === "<")) {
             let method = getOperatorOverloadType(ctx, "__lt__", lhs as OverridableMethodType, [rhs]);
             if (method) {
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
-        if (isLte(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === "<=")) {
+        if (isLte(ctx, lhs as ClassType | InterfaceType) && (expr.operator === "<=")) {
             let method = getOperatorOverloadType(ctx, "__le__", lhs as OverridableMethodType, [rhs]);
             if (method) {
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
-        if (isGt(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === ">")) {
+        if (isGt(ctx, lhs as ClassType | InterfaceType) && (expr.operator === ">")) {
             let method = getOperatorOverloadType(ctx, "__gt__", lhs as OverridableMethodType, [rhs]);
             if (method) {
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
             }
         }
-        if (isGte(ctx, lhs as ClassType | InterfaceType | ReferenceType) && (expr.operator === ">=")) {
+        if (isGte(ctx, lhs as ClassType | InterfaceType) && (expr.operator === ">=")) {
             let method = getOperatorOverloadType(ctx, "__ge__", lhs as OverridableMethodType, [rhs]);
             if (method) {
                 return setBinaryOverrideMethodHint(ctx, lhs, rhs, method, expr);
@@ -345,7 +346,7 @@ function inferLessThan(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
  */
 function inferLogicalAndOr(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression) {
 
-    if (lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType) {
+    if (lhs instanceof ClassType || lhs instanceof InterfaceType) {
         if (isOr(ctx, lhs) && (expr.operator === "||")) {
             let method = getOperatorOverloadType(ctx, "__or__", lhs as OverridableMethodType, [rhs]);
             if (method) {
@@ -381,7 +382,7 @@ function inferCoalescing(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
 
 // binary and(&), or(|), right shift(>>), left shift(<<) requires two integer inputs and returns an integer
 function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryExpression): DataType {
-    if (lhs instanceof ClassType || lhs instanceof InterfaceType || lhs instanceof ReferenceType) {
+    if (lhs instanceof ClassType || lhs instanceof InterfaceType) {
         if (isLShift(ctx, lhs) && (expr.operator === "<<")) {
             let method = getOperatorOverloadType(ctx, "__lshift__", lhs as OverridableMethodType, [rhs]);
             if (method) {
@@ -428,6 +429,19 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
         }
 
         return new BasicType(expr.location, basicTypePromotionMap[lhs.kind][rhs.kind]);
+    }
+
+    /**
+     * a << b infers typeof(a)
+     * a >> b infers typeof(b)
+     */
+    else if (["<<", ">>"].includes(expr.operator) && (lhs.is(ctx, PartialStructType) || lhs.is(ctx, StructType)) && (rhs.is(ctx, PartialStructType) || rhs.is(ctx, StructType))) {
+        if(expr.operator == "<<") {
+            return lhs;
+        }
+        else {
+            return rhs;
+        } 
     }
 
     ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}`, expr.location);

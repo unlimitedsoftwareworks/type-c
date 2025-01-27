@@ -131,6 +131,7 @@ import {
     popStackType,
     pushStackType,
     retType,
+    structCopyFieldType,
     structGetFieldJmpType,
     structGetFieldType,
     structSetFieldType,
@@ -1279,6 +1280,10 @@ export class FunctionGenerator {
         }
         if (expr.operator === "??") {
             return this.ir_generate_null_coalescing(ctx, expr);
+        }
+
+        if(["<<", ">>"].includes(expr.operator) && (expr.inferredType!.is(ctx, PartialStructType) || expr.inferredType!.is(ctx, StructType))){
+            return this.ir_generate_struct_merge(expr, ctx);
         }
 
         if (
@@ -4502,6 +4507,37 @@ export class FunctionGenerator {
         this.destroyTmp(aTmp);
         this.destroyTmp(bTmp);
         return tmpRes;
+    }
+
+    ir_generate_struct_merge(expr: BinaryExpression, ctx: Context) {
+        let lhs = this.visitExpression(expr.left, ctx);
+        let rhs = this.visitExpression(expr.right, ctx);
+        
+        let lhsStruct = (expr.left.inferredType!.is(ctx, StructType)) ? 
+                            expr.left.inferredType!.to(ctx, StructType) as StructType : 
+                            (expr.left.inferredType!.to(ctx, PartialStructType) as PartialStructType).getStructType(ctx);
+        let rhsStruct = (expr.right.inferredType!.is(ctx, StructType)) ? 
+                            expr.right.inferredType!.to(ctx, StructType) as StructType : 
+                            (expr.right.inferredType!.to(ctx, PartialStructType) as PartialStructType).getStructType(ctx);
+
+        let srcStruct = lhsStruct;
+
+        // assume <<
+        let src = lhs;
+        let dst = rhs;
+
+        if(expr.operator == "<<"){
+            src = rhs;
+            dst = lhs;
+            srcStruct = rhsStruct;
+        }
+
+        for(const [i, field] of srcStruct.fields.entries()){
+            let instruction = structCopyFieldType(field!.type);
+            this.i(instruction, src, dst, field!.getFieldID());
+        }
+
+        return dst;
     }
 
     ir_generate_tuple_assignment(ctx: Context, expr: BinaryExpression) {

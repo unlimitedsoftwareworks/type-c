@@ -809,6 +809,33 @@ export class BytecodeGenerator {
                 this.addUnresolvedOffset(instruction.args[3] as string, lbl);
             }
 
+
+            else if (instruction.type == "s_copy_field_i8" || instruction.type == "s_copy_field_u8") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.s_copyf, dest, src, instruction.args[2] as number, 1);
+            }
+            else if (instruction.type == "s_copy_field_i16" || instruction.type == "s_copy_field_u16") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.s_copyf, dest, src, instruction.args[2] as number, 2);
+            }
+            else if (instruction.type == "s_copy_field_i32" || instruction.type == "s_copy_field_u32" || instruction.type == "s_copy_field_f32") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.s_copyf, dest, src, instruction.args[2] as number, 4);
+            }
+            else if (instruction.type == "s_copy_field_i64" || instruction.type == "s_copy_field_u64" || instruction.type == "s_copy_field_f64") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.s_copyf, dest, src, instruction.args[2] as number, 8);
+            }
+            else if (instruction.type == "s_copy_field_ptr") {
+                let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
+                let src = this.getRegisterForVariable(fn, instruction.args[1] as string);
+                this.emit(BytecodeInstructionType.s_copyf, dest, src, instruction.args[2] as number, 8);
+            }
+
             else if (instruction.type == "s_set_field_i8" || instruction.type == "s_set_field_u8") {
                 let dest = this.getRegisterForVariable(fn, instruction.args[0] as string);
                 let src = this.getRegisterForVariable(fn, instruction.args[2] as string);

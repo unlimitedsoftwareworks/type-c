@@ -182,7 +182,7 @@ export class Expression {
      * hint type of `null`.
      * in this 
      */
-    infer(ctx: Context, hint: DataType | null = null, meta?: InferenceMeta): DataType{
+    infer(ctx: Context, hint: DataType | null = null, meta: InferenceMeta={}): DataType{
         throw new Error("infer is not implemented on abstract Expression");
     }
 

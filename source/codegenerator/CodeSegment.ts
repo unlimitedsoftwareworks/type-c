@@ -166,6 +166,12 @@ export class CodeSegment {
                 this.writer.push_8(args[1]);
                 this.writer.push_32(args[2]);
                 return this.writer.push_32(args[3]);
+
+            case BytecodeInstructionType.s_copyf:
+                this.writer.push_8(args[0]);
+                this.writer.push_8(args[1]);
+                this.writer.push_32(args[2]);
+                return this.writer.push_8(args[3]);
                 
             case BytecodeInstructionType.s_storef_const:
                 this.writer.push_8(args[0]);

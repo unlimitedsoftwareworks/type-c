@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
- /**
-  * @file test.c
-  * Tests Partial Structs
-  * 
-  * Partial structs have their fields set at runtime
-  * Access to partial structs required nullish coalescing operator
-  * i.e p1.x ?? 10 and they can be merged with regular structs using
-  * >> and << operators
-  */
+/**
+ * @file test.c
+ * Tests Partial Structs
+ * 
+ * Partial structs have their fields set at runtime
+ * Access to partial structs required nullish coalescing operator
+ * i.e p1.x ?? 10 and they can be merged with regular structs using
+ * >> and << operators
+ */
 
 from std.unit.test import TestUnit, UnitSet
 from std.io import println
@@ -31,26 +31,49 @@ fn test_case_1(rn: TestUnit) {
     let p1 = {x: 1.0f, y: 2.0f, z: 3.0f}
     let p2: partial<{x: f32, y: f32, a: u32}> = {x: 4.0f, y: 5.0f}
     let p3: partial<{a: u32}> = p2
+    
     let data: { name: String, coords: partial<{x: f32, y: f32, z: {
         x: u32, y: u32
     }}>? } = {"hello, world!", null}
-    data.coords = {x: 0.0f}
-    println("setting field y")
     
-    println("field y set")
+    rn.assert_obj_null(data.coords)
+
+    // setting value to a partial value
+    data.coords = {x: 0.0f}
+
+    rn.assert_f32_eq_pre(data.coords?.x ?? 1.0f, 0.0f, 0.00001f)
+    
     let x1 = data.coords?.x ?? 10.0f
+    rn.assert_f32_eq_pre(x1, 0.0f, 0.00001f)
+
+
     let y1 = data.coords?.y ?? 2.0f
+    rn.assert_f32_eq_pre(y1, 2.0f, 0.00001f)
+}
 
-    // should result in `Compiler Error: Partial struct access is readonly`
-    // data.coords?.z.x = 1
+type Point2D = {x: f32, y: f32}
+type Point3D = Point2D & {z: f32}
+type Point4D = Point3D & {t: u64}
 
-    println("y =" +y1)
-    println("x =" +x1)
-    println("z = "+(data.coords?.z.x ?? 2))
+fn test_case_2(rn: TestUnit) {
+    let p1: Point2D = {1.0f, 2.0f}
+    let p2: partial<Point3D> = {z: 3.0f}
+    p2 = p2 << p1
+
+    rn.assert_f32_eq_pre(p2.x ?? 0.0f, 1.0f, 0.0001f)
+    rn.assert_f32_eq_pre(p2.y ?? 0.0f, 2.0f, 0.0001f)
+    rn.assert_f32_eq_pre(p2.z ?? 0.0f, 3.0f, 0.0001f)
+
+    let p3: Point4D = {0,0,0,0}
+    p3 << p1
+    rn.assert_f32_eq_pre(p3.x ?? 0.0f, 1.0f, 0.0001f)
+    rn.assert_f32_eq_pre(p3.y, 2.0f, 0.0001f)
+    
 }
 
 fn main() {
     let test_1 = new TestUnit("Test 1", "tests partial structs", test_case_1)
-    let set = new UnitSet("STD Test 28", "Tests Partial Structs", [test_1])
+    let test_2 = new TestUnit("Test 1", "tests struct/partial struct merge", test_case_2)
+    let set = new UnitSet("STD Test 28", "Tests Partial Structs", [test_1, test_2])
     return set.run()
 }

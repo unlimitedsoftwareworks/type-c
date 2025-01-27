@@ -140,6 +140,7 @@ This checklist containts only major changes and updates, for minor changes and u
         doesn't exist.
     - Added `ASTCheckers`, all AST checking will need to move there, so this is a work in progress and/or needs massive cleanup and review.
     - Every expression now properly propagates `meta` argument to properly handle nullish coalescing and partial field access
+    - Implemented struct merge: `>>` and `<<` 
 
 
 
