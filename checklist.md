@@ -142,6 +142,8 @@ This checklist containts only major changes and updates, for minor changes and u
     - Every expression now properly propagates `meta` argument to properly handle nullish coalescing and partial field access
     - Implemented struct merge: `>>` and `<<` 
 
+- 27/01/2025:
+    - TODO: When inferring expression during code gen, it might be necessary to infer using `{isWithinNullishCoalescing: true}`, since the AST is slightly rewritten
 
 
 ## TODOs:

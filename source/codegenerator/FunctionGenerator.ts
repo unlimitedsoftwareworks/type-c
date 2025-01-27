@@ -1865,7 +1865,7 @@ export class FunctionGenerator {
             ),
             [expr.right],
         );
-        methodCall.infer(ctx, expr.inferredType);
+        methodCall.infer(ctx, expr.inferredType, {isWithinNullishCoalescing: true});
         return this.visitFunctionCallExpression(methodCall, ctx);
     }
 
@@ -4522,7 +4522,7 @@ export class FunctionGenerator {
 
         let srcStruct = lhsStruct;
 
-        // assume <<
+        // assume >>
         let src = lhs;
         let dst = rhs;
 
@@ -4534,7 +4534,7 @@ export class FunctionGenerator {
 
         for(const [i, field] of srcStruct.fields.entries()){
             let instruction = structCopyFieldType(field!.type);
-            this.i(instruction, src, dst, field!.getFieldID());
+            this.i(instruction, dst, src, field!.getFieldID());
         }
 
         return dst;
