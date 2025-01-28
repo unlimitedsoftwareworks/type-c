@@ -74,6 +74,7 @@ export async function downloadAndInstallStdLib() {
 
     try {
         console.log("Cloning the standard library...");
+        console.log(`running git clone ${STD_LIB_REPO_URL} ${STD_LIB_PATH}`);
         execSync!(`git clone ${STD_LIB_REPO_URL} ${STD_LIB_PATH}`, {
             stdio: "inherit",
         });
