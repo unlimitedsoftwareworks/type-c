@@ -53,7 +53,7 @@ function normalizePath(filePath: string): string {
     return nodeModules.path.resolve(filePath).toLowerCase();
 }
 
-export module TypeC {
+export namespace TypeC {
     export interface CompileOptions {
         dir: string;
         generateBinaries: boolean;
@@ -68,7 +68,7 @@ export module TypeC {
         target: "runnable" | "library" = "runnable";
         entry: string = "index.tc";
         dir: string = "";
-        static stdlibDir: string = getStdLibPath();
+        static stdlibDir: string = initStdLib();
         
         stateCapturePosition: {
             file: string;
@@ -411,7 +411,6 @@ export module TypeC {
     export const compile = (options: CompileOptions) => {
         // reset compiler state
         TCCompiler.resetCompilerState();
-        initStdLib();
         // make sure all env variables are set
         if (!TCCompiler.stdlibDir) {
             throw new Error(

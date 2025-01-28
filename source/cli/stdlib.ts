@@ -39,13 +39,15 @@ function getExecSync(): typeof import("child_process").execSync | undefined {
 
 const execSync = getExecSync();
 
-export function initStdLib() {
+export function initStdLib(): string {
     if (!nodeModules.path || !nodeModules.os) {
         throw new Error("Standard library initialization requires Node.js environment");
     }
     STD_LIB_REPO_URL = "https://github.com/unlimitedsoftwareworks/stdlib";
     STD_LIB_PATH = nodeModules.path.join(nodeModules.os.homedir(), ".typec", "stdlib");
     COMMIT_HASH_FILE = nodeModules.path.join(STD_LIB_PATH, "commit_hash");
+
+    return STD_LIB_PATH;
 }
 
 export function getStdLibPath(): string {
