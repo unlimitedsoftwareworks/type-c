@@ -5,7 +5,7 @@ import { ImportNode } from "./ast/ImportNode";
 import { BuiltinModules } from "./BuiltinModules";
 import { generateCode } from "./codegenerator/CodeGenerator";
 import { colors } from "./utils/termcolors";
-import { getStdLibPath, initStdLib } from "./cli/stdlib";
+import { initStdLib } from "./cli/stdlib";
 import { DeclaredNamespace } from "./ast/symbol/DeclaredNamespace";
 import { Symbol } from "./ast/symbol/Symbol";
 import { ClassType, DataType, InterfaceType, StructField } from "./ast/types";
@@ -159,7 +159,7 @@ export namespace TypeC {
          * this is used by vscode extention to process unsaved file content
          */
         compile(mode: ParserMode = "compiler", content?: string) {
-            initStdLib();
+            TCCompiler.stdlibDir = initStdLib();
             
             console.log("Compiling ", this.dir);
             // start with index
