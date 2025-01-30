@@ -85,7 +85,7 @@ fn main() -> u32 {
 
     let test_null_instance_check = new TestUnit("test null instance check", "Tests null instance check", test_stuff)
 
-    let set = new UnitSet("Madness", "Tests all operations for all types", [
+    let set = new UnitSet("STD Test 2", "Tests all operations for all types", [
         test_i8_ops,
         test_u8_ops,
         test_i16_ops,

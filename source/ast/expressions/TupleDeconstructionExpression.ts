@@ -13,7 +13,7 @@
  */
 
 
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
@@ -29,10 +29,10 @@ export class TupleDeconstructionExpression extends Expression {
         super(location, "tuple_deconstruction");
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
-        let tupleType = this.tupleExpression.infer(ctx, null);
+        let tupleType = this.tupleExpression.infer(ctx, null, meta);
 
         if (!tupleType.is(ctx, TupleType)) {
             ctx.parser.customError(`Expected tuple type, got ${tupleType.getShortName()}`, this.location);

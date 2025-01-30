@@ -105,6 +105,21 @@ export enum BytecodeInstructionType{
     s_loadf_ptr,
 
     /**
+     * s_loadf_jmp[size] dest: r, src: r fieldindex: i, bytesize: s, jump-address: i (8 bytes)
+     * loads size bytes from field i of struct stored at src to register dest
+     * if the field is not found, it jumps to the given address
+     */
+    s_loadf_jmp,
+    s_loadf_jmp_ptr,
+
+    /**
+     * s_copy_f dest: r, src: r fieldindex: i, bytesize: s
+     * copies size bytes from field i of struct stored at src to register dest
+     */
+    s_copyf,
+
+
+    /**
      * s_storef_const_[size] dest: r, fieldindex: i, constant-offset: i (8 bytes), bytesize: s
      * stores [size] bytes from constant pool address offset to field i of
      * struct stored at dest

@@ -362,7 +362,7 @@ fn main() -> u32 {
     let test_3 = new TestUnit("test 3", "Test Interface/class/join", test_case_3)
     let test_4 = new TestUnit("test 4", "Test variant field assignment", test_case_4)
 
-    let set = new UnitSet("Matching tests", "Tests pattern matching expression and statements", [
+    let set = new UnitSet("STD Test 10", "Tests pattern matching expression and statements", [
         test_1, 
         test_2, 
         test_3,

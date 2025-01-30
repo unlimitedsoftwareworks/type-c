@@ -14,9 +14,8 @@ import { BlockStatement } from "../statements/BlockStatement";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { Context } from "../symbol/Context";
 import { FunctionType } from "../types/FunctionType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { DataType } from "../types/DataType";
-import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { ReturnStatement } from "../statements/ReturnStatement";
 import { inferFunctionReturnFromHeader, inferFunctionYieldFromHeader } from "../../typechecking/TypeInference";
 import { FunctionCodegenProps } from "../../codegenerator/FunctionCodegenProps";
@@ -115,7 +114,7 @@ export class LambdaExpression extends Expression {
         this.definition = new LambdaDefinition(location, this);
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         // we do not re-infer the lambda expression if it is already inferred
         // since they can't be generic 
         if(this.inferredType) return this.inferredType;

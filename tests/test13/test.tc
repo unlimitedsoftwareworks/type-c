@@ -105,6 +105,6 @@ fn main() -> u32 {
     let test_2 = new TestUnit("test 2", "Sum float", test_case_2)
     let test_3 = new TestUnit("test 3", "Tests sum variant", test_case_3)
 
-    let set = new UnitSet("Matching tests", "Tests some SUM functions", [test_1, test_2, test_3])
+    let set = new UnitSet("STD Test 13", "Tests some SUM functions", [test_1, test_2, test_3])
     return set.run()
 }

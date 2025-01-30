@@ -203,7 +203,7 @@ fn main() -> u32 {
     let test_7 = new TestUnit("test vec3 reverse indexing", "Tests reverse indexing feature for Vec3 class", test_vec3_reverse_indexing)
     let test_8 = new TestUnit("test vec3 reverse setting", "Tests reverse setting feature for Vec3 class", test_vec3_reverse_setting)
 
-    let set = new UnitSet("Addable and Vec3 Test Suite", "Tests for Addable interface and Vec3 class functionality", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
+    let set = new UnitSet("STD Test 22", "Tests for Addable interface and Vec3 class functionality", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
 
     return set.run()
 }

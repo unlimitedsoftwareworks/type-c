@@ -131,6 +131,8 @@ import {
     popStackType,
     pushStackType,
     retType,
+    structCopyFieldType,
+    structGetFieldJmpType,
     structGetFieldType,
     structSetFieldType,
     tmpType,
@@ -153,6 +155,7 @@ import { BuiltinModules } from "../BuiltinModules";
 import { compareStringToEnum, convertForeachAbstractIterableToFor, convertForeachArrayToFor, convertStringEq, convertStringNotEq } from "./ASTTransformers";
 import { ThrowExpression } from "../ast/expressions/ThrowExpression";
 import { StringEnumType } from "../ast/types/StringEnumType";
+import { PartialStructType } from "../ast/types/PartialStruct";
 
 export type FunctionGenType = DeclaredFunction | ClassMethod | LambdaDefinition;
 
@@ -242,6 +245,7 @@ export class FunctionGenerator {
 
     doExpressionLabelStack: string[] = [];
     doExpressionTmpStack: string[] = [];
+    coalescingLabelStack: string[] = [];
 
     // labels of the current loop, nested loops will be pushed to the stack
     // a break or continue statement will use the last label in the stack
@@ -273,6 +277,21 @@ export class FunctionGenerator {
     popLoopLabels(){
         this.loopBeginLabelStack.pop();
         this.loopEndLabelStack.pop();
+    }
+
+    pushCoalescingLabel(lbl: string){
+        this.coalescingLabelStack.push(lbl);
+    }
+
+    popCoalescingLabel(){
+        this.coalescingLabelStack.pop();
+    }
+
+    getCoalescingLabel(): string | null{
+        if(this.coalescingLabelStack.length == 0){
+            return null;
+        }
+        return this.coalescingLabelStack[this.coalescingLabelStack.length - 1];
     }
 
     getLoopBeginLabel(){
@@ -832,7 +851,7 @@ export class FunctionGenerator {
     }
 
     visitMatchExpression(expr: MatchExpression, ctx: Context): string {
-        let tmp = this.visitExpression(expr.expression, ctx);
+        //let tmp = this.visitExpression(expr.expression, ctx);
         this.i("debug", "match expression");
 
         let switchLabels = expr.cases.map(() => this.generateLabel());
@@ -904,7 +923,7 @@ export class FunctionGenerator {
                 let reg = this.visitExpression(case_.expression, case_.context);
                 let instruction = tmpType(expr.inferredType!);
                 this.i(instruction, tmpRes, "reg", reg);
-                this.destroyTmp(tmp);
+                //this.destroyTmp(tmp);
             }
 
             this.i("j", endLabel);
@@ -1155,6 +1174,22 @@ export class FunctionGenerator {
             this.i(instr, tmp, lhsReg, field!.getFieldID());
             this.destroyTmp(lhsReg);
             resultTMP = tmp;
+        } else if (baseType.is(ctx, PartialStructType)) {
+            let partialStructType = baseType.to(ctx, PartialStructType) as PartialStructType;
+            let structType = partialStructType.structType.to(ctx, StructType) as StructType;
+            let fieldType = structType.getFieldTypeByName(rhs.name);
+            let field = structType.getField(rhs.name);
+
+            let tmp = this.generateTmp();
+            let instr = structGetFieldJmpType(fieldType!);
+            let lbl = this.getCoalescingLabel();
+            if(!lbl){
+                throw new Error("No coalescing label found");
+            }
+
+            this.i(instr, tmp, lhsReg, field!.getFieldID(), lbl);
+            this.destroyTmp(lhsReg);
+            resultTMP = tmp;
         } else if (baseType.is(ctx, ClassType)) {
             // find if the field is an attribute or a method
             let classType = baseType.to(ctx, ClassType) as ClassType;
@@ -1197,6 +1232,10 @@ export class FunctionGenerator {
             this.i("j", endLabel)
             this.i("label", assignNullLabel);
             this.i("const_ptr", resultTMP, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
 
@@ -1241,6 +1280,10 @@ export class FunctionGenerator {
         }
         if (expr.operator === "??") {
             return this.ir_generate_null_coalescing(ctx, expr);
+        }
+
+        if(["<<", ">>"].includes(expr.operator) && (expr.inferredType!.is(ctx, PartialStructType) || expr.inferredType!.is(ctx, StructType))){
+            return this.ir_generate_struct_merge(expr, ctx);
         }
 
         if (
@@ -1532,7 +1575,17 @@ export class FunctionGenerator {
                     element,
                     nullableAccess,
                 );
-            } else if (baseType.is(ctx, VariantConstructorType)) {
+            } else if (baseType.is(ctx, PartialStructType)) {
+                return this.ir_generate_struct_field_assignment(
+                    expr,
+                    ctx,
+                    left,
+                    right,
+                    (baseType.to(ctx, PartialStructType) as PartialStructType).structType.to(ctx, StructType) as StructType,
+                    element,
+                    nullableAccess,
+                );
+            }else if (baseType.is(ctx, VariantConstructorType)) {
                 return this.ir_generate_variant_constructor_field_assignment(
                     expr,
                     ctx,
@@ -1625,6 +1678,10 @@ export class FunctionGenerator {
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
             this.i("const_ptr", right, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
 
@@ -1672,6 +1729,10 @@ export class FunctionGenerator {
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
             this.i("const_ptr", right, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
         return right;
@@ -1723,6 +1784,10 @@ export class FunctionGenerator {
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
             this.i("const_ptr", right, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
         return right;
@@ -1800,7 +1865,7 @@ export class FunctionGenerator {
             ),
             [expr.right],
         );
-        methodCall.infer(ctx, expr.inferredType);
+        methodCall.infer(ctx, expr.inferredType, {isWithinNullishCoalescing: true});
         return this.visitFunctionCallExpression(methodCall, ctx);
     }
 
@@ -2343,6 +2408,10 @@ export class FunctionGenerator {
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
             this.i("const_ptr", resultTMP, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
 
@@ -2450,6 +2519,10 @@ export class FunctionGenerator {
                 resultTMP = this.generateTmp();
             }
             this.i("const_ptr", resultTMP, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
 
@@ -2542,6 +2615,10 @@ export class FunctionGenerator {
             this.i("j", endLabel);
             this.i("label", assignNullLabel);
             this.i("const_ptr", resultTMP, 0);
+            let lbl = this.getCoalescingLabel();
+            if(lbl){
+                this.i("j", lbl);
+            }
             this.i("label", endLabel);
         }
 
@@ -2674,6 +2751,16 @@ export class FunctionGenerator {
         ctx: Context,
     ): string {
         /**
+         * The hint could be a partial struct.
+         * In that case, we will not use the hint type but rather the inferred type.
+         */
+        let hintType = expr.hintType;
+        if((hintType != null) && hintType.is(ctx, PartialStructType)) {
+            hintType = (hintType.to(ctx, PartialStructType) as PartialStructType).structType;
+        }
+
+        
+        /**
          * s_alloc [dest] [num_fields] [struct_size]
          * s_set_offset [dest] [field_index] [offset]
          * a_set_field_[type] [dest] [field_index] [value
@@ -2681,10 +2768,10 @@ export class FunctionGenerator {
         // important: we need to use hint type to infer the size of the struct
         // since elements within it could be promoted
         let structType =
-            expr.hintType != null
+            hintType != null
                 ? getLargestStruct(
                       ctx,
-                      expr.hintType!.to(ctx, StructType) as StructType,
+                      hintType!.to(ctx, StructType) as StructType,
                       expr.inferredType!.to(ctx, StructType) as StructType,
                   )
                 : (expr.inferredType!.to(ctx, StructType) as StructType);
@@ -2759,7 +2846,7 @@ export class FunctionGenerator {
         }
 
         // do it at the end so it doesn't interfere with origin
-        if (expr.hintType) {
+        if (hintType) {
             expr.inferredType = expr.hintType;
         }
 
@@ -3926,7 +4013,7 @@ export class FunctionGenerator {
     }
     visitMatchStatement(stmt: MatchStatement, ctx: Context) {
         // first generate the expression
-        let tmp = this.visitExpression(stmt.expression, ctx);
+        //let tmp = this.visitExpression(stmt.expression, ctx);
 
         // now we perform the matching, we will have different block per case.
         // case checking is done through structure first, then value
@@ -3938,6 +4025,7 @@ export class FunctionGenerator {
         let switchLabels = stmt.cases.map((c) => this.generateLabel());
         let caseLabels = stmt.cases.map((c) => this.generateLabel());
         let endLabel = this.generateLabel();
+        
         caseLabels.push(endLabel);
         switchLabels.push(endLabel);
 
@@ -3948,9 +4036,7 @@ export class FunctionGenerator {
                 stmt.expression,
                 case_.pattern,
             );
-            let cond =
-                expr.condition ||
-                TrueLiteralExpression.makeLiteral(case_.location);
+            let cond = expr.condition || TrueLiteralExpression.makeLiteral(case_.location);
             let variables = expr.variableAssignments;
 
             cond.infer(case_.context, new BooleanType(case_.location));
@@ -3992,6 +4078,8 @@ export class FunctionGenerator {
             }
             counter++;
         }
+        // if no case matched, we jump to the end
+        this.i("j", endLabel);
 
         counter = 0;
         for (let case_ of stmt.cases) {
@@ -4388,33 +4476,69 @@ export class FunctionGenerator {
     }
 
     ir_generate_null_coalescing(ctx: Context, expr: BinaryExpression) {
+        let instruction = tmpType(expr.inferredType!);
+
         let tmpRes = this.generateTmp();
+        let rhsLabel = this.generateLabel();
+        this.pushCoalescingLabel(rhsLabel);
         // a ?? b -> if a is null, return b, otherwise return a, so we need a label for the null case
         let aTmp = this.visitExpression(expr.left, ctx);
-        // compare a with null
-        let nullTmp = this.generateTmp();
-
-        // null is 0
-        this.i("const_ptr", nullTmp, 0);
 
         let lblEnd = this.generateLabel();
 
-        // if a is NOT NULL, we jump to end label
-        // save result in tmpRes in case a is not null
-        this.i("tmp_ptr", tmpRes, "reg", aTmp);
-        this.i("j_cmp_ptr", aTmp, nullTmp, 1, lblEnd);
-        this.destroyTmp(nullTmp);
-        // save the result in tmpRes
+        // if the LHS evaluates to NULL, we jump to the rhsLabel
+        // null evaluation only applied if the expression evaluates to an object
+        if(expr.left.inferredType!.allowedNullable(ctx)){
+            this.i("j_eq_null_ptr", aTmp, rhsLabel);
+        }
+
+        // if the LHS evaluates successfully, we jump to the end label
+        // otherwise it will jump to the rhsLabel
+        this.i(instruction, tmpRes, "reg", aTmp);
+        this.i("j", lblEnd);
 
         // if a is null, we return b
+        this.i("label", rhsLabel);
+        this.popCoalescingLabel();
         let bTmp = this.visitExpression(expr.right, ctx);
-        this.i("tmp_ptr", tmpRes, "reg", bTmp);
+        this.i(instruction, tmpRes, "reg", bTmp);
 
         this.i("label", lblEnd);
 
         this.destroyTmp(aTmp);
         this.destroyTmp(bTmp);
         return tmpRes;
+    }
+
+    ir_generate_struct_merge(expr: BinaryExpression, ctx: Context) {
+        let lhs = this.visitExpression(expr.left, ctx);
+        let rhs = this.visitExpression(expr.right, ctx);
+        
+        let lhsStruct = (expr.left.inferredType!.is(ctx, StructType)) ? 
+                            expr.left.inferredType!.to(ctx, StructType) as StructType : 
+                            (expr.left.inferredType!.to(ctx, PartialStructType) as PartialStructType).getStructType(ctx);
+        let rhsStruct = (expr.right.inferredType!.is(ctx, StructType)) ? 
+                            expr.right.inferredType!.to(ctx, StructType) as StructType : 
+                            (expr.right.inferredType!.to(ctx, PartialStructType) as PartialStructType).getStructType(ctx);
+
+        let srcStruct = lhsStruct;
+
+        // assume >>
+        let src = lhs;
+        let dst = rhs;
+
+        if(expr.operator == "<<"){
+            src = rhs;
+            dst = lhs;
+            srcStruct = rhsStruct;
+        }
+
+        for(const [i, field] of srcStruct.fields.entries()){
+            let instruction = structCopyFieldType(field!.type);
+            this.i(instruction, dst, src, field!.getFieldID());
+        }
+
+        return dst;
     }
 
     ir_generate_tuple_assignment(ctx: Context, expr: BinaryExpression) {

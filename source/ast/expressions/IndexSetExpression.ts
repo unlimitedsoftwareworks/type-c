@@ -13,7 +13,7 @@
 
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { OperatorOverloadState } from "../other/OperatorOverloadState";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { Context } from "../symbol/Context";
 import { DataType } from "../types/DataType";
 import { InterfaceType } from "../types/InterfaceType";
@@ -39,11 +39,11 @@ export class IndexSetExpression extends Expression {
         this.value = value;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
-        let lhsType = this.lhs.infer(ctx, null);
+        let lhsType = this.lhs.infer(ctx, null, meta);
 
         /**
          * Make sure we are not assigning to a constant
@@ -62,10 +62,10 @@ export class IndexSetExpression extends Expression {
                 ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index set`, this.location);
             }
 
-            let valueType = this.value.infer(ctx, null);
-            let m = getOperatorOverloadType(ctx, "__index_set__", lhsT, [...this.indexes.map((index) => index.infer(ctx, null)), valueType]);
+            let valueType = this.value.infer(ctx, null, meta);
+            let m = getOperatorOverloadType(ctx, "__index_set__", lhsT, [...this.indexes.map((index) => index.infer(ctx, null, meta)), valueType]);
             if(m === null) {
-                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null).getShortName()).join(", ")})`, this.location);
+                ctx.parser.customError(`Type ${lhsType.getShortName()} does not support index access with signature __index_set__(${this.indexes.map((index) => index.infer(ctx, null, meta).getShortName()).join(", ")})`, this.location);
             }
 
             this.operatorOverloadState.setMethodRef(m);
@@ -74,7 +74,7 @@ export class IndexSetExpression extends Expression {
         }
         else if (lhsType.is(ctx, ArrayType)) {
             let arrayType = lhsType.to(ctx, ArrayType) as ArrayType;
-            let valueType = this.value.infer(ctx, arrayType.arrayOf);
+            let valueType = this.value.infer(ctx, arrayType.arrayOf, meta);
             this.inferredType = valueType;
 
             // make sure we have exactly one index
@@ -89,7 +89,7 @@ export class IndexSetExpression extends Expression {
             }
 
             // infer the type of the index
-            let indexType = this.indexes[0].infer(ctx, null);
+            let indexType = this.indexes[0].infer(ctx, null, meta);
             if(!indexType.is(ctx, BasicType)) {
                 ctx.parser.customError(`Array index must be of type int, got ${indexType.getShortName()}`, this.location);
             }

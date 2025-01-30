@@ -131,7 +131,19 @@ This checklist containts only major changes and updates, for minor changes and u
       but it required the type to be resolved. And resolving a type pushes its hash to stack -> fail.
       `hash` is now exclusively used where the exact type hashing is needed, otherwise weakId and `getWeakHash` (a string version of weak id) are to be used
 
+- 26/01/2025:
+    - Added partial structs
+    - Nullish coalescing op now conditionally compares the result against null to decided if it will evaluate the RHS or not (i.e only for objects!):
+        Now it also has a jump (to the RHS side), based on the last seen nullish coasl. op. If a member access yields null, it will jump to that.
+        If it doesn't jump, it will instead jump to an end label (after the lhs has been evaluated). Partial structs use this behavior to jump to the 
+        rhs if the struct doesn't contain a field. This kinda double dips for `nullableObj?.partial_struct.f ?? 10`, will jump if the obj is null or f 
+        doesn't exist.
+    - Added `ASTCheckers`, all AST checking will need to move there, so this is a work in progress and/or needs massive cleanup and review.
+    - Every expression now properly propagates `meta` argument to properly handle nullish coalescing and partial field access
+    - Implemented struct merge: `>>` and `<<` 
 
+- 27/01/2025:
+    - TODO: When inferring expression during code gen, it might be necessary to infer using `{isWithinNullishCoalescing: true}`, since the AST is slightly rewritten
 
 
 ## TODOs:

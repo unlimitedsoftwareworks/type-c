@@ -23,7 +23,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { TupleType } from "../types/TupleType";
 import { VoidType } from "../types/VoidType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { LambdaDefinition, LambdaExpression } from "./LambdaExpression";
 import { TupleConstructionExpression } from "./TupleConstructionExpression";
 
@@ -37,9 +37,9 @@ export class YieldExpression extends Expression {
         this.isFinal = isFinal;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         if(this.yieldExpression) {
-            this.yieldExpression.inferReturn(ctx, this.getReturnType(ctx));
+            this.yieldExpression.inferReturn(ctx, this.getReturnType(ctx), meta);
         }
 
         let parentFunction = ctx.findParentFunction();

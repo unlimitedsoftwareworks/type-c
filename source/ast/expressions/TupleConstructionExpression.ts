@@ -18,7 +18,7 @@ import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { TupleType } from "../types/TupleType";
 import { ElementExpression } from "./ElementExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class TupleConstructionExpression extends Expression {
     elements: Expression[];
@@ -28,7 +28,7 @@ export class TupleConstructionExpression extends Expression {
         this.elements = elements;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         ctx.parser.customError("Tuple construction is only allowed in function return types", this.location);
     }
 

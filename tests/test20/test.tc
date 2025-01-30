@@ -69,7 +69,7 @@ fn main() -> u32 {
     let test_2 = new TestUnit("test static increment", "Tests increment behavior of static attribute", test_static_increment)
     let test_3 = new TestUnit("test static consistency", "Tests consistency of static value access from instance", test_static_consistency)
 
-    let set = new UnitSet("Static Class Feature Test Suite", "Tests for static class attributes and methods", [test_1, test_2, test_3])
+    let set = new UnitSet("STD Test 20", "Tests for static class attributes and methods", [test_1, test_2, test_3])
 
     return set.run()
 }

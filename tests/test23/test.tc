@@ -129,7 +129,7 @@ fn main() {
     let test_1 = new TestUnit("Foreach", "tests foreach regular and nested", test_case_1)
     let test_2 = new TestUnit("Foreach Matmul", "tests matrix multiplication", test_case_2)
 
-    let set = new UnitSet("STD Test 0", "Tests foreach on basic arrays and abstract array", [test_1, test_2])
+    let set = new UnitSet("STD Test 23", "Tests foreach on basic arrays and abstract array", [test_1, test_2])
     return set.run()
 }
 

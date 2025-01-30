@@ -1,0 +1,11 @@
+{
+  "name": "test28",
+  "version": "1.0.0",
+  "author": "praisethemoon",
+  "dependencies": [],
+  "description": "Tests partial structs",
+  "compiler": {
+    "target": "runnable",
+    "entry": "main.tc"
+  }
+}

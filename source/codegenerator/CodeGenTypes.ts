@@ -299,6 +299,52 @@ export function structGetFieldType(v: DataType): IRInstructionType {
     return "s_get_field_ptr";
 }
 
+export function structCopyFieldType(v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "s_copy_field_i8";
+        if (u.kind == "u8") return "s_copy_field_u8";
+        if (u.kind == "i16") return "s_copy_field_i16";
+        if (u.kind == "u16") return "s_copy_field_u16";
+        if (u.kind == "i32") return "s_copy_field_i32";
+        if (u.kind == "u32") return "s_copy_field_u32";
+        if (u.kind == "i64") return "s_copy_field_i64";
+        if (u.kind == "u64") return "s_copy_field_u64";
+        if (u.kind == "f32") return "s_copy_field_f32";
+        if (u.kind == "f64") return "s_copy_field_f64";
+        if (u.kind == "array") return "s_copy_field_ptr";
+        if (u.kind == "bool") return "s_copy_field_u8";
+    }
+    if (u instanceof BooleanType) return "s_copy_field_u8"
+    if (u instanceof EnumType) {
+        return ("s_copy_field_" + u.as) as IRInstructionType;
+    }
+    return "s_copy_field_ptr";
+}
+
+export function structGetFieldJmpType(v: DataType): IRInstructionType {
+    let u = v.dereference();
+    if (u instanceof BasicType) {
+        if (u.kind == "i8") return "s_get_field_jmp_i8";
+        if (u.kind == "u8") return "s_get_field_jmp_u8";
+        if (u.kind == "i16") return "s_get_field_jmp_i16";
+        if (u.kind == "u16") return "s_get_field_jmp_u16";
+        if (u.kind == "i32") return "s_get_field_jmp_i32";
+        if (u.kind == "u32") return "s_get_field_jmp_u32";
+        if (u.kind == "i64") return "s_get_field_jmp_i64";
+        if (u.kind == "u64") return "s_get_field_jmp_u64";
+        if (u.kind == "f32") return "s_get_field_jmp_f32";
+        if (u.kind == "f64") return "s_get_field_jmp_f64";
+        if (u.kind == "array") return "s_get_field_jmp_ptr";
+        if (u.kind == "bool") return "s_get_field_jmp_u8";
+    }
+    if (u instanceof BooleanType) return "s_get_field_jmp_u8"
+    if (u instanceof EnumType) {
+        return ("s_get_field_jmp_" + u.as) as IRInstructionType;
+    }
+    return "s_get_field_jmp_ptr";
+}
+
 export function fnSetArgType(v: DataType): IRInstructionType {
     let u = v.dereference();
     if (u instanceof BasicType) {

@@ -12,7 +12,7 @@
 
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { DataType } from "../types/DataType";
 import { BlockStatement } from "../statements/BlockStatement";
 import { ReturnStatement } from "../statements/ReturnStatement";
@@ -39,7 +39,7 @@ export class DoExpression extends Expression {
         this.context = context;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
         // do not allow re-inferring
         this.block?.infer(ctx, true);

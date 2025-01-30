@@ -15,10 +15,11 @@ import { getSubStruct, matchDataTypes, mergeStructs, reduceStructFields } from "
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
+import { PartialStructType } from "../types/PartialStruct";
 import { StructField, StructType } from "../types/StructType";
 import { isRHSConstSafe } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 
 export type KeyValueExpressionPair = {
@@ -71,18 +72,23 @@ export class NamedStructConstructionExpression extends Expression {
         this.fields = fields;
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
         let structHint: StructType | null = null;
         if (hint) {
             // make sure the hint is a struct
-            if (!hint.is(ctx, StructType)) {
+            if (!hint.is(ctx, StructType) && !hint.is(ctx, PartialStructType)) {
                 ctx.parser.customError(`Cannot create a named struct from a non-struct type ${hint.getShortName()}`, this.location);
             }
 
             // the hint may not contain all the fields present in the name struct construction
-            structHint = hint.to(ctx, StructType) as StructType;
+            if(hint.is(ctx, PartialStructType)){
+                structHint = (hint.to(ctx, PartialStructType) as PartialStructType).getStructType(ctx);
+            }
+            else {
+                structHint = hint.to(ctx, StructType) as StructType;
+            }
         }
 
         let hasUnpacked = false;
@@ -108,7 +114,7 @@ export class NamedStructConstructionExpression extends Expression {
 
                 // must pre-infer with null to allow for partial type checking
                 // we don;t know the nested fields of this field yet
-                let newField = new StructField(field.location, field.name, field.value.infer(ctx, allowPartial ? null : fieldHint));
+                let newField = new StructField(field.location, field.name, field.value.infer(ctx, allowPartial ? null : fieldHint, meta));
                 
 
                 if(allowPartial) {
@@ -117,7 +123,7 @@ export class NamedStructConstructionExpression extends Expression {
                         (field.value.inferredType!.to(ctx, StructType) as StructType).fields.map(f => f.name)
                     );
 
-                    field.value.infer(ctx, infrAs);
+                    field.value.infer(ctx, infrAs, meta);
 
                     field.isPartial = true;
                     mergedStruct.fields.push(new StructField(field.location, field.name, field.value.inferredType!));
@@ -137,7 +143,7 @@ export class NamedStructConstructionExpression extends Expression {
             else {
                 hasUnpacked = true;
                 let dec = field as StructUnpackedElement;
-                let inferredType = dec.expression.infer(ctx, null);
+                let inferredType = dec.expression.infer(ctx, null, meta);
 
                 // Check if the field's value is constant
                 if (dec.expression.isConstant && !isRHSConstSafe(ctx, dec.expression)) {
@@ -163,7 +169,7 @@ export class NamedStructConstructionExpression extends Expression {
                 // create a new NamedStructConstructionExpression with the new fields, to flatten it
                 let expr = new NamedStructConstructionExpression(this.location, pairs);
                 // we infer with null because we are not done with the inference yet
-                this.inferredType = expr.infer(ctx, null);
+                this.inferredType = expr.infer(ctx, null, meta);
                 this._plainKeyValues = expr._plainKeyValues;
                 // now make the pair unique
             }
@@ -181,7 +187,7 @@ export class NamedStructConstructionExpression extends Expression {
         if (hasUnpacked) {
             // create a new NamedStructConstructionExpression with the new fields, to flatten it
             let expr = new NamedStructConstructionExpression(this.location, pairs);
-            let fullStruct = expr.infer(ctx, hint);
+            let fullStruct = expr.infer(ctx, hint, meta);
             if(!fullStruct.is(ctx, StructType)) {
                 ctx.parser.customError(`Cannot create a named struct from a non-struct type ${fullStruct.getShortName()}`, this.location);
             }

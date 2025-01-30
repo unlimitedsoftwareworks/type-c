@@ -5,7 +5,7 @@ import { ImportNode } from "./ast/ImportNode";
 import { BuiltinModules } from "./BuiltinModules";
 import { generateCode } from "./codegenerator/CodeGenerator";
 import { colors } from "./utils/termcolors";
-import { getStdLibPath, initStdLib } from "./cli/stdlib";
+import { initStdLib } from "./cli/stdlib";
 import { DeclaredNamespace } from "./ast/symbol/DeclaredNamespace";
 import { Symbol } from "./ast/symbol/Symbol";
 import { ClassType, DataType, InterfaceType, StructField } from "./ast/types";
@@ -53,7 +53,7 @@ function normalizePath(filePath: string): string {
     return nodeModules.path.resolve(filePath).toLowerCase();
 }
 
-export module TypeC {
+export namespace TypeC {
     export interface CompileOptions {
         dir: string;
         generateBinaries: boolean;
@@ -68,7 +68,7 @@ export module TypeC {
         target: "runnable" | "library" = "runnable";
         entry: string = "index.tc";
         dir: string = "";
-        static stdlibDir: string = getStdLibPath();
+        static stdlibDir: string = initStdLib();
         
         stateCapturePosition: {
             file: string;
@@ -159,7 +159,7 @@ export module TypeC {
          * this is used by vscode extention to process unsaved file content
          */
         compile(mode: ParserMode = "compiler", content?: string) {
-            initStdLib();
+            TCCompiler.stdlibDir = initStdLib();
             
             console.log("Compiling ", this.dir);
             // start with index
@@ -411,7 +411,6 @@ export module TypeC {
     export const compile = (options: CompileOptions) => {
         // reset compiler state
         TCCompiler.resetCompilerState();
-        initStdLib();
         // make sure all env variables are set
         if (!TCCompiler.stdlibDir) {
             throw new Error(

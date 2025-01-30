@@ -217,20 +217,43 @@ export class InterfaceType extends DataType {
     getConcreteMethod(ctx: Context, imethod: InterfaceMethod, declaredGenerics: { [key: string]: GenericType }): InterfaceMethod[] {
         let findMethod = (strict: boolean): InterfaceMethod[] => {
             let candidates: InterfaceMethod[] = [];
+            // list of generic mappings generated from the abstract method
+            // needed in case we want to apply a second filtering
+            let matches: { [key: string]: DataType }[] = [];
             let allMethods = this._allMethods;
 
             for (let method of allMethods) {
                 if ((method.name === imethod.name) && (method.header.parameters.length === imethod.header.parameters.length)) {
                     try {
-                        let matches: { [key: string]: DataType } = {};
+                        let typeMatches: { [key: string]: DataType } = {};
                         // imethod is the generic method, method is the concrete method
-                        imethod.header.getGenericParametersRecursive(ctx, method.header, declaredGenerics, matches);
+                        imethod.header.getGenericParametersRecursive(ctx, method.header, declaredGenerics, typeMatches);
+                        matches.push(typeMatches);
+
                     }
                     catch(e){
                         continue;
                     }
 
                     candidates.push(method);
+                }
+            }
+
+            /**
+             * This happens if we have overloaded method with same name and arg type.
+             * In that case, we clone the abstract method with which ever generic mapping it has,
+             * and then check if the concrete method matches against current method.
+             */
+            if (candidates.length > 1) {
+                let finalCandidates: InterfaceMethod[] = [];
+                for (let [i, candidate] of candidates.entries()) {
+                    let concrete = imethod.clone(matches[i]);
+                    let res = matchDataTypes(ctx, candidate.header, concrete.header, false);
+                    if (res.success) {
+                        finalCandidates.push(concrete);
+                    }
+
+                    return finalCandidates;
                 }
             }
 
@@ -297,6 +320,7 @@ export class InterfaceType extends DataType {
             }
 
             if (candidates.length > 1) {
+                let candidates = interfaceType.getConcreteMethod(ctx, this.methods[i], declaredGenerics);
                 ctx.parser.customError(`Ambiguous method ${this.methods[i].name} with given types ${this.methods[i].header.parameters.map(e => e.type.getShortName()).join(", ")} -> ${this.methods[i].header.returnType?.getShortName() || "void"} in interface ${interfaceType.getShortName()}`, this.location);
             }
 

@@ -13,7 +13,7 @@
  */
 
 
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
@@ -31,18 +31,16 @@ export class StructDeconstructionExpression extends Expression {
         super(location, "object_deconstruction");
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         this.setHint(hint);
 
-        let structType = this.structExpression.infer(ctx, null);
-        
+        let structType = this.structExpression.infer(ctx, null, meta);
 
         if (!structType.is(ctx, StructType)) {
             ctx.parser.customError(`Expected tuple type, got ${structType.getShortName()}`, this.location);
         }
 
         let stType = structType.to(ctx, StructType) as StructType;
-
 
         if (this.rest){
             // we will create a new struct type with the remaining fields

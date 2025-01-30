@@ -17,7 +17,7 @@ import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { BooleanType } from "../types/BooleanType";
 import { DataType } from "../types/DataType";
-import { Expression } from "./Expression";
+import { Expression, InferenceMeta } from "./Expression";
 
 export class IfElseExpression extends Expression {
     conditions: Expression[];
@@ -48,45 +48,32 @@ export class IfElseExpression extends Expression {
         });
     }
 
-    infer(ctx: Context, hint: DataType | null): DataType {
+    infer(ctx: Context, hint: DataType | null, meta?: InferenceMeta): DataType {
         //if(this.inferredType) return this.inferredType;
         this.setHint(hint);
 
         // step 1: infer the conditions, as boolean
-        this.conditions.forEach((condition) => condition.infer(ctx, null));
+        this.conditions.forEach((condition) => condition.infer(ctx, null, meta));
         this.conditions.forEach((condition) => condition.setHint(new BooleanType(condition.location)));
 
         // step 2: infer the expressions of each if expression
-        let typesCombined: DataType[] = this.bodies.map((body) => body.infer(ctx, hint));
+        let typesCombined: DataType[] = this.bodies.map((body) => body.infer(ctx, hint, meta));
 
         // step 3: infer the else expression
-        typesCombined.push(this.elseBody.infer(ctx, hint));
+        typesCombined.push(this.elseBody.infer(ctx, hint, meta));
 
         // if no hint was present, we will have to infer the common type
-        if(!hint) {
-            let commonType = findCompatibleTypes(ctx, typesCombined);
-            if(!commonType) {
-                ctx.parser.customError(`No common type found for if-else expression inferred types: [${typesCombined.map(e => e.getShortName()).join(",")}]`, this.location);
-            }
-            else {
-                this.inferredType = commonType;
-                // set the common type as hint for all expressions
-                this.bodies.forEach((body) => body.setHint(commonType));
-                this.elseBody.setHint(commonType);
-            }
+        let commonType = findCompatibleTypes(ctx, typesCombined);
+        if(!commonType) {
+            ctx.parser.customError(`No common type found for if-else expression inferred types: [${typesCombined.map(e => e.getShortName()).join(",")}]`, this.location);
         }
-        else {
-            // if we have a hint, we need to make sure that the hint is compatible with all types
-            for (let i = 0; i < typesCombined.length; i++) {
-                let r = matchDataTypes(ctx, hint, typesCombined[i]);
-                if(!r.success) {
-                    ctx.parser.customError(`Incompatible type for condition ${i+1} expression, expected ${hint.getShortName()} but ${typesCombined[i].getShortName()} was found: ${r.message}`, this.location);
-                }
-            }
 
-            // the hint was already set to all expressions, we do not need to reset it.
-            this.inferredType = hint;
-        }
+        this.inferredType = commonType;
+        // set the common type as hint for all expressions
+        
+        // override the hint for the if-body
+        this.bodies.forEach((body) => body.setHint(commonType));
+        this.elseBody.setHint(commonType);
 
         this.checkHint(ctx);
         return this.inferredType;

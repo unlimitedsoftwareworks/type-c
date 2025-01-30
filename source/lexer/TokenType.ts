@@ -73,6 +73,7 @@ export enum TokenType {
     TOK_TRUE = "true",
     TOK_TYPE = "type",
     TOK_WHILE = "while",
+    TOK_PARTIAL = "partial",
     TOK_SEMICOLON = ";",
     TOK_COLON = ":",
     TOK_COMMA = ",",

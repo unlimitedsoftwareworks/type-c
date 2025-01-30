@@ -18,6 +18,7 @@ import { GenericType } from "./GenericType";
 export type DataTypeKind =
     "interface" | // InterfaceType
     "struct" | // StructType
+    "partial_struct" | // PartialStructType
     "class" | // ClassType
     "array" | // ArrayType
     "enum" | // EnumType
@@ -89,6 +90,7 @@ export class DataType {
         DataType._recursiveGenericRecursion = [];
         DataType._recursiveTypeResolution = [];
         DataType._recursiveTypeSerialization = [];
+        DataType.ID_COUNTER = 0;
     }
 
     // the original type, i.e its definition reference

@@ -103,6 +103,7 @@ export class Lexer {
         [TokenType.TOK_VOID, /^void\b/],
         [TokenType.TOK_STRING, /^string\b/],
         [TokenType.TOK_CHAR, /^char\b/],
+        [TokenType.TOK_PARTIAL, /^partial\b/],
 
         [TokenType.TOK_COALESCING, /^\?\?/], // must be before TOK_NULLABLE
         [TokenType.TOK_NULLDOT, /^\?\./],

@@ -106,6 +106,30 @@ export type IRInstructionType =
     "s_get_field_f64" |
     "s_get_field_ptr" |
 
+    "s_get_field_jmp_i8" |
+    "s_get_field_jmp_u8" |
+    "s_get_field_jmp_i16" |
+    "s_get_field_jmp_u16" |
+    "s_get_field_jmp_i32" |
+    "s_get_field_jmp_u32" |
+    "s_get_field_jmp_i64" |
+    "s_get_field_jmp_u64" |
+    "s_get_field_jmp_f32" |
+    "s_get_field_jmp_f64" |
+    "s_get_field_jmp_ptr" |
+
+    "s_copy_field_i8" |
+    "s_copy_field_u8" |
+    "s_copy_field_i16" |
+    "s_copy_field_u16" |
+    "s_copy_field_i32" |
+    "s_copy_field_u32" |
+    "s_copy_field_i64" |
+    "s_copy_field_u64" |
+    "s_copy_field_f32" |
+    "s_copy_field_f64" |
+    "s_copy_field_ptr" |
+
     "s_set_field_u8" |
     "s_set_field_i8" |
     "s_set_field_u16" |

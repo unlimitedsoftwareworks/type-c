@@ -176,6 +176,6 @@ fn main() -> u32 {
     let test_6 = new TestUnit("test 6", "Nested do Expressions with Return", test_case_6)
     let test_7 = new TestUnit("test 7", "Nested do Expressions with Early Return", test_case_7)
     let test_8 = new TestUnit("test 8", "Test Case 8: Triple Nested do Expression", test_case_8)
-    let set = new UnitSet("Do-expressions tests", "Tests do-expressions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
+    let set = new UnitSet("STD Test 15", "Tests do-expressions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8])
     return set.run()
 }

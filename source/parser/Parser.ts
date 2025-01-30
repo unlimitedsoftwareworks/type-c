@@ -39,6 +39,23 @@ export type CompilerLogs = {
     length: number;
 };
 
+export class CompileError extends Error {
+    readableMessage: string;
+
+    constructor(message: string, readableMessage: string) {
+        super(message);
+        this.readableMessage = readableMessage;
+    }
+    
+    toString(){
+        return this.message;
+    }
+
+    getMessage(){
+        return this.readableMessage;
+    }
+}
+
 export class Parser {
     // current package name
     // e.g std.io
@@ -322,7 +339,7 @@ export class Parser {
 
 
         if(this.mode == "compiler") {
-            throw new Error(message);
+            throw new CompileError(message, `${coordinates.file}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`);
         }
     }
 

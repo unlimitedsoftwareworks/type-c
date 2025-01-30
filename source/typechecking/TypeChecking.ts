@@ -41,6 +41,7 @@ import { InterfaceMethod } from "../ast/other/InterfaceMethod";
 import { UnreachableType } from "../ast/types/UnreachableType";
 import { BuiltinModules } from "../BuiltinModules";
 import { StringEnumType } from "../ast/types/StringEnumType";
+import { PartialStructType } from "../ast/types/PartialStruct";
 
 
 export type TypeMatchResult = {
@@ -430,6 +431,21 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
         return res;
     }
 
+    if(t1.is(ctx, PartialStructType)) {
+        // t2 should be either another partial struct or a struct
+        if(t2.is(ctx, PartialStructType)) {
+            res = matchPartialStructs(ctx, t1.to(ctx, PartialStructType) as PartialStructType, t2.to(ctx, PartialStructType) as PartialStructType, strict, stack);
+        }
+        else if(t2.is(ctx, StructType)) {
+            res = matchPartialStructStruct(ctx, t1.to(ctx, PartialStructType) as PartialStructType, t2.to(ctx, StructType) as StructType, strict, stack);
+        }
+        else {
+            res = Err(`Type mismatch, expected partial struct or struct, got ${t2.getShortName()}`);
+        }
+
+        scopeCache.set(typeKey, res);
+        return res;
+    }
 
     if (t1.is(ctx, StructType)) {
         if (!(t2.is(ctx, StructType))) {
@@ -481,6 +497,79 @@ export function matchDataTypesRecursive(ctx: Context, t1: DataType, t2: DataType
     res = Err(`Type mismatch, ${t1.getShortName()} and ${t2.getShortName()} are not compatible`);
     scopeCache.set(typeKey, res);
     return res;
+}
+
+function matchPartialStructStruct(ctx: Context, t1: PartialStructType, t2: StructType, strict: boolean, stack: string[]): TypeMatchResult {
+    /**
+     * Matches two partial structs,
+     * all the fields of the first partial struct must be present in the second partial struct, and the types must match.
+     * In other words, we extract the struct type from the first partial struct and match it against the struct type of the second partial struct.
+     */
+    let structType1 = t1.getStructType(ctx);
+    let structType2 = t2;
+    
+    let fields: StructField[] = [];
+
+    let t1FieldNames = structType1.fields.map(f => f.name);
+    let t2FieldNames = structType2.fields.map(f => f.name);
+
+
+    for(let i = 0; i < t1FieldNames.length; i++) {
+        let field = structType1.fields[i];
+        if(t2FieldNames.includes(field.name)) {
+            fields.push(field);
+            let t2Field = structType2.getField(field.name);
+            if(t2Field == null) {
+                return Err(`Type mismatch, field ${field.name} present in ${t1.getShortName()} not found in ${t2.getShortName()}`);
+            }
+            let res = matchDataTypes(ctx, field.type, t2Field.type, strict);
+            if(!res.success) {
+                return Err(`Type mismatch, field ${field.name} types do not match between ${t1.getShortName()} and ${t2.getShortName()}: ${res.message}`);
+            }
+        }
+    }
+
+    if(fields.length === 0) {
+        return Err(`Type mismatch, no fields in common between ${t1.getShortName()} and ${t2.getShortName()}`);
+    }
+
+    return Ok();
+}
+
+function matchPartialStructs(ctx: Context, t1: PartialStructType, t2: PartialStructType, strict: boolean, stack: string[]): TypeMatchResult {
+    /**
+     * Matches two partial structs,
+     * all the fields of the first partial struct must be present in the second partial struct, and the types must match.
+     * In other words, we extract the struct type from the first partial struct and match it against the struct type of the second partial struct.
+     */
+    let structType1 = t1.getStructType(ctx);
+    let structType2 = t2.getStructType(ctx);
+    
+    let fields: StructField[] = [];
+
+    let t1FieldNames = structType1.fields.map(f => f.name);
+    let t2FieldNames = structType2.fields.map(f => f.name);
+
+    for(let i = 0; i < t1FieldNames.length; i++) {
+        let field = structType1.fields[i];
+        if(t2FieldNames.includes(field.name)) {
+            fields.push(field);
+            let t2Field = structType2.getField(field.name);
+            if(t2Field == null) {
+                return Err(`Type mismatch, field ${field.name} present in ${t1.getShortName()} not found in ${t2.getShortName()}`);
+            }
+            let res = matchDataTypes(ctx, field.type, t2Field.type, strict);
+            if(!res.success) {
+                return Err(`Type mismatch, field ${field.name} types do not match between ${t1.getShortName()} and ${t2.getShortName()}: ${res.message}`);
+            }
+        }
+    }
+
+    if(fields.length === 0) {
+        return Err(`Type mismatch, no fields in common between ${t1.getShortName()} and ${t2.getShortName()}`);
+    }
+
+    return Ok();
 }
 
 function matchBasicTypes(ctx: Context, t1: BasicType, t2: BasicType, strict: boolean): TypeMatchResult {

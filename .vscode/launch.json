@@ -1,29 +1,41 @@
 {
     "version": "0.2.0",
     "configurations": [
-      {
-        "type": "node",
-        "request": "launch",
-        "name": "Base Test",
-        "preLaunchTask": "tsc: build - tsconfig.json",
-        "program": "${workspaceFolder}/source/index.ts",
-        "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-        "sourceMaps": true,
-        "args": ["-c", "./tests/test12", "-o", "./output", "-r", "--generate-ir"],//, "--run-tests"]
-        "env": {
-          "TYPE_V_PATH": "/Users/praisethemoon/projects/type-c/type-v/cmake-build-debug"
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Base Test",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/source/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "args": [
+                "-c",
+                "./tests/test29",
+                "-o",
+                "./output",
+                "-r",
+                "--generate-ir"
+            ],
+            "env": {
+                "TYPE_V_PATH": "/Users/praisethemoon/projects/type-c/type-v/cmake-build-debug"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run Tests",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/source/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "args": [
+                "--run-tests"
+            ]
         }
-      },
-      {
-        "type": "node",
-        "request": "launch",
-        "name": "Run Tests",
-        "preLaunchTask": "tsc: build - tsconfig.json",
-        "program": "${workspaceFolder}/source/index.ts",
-        "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-        "sourceMaps": true,
-        "args": ["--run-tests"]
-      }
     ]
-  }
-  
+}

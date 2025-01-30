@@ -91,10 +91,7 @@ fn test_case_1(rn: TestUnit) {
 
 fn main() -> u32 {
     let test_1 = new TestUnit("test 1", "Tests the map class", test_case_1)
-    let set = new UnitSet("Map Tests", "Tests map", [test_1])
+    let set = new UnitSet("STD Test 6", "Tests map", [test_1])
 
     return set.run()
 }
-
-// Start the program
-

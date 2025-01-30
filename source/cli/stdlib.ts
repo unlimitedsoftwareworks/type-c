@@ -10,7 +10,6 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { TypeC } from "../compiler";
 
 /**
  * Safe imports for Node.js specific modules
@@ -40,14 +39,15 @@ function getExecSync(): typeof import("child_process").execSync | undefined {
 
 const execSync = getExecSync();
 
-export function initStdLib() {
+export function initStdLib(): string {
     if (!nodeModules.path || !nodeModules.os) {
         throw new Error("Standard library initialization requires Node.js environment");
     }
     STD_LIB_REPO_URL = "https://github.com/unlimitedsoftwareworks/stdlib";
     STD_LIB_PATH = nodeModules.path.join(nodeModules.os.homedir(), ".typec", "stdlib");
     COMMIT_HASH_FILE = nodeModules.path.join(STD_LIB_PATH, "commit_hash");
-    TypeC.TCCompiler.stdlibDir = STD_LIB_PATH;
+
+    return STD_LIB_PATH;
 }
 
 export function getStdLibPath(): string {
@@ -74,6 +74,7 @@ export async function downloadAndInstallStdLib() {
 
     try {
         console.log("Cloning the standard library...");
+        console.log(`running git clone ${STD_LIB_REPO_URL} ${STD_LIB_PATH}`);
         execSync!(`git clone ${STD_LIB_REPO_URL} ${STD_LIB_PATH}`, {
             stdio: "inherit",
         });
