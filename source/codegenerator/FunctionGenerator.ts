@@ -851,7 +851,7 @@ export class FunctionGenerator {
     }
 
     visitMatchExpression(expr: MatchExpression, ctx: Context): string {
-        let tmp = this.visitExpression(expr.expression, ctx);
+        //let tmp = this.visitExpression(expr.expression, ctx);
         this.i("debug", "match expression");
 
         let switchLabels = expr.cases.map(() => this.generateLabel());
@@ -923,7 +923,7 @@ export class FunctionGenerator {
                 let reg = this.visitExpression(case_.expression, case_.context);
                 let instruction = tmpType(expr.inferredType!);
                 this.i(instruction, tmpRes, "reg", reg);
-                this.destroyTmp(tmp);
+                //this.destroyTmp(tmp);
             }
 
             this.i("j", endLabel);
@@ -4013,7 +4013,7 @@ export class FunctionGenerator {
     }
     visitMatchStatement(stmt: MatchStatement, ctx: Context) {
         // first generate the expression
-        let tmp = this.visitExpression(stmt.expression, ctx);
+        //let tmp = this.visitExpression(stmt.expression, ctx);
 
         // now we perform the matching, we will have different block per case.
         // case checking is done through structure first, then value
@@ -4025,6 +4025,7 @@ export class FunctionGenerator {
         let switchLabels = stmt.cases.map((c) => this.generateLabel());
         let caseLabels = stmt.cases.map((c) => this.generateLabel());
         let endLabel = this.generateLabel();
+        
         caseLabels.push(endLabel);
         switchLabels.push(endLabel);
 
@@ -4035,9 +4036,7 @@ export class FunctionGenerator {
                 stmt.expression,
                 case_.pattern,
             );
-            let cond =
-                expr.condition ||
-                TrueLiteralExpression.makeLiteral(case_.location);
+            let cond = expr.condition || TrueLiteralExpression.makeLiteral(case_.location);
             let variables = expr.variableAssignments;
 
             cond.infer(case_.context, new BooleanType(case_.location));
@@ -4079,6 +4078,8 @@ export class FunctionGenerator {
             }
             counter++;
         }
+        // if no case matched, we jump to the end
+        this.i("j", endLabel);
 
         counter = 0;
         for (let case_ of stmt.cases) {
