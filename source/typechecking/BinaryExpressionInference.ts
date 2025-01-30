@@ -437,10 +437,20 @@ function inferBitwiseAnd(ctx: Context, lhs: DataType, rhs: DataType, expr: Binar
      */
     else if (["<<", ">>"].includes(expr.operator) && (lhs.is(ctx, PartialStructType) || lhs.is(ctx, StructType)) && (rhs.is(ctx, PartialStructType) || rhs.is(ctx, StructType))) {
         if(expr.operator == "<<") {
-            return lhs;
+            if(lhs.is(ctx, PartialStructType)) {
+                ctx.parser.customError(`Cannot modify partial struct ${lhs.getShortName()}`, expr.location);
+            }
+            else {
+                return lhs;
+            }
         }
         else {
-            return rhs;
+            if(rhs.is(ctx, PartialStructType)) {
+                ctx.parser.customError(`Cannot modify partial struct ${rhs.getShortName()}`, expr.location);
+            }
+            else {
+                return rhs;
+            }
         } 
     }
 

@@ -2755,7 +2755,7 @@ export class FunctionGenerator {
          * In that case, we will not use the hint type but rather the inferred type.
          */
         let hintType = expr.hintType;
-        if(hintType != null && hintType.is(ctx, PartialStructType)) {
+        if((hintType != null) && hintType.is(ctx, PartialStructType)) {
             hintType = (hintType.to(ctx, PartialStructType) as PartialStructType).structType;
         }
 

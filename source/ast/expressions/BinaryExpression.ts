@@ -23,17 +23,20 @@ import { IndexAccessExpression } from "./IndexAccessExpression";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 import { binaryTypeCheckers } from "../../typechecking/BinaryExpressionInference";
 import { BasicType } from "../types/BasicType";
-import { NullableType } from "../types/NullableType";
 import { TupleConstructionExpression } from "./TupleConstructionExpression";
 import { VoidType } from "../types/VoidType";
 import { EnumType } from "../types/EnumType";
 import { CoroutineType } from "../types/CoroutineType";
 import { UnaryExpression } from "./UnaryExpression";
-import { BinaryIntLiteralExpression, HexIntLiteralExpression, IntLiteralExpression, OctIntLiteralExpression } from "./LiteralExpression";
+import { 
+    BinaryIntLiteralExpression, 
+    HexIntLiteralExpression, 
+    IntLiteralExpression, 
+    OctIntLiteralExpression 
+} from "./LiteralExpression";
 import { BooleanType } from "../types/BooleanType";
 import { StringEnumType } from "../types/StringEnumType";
 import { BuiltinModules } from "../../BuiltinModules";
-import { FunctionCallExpression } from "./FunctionCallExpression";
 
 export type BinaryExpressionOperator = 
     "+" | "+=" |

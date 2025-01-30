@@ -1,0 +1,46 @@
+/**
+ * partial Struct Demo
+ * Based on the struct demo
+ */
+
+from std.unit.test import TestUnit, UnitSet
+
+type Point2D = {
+    x: i32,
+    y: i32
+}
+
+fn test_case_1(rn: TestUnit) {
+    let p1: Point2D = { x: 10, y: 20 }
+    let p2: Point2D & { z: i32 } = { x: 20, y: -40, z: 34 }
+
+    let p3: partial<Point2D> = {x: 30}
+
+    let partialX = p3.x ?? -1
+    rn.assert_eq(partialX, 30)
+
+    let partialY = p3.y ?? -1
+    rn.assert_eq(partialY, -1)
+
+    // merge p2 into p3
+    p2 << p3
+
+    rn.assert_eq(p2.x, 30)
+    rn.assert_eq(p2.y, -40)
+    rn.assert_eq(p2.z, 34)
+
+
+    
+    let p4: partial<Point2D> = {x: 10, y: 20}
+    let partialX3 = p4.x ?? -1
+    rn.assert_eq(partialX3, 10)
+
+    let partialY3 = p4.y ?? -1
+    rn.assert_eq(partialY3, 20)
+}
+
+fn main() {
+    let test_1 = new TestUnit("Test 1", "tests pipe operator", test_case_1)
+    let set = new UnitSet("STD Test 29", "Tests partial Structs", [test_1])
+    return set.run()
+}

@@ -3258,7 +3258,6 @@ export class ParseMethods {
                     parser.reject();
                     nullableList.push(false);
                 }
-
             }
             if (parser.peek().type != ")") {
                 parser.reject();
