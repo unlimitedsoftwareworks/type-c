@@ -3894,10 +3894,11 @@ export class FunctionGenerator {
             this.visitStatement(init, stmt.context);
         }
 
+        let loopIncrementalsLabel = this.generateLabel();
         let beginLabel = stmt.context.uuid;
         let endLabel = stmt.context.generateEndOfContextLabel();
 
-        this.pushLoopLabels(beginLabel, endLabel);
+        this.pushLoopLabels(loopIncrementalsLabel, endLabel);
 
         // generate the label for continue
         this.i("debug", "for-statement label");
@@ -3928,6 +3929,7 @@ export class FunctionGenerator {
 
         // generate the increment
         this.i("debug", "for-statement increment");
+        this.i("label", loopIncrementalsLabel);
         for (let inc of stmt.incrementors) {
             this.visitExpression(inc, stmt.context); // we do not need to store the result
         }
