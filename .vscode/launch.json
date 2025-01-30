@@ -13,7 +13,7 @@
             "sourceMaps": true,
             "args": [
                 "-c",
-                "./tests/test28",
+                "./tests/test29",
                 "-o",
                 "./output",
                 "-r",
