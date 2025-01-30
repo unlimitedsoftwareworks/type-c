@@ -55,6 +55,17 @@ export function getStdLibPath(): string {
 }
 
 export async function downloadAndInstallStdLib() {
+    // init if needed
+    if (!STD_LIB_PATH || STD_LIB_PATH == "") {
+        initStdLib();
+    }
+    // check if lib already exists
+    if(nodeModules.fs.existsSync(COMMIT_HASH_FILE)) {
+        console.log("Standard library already installed, updating instead");
+        updateStdLib();
+        return;
+    }
+    
     if (!nodeModules.fs || !nodeModules.path || !nodeModules.os) {
         throw new Error("Standard library installation requires Node.js environment");
     }
@@ -71,6 +82,7 @@ export async function downloadAndInstallStdLib() {
         );
         process.exit(1);
     }
+
 
     try {
         console.log("Cloning the standard library...");
