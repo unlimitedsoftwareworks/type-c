@@ -126,7 +126,7 @@ fn test_case_2(rn: TestUnit) {
 fn main() -> u32 {
     let test_1 = new TestUnit("test 1", "Tests generic class and generic struct", test_case_1)
     let test_2 = new TestUnit("test 2", "Tests the UserClass class", test_case_2)
-    let set = new UnitSet("Structs tests", "Tests struct usage", [test_1, test_2])
+    let set = new UnitSet("STD Test 8", "Tests struct usage", [test_1, test_2])
 
     return set.run()
 }

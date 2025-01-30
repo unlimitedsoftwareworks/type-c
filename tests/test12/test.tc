@@ -231,7 +231,23 @@ fn test_case_7(rn: TestUnit) {
         x {
             rn.assert_reachable()
         }
-    }   
+    }
+
+    let z: u32 = 10
+
+    match z {
+        0 {
+            z = 11
+        }
+        1 {
+            z = 12
+        }
+        2 {
+            z = 13
+        }
+    }
+
+    rn.assert_eq<u32>(z, 10)
 }
 
 
@@ -376,7 +392,7 @@ fn main() -> u32 {
     let test_9 = new TestUnit("test 9", "Tests generic variant matching", test_case_8<i32>)
     let test_nullable = new TestUnit("test nullable function calls", "Tests nullable function calls", test_case_nullable_function_calls)
 
-    let set = new UnitSet("Matching tests", "Tests pattern matching expression and statements", 
+    let set = new UnitSet("STD Test 12", "Tests pattern matching expression and statements", 
                           [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9, test_nullable])
     return set.run()
 }

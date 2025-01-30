@@ -119,7 +119,7 @@ fn test_case_2(rn: TestUnit) {
 fn main() -> u32 {
     let test_1 = new TestUnit("test 1", "Tests the map class", test_case_1)
     let test_2 = new TestUnit("test 2", "Tests the UserClass class", test_case_2)
-    let set = new UnitSet("Random Tests", "Tests Random things i guess", [test_1, test_2])
+    let set = new UnitSet("STD Test 7", "Tests Random things i guess", [test_1, test_2])
 
     return set.run()
 }

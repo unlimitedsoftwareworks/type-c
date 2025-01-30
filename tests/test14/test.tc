@@ -171,6 +171,6 @@ fn main() -> u32 {
     let test_9 = new TestUnit("test 9", "Test array destructuring", test_case_9)
     let test_10 = new TestUnit("test 10", "Test empty array destructuring", test_case_10)
 
-    let set = new UnitSet("Matching tests", "Tests some SUM functions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9, test_10])
+    let set = new UnitSet("STD Test 14", "Tests some SUM functions", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9, test_10])
     return set.run()
 }

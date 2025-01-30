@@ -262,6 +262,6 @@ fn main() -> u32 {
     let test_8 = new TestUnit("test 8", "Tests generic variant matching", test_case_8<u32>)
     let test_9 = new TestUnit("test 9", "Tests generic variant matching", test_case_8<i32>)
 
-    let set = new UnitSet("Matching tests", "Tests pattern matching expression and statements", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9])
+    let set = new UnitSet("STD Test 9", "Tests pattern matching expression and statements", [test_1, test_2, test_3, test_4, test_5, test_6, test_7, test_8, test_9])
     return set.run()
 }

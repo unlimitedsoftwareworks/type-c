@@ -30,7 +30,7 @@ fn test_case_1(rn: TestUnit) {
 
 fn main() -> u32{
     let test_1 = new TestUnit("test 1", "Test String 1", test_case_1)
-    let set = new UnitSet("STD String test", "", [test_1])
+    let set = new UnitSet("STD Test 4", "STD String test", [test_1])
 
     return set.run()
 }

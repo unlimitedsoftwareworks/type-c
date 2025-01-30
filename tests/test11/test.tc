@@ -136,6 +136,6 @@ fn main() {
     let test_1 = new TestUnit("test 1", "Array destructuring", test_case_1)
     let test_2 = new TestUnit("test 2", "Struct destructuring", test_case_2)
     let test_3 = new TestUnit("test 3", "Tuple destructuring", test_case_3)
-    let set = new UnitSet("Matching tests", "Tests destructuring", [test_1, test_2, test_3])
+    let set = new UnitSet("STD Test 11", "Tests destructuring", [test_1, test_2, test_3])
     return set.run()
 }
