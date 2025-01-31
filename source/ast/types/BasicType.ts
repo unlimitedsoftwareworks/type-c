@@ -53,7 +53,8 @@ export class BasicType extends DataType {
         }
 
         let basicType = originalType.to(ctx, BasicType) as BasicType;
-        let res = matchDataTypes(ctx, this, basicType);
+        // TODO: investigate this
+        let res = matchDataTypes(ctx, this, basicType, false);
         if(!res.success){
             ctx.parser.customError(`Expected basic type ${this.getShortName()}, got ${basicType.getShortName()} instead.`, this.location);
         }

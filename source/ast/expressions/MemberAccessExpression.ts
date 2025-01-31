@@ -48,6 +48,7 @@ export class MemberAccessExpression extends Expression {
     isNullable: boolean = false;
 
     _nsAccessedSymbol: Symbol | null = null;
+    _nsAccessedExpression: ElementExpression | null = null;
 
     constructor(
         location: SymbolLocation,
@@ -451,8 +452,11 @@ export class MemberAccessExpression extends Expression {
             this._nsAccessedSymbol = element;
 
             let e_expr = new ElementExpression(this.location, this.right.name, this.right.typeArguments);
+            e_expr.inferredArgumentsTypes = this.right.inferredArgumentsTypes;
             e_expr.infer(namespaceType.getContext(), hint, meta);
 
+            this._nsAccessedExpression = e_expr;
+            
             this.inferredType = e_expr.inferredType;
             this.isConstant = e_expr.isConstant;
             this.checkHint(ctx);

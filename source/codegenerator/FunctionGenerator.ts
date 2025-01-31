@@ -670,6 +670,10 @@ export class FunctionGenerator {
             this.i(instruction, tmp, symScope.scope, sym.uid);
             return tmp;
         } else if (sym instanceof DeclaredFunction) {
+            if(expr._functionReference) {
+                let fnCtxID = expr._functionReference.context.uuid;
+                return this.ir_generate_closure(ctx, expr._functionReference.codeGenProps, fnCtxID);
+            }
             // in case of generics:
             let signature = signatureFromGenerics(expr.typeArguments);
 
@@ -1089,6 +1093,10 @@ export class FunctionGenerator {
 
 
         if(expr.left.inferredType instanceof NamespaceType){
+            // in case the RHS is an element expression, we need to visit it
+            if(expr._nsAccessedExpression){
+                return this.visitElementExpression(expr._nsAccessedExpression, expr.left.inferredType.getContext());
+            }
             return this.visitElementExpression(expr.right, expr.left.inferredType.getContext());
         }
 

@@ -165,6 +165,9 @@ export class FunctionCallExpression extends Expression {
         if ((left instanceof ElementExpression) && (left.typeArguments.length === 0) && (left.isGenericFunction(ctx))) {
             left.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null, meta));
         }
+        else if ((left instanceof MemberAccessExpression) && (left.right.typeArguments.length === 0)) {
+            left.right.inferredArgumentsTypes = this.args.map(e => e.infer(ctx, null, meta));
+        }
 
         if (left instanceof ElementExpression) {
             left.numParams = this.args.length;
