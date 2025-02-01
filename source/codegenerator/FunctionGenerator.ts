@@ -958,13 +958,14 @@ export class FunctionGenerator {
 
         this.i("debug", "anonymous struct field values");
 
-        for (let i = 0; i < sortedStruct.fields.length; i++) {
-            let field = sortedStruct.fields[i];
+        for (let i = 0; i < structType.fields.length; i++) {
+            let field = structType.fields[i];
+            let fieldInSortedStruct = sortedStruct.getField(field.name)!;
 
             let res = this.visitExpression(expr.elements[i], ctx);
 
-            let inst = structSetFieldType(field.type);
-            this.i(inst, tmp, field.getFieldID(), res);
+            let inst = structSetFieldType(fieldInSortedStruct.type);
+            this.i(inst, tmp, fieldInSortedStruct.getFieldID(), res);
             this.destroyTmp(res);
         }
 
