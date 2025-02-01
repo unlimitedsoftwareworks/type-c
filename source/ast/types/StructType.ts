@@ -188,9 +188,10 @@ export class StructType extends DataType {
 
     toSortedStruct() {
         // Step 1: Sort the fields by their FieldID
-        const sortedFields = this.fields.sort((a, b) => a.getFieldID() - b.getFieldID());
+        let fields = [...this.fields];
+        fields.sort((a, b) => a.getFieldID() - b.getFieldID());
         
-        return new StructType(this.location, sortedFields);
+        return new StructType(this.location, fields);
     }
 
     getFieldPointerBitMask(): number {
