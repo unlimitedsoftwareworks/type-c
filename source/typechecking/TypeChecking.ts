@@ -799,7 +799,8 @@ function matchInterfaces(ctx: Context, t1: InterfaceType, t2: InterfaceType, str
             if (method.name === method2.name) {
                 let res = matchFunctionType(ctx, method.header, method2.header, stack, strict);
                 if (!res.success) {
-                    return res;
+                    let newRes = Err(`Incompatible interface method ${method.name}: ${res.message}`);
+                    return newRes;
                 }
                 found = true;
                 break;
