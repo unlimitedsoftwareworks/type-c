@@ -22,7 +22,8 @@ import { InterfaceType } from "../ast/types/InterfaceType";
 import { NullableType } from "../ast/types/NullableType";
 import { PartialStructType } from "../ast/types/PartialStruct";
 import { isAddable, getOperatorOverloadType, setBinaryOverrideMethodHint, isSubable, isMultiplicable, isDivisible, isModable, isLt, isLte, isGt, isGte, isOr, isAnd, isLShift, isRShift, isBAnd, isBOr, isXor, OverridableMethodType } from "./OperatorOverload";
-import { matchDataTypes } from "./TypeChecking";
+import { isStringClass, matchDataTypes } from "./TypeChecking";
+import { StringEnumType } from "../ast/types/StringEnumType";
 
 
 type DataTypeKind = "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "f32" | "f64";
@@ -499,6 +500,10 @@ function inferEquality(ctx: Context, lhs: DataType, rhs: DataType, expr: BinaryE
         else {
             ctx.parser.customError(`Cannot use operator ${expr.operator} on types ${lhs.getShortName()} and ${rhs.getShortName()}`, expr.location);
         }
+    }
+
+    if(lhs.is(ctx, StringEnumType) && isStringClass(ctx, rhs)){
+        return new BooleanType(expr.location);
     }
 
     let res = matchDataTypes(ctx, lhs, rhs);
