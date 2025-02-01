@@ -1268,6 +1268,6 @@ export function isStringClass(ctx: Context, type: DataType): boolean {
     }
 
     // check if the type is the string class
-    let res = matchDataTypes(ctx, type, BuiltinModules.String!, true);
+    let res = matchDataTypes(ctx, BuiltinModules.String!, type, true);
     return res.success;
 }
