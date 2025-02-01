@@ -3773,6 +3773,7 @@ export class FunctionGenerator {
     visitThisDistributedAssignExpression(expr: ThisDistributedAssignExpression, ctx: Context): string {
         let exprs = expr.buildExpressions(ctx);
         for(let e of exprs) {
+            e.infer(ctx, null);
             this.visitExpression(e, ctx);
         }
         let tmp = this.generateTmp();
