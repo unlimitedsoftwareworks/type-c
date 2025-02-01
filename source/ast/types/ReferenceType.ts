@@ -273,7 +273,24 @@ export class ReferenceType extends DataType{
         }
         else {
             this.resolvePartialGeneric(ctx);
-            this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+            let isGeneric = false
+
+            if(this.typeArgs.length > 0){
+                // check if the type arguments contains a delcared generic
+                for(let typeArg of this.typeArgs){
+                    if((typeArg instanceof ReferenceType) && (typeArg.pkg.length == 1) && (declaredGenerics[typeArg.pkg[0]])){
+                        isGeneric = true;
+                    }
+                }
+            }
+            else {
+                isGeneric = true;
+            }
+
+            if(isGeneric){
+                // only if generic
+                this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+            }
         }
 
         this.postGenericExtractionRecursion();
