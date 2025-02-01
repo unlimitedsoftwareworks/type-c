@@ -33,7 +33,8 @@ export class ThisDistributedAssignExpression extends Expression {
         this.right = right;
     }
 
-    infer(ctx: Context, hintType: DataType, meta?: InferenceMeta): DataType {
+    infer(ctx: Context, hintType: DataType | null, meta?: InferenceMeta): DataType {
+        this.setHint(hintType);
         let lhsType = this.left.infer(ctx, hintType, meta);
 
         if(!lhsType.is(ctx, ClassType)) {
@@ -82,6 +83,8 @@ export class ThisDistributedAssignExpression extends Expression {
             }
         }
 
+        this.inferredType = lhsType;
+        this.checkHint(ctx);
         // `this` is not constant
         this.isConstant = false;
         return lhsType;
@@ -93,13 +96,13 @@ export class ThisDistributedAssignExpression extends Expression {
         if(this.right instanceof UnnamedStructConstructionExpression) {
             for(let field of this.right.elements) {
                 let element = field as ElementExpression;
-            // transform into a binary expression
-            /**
-             * this += {x, y} -> this.x = this.x + x; this.y = this.y + y;
-             */
-            let lhs = new MemberAccessExpression(field.location, this.left, element);
-            let rhs = new BinaryExpression(field.location, lhs, field, "=");
-            exprs.push(rhs);
+                // transform into a binary expression
+                /**
+                 * this += {x, y} -> this.x = this.x + x; this.y = this.y + y;
+                 */
+                let lhs = new MemberAccessExpression(field.location, this.left, element);
+                let rhs = new BinaryExpression(field.location, lhs, field, "=");
+                exprs.push(rhs);
             }
         }
         else {
