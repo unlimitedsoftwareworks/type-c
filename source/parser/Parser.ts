@@ -337,7 +337,6 @@ export class Parser {
             `${coordinates.file}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`,
         );
 
-
         if(this.mode == "compiler") {
             throw new CompileError(message, `${coordinates.file}:${coordinates.line + 1}:${coordinates.col + 1}:${msg}`);
         }
