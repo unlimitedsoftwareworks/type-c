@@ -89,7 +89,7 @@ export class GenericType extends DataType {
         return new GenericType(this.location, this.name, this.constraint);
     }
 
-    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}, isArgument: boolean = false) {
         // make sure this is a declared generic
         if(!(this.name in declaredGenerics)){
             ctx.parser.customError(`Generic type ${this.name} is not declared`, this.location);
@@ -103,7 +103,27 @@ export class GenericType extends DataType {
         if(this.name in typeMap){
             // we do not allow generics to satisfy different constraints in one instance!
             // hence we need to check if the specified type and the current type match
-            let res = matchDataTypes(ctx, typeMap[this.name], originalType);
+
+            if(isArgument){
+                /**
+                 * Used to handle case where we have 
+let values1 = new Array<{x: u32, y: u32}>([{x: 1, y: 11}])
+let values2 = new Array<{x: f32, y: f32}>([{x: 1.0f, y: 1.0f}])
+
+let diff = tctoolkit.differenceWith(
+    values1, 
+    values2, 
+    fn(e1: {x: u32}, e2: {x: f32}) = e1.x as f32 == e2.x
+)
+
+                 *
+                 */
+                let res = matchDataTypes(ctx, originalType, typeMap[this.name]);
+                if(res.success){
+                    return;
+                }
+            }
+            let res = matchDataTypes(ctx, originalType, typeMap[this.name]);
             if(!res.success){
                 // Find a common type
                 let commonType = findCompatibleTypes(ctx, [typeMap[this.name], originalType]);

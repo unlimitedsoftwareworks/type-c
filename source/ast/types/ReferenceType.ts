@@ -255,7 +255,9 @@ export class ReferenceType extends DataType{
 
 
     getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
-        this.preGenericExtractionRecursion();
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
 
 
         // there are two cases:
@@ -288,11 +290,38 @@ export class ReferenceType extends DataType{
             }
 
             if(isGeneric){
-                // only if generic
-                this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+
+                if (this.typeArgs.length == 0) {
+                    this.baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+                }
+                else {
+                    // we need to map the generics of this reference to the generics of the base type 
+                    // first create typeMap
+                    let newMap: {[key: string]: DataType} = {};
+                    // make sure the same number of args is given
+                    if(this.baseDecl!.genericParameters.length != this.typeArgs.length){
+                        ctx.parser.customError(`Expected ${this.baseDecl!.genericParameters.length} type arguments, but got ${this.typeArgs.length}`, this.location);
+                    }
+
+                    for(let i = 0; i < this.baseDecl!.genericParameters.length; i++){
+                        let garg = this.baseDecl!.genericParameters[i];
+                        newMap[garg.name] = this.typeArgs[i];
+                    }
+
+                    let baseType = this.baseDecl!.type.clone(newMap);
+
+                    // only if generic
+                    baseType!.getGenericParametersRecursive(ctx, originalType, declaredGenerics, typeMap);
+                }
             }
         }
 
         this.postGenericExtractionRecursion();
+    }
+
+
+    getWeakHash(): string {
+        // needed because of cloning the baseType in getGenericParametersRecursive 
+        return `${this.location.toString()}://${this.pkg.join(".")}<${this.typeArgs.map(t => t.getWeakHash()).join(",")}>`
     }
 }

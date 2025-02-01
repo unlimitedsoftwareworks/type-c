@@ -287,9 +287,11 @@ export class DataType {
      * @param ctx
      * @param originalType
      * @param typeMap
+     * @param isArgument: if true, we are extracting generics for an argument, set to false if nested argument
+     * i.e f(x) when evaluating x, it is set to true, but when evaluating x.y, it is set to false
      * @returns
      */
-    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}, isArgument: boolean = false) {
         throw new Error("Method not implemented.");
     }
 

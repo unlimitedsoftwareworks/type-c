@@ -85,7 +85,7 @@ export class FunctionType extends DataType {
                 ctx.parser.customError(`Expected ${functionType.parameters[i].isMutable} mutability for parameter ${this.parameters[i].name}, got ${this.parameters[i].isMutable} instead.`, this.location);
             }
 
-            this.parameters[i].type.getGenericParametersRecursive(ctx, functionType.parameters[i].type, declaredGenerics, typeMap);
+            this.parameters[i].type.getGenericParametersRecursive(ctx, functionType.parameters[i].type, declaredGenerics, typeMap, true);
         }
 
         // get generics for the return type
