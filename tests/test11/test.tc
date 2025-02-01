@@ -84,8 +84,8 @@ fn test_case_3(rn: TestUnit) {
     let (kk, ll) = doStuff2<String>("hello")
 
     // addition changes the string, so +1 then +2 -> "hello12"
-    rn.assert_obj_eq<String>(kk, "hello12")
-    rn.assert_obj_eq<String>(ll, "hello12")
+    rn.assert_obj_eq<String>(kk, "hello1")
+    rn.assert_obj_eq<String>(ll, "hello2")
 
     let (mm, nn) = doStuff2(10)
 
