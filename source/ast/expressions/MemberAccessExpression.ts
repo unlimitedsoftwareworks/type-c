@@ -11,6 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
+import { matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { FunctionArgument } from "../symbol/FunctionArgument";
 import { Symbol } from "../symbol/Symbol";
@@ -206,6 +207,20 @@ export class MemberAccessExpression extends Expression {
 
             if(field.isStatic){
                 ctx.parser.customError(`Cannot access static field ${this.right.name} on instance, Use Class name instead`, this.location);
+            }
+
+            if(field.isLocal){
+                // get the active class
+                let activeClass = ctx.getActiveClass();
+
+                if(!activeClass){
+                    ctx.parser.customError(`Cannot access local field ${this.right.name} on instance outside of its class`, this.location);
+                }
+
+                let res = matchDataTypes(ctx, classType, activeClass);
+                if(!res.success){
+                    ctx.parser.customError(`Cannot access local field ${this.right.name} on instance outside of its class`, this.location);
+                }
             }
 
             this.inferredType = field.type;

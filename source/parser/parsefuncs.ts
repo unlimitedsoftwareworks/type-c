@@ -557,7 +557,7 @@ export class ParseMethods {
         let name: string | null = null;
         let altNames: string[] = [];
 
-            parser.reject();
+        parser.reject();
 
         let canLoop = true;
         while(canLoop){
@@ -651,24 +651,71 @@ export class ParseMethods {
             fnProto.name,
             fnProto.header,
             isStatic,
+            false,
+            false,
             fnProto.generics,
         );
     }
 
     @trackState()
-    static parseClassMethodInterface(parser: Parser, ctx: Context): {
+    static parseClassMethodInterface(parser: Parser, ctx: Context, allowLocal: boolean = false, allowOverride: boolean = false): {
         imethod: InterfaceMethod,
         altNames: string[]
     } {
         let loc = parser.loc();
 
-        let {fnProto, altNames} = ParseMethods.parseMethodFunctionPrototype(parser, ctx);
+        let tok = parser.peek();
+        let canLoop = tok.type !== "fn"
+        parser.reject();
+
+        let isLocal = false;
+        let isOverride = false;
+        let isStatic = false;
+
+        while(canLoop){
+            tok = parser.peek();
+            if(tok.type === "local"){
+                if(!allowLocal){
+                    parser.error("Unexpected token 'local'", tok.location);
+                }
+                if(isLocal){
+                    parser.error("Duplicate 'local' keyword", tok.location);
+                }
+                isLocal = true;
+                parser.accept();
+            }
+            else if(tok.type === "override"){
+                if(!allowOverride){
+                    parser.error("Unexpected token 'override'", tok.location);
+                }
+                if(isOverride){
+                    parser.error("Duplicate 'override' keyword", tok.location);
+                }
+                isOverride = true;
+                parser.accept();
+            }
+            else if(tok.type === "static"){
+                if(isStatic){
+                    parser.error("Duplicate 'static' keyword", tok.location);
+                }
+                isStatic = true;
+                parser.accept();
+            }
+            else{
+                canLoop = false;
+            }
+            parser.reject();
+        }
+
+        let {fnProto, altNames} = ParseMethods.parseMethodFunctionPrototype(parser, ctx,);
 
         let imethod = new InterfaceMethod(
             loc,
             fnProto.name,
             fnProto.header,
-            false,
+            isStatic,
+            isLocal,
+            isOverride,
             fnProto.generics,
         );
 
@@ -1572,76 +1619,44 @@ export class ParseMethods {
                     }
                 }
 
-            } else if (tok.type === "static") {
-                let tok2 = parser.peek();
-                if (tok2.type === "{") {
-                    // Static block
-                    // make sure we don"t have more than one static block
-                    if (staticBlock != null) {
-                        parser.customError(
-                            "Duplicate static block in class, can only have one",
-                            tok.location,
-                        );
-                    }
-                    parser.rejectOne();
-                    parser.accept();
-                    staticBlockCtx = new Context(tok.location, parser, ctx, { withinClassStaticBlock: true, withinClass: true });
-                    staticBlock = ParseMethods.parseStatementBlock(parser, staticBlockCtx);
-                } else if (tok2.type === "fn") {
-                    parser.rejectOne();// reject the fn
-                    parser.accept();// accept the static
-                    let parsedMethods = ParseMethods.parseClassMethod(parser, ctx);
-                    for(let method of parsedMethods) {
-                        if(method.isOverride) {
+            } else if (tok.type === "static" || tok.type === "local" || tok.type === "override" || tok.type === "fn") {
+                parser.reject();
+
+                let parsedStaticBlock = false;
+
+                if(tok.type === "static"){
+                    let tok2 = parser.peek();
+                    tok2 = parser.peek(); // need to skip the "static" token
+                    if(tok2.type === "{") {
+                        if (staticBlock != null) {
                             parser.customError(
-                                `Cannot override method "${method.imethod.name}" in static block`,
-                                method.location,
+                                "Duplicate static block in class, can only have one",
+                                tok.location,
                             );
                         }
-                        method.imethod.isStatic = true;
+                        parser.rejectOne();
+                        parser.accept();
+                        staticBlockCtx = new Context(tok.location, parser, ctx, { withinClassStaticBlock: true, withinClass: true });
+                        staticBlock = ParseMethods.parseStatementBlock(parser, staticBlockCtx);
+                        parsedStaticBlock = true;
                     }
-
-                    // also comapre it with attributes
+                }
+                if(!parsedStaticBlock) {
+                    parser.reject();
+                    let parsedMethods = ParseMethods.parseClassMethod(parser, ctx, true, true);
                     for(let method of parsedMethods) {
+                        // also comapre it with attributes
                         if (attributes.find((a) => a.name == method.imethod.name)) {
                             parser.customError(
                                 `Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`,
-                            method.location,
+                                method.location,
                             );
                         }
                         methods.push(method);
                     }
-                    
-                }
-            } else if (tok.type === "override") {
-                parser.accept();
-                let parsedMethods = ParseMethods.parseClassMethod(parser, ctx);
-                for(let method of parsedMethods) {
-                    // also comapre it with attributes
-                    if (attributes.find((a) => a.name == method.imethod.name)) {
-                        parser.customError(
-                            `Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`,
-                            method.location,
-                        );
-                    }
-                    method.isOverride = true;
-                    methods.push(method);
                 }
             }
-            else if (tok.type === "fn") {
-                parser.reject();
-                let parsedMethods = ParseMethods.parseClassMethod(parser, ctx);
-                for(let method of parsedMethods) {
-                    // also comapre it with attributes
-                    if (attributes.find((a) => a.name == method.imethod.name)) {
-                        parser.customError(
-                            `Duplicate name method "${method.imethod.name}" is already reserved by an attribute, in class`,
-                            method.location,
-                        );
-                    }
-                    methods.push(method);
-                }
-            } else if (tok.type === "impl") {
+            else if (tok.type === "impl") {
                 parser.reject();
                 let impl = ParseMethods.parseClassImplementation(parser, ctx);
                 impls.push(impl);
@@ -1715,38 +1730,41 @@ export class ParseMethods {
 
         let tok = parser.peek();
         ParseMethods.setState({"step": ["modifiers"]});
-        ParseMethods.setState({"expectedTokens": ["static", "const", "identifier"]});
-        // we have const, static, static const or const static
-        let isStatic = tok.type === "static";
-        let isConst = tok.type === "const";
+        ParseMethods.setState({"expectedTokens": ["static", "const", "local", "identifier"]});
+        // we have const, static, local in any order
+        let isStatic = false;
+        let isConst = false;
+        let isLocal = false;
 
-        if (isStatic) {
-            parser.accept();
-            let tok2 = parser.peek();
-            if (tok2.type === "const") {
-                parser.accept();
-                isConst = true;
-            } else {
-                parser.reject();
-            }
-        } else if (isConst) {
-            parser.accept();
-            let tok2 = parser.peek();
-            if (tok2.type === "static") {
-                parser.accept();
+        // Loop to check for modifiers in any order
+        while (tok.type === "static" || tok.type === "const" || tok.type === "local") {
+            if (tok.type === "static") {
+                if (isStatic) {
+                    parser.customError("Duplicate 'static' modifier found", tok.location);
+                }
                 isStatic = true;
-            } else {
-                parser.reject();
+            } else if (tok.type === "const") {
+                if (isConst) {
+                    parser.customError("Duplicate 'const' modifier found", tok.location);
+                }
+                isConst = true;
+            } else if (tok.type === "local") {
+                if (isLocal) {
+                    parser.customError("Duplicate 'local' modifier found", tok.location);
+                }
+                isLocal = true;
             }
-        } else {
-            parser.reject();
+            parser.accept();
+            tok = parser.peek();
         }
+        parser.reject();
+
         ParseMethods.setState({"step": ["name"]});
         let id = parser.expect("identifier");
         parser.expect(":");
         ParseMethods.setState({"step": ["$type"]});
         let type = ParseMethods.parseType(parser, ctx);
-        return new ClassAttribute(loc, id.value, type, isStatic, isConst);
+        return new ClassAttribute(loc, id.value, type, isStatic, isConst, isLocal);
     }
 
     @trackState()
@@ -1819,12 +1837,14 @@ export class ParseMethods {
     @trackState()
     static parseClassMethod(
         parser: Parser,
-        ctx: Context
+        ctx: Context,
+        allowLocal: boolean = false,
+        allowOverride: boolean = false,
     ): ClassMethod[] {
         let loc = parser.loc();
 
         ParseMethods.setState({"step": ["fnHeader"]});
-        let {imethod, altNames} = ParseMethods.parseClassMethodInterface(parser, ctx);
+        let {imethod, altNames} = ParseMethods.parseClassMethodInterface(parser, ctx, allowLocal, allowOverride);
         let body: BlockStatement | null = null;
         let expression: Expression | null = null;
 

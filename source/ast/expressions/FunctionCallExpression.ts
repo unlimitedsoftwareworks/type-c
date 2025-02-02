@@ -316,6 +316,24 @@ export class FunctionCallExpression extends Expression {
 
             let method = candidateMethods[0];
 
+            if(method.isStatic){
+                ctx.parser.customError(`Cannot call static method ${memberExpr.name} on instance`, this.location);
+            }
+
+            
+            if(method.isLocal){
+                // get the active class
+                let activeClass = ctx.getActiveClass();
+
+                if(!activeClass){
+                    ctx.parser.customError(`Cannot call local method ${memberExpr.name} on instance outside of its class`, this.location);
+                }
+
+                let res = matchDataTypes(ctx, baseClass, activeClass);
+                if(!res.success){
+                    ctx.parser.customError(`Cannot call local method ${memberExpr.name} on instance outside of its class`, this.location);
+                }
+            }
 
             // since we might have a generic method, we need to re-infer the arguments of the call
             for (let i = 0; i < this.args.length; i++) {

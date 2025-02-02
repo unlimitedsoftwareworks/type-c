@@ -21,6 +21,8 @@ import { Documentation } from "../../lexer/Documentation";
 
 export class InterfaceMethod extends FunctionPrototype {
     isStatic: boolean;
+    isLocal: boolean;
+    isOverride: boolean;
 
     /**
      * A cache of the method in case it belongs to a class method,
@@ -66,9 +68,11 @@ export class InterfaceMethod extends FunctionPrototype {
         return uid;
     }
 
-    constructor(location: SymbolLocation, name: string, header: FunctionType, isStatic: boolean, generics: GenericType[] = []){
+    constructor(location: SymbolLocation, name: string, header: FunctionType, isStatic: boolean, isLocal: boolean, isOverride: boolean, generics: GenericType[] = []){
         super(location, name, header, generics);
         this.isStatic = isStatic;
+        this.isLocal = isLocal;
+        this.isOverride = isOverride;
     }
 
     addAlternativeName(name: string) {
@@ -103,7 +107,7 @@ export class InterfaceMethod extends FunctionPrototype {
     }
 
     clone(typeMap: { [key: string]: DataType; }): InterfaceMethod {
-        return new InterfaceMethod(this.location, this.name, this.header.clone(typeMap) as FunctionType, this.isStatic, this.generics.map(g => g.clone(typeMap)) as GenericType[]);
+        return new InterfaceMethod(this.location, this.name, this.header.clone(typeMap) as FunctionType, this.isStatic, this.isLocal, this.isOverride, this.generics.map(g => g.clone(typeMap)) as GenericType[]);
     }
 
     getUID(): number {

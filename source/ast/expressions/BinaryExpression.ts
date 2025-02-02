@@ -54,6 +54,11 @@ export type BinaryExpressionOperator =
     "??"
 ;
 
+function isAssignmentOperator(op: BinaryExpressionOperator): boolean {
+    // not all are implement by the lexer for now
+    return ["=", "+=", "-=", "*=", "/=", "%=", "&&=", "||=", "&=", "|=", "^=", ">>=", "<<="].includes(op);
+}
+
 function isArithmeticOperator(op: BinaryExpressionOperator): boolean {
     return ["+", "-", "*", "/", "%", "^", ">>", "<<"].includes(op);
 }
@@ -216,8 +221,9 @@ export class BinaryExpression extends Expression {
         /**
          * Check if we are allowed to use the operator =
          */
-        if(this.operator === "=") {
-            if (this.left instanceof ThisExpression) {
+        if(isAssignmentOperator(this.operator)) {
+            // can perform this += { .. }
+            if ((this.left instanceof ThisExpression) && (this.operator !== "+=")) {
                 ctx.parser.customError("Cannot assign to this", this.location);
             }
 
@@ -230,7 +236,7 @@ export class BinaryExpression extends Expression {
 
             //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
             if(!canAssign.success && !ignoreConst && Context.InferenceMode != "codegen") {
-                ctx.parser.customError(`Cannot assign to LHS of operator =, : ${canAssign.message}`, this.location);
+                ctx.parser.customError(`Cannot assign to LHS of operator ${this.operator}, : ${canAssign.message}`, this.location);
             }
         }
 

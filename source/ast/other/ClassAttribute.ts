@@ -23,6 +23,7 @@ export class ClassAttribute extends Symbol {
     location: SymbolLocation;
     isConst: boolean;
     documentation: Documentation | null = null;
+    isLocal: boolean = false;
 
     static uidCounter: number = 0;
 
@@ -31,14 +32,14 @@ export class ClassAttribute extends Symbol {
     }
 
 
-    constructor(location: SymbolLocation, name: string, type: DataType, isStatic: boolean, isConst: boolean=false){
+    constructor(location: SymbolLocation, name: string, type: DataType, isStatic: boolean, isConst: boolean=false, isPrivate: boolean=false){
         super(location, "class_attribute", name);
         this.location = location;
         this.name = name;
         this.type = type;
         this.isStatic = isStatic;
         this.isConst = isConst;
-
+        this.isLocal = isPrivate;
         // set the unique identifier
         this.uid = `ca_${ClassAttribute.uidCounter++}`;
     }

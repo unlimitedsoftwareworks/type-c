@@ -239,6 +239,9 @@ export class ClassType extends DataType {
             if (m == null) {
                 ctx.parser.customError(`Method ${method.getShortName()} is not implemented in class ${this.getShortName()}`, this.location);
             }
+            if(m.isLocal){
+                ctx.parser.customError(`Cannot implement an interface method ${method.getShortName()} as local.`, this.location);
+            }
         }
 
         /**
@@ -672,7 +675,7 @@ export class ClassType extends DataType {
             let methods: InterfaceMethod[] = [];
             for (const method of this.methods) {
                 // interfaces cannot have generic methods, static or constructors
-                if ((method.imethod.generics.length === 0) && (method.imethod.isStatic === false) && (method.name !== "init")) {
+                if ((method.imethod.generics.length === 0) && (method.imethod.isStatic === false) && (method.name !== "init") && (!method.imethod.isLocal)) {
                     methods.push(method.imethod);
                 }
             }

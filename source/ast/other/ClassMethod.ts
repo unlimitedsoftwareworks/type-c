@@ -64,6 +64,12 @@ export class ClassMethod extends Symbol {
     // if the method is an override, i.e overrides an external method
     isOverride: boolean = false;
 
+    // if the method is local, i.e defined within a class
+    isLocal: boolean = false;
+
+    // if the method is static, i.e defined within a class
+    isStatic: boolean = false;
+
     constructor(location: SymbolLocation, context: Context, imethod: InterfaceMethod, body: BlockStatement | null, expression: Expression | null) {
         super(location, "class_method", imethod.name);
 
@@ -95,6 +101,9 @@ export class ClassMethod extends Symbol {
         }
         this.imethod._sourceMethod = this;
 
+        this.isLocal = imethod.isLocal;
+        this.isStatic = imethod.isStatic;
+        this.isOverride = imethod.isOverride;
     }
 
     shortname(): string {
@@ -153,9 +162,7 @@ export class ClassMethod extends Symbol {
         if(fn.body !== null) {
             fn.body.context.overrideParent(fn.context);
         }
-
-        fn.isExternal = this.isExternal;
-        fn.isOverride = this.isOverride;
+        
         return fn;
     }
 
