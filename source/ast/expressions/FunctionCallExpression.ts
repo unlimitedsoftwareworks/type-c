@@ -19,7 +19,7 @@ import { DataType } from "../types/DataType";
 import { Context } from "../symbol/Context";
 import { MemberAccessExpression } from "./MemberAccessExpression";
 import { FunctionType } from "../types/FunctionType";
-import { checkExpressionArgConst, matchDataTypes } from "../../typechecking/TypeChecking";
+import { checkExpressionArgConst, matchClassSeries, matchDataTypes } from "../../typechecking/TypeChecking";
 import { ClassType } from "../types/ClassType";
 import { getOperatorOverloadType, isCallable, matchCall } from "../../typechecking/OperatorOverload";
 import { InterfaceType } from "../types/InterfaceType";
@@ -39,6 +39,7 @@ import { MutateExpression } from "./MutateExpression";
 import { VoidType } from "../types/VoidType";
 import { GenericType } from "../types/GenericType";
 import { BinaryExpression } from "./BinaryExpression";
+import { checkEncapsulation } from "../utilities/EncapsulationCheck";
 
 export class FunctionCallExpression extends Expression {
     lhs: Expression;
@@ -284,6 +285,7 @@ export class FunctionCallExpression extends Expression {
     }
 
     private inferClassMethod(ctx: Context, baseExprType: DataType, memberExpr: ElementExpression, hint: DataType | null, meta?: InferenceMeta) {
+        let performLocalCheck = false;
 
         let baseClass = baseExprType.to(ctx, ClassType) as ClassType;
         baseClass.resolve(ctx);
@@ -322,17 +324,7 @@ export class FunctionCallExpression extends Expression {
 
             
             if(method.isLocal){
-                // get the active class
-                let activeClass = ctx.getActiveClass();
-
-                if(!activeClass){
-                    ctx.parser.customError(`Cannot call local method ${memberExpr.name} on instance outside of its class`, this.location);
-                }
-
-                let res = matchDataTypes(ctx, baseClass, activeClass);
-                if(!res.success){
-                    ctx.parser.customError(`Cannot call local method ${memberExpr.name} on instance outside of its class`, this.location);
-                }
+                performLocalCheck = true;
             }
 
             // since we might have a generic method, we need to re-infer the arguments of the call
@@ -366,6 +358,13 @@ export class FunctionCallExpression extends Expression {
             if(!isAttribute.type.allowedNullable(ctx) && this._isNullableCall){
                 ctx.parser.customError(`The result of an expression following a nullable access ?. should always be a type that can be null or void.`, this.location)
             }
+            if(isAttribute.isLocal){
+                performLocalCheck = true;
+            }
+        }
+
+        if(performLocalCheck){
+            checkEncapsulation(ctx, baseClass, isAttribute?isAttribute:this._calledClassMethod!.imethod, this);
         }
     }
 
@@ -488,6 +487,10 @@ export class FunctionCallExpression extends Expression {
 
             // save the reference to the source method to be used in the code generator
             this._calledClassMethod = method._sourceMethod;
+
+            if(method.isLocal){
+                checkEncapsulation(ctx, classType, method, this);
+            }
 
             // manually set the inferred type of the lhs, since
             // this.lhs.lhs was already inferred let baseExpr = this.lhs.left;

@@ -73,7 +73,21 @@ export class ClassType extends DataType {
     impls: ClassImplementation[] = [];
 
     implsResolved: boolean = false;
-    classId: number
+    
+    /**
+     * ClassID is unique per class, it is used to identify the class
+     * When a class is cloned, the class ID will change.
+     */
+    classId: number;
+
+
+    /**
+     * Unlike Class ID, class series is not unique per class,
+     * it is used to identify the class across multiple clones.
+     * Why you ask? Because static methods/attributes do not care about the clones.
+     */
+    classSeries: number;
+
 
     constructor(location: SymbolLocation, superTypes: DataType[], attributes: ClassAttribute[], methods: ClassMethod[], impls: ClassImplementation[]) {
         super(location, "class");
@@ -89,6 +103,7 @@ export class ClassType extends DataType {
             }
         }
         this.classId = ClassType.classCounter++;
+        this.classSeries = this.classId;
     }
 
     resolve(ctx: Context, hint: DataType | null = null) {
@@ -713,6 +728,8 @@ export class ClassType extends DataType {
         })
 
         clone.implsResolved = this.implsResolved;
+        // preserve the class series
+        clone.classSeries = this.classSeries;
 
         return clone;
     }

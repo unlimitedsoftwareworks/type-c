@@ -12,13 +12,14 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { matchClassSeries, matchDataTypes } from "../../typechecking/TypeChecking";
 import { InterfaceMethod } from "../other/InterfaceMethod";
 import { Context } from "../symbol/Context";
 import { SymbolLocation } from "../symbol/SymbolLocation";
 import { ClassType } from "../types/ClassType";
 import { DataType } from "../types/DataType";
 import { UnsetType } from "../types/UnsetType";
+import { checkEncapsulation } from "../utilities/EncapsulationCheck";
 import { Expression, InferenceMeta } from "./Expression";
 
 export class NewExpression extends Expression {
@@ -80,6 +81,9 @@ export class NewExpression extends Expression {
                 }
             }
 
+            if(this._hasInitMethod && this._calledInitMethod?.isLocal){
+                checkEncapsulation(ctx, classType, this._calledInitMethod, this);
+            }
 
             this.inferredType = this.type;
             this.isConstant = false;

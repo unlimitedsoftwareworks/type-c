@@ -17,7 +17,7 @@
         {
             "label": "tsc: build - tsconfig.json",
             "type": "shell",
-            "command": "tsc -p ./tsconfig.json --incremental",
+            "command": "./node_modules/.bin/tsc -p ./tsconfig.json --incremental",
             "problemMatcher": [
                 "$tsc"
             ],

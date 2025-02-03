@@ -145,6 +145,8 @@ This checklist containts only major changes and updates, for minor changes and u
 - 27/01/2025:
     - TODO: When inferring expression during code gen, it might be necessary to infer using `{isWithinNullishCoalescing: true}`, since the AST is slightly rewritten
 
+- 03/02/2025:
+    - Added encapsulation check for local methods and attributes. When calling local method from a static method, the `ctx.getActiveClass()` will return the base class (generic class), not the class where the static method is defined. Hence checking is performed using the new `matchClassSeries` function (uses `classSeries` attribute of `ClassType`, which is retained when the class is cloned).
 
 ## TODOs:
 - Allow class attributes (both static and not static) to be immutable, and can only be set from within the constructor.

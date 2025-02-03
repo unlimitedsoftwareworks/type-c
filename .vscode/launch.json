@@ -13,14 +13,14 @@
             "sourceMaps": true,
             "args": [
                 "-c",
-                "./tests/test29",
+                "./tests/demo",
                 "-o",
                 "./output",
                 "-r",
                 "--generate-ir"
             ],
             "env": {
-                "TYPE_V_PATH": "/Users/praisethemoon/projects/type-c/type-v/cmake-build-debug"
+                "TYPE_V_PATH": "/Users/praisethemoon/praisethemoon/type-c/type-v/cmake-build-debug"
             }
         },
         {

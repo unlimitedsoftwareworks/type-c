@@ -426,7 +426,7 @@ export namespace TypeC {
             if (options.runOutput) {
                 let interpreterPath = process.env.TYPE_V_PATH!;
 
-                const command = `cd ${interpreterPath} && ./typev /Users/praisethemoon/projects/type-c/type-c/output/bin.tcv ${options.typevArgs.join(" ")}`;
+                const command = `cd ${interpreterPath} && ./typev ${binFile} ${options.typevArgs.join(" ")}`;
 
                 const result = nodeModules.spawnSync(command, { shell: true });
 

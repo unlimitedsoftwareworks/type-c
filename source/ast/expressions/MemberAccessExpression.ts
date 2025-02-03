@@ -11,7 +11,7 @@
  * This file is licensed under the terms described in the LICENSE.md.
  */
 
-import { matchDataTypes } from "../../typechecking/TypeChecking";
+import { matchClassSeries, matchDataTypes } from "../../typechecking/TypeChecking";
 import { Context } from "../symbol/Context";
 import { FunctionArgument } from "../symbol/FunctionArgument";
 import { Symbol } from "../symbol/Symbol";
@@ -38,6 +38,7 @@ import { StructType } from "../types/StructType";
 import { VariantConstructorType } from "../types/VariantConstructorType";
 import { VariantType } from "../types/VariantType";
 import { VoidType } from "../types/VoidType";
+import { checkEncapsulation } from "../utilities/EncapsulationCheck";
 import { BinaryExpression } from "./BinaryExpression";
 import { ElementExpression } from "./ElementExpression";
 import { Expression, InferenceMeta } from "./Expression";
@@ -210,17 +211,7 @@ export class MemberAccessExpression extends Expression {
             }
 
             if(field.isLocal){
-                // get the active class
-                let activeClass = ctx.getActiveClass();
-
-                if(!activeClass){
-                    ctx.parser.customError(`Cannot access local field ${this.right.name} on instance outside of its class`, this.location);
-                }
-
-                let res = matchDataTypes(ctx, classType, activeClass);
-                if(!res.success){
-                    ctx.parser.customError(`Cannot access local field ${this.right.name} on instance outside of its class`, this.location);
-                }
+                checkEncapsulation(ctx, classType, field, this);
             }
 
             this.inferredType = field.type;

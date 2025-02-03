@@ -1022,6 +1022,17 @@ function matchTuples(ctx: Context, t1: TupleType, t2: TupleType, strict: boolean
     return Ok();
 }
 
+export function matchClassSeries(ctx: Context, t1: DataType, t2: DataType): boolean {
+    let t1Class = t1.to(ctx, ClassType) as ClassType;
+    let t2Class = t2.to(ctx, ClassType) as ClassType;
+
+    if(t1Class.classSeries !== t2Class.classSeries){
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Checks if two function types are identical.
  * this is used for classes/interfaces to make sure overloaded methods
