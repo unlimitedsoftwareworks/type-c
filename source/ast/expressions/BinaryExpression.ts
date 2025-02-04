@@ -218,28 +218,6 @@ export class BinaryExpression extends Expression {
             rhsType = this.right.infer(ctx, null, meta);   
         }
 
-        /**
-         * Check if we are allowed to use the operator =
-         */
-        if(isAssignmentOperator(this.operator)) {
-            // can perform this += { .. }
-            if ((this.left instanceof ThisExpression) && (this.operator !== "+=")) {
-                ctx.parser.customError("Cannot assign to this", this.location);
-            }
-
-            let canAssign = meta?.ignoreConst ? Ok() : canAssignLHSRHS(ctx, this.left, this.right);
-
-            /**
-             * We need to ignore constness when assigning a `this` field/subfield to a class constructor
-             */
-            let ignoreConst = this.left.isConstant === 0;
-
-            //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
-            if(!canAssign.success && !ignoreConst && Context.InferenceMode != "codegen") {
-                ctx.parser.customError(`Cannot assign to LHS of operator ${this.operator}, : ${canAssign.message}`, this.location);
-            }
-        }
-
         if((isLiteralIntExpr(this.left)) && !(isLiteralIntExpr(this.right)) && isBasicType(rhsType)){
             this.left.setHint(this.right.inferredType);
             lhsType = this.right.inferredType!;
@@ -274,6 +252,29 @@ export class BinaryExpression extends Expression {
 
         if(!this.inferredType) {
             ctx.parser.customError(`Cannot apply operator ${this.operator} to types ${lhsType} and ${rhsType}`, this.location);
+        }
+
+        /**
+         * Check if we are allowed to modify the left hand side.
+         * We only check this if we are not within an operator overload method call
+         */
+        if(isAssignmentOperator(this.operator) && !(this.operatorOverloadState.isMethodCall)) {
+            // can perform this += { .. }
+            if ((this.left instanceof ThisExpression) && (this.operator !== "+=")) {
+                ctx.parser.customError("Cannot assign to this", this.location);
+            }
+
+            let canAssign = meta?.ignoreConst ? Ok() : canAssignLHSRHS(ctx, this.left, this.right);
+
+            /**
+             * We need to ignore constness when assigning a `this` field/subfield to a class constructor
+             */
+            let ignoreConst = this.left.isConstant === 0;
+
+            //let canAssign2 = meta?.ignoreConst ? Ok() : isLHSAssignable(ctx, this.left);
+            if(!canAssign.success && !ignoreConst && Context.InferenceMode != "codegen") {
+                ctx.parser.customError(`Cannot assign to LHS of operator ${this.operator}, : ${canAssign.message}`, this.location);
+            }
         }
 
         this.checkHint(ctx);
